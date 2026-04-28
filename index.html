@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Agent Sprite Forge — Level 1: Lumbridge Plains</title>
+<style>
+  :root {
+    --bg: #0d0d10;
+    --panel: #181820;
+    --border: #2a2a36;
+    --gold: #d4af37;
+    --text: #e8e8ee;
+    --dim: #888;
+    --hp: #c0392b;
+    --xp: #2a8b6c;
+    --quest: #d4af37;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; background: var(--bg); color: var(--text);
+    font-family: 'Courier New', ui-monospace, monospace;
+    height: 100%;
+  }
+  body {
+    display: flex; justify-content: center; align-items: center;
+    padding: 12px; min-height: 100vh;
+  }
+  #wrap {
+    display: grid;
+    grid-template-columns: 800px 240px;
+    gap: 12px;
+    user-select: none;
+  }
+  #stage {
+    position: relative;
+    width: 800px; height: 576px;
+    background: #000;
+    border: 4px solid var(--border);
+    border-radius: 4px;
+  }
+  canvas {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  #title {
+    position: absolute; top: 6px; left: 8px;
+    font-size: 11px; color: var(--gold);
+    text-shadow: 1px 1px 0 #000;
+    pointer-events: none;
+  }
+  #overlay {
+    position: absolute; inset: 0;
+    display: none;
+    flex-direction: column; justify-content: center; align-items: center;
+    background: rgba(0,0,0,0.78);
+    color: var(--gold);
+    text-align: center;
+    z-index: 10;
+  }
+  #overlay h2 { font-size: 28px; margin: 6px 0; letter-spacing: 2px; }
+  #overlay p { color: #eee; font-size: 13px; margin: 4px 0; }
+  #overlay button {
+    margin-top: 14px; padding: 8px 18px;
+    background: var(--gold); color: #000;
+    border: 0; cursor: pointer; font-family: inherit;
+    font-weight: bold; letter-spacing: 1px;
+  }
+  #panel {
+    background: var(--panel);
+    border: 4px solid var(--border);
+    border-radius: 4px;
+    padding: 10px;
+    height: 576px;
+    display: flex; flex-direction: column;
+    font-size: 12px;
+  }
+  .section { margin-bottom: 10px; }
+  .section h1 {
+    font-size: 11px; letter-spacing: 1px;
+    color: var(--gold);
+    margin: 0 0 4px 0;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 2px;
+  }
+  .stat-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin: 3px 0;
+  }
+  .stat-label { color: var(--dim); }
+  .stat-value { color: var(--text); }
+  .bar {
+    height: 10px; background: #0a0a0e;
+    border: 1px solid var(--border);
+    margin-top: 2px; overflow: hidden;
+  }
+  .bar.tiny { height: 5px; }
+  .bar-fill { height: 100%; transition: width 180ms ease-out; }
+  .bar-fill.hp { background: var(--hp); }
+  .bar-fill.xp { background: var(--xp); }
+  #skills {
+    margin-top: 6px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px 8px;
+  }
+  #skills .sk {
+    font-size: 10px;
+    color: var(--dim);
+  }
+  #skills .sk .row {
+    display: flex; justify-content: space-between;
+  }
+  #skills .sk .lv { color: var(--text); }
+
+  #inv {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3px;
+  }
+  .slot {
+    aspect-ratio: 1 / 1;
+    background: #0a0a0e;
+    border: 1px solid var(--border);
+    position: relative;
+    font-size: 9px;
+    color: var(--gold);
+    display: flex; align-items: flex-end; justify-content: flex-end;
+    padding: 1px;
+  }
+  .slot .icon {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  #quest {
+    background: #0a0a0e;
+    border: 1px dashed var(--border);
+    padding: 6px;
+    font-size: 11px;
+    line-height: 1.5;
+    min-height: 70px;
+  }
+  #quest .step { color: var(--dim); }
+  #quest .step.active { color: var(--quest); }
+  #quest .step.done { color: #4a8; text-decoration: line-through; }
+
+  #log {
+    flex: 1;
+    background: #060608;
+    border: 1px solid var(--border);
+    padding: 5px;
+    font-size: 10px;
+    overflow: hidden;
+    line-height: 1.4;
+    color: #aaa;
+  }
+  #log .entry { margin: 1px 0; }
+  #log .entry.combat { color: #e88; }
+  #log .entry.skill { color: #8c8; }
+  #log .entry.quest { color: var(--gold); }
+  #log .entry.hint { color: #6cb; }
+
+  #controls {
+    font-size: 10px; color: var(--dim);
+    text-align: center; margin-top: 4px;
+  }
+  kbd {
+    display: inline-block;
+    padding: 1px 4px;
+    background: #222;
+    border: 1px solid #333;
+    border-radius: 2px;
+    font-size: 9px;
+    color: #ddd;
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="stage">
+    <canvas id="game" width="800" height="576"></canvas>
+    <div id="title">AGENT SPRITE FORGE — LEVEL 1: LUMBRIDGE PLAINS</div>
+    <div id="overlay">
+      <h2 id="overlay-title">LEVEL COMPLETE</h2>
+      <p id="overlay-text">You've conquered the plains, adventurer.</p>
+      <button id="overlay-btn">Play Again</button>
+    </div>
+  </div>
+  <div id="panel">
+    <div class="section">
+      <h1>Adventurer</h1>
+      <div class="stat-row"><span class="stat-label">HP</span><span class="stat-value"><span id="hp-num">10</span>/<span id="hp-max">10</span></span></div>
+      <div class="bar"><div id="hp-bar" class="bar-fill hp" style="width:100%"></div></div>
+      <div id="skills"></div>
+    </div>
+    <div class="section">
+      <h1>Equipped</h1>
+      <div id="equipped" style="font-size:11px; color:#aaa">Fists (no weapon)</div>
+    </div>
+    <div class="section">
+      <h1>Inventory</h1>
+      <div id="inv"></div>
+    </div>
+    <div class="section">
+      <h1>Quest</h1>
+      <div id="quest"></div>
+    </div>
+    <div class="section" style="flex:1; display:flex; flex-direction:column; min-height:0">
+      <h1>Combat Log</h1>
+      <div id="log"></div>
+    </div>
+    <div id="controls">
+      <kbd>WASD</kbd>/<kbd>Arrows</kbd> move &nbsp; <kbd>Space</kbd>/<kbd>E</kbd> interact
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
