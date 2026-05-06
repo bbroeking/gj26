@@ -517,6 +517,61 @@
     }
     .skill-content th { font-weight: 600; color: var(--ink-mid); }
 
+    /* ---- recipes tab ---- */
+    .recipe-card {
+      --station-color: #999;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--station-color);
+      border-radius: 3px;
+      padding: 8px 12px;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+    .recipe-head {
+      display: flex; align-items: baseline; gap: 8px;
+      margin-bottom: 4px;
+    }
+    .recipe-name {
+      font-family: var(--font-display);
+      font-size: 13px;
+      color: var(--ink);
+    }
+    .recipe-station {
+      --station-color: #999;
+      font-family: var(--font-body);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: var(--station-color);
+      color: #fff;
+      padding: 1px 6px;
+      border-radius: 2px;
+    }
+    .recipe-req {
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 10px;
+      color: var(--ink-mid);
+      letter-spacing: 0.04em;
+      margin-left: auto;
+    }
+    .recipe-flow {
+      font-size: 12px;
+      color: var(--ink-mid);
+      line-height: 1.5;
+    }
+    .recipe-flow b { color: var(--ink); }
+    .recipe-flow .arrow {
+      color: var(--accent-gold, #b48a3a);
+      margin: 0 4px;
+    }
+    .recipe-rolls {
+      font-size: 10px;
+      color: var(--ink-mid);
+      font-style: italic;
+      margin-top: 3px;
+    }
+
     /* ---- materials tier graph ---- */
     .mat-tier-section { margin-bottom: var(--s-5); }
     .mat-tier-head {
@@ -805,6 +860,7 @@
       <h4>Inventory</h4>
       <button data-tab="items" class="on">Items <span class="badge" id="badge-items"></span></button>
       <button data-tab="materials">Materials <span class="badge" id="badge-materials"></span></button>
+      <button data-tab="recipes">Recipes <span class="badge" id="badge-recipes"></span></button>
       <button data-tab="abilities">Abilities <span class="badge" id="badge-abilities"></span></button>
       <button data-tab="skills">Skills <span class="badge" id="badge-skills"></span></button>
 
@@ -847,6 +903,14 @@
           <span class="count" id="count-materials"></span>
         </div>
         <div id="grid-materials"></div>
+      </section>
+
+      <section class="tab-pane" data-tab="recipes">
+        <div class="filter-row">
+          <input id="filter-recipes" type="search" placeholder="Filter recipes by ingredient, output, station…">
+          <span class="count" id="count-recipes"></span>
+        </div>
+        <div id="grid-recipes"></div>
       </section>
 
       <section class="tab-pane" data-tab="abilities">

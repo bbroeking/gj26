@@ -21,6 +21,10 @@ import { SKILL_MILESTONES } from './src/data/skill-milestones.js';
 import { CARTO_UNLOCKS } from './src/ui/worldMap.js';
 import { ENEMY_DEFS } from './src/data/enemy-defs.js';
 import { MATERIAL_DEFS, MATERIAL_TIERS, MATERIAL_GROUPS } from './src/data/materials.js';
+import { SMITH_RECIPES } from './src/data/smith-recipes.js';
+import { COOK_RECIPES } from './src/data/cook-recipes.js';
+import { INK_RECIPES } from './src/data/inkRecipes.js';
+import { ORB_RECIPES } from './src/data/orb-recipes.js';
 import { animateGLBKnight } from './src/anim/knight.js';
 import { animateQuadruped } from './src/anim/quadruped.js';
 import { phongifyMaterials } from './src/scene/characters.js';
@@ -39,6 +43,7 @@ tabsEl.addEventListener('click', (ev) => {
   if (which === 'research') ensureResearchGalleryLoaded();
   if (which === 'skills') ensureSkillsLoaded();
   if (which === 'materials') renderMaterials();
+  if (which === 'recipes') renderRecipes();
   // Sync the global search box into the active tab's filter input so
   // the search persists visually when switching tabs.
   _syncGlobalSearchToActiveTab();
@@ -51,7 +56,7 @@ const globalSearchEl = document.getElementById('filter-global');
 const TAB_FILTER_IDS = {
   items: 'filter-items', npcs: 'filter-npcs',
   enemies: 'filter-enemies', abilities: 'filter-abilities',
-  materials: 'filter-materials',
+  materials: 'filter-materials', recipes: 'filter-recipes',
 };
 function activeTab() {
   const on = tabsEl.querySelector('button.on');
@@ -82,6 +87,11 @@ function refreshNavBadges() {
   set('badge-enemies',   document.querySelectorAll('#grid-enemies .card').length);
   set('badge-abilities', document.querySelectorAll('#grid-abilities .card').length);
   set('badge-materials', MATERIAL_DEFS.length);
+  set('badge-recipes',
+    Object.keys(SMITH_RECIPES).length +
+    Object.keys(COOK_RECIPES).length +
+    INK_RECIPES.length +
+    Object.keys(ORB_RECIPES).length);
 }
 
 // ---------------------------------------------------------------------------
@@ -449,6 +459,140 @@ function renderMaterials() {
   grid.innerHTML = html;
 }
 document.getElementById('filter-materials')?.addEventListener('input', renderMaterials);
+
+// ---------------------------------------------------------------------------
+// Recipes tab — every crafting recipe across smith / cook / ink / orb,
+// grouped by station, sorted by reqLevel within each station so the
+// player reads bronze → iron → steel.
+// ---------------------------------------------------------------------------
+const RECIPE_STATIONS = [
+  { key: 'smith',  label: 'Smithing',     color: '#a8633a', desc: 'Smelt + smith at the forge. Earth XP.' },
+  { key: 'cook',   label: 'Cooking',      color: '#c08040', desc: 'Cook at a hearth or campfire. Cooking XP.' },
+  { key: 'ink',    label: 'Inks',         color: '#7b4a9c', desc: 'Mix at the Wayfinding Workshop. Wayfinding XP.' },
+  { key: 'orb',    label: 'Orb Forge',    color: '#b48a3a', desc: 'Forge at the Plinth. Wayfinding XP. Output rolls properties.' },
+];
+function _stationColor(key) {
+  const s = RECIPE_STATIONS.find(s => s.key === key); return s ? s.color : '#999';
+}
+function _ingredientHTML(map) {
+  return Object.entries(map).map(([id, n]) => {
+    const def = ITEMS[id]; const name = def?.name || id;
+    return `${n}× <b>${escapeHtml(name)}</b>`;
+  }).join(' + ');
+}
+function _outputHTML(id, count = 1) {
+  const def = ITEMS[id]; const name = def?.name || id;
+  return `${count > 1 ? `${count}× ` : ''}<b>${escapeHtml(name)}</b>`;
+}
+
+function _allRecipes() {
+  const all = [];
+  for (const [id, r] of Object.entries(SMITH_RECIPES)) {
+    let inputs;
+    if (r.kind === 'smelt') inputs = r.inputs;
+    else inputs = { [r.bars]: r.count };
+    all.push({
+      id, station: 'smith', label: r.label,
+      inputs, output: r.out, outputCount: 1,
+      reqLevel: r.reqLevel || 1, reqSkill: 'earth',
+      xp: r.xp, kind: r.kind,
+    });
+  }
+  for (const [id, r] of Object.entries(COOK_RECIPES)) {
+    const inputs = r.inputs ?? { [r.input]: 1 };
+    all.push({
+      id, station: 'cook', label: r.label,
+      inputs, output: r.output, outputCount: 1,
+      reqLevel: r.reqLevel || 1, reqSkill: 'cook',
+      xp: r.xp, burnt: r.burnt,
+    });
+  }
+  for (const r of INK_RECIPES) {
+    if (!r.id || !r.output) continue;
+    // INK_RECIPES inputs come in two shapes: ingredient lists or grid
+    // patterns. Normalize to a {id:count} map for display.
+    const inputs = {};
+    if (r.inputs) Object.assign(inputs, r.inputs);
+    else if (r.ingredients) for (const x of r.ingredients) inputs[x.id] = (inputs[x.id] || 0) + (x.count || 1);
+    all.push({
+      id: r.id, station: 'ink', label: r.label || r.name || r.id,
+      inputs, output: r.output, outputCount: r.outputCount || r.count || 1,
+      reqLevel: r.reqLevel || r.reqCarto || 1, reqSkill: 'carto',
+      vessel: r.vessel,
+    });
+  }
+  for (const [id, r] of Object.entries(ORB_RECIPES)) {
+    const inputs = { ...r.inks };
+    if (r.core) inputs[r.core] = 1;
+    if (r.catalyst) inputs[r.catalyst] = 1;
+    if (r.blank) inputs[r.blank] = 1;
+    all.push({
+      id, station: 'orb', label: r.label,
+      inputs, output: r.output, outputCount: 1,
+      reqLevel: r.reqLevel || 1, reqSkill: 'carto',
+      xp: r.xp, rolls: r.rolls,
+    });
+  }
+  return all;
+}
+
+function renderRecipes() {
+  const grid = document.getElementById('grid-recipes');
+  const count = document.getElementById('count-recipes');
+  const filterEl = document.getElementById('filter-recipes');
+  const filter = (filterEl?.value || '').trim().toLowerCase();
+  const all = _allRecipes();
+  const entries = all.filter(r => {
+    if (!filter) return true;
+    const blob = `${r.id} ${r.label} ${r.station} ${Object.keys(r.inputs).join(' ')} ${r.output}`.toLowerCase();
+    return blob.includes(filter);
+  });
+  count.textContent = `${entries.length} of ${all.length}`;
+
+  if (entries.length === 0) {
+    grid.innerHTML = '<div class="codex-empty">No recipes match this filter.</div>';
+    return;
+  }
+
+  // Section by station; sort by reqLevel within each.
+  const buckets = {};
+  for (const r of entries) (buckets[r.station] ||= []).push(r);
+  for (const k of Object.keys(buckets)) buckets[k].sort((a, b) => a.reqLevel - b.reqLevel);
+
+  const cardHTML = (r) => {
+    const color = _stationColor(r.station);
+    const inHTML = _ingredientHTML(r.inputs);
+    const outHTML = _outputHTML(r.output, r.outputCount);
+    const reqStr = r.reqLevel > 1 ? `${r.reqSkill} ${r.reqLevel}` : '';
+    const xpStr = r.xp ? ` · ${r.xp} XP` : '';
+    const stationLabel = RECIPE_STATIONS.find(s => s.key === r.station)?.label || r.station;
+    return `<div class="recipe-card" style="--station-color:${color}">
+      <div class="recipe-head">
+        <span class="recipe-station" style="--station-color:${color}">${escapeHtml(stationLabel)}</span>
+        <span class="recipe-name">${escapeHtml(r.label || r.id)}</span>
+        <span class="recipe-req">${escapeHtml(reqStr + xpStr)}</span>
+      </div>
+      <div class="recipe-flow">${inHTML} <span class="arrow">→</span> ${outHTML}</div>
+      ${r.rolls ? `<div class="recipe-rolls">rolls: ${r.rolls.map(escapeHtml).join(', ')}</div>` : ''}
+      ${r.burnt ? `<div class="recipe-rolls">burns to: ${escapeHtml(ITEMS[r.burnt]?.name || r.burnt)}</div>` : ''}
+    </div>`;
+  };
+
+  let html = '';
+  for (const s of RECIPE_STATIONS) {
+    const bucket = buckets[s.key];
+    if (!bucket || bucket.length === 0) continue;
+    html += `<div class="mat-tier-section">
+      <div class="mat-tier-head" style="border-bottom-color:${s.color}">
+        ${escapeHtml(s.label)} <span class="codex-section-count">${bucket.length}</span>
+      </div>
+      <div class="mat-tier-desc">${escapeHtml(s.desc)}</div>
+      ${bucket.map(cardHTML).join('')}
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+document.getElementById('filter-recipes')?.addEventListener('input', renderRecipes);
 
 // ---------------------------------------------------------------------------
 // NPCs tab — pulls from NPC_DEFS, shows the first dialog line as flavor preview
