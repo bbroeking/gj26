@@ -12,7 +12,7 @@ import { isPressed, takeInteract, takeDodge, takeAbility, takeTargetSwap, takePo
 import { castSpell, canCast, SPELLS } from './game/spells.js';
 import { attachMouse, takeLeftClick, takeRightClick, getHoverTile } from './core/mouse.js';
 import { findPath, pathToAdjacent } from './core/pathfind.js';
-import { createCamera, updateCamera } from './core/camera.js';
+import { createCamera, updateCamera, fovPulse } from './core/camera.js';
 import { spawnFloat, spawnSplat, updateFloaters } from './core/floaters.js';
 import { animateKnight, triggerSwing, triggerHurt } from './anim/procedural.js';
 import { animateCow } from './anim/cow.js';
@@ -2629,6 +2629,16 @@ if (cottageScene) {
       inst.userData.kind = 'cottage';
       inst.userData.name = `Cottage (${b.x},${b.y})`;
       scene.add(inst);
+      // Chimney smoke — small continuous wisp from a corner of the
+      // cottage roof so the village reads "lived in" from any angle.
+      const smokeOffset = (bIdx % 2 === 0) ? 0.6 : -0.6;
+      const smoke = makeSmoke(
+        new THREE.Vector3(cx + smokeOffset, terrainHeightAt(cx, cz) + 1.6, cz - 0.5),
+        14   // particle count — light load: ~14 particles per cottage
+      );
+      scene.add(smoke);
+      if (!window.__cottageSmokes) window.__cottageSmokes = [];
+      window.__cottageSmokes.push(smoke);
       bIdx++;
     }
   }
@@ -4476,6 +4486,14 @@ function tryForgeOrb(recipeId) {
     : `🔮 Forged ${outName}.`);
   renderInv();
   advanceTutorial('orb_forged');
+  // Forge emit — spark burst + soft FOV pulse anchored at the Plinth.
+  // Reads as the orb materializing out of the stone.
+  if (window.__plinths && window.__plinths[0]) {
+    const p0 = window.__plinths[0];
+    const emitPos = new THREE.Vector3(p0.position.x, p0.position.y + 1.55, p0.position.z);
+    spawnHitSparks(emitPos, { count: 18, spread: 2.4, life: 0.6, size: 7, color: 0xffd078 });
+    fovPulse(2.5, 0.35);
+  }
   return { ok: true, output: r.output, rolls: rolled };
 }
 
@@ -7104,6 +7122,9 @@ function loop() {
     }
   }
   if (fireSmoke) updateSmoke(fireSmoke, dt);
+  if (window.__cottageSmokes) {
+    for (const s of window.__cottageSmokes) updateSmoke(s, dt);
+  }
   clouds.update(dt);
   updateSparks(dt);
   updateTelegraphs(dt);
