@@ -8,7 +8,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { CONFIG } from './data/config.js';
 import { ITEMS, pickRandomLoreParchment } from './data/items.js';
-import { isPressed, takeInteract, takeDodge, takeAbility, takeTargetSwap, takePotion, takeJournal, takeSketch, takeCast, getSlotKey } from './core/input.js';
+import { isPressed, takeInteract, takeDodge, takeAbility, takeTargetSwap, takePotion, takeJournal, takeSketch, takeCast, getSlotKey, setSlotKey } from './core/input.js';
 import { castSpell, canCast, SPELLS } from './game/spells.js';
 import { attachMouse, takeLeftClick, takeRightClick, getHoverTile } from './core/mouse.js';
 import { findPath, pathToAdjacent } from './core/pathfind.js';
@@ -1011,6 +1011,53 @@ window.addEventListener('keydown', (e) => {
       prefs.showFloaters = flo.checked; savePrefs(); applyDisplayPrefs();
     });
   }
+
+  // ---- Slot key rebinder ----
+  // Lists slots 1-8 with their current key; click → "press a new key"
+  // mode → next keypress wins. Esc / clicking elsewhere cancels.
+  const kbGrid = document.getElementById('settings-keybinds');
+  let _kbListening = null;   // { cell, slot }
+  function _renderKeybinds() {
+    if (!kbGrid) return;
+    let html = '';
+    for (let s = 1; s <= 8; s++) {
+      const k = getSlotKey(s);
+      html += `<div class="keybind-cell" data-slot="${s}">
+        <span class="kb-slot">SLOT ${s}</span>
+        <span class="kb-key">${(k || '?').toUpperCase()}</span>
+      </div>`;
+    }
+    kbGrid.innerHTML = html;
+    kbGrid.querySelectorAll('.keybind-cell').forEach(cell => {
+      cell.addEventListener('click', () => _startRebind(cell));
+    });
+  }
+  function _startRebind(cell) {
+    // Cancel any in-flight rebind first.
+    if (_kbListening) _kbListening.cell.classList.remove('listening');
+    _kbListening = { cell, slot: parseInt(cell.dataset.slot, 10) };
+    cell.classList.add('listening');
+    cell.querySelector('.kb-key').textContent = '…';
+  }
+  function _stopRebind() {
+    if (_kbListening) _kbListening.cell.classList.remove('listening');
+    _kbListening = null;
+    _renderKeybinds();
+  }
+  // Capture next keypress when listening — uses a capture-phase
+  // listener so the input handler doesn't claim it first.
+  window.addEventListener('keydown', (e) => {
+    if (!_kbListening) return;
+    if (e.key === 'Escape') { _stopRebind(); e.preventDefault(); e.stopPropagation(); return; }
+    // Single-character keys only — don't accept Shift/Control/etc.
+    const k = e.key.toLowerCase();
+    if (k.length !== 1) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setSlotKey(_kbListening.slot, k);
+    _stopRebind();
+  }, true);
+  _renderKeybinds();
 }
 
 // ---------- ONBOARDING ----------
