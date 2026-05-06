@@ -1740,17 +1740,51 @@ const CHARTMAKER_TILE = { x: world.spawn.x + 3, y: world.spawn.y - 1 };
     main.rotation.y = 0.15;
     stone.add(main);
   }
-  // Glowing rune disc at the base — kept on top of the GLB so the click
-  // affordance still reads at a glance.
-  const rune = new THREE.Mesh(
-    new THREE.CircleGeometry(0.22, 24),
-    new THREE.MeshBasicMaterial({ color: 0xb58637, transparent: true, opacity: 0.85 })
+  // ---- Plinth visual upgrade ----
+  // The chartmaker stone is reframed as the Plinth: a wider rune-ring
+  // at the base and a floating orb above the cap so the orb-forge
+  // affordance reads at a glance from any angle.
+  // Rune ring at the base (rotates in the loop).
+  const runeRing = new THREE.Mesh(
+    new THREE.RingGeometry(0.55, 0.78, 32),
+    new THREE.MeshBasicMaterial({ color: 0xb58637, transparent: true, opacity: 0.55, side: THREE.DoubleSide })
   );
-  rune.rotation.x = -Math.PI / 2;
-  rune.position.set(0, 0.02, 0.30);
-  stone.add(rune);
+  runeRing.rotation.x = -Math.PI / 2;
+  runeRing.position.y = 0.02;
+  runeRing.userData.spin = true;
+  stone.add(runeRing);
+  // Smaller bright disc on top of the GLB to read as a click-target.
+  const disc = new THREE.Mesh(
+    new THREE.CircleGeometry(0.22, 24),
+    new THREE.MeshBasicMaterial({ color: 0xffd078, transparent: true, opacity: 0.95 })
+  );
+  disc.rotation.x = -Math.PI / 2;
+  disc.position.set(0, 0.02, 0.30);
+  stone.add(disc);
+  // Floating decorative orb above the cap. Soft cream/gold gradient
+  // material with additive bloom — reads as a slot-able artefact.
+  const plinthOrb = new THREE.Mesh(
+    new THREE.SphereGeometry(0.18, 18, 12),
+    new THREE.MeshStandardMaterial({
+      color: 0xffe6a8, emissive: 0xc89858, emissiveIntensity: 0.55,
+      roughness: 0.4, metalness: 0.2,
+    })
+  );
+  plinthOrb.position.set(0, 1.55, 0);
+  plinthOrb.userData.bob = true;
+  plinthOrb.userData.bobBaseY = 1.55;
+  stone.add(plinthOrb);
+  // A faint point light so the orb visibly glows at night.
+  const orbLight = new THREE.PointLight(0xffd09a, 0.45, 2.8, 1.6);
+  orbLight.position.copy(plinthOrb.position);
+  stone.add(orbLight);
   stone.position.set(cx, cy, cz);
   stone.userData.kind = 'chartmaker';
+  stone.userData.plinthOrb = plinthOrb;
+  stone.userData.plinthRing = runeRing;
+  // Park the stone so the loop can spin its ring + bob the orb each frame.
+  if (!window.__plinths) window.__plinths = [];
+  window.__plinths.push(stone);
   scene.add(stone);
 }
 
@@ -7015,6 +7049,15 @@ function loop() {
   if (_validationEldra) animateGLBKnight(_validationEldra.mesh, _validationEldra.fakeEntity, dt);
 
   updateOccluders(dt);
+  // Plinth idle — slow ring spin + sine bob on the floating orb.
+  if (window.__plinths) {
+    const t = performance.now() * 0.001;
+    for (const p of window.__plinths) {
+      if (p.userData.plinthRing) p.userData.plinthRing.rotation.z += dt * 0.6;
+      const orb = p.userData.plinthOrb;
+      if (orb) orb.position.y = orb.userData.bobBaseY + Math.sin(t * 1.4) * 0.06;
+    }
+  }
   composer.render();
   updateFloaters(camera, W, H);
   renderSkillBar(dt);
