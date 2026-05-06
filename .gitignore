@@ -10,8 +10,10 @@ models/*_r[0-9][0-9][0-9]_*.glb
 models/cook_v30.glb.bak
 models/cow_old.glb.bak
 
-# Eldra autoresearch GLB outputs (~hundreds of MB if run)
+# Eldra autoresearch outputs (huge GLB iterations + symlinks pointing
+# to model files we exclude above — keep entire runs/ dir out of git).
 docs/research/eldra/*.glb
+docs/research/eldra/runs/
 
 # Generated / temp
 *.log

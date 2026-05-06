@@ -17,6 +17,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { ITEMS } from './src/data/items.js';
 import { NPC_DEFS } from './src/data/npcs.js';
 import { ABILITIES } from './src/game/abilities.js';
+import { SKILL_MILESTONES } from './src/data/skill-milestones.js';
+import { CARTO_UNLOCKS } from './src/ui/worldMap.js';
 import { animateGLBKnight } from './src/anim/knight.js';
 import { animateQuadruped } from './src/anim/quadruped.js';
 import { phongifyMaterials } from './src/scene/characters.js';
@@ -1295,25 +1297,96 @@ function ensureSkillsLoaded() {
   // Auto-load the first skill so the pane isn't empty.
   loadSkillDoc('atk', list.querySelector('button[data-skill="atk"]'));
 }
-async function loadSkillDoc(id, btn) {
+// Build a level-by-level progression timeline for a skill. Pulls from
+// SKILL_MILESTONES (canonical 3-5 beats per skill) and, for Wayfinding,
+// the much richer CARTO_UNLOCKS (~30 entries across vision / recipes /
+// affixes / templates / specialty / endgame tracks).
+function _milestonesForSkill(id) {
+  if (id === 'carto') {
+    return CARTO_UNLOCKS.map(u => ({
+      lv: u.lv,
+      label: u.name,
+      desc: u.text,
+      track: u.track,
+    }));
+  }
+  return (SKILL_MILESTONES[id] || []).map(m => ({
+    lv: m.lv, label: m.label, desc: m.desc, track: null,
+  }));
+}
+
+const _TRACK_BADGES = {
+  vision:    { label: 'Vision',    color: '#3a6b8a' },
+  recipes:   { label: 'Recipe',    color: '#7b4a9c' },
+  affixes:   { label: 'Affix',     color: '#a8632a' },
+  templates: { label: 'Template',  color: '#5a7a3a' },
+  specialty: { label: 'Specialty', color: '#a8413a' },
+  endgame:   { label: 'Endgame',   color: '#3a3a3a' },
+};
+
+function loadSkillDoc(id, btn) {
   for (const b of document.querySelectorAll('#skill-list button'))
     b.classList.toggle('on', b === btn);
   const content = document.getElementById('skill-content');
   if (!content) return;
-  content.innerHTML = '<em style="opacity:0.6">loading…</em>';
-  try {
-    const res = await fetch(`docs/skills/${id}.md?cb=${Date.now()}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const md = await res.text();
-    // Use marked from the CDN. Fallback to <pre> if it didn't load.
-    if (typeof marked !== 'undefined' && marked.parse) {
-      content.innerHTML = marked.parse(md, { gfm: true, breaks: false });
-    } else {
-      content.innerHTML = `<pre style="white-space:pre-wrap">${escapeHtml(md)}</pre>`;
-    }
-  } catch (err) {
-    content.innerHTML = `<em style="color:#c94c4c">load failed: ${escapeHtml(err.message || String(err))}</em>`;
-    console.warn('skills: load failed', id, err);
+
+  const name = SKILL_LABELS[id] || id;
+  const rows = _milestonesForSkill(id);
+  if (rows.length === 0) {
+    content.innerHTML = `<h2 style="margin-top:0">${escapeHtml(name)}</h2>
+      <em style="opacity:0.6">No milestones authored yet for this skill.</em>`;
+    return;
+  }
+
+  // Sort by level so the timeline reads top-down 1 → 99.
+  rows.sort((a, b) => a.lv - b.lv);
+  const minLv = rows[0].lv;
+  const maxLv = rows[rows.length - 1].lv;
+
+  // Track filter chips (Wayfinding only — others have no track field).
+  const tracks = Array.from(new Set(rows.map(r => r.track).filter(Boolean)));
+  const chipRow = tracks.length > 0
+    ? `<div class="skill-tracks">
+         <button class="skill-track-chip on" data-track="all">All <span>${rows.length}</span></button>
+         ${tracks.map(t => {
+           const cnt = rows.filter(r => r.track === t).length;
+           const cfg = _TRACK_BADGES[t] || { label: t, color: '#666' };
+           return `<button class="skill-track-chip" data-track="${escapeHtml(t)}" style="--chip-color:${cfg.color}">${escapeHtml(cfg.label)} <span>${cnt}</span></button>`;
+         }).join('')}
+       </div>`
+    : '';
+
+  const rowHTML = (r) => {
+    const trackBadge = r.track && _TRACK_BADGES[r.track]
+      ? `<span class="milestone-track" style="--track-color:${_TRACK_BADGES[r.track].color}">${escapeHtml(_TRACK_BADGES[r.track].label)}</span>`
+      : '';
+    return `<div class="milestone-row" data-track="${escapeHtml(r.track || '')}">
+      <div class="milestone-lv">Lv ${r.lv}</div>
+      <div class="milestone-body">
+        <div class="milestone-label">${escapeHtml(r.label)} ${trackBadge}</div>
+        <div class="milestone-desc">${escapeHtml(r.desc || '')}</div>
+      </div>
+    </div>`;
+  };
+
+  content.innerHTML = `
+    <h2 class="skill-doc-title">${escapeHtml(name)}</h2>
+    <div class="skill-doc-meta">${rows.length} milestone${rows.length === 1 ? '' : 's'} · Lv ${minLv} → ${maxLv}</div>
+    ${chipRow}
+    <div class="milestone-timeline">${rows.map(rowHTML).join('')}</div>
+  `;
+
+  // Wire track chips (Wayfinding only).
+  if (tracks.length > 0) {
+    content.querySelectorAll('.skill-track-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const t = chip.dataset.track;
+        content.querySelectorAll('.skill-track-chip').forEach(c => c.classList.toggle('on', c === chip));
+        content.querySelectorAll('.milestone-row').forEach(row => {
+          row.style.display = (t === 'all' || row.dataset.track === t) ? '' : 'none';
+        });
+      });
+    });
   }
 }
 

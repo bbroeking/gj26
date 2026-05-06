@@ -440,6 +440,112 @@
     }
     .skill-content th { font-weight: 600; color: var(--ink-mid); }
 
+    /* ---- skill progression timeline ---- */
+    .skill-doc-title {
+      font-family: var(--font-display);
+      font-size: 26px; margin: 0 0 var(--s-1);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: var(--s-2);
+      color: var(--ink);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .skill-doc-meta {
+      font-size: 12px; color: var(--ink-mid);
+      margin-bottom: var(--s-3);
+      letter-spacing: 0.04em;
+    }
+    .skill-tracks {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin-bottom: var(--s-4);
+    }
+    .skill-track-chip {
+      --chip-color: #555;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--chip-color);
+      color: var(--ink-mid);
+      padding: 4px 10px;
+      border-radius: 2px;
+      cursor: pointer;
+      font-family: var(--font-body);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+    }
+    .skill-track-chip span {
+      margin-left: 4px;
+      font-variant-numeric: tabular-nums;
+      opacity: 0.7;
+    }
+    .skill-track-chip:hover { background: var(--paper-deep); }
+    .skill-track-chip.on {
+      background: var(--chip-color);
+      color: #fff;
+      border-color: var(--chip-color);
+    }
+    .skill-track-chip.on span { opacity: 0.85; }
+    .milestone-timeline {
+      position: relative;
+      padding-left: 50px;
+      border-left: 2px solid var(--border);
+      margin-left: 18px;
+    }
+    .milestone-row {
+      position: relative;
+      margin-bottom: var(--s-3);
+      padding: var(--s-2) var(--s-3);
+      background: var(--paper-deep);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+    }
+    .milestone-row::before {
+      /* Dot on the timeline rail. */
+      content: '';
+      position: absolute;
+      left: -57px;
+      top: 14px;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--accent-gold, #b48a3a);
+      border: 2px solid var(--paper);
+    }
+    .milestone-lv {
+      position: absolute;
+      left: -42px;
+      top: 11px;
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-mid);
+      letter-spacing: 0.04em;
+      width: 32px;
+      text-align: right;
+    }
+    .milestone-label {
+      font-family: var(--font-display);
+      font-size: 14px;
+      color: var(--ink);
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 2px;
+    }
+    .milestone-track {
+      --track-color: #555;
+      font-family: var(--font-body);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: var(--track-color);
+      color: #fff;
+      padding: 1px 6px;
+      border-radius: 2px;
+      font-weight: 400;
+    }
+    .milestone-desc {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--ink-mid);
+    }
+
     /* ---- model viewer layout ---- */
     .viewer {
       display: grid;
