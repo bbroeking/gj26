@@ -280,7 +280,7 @@
      ============================================================ */
   #spellbook-backdrop, #pedestal-backdrop,
   #cartography-workshop-backdrop, #atlas-map-backdrop,
-  #materials-browser-backdrop {
+  #materials-browser-backdrop, #plinth-forge-backdrop {
     position: fixed; inset: 0;
     background: rgba(20, 14, 10, 0.65);
     display: none; align-items: center; justify-content: center;
@@ -288,7 +288,156 @@
   }
   #spellbook-backdrop.open, #pedestal-backdrop.open,
   #cartography-workshop-backdrop.open, #atlas-map-backdrop.open,
-  #materials-browser-backdrop.open { display: flex; }
+  #materials-browser-backdrop.open, #plinth-forge-backdrop.open { display: flex; }
+
+  /* ---- Plinth Forge ---- */
+  #plinth-forge {
+    background: var(--paper);
+    border: var(--bw-frame) solid transparent;
+    border-image: var(--frame-ink) 18 / var(--bw-frame) / 0 stretch;
+    border-radius: var(--r-md);
+    padding: var(--s-4);
+    width: min(720px, 92vw);
+    max-height: 84vh;
+    overflow-y: auto;
+    color: var(--ink);
+    font-family: var(--font-body);
+    box-shadow: 0 12px 36px rgba(0,0,0,0.45);
+  }
+  #plinth-forge-head {
+    display: flex; align-items: baseline; gap: var(--s-2);
+    margin-bottom: var(--s-3);
+    padding-bottom: var(--s-2);
+    border-bottom: 1px solid var(--accent-gold);
+  }
+  #plinth-forge .pf-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    color: var(--ink);
+    letter-spacing: 0.04em;
+  }
+  #plinth-forge .pf-sub {
+    font-style: italic;
+    color: var(--ink-mid);
+    font-size: 12px;
+  }
+  #plinth-forge-close {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    color: var(--ink);
+    width: 28px; height: 28px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+  }
+  #plinth-forge-close:hover { background: var(--paper-deep); }
+  #plinth-forge .pf-headline {
+    font-family: var(--font-display);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-mid);
+    margin-bottom: var(--s-2);
+  }
+  .pf-row {
+    background: var(--paper-deep);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background 120ms ease, transform 120ms ease;
+  }
+  .pf-row.pf-row-ok:hover {
+    background: var(--paper);
+    transform: translateX(2px);
+  }
+  .pf-row.pf-row-locked {
+    opacity: 0.55;
+    cursor: not-allowed;
+    border-left-color: var(--ink-mid);
+  }
+  .pf-row-head {
+    display: flex; align-items: baseline; gap: var(--s-3);
+    margin-bottom: 6px;
+  }
+  .pf-row-name {
+    font-family: var(--font-display);
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .pf-row-req {
+    margin-left: auto;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 10px;
+    color: var(--ink-mid);
+    letter-spacing: 0.04em;
+  }
+  .pf-row-flow {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .pf-pills {
+    display: flex; gap: 4px; flex-wrap: wrap; flex: 1;
+  }
+  .pf-pill {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 99px;
+    background: var(--paper);
+    border: 1px solid var(--border);
+    color: var(--ink);
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .pf-pill.ok { border-color: #6e9658; }
+  .pf-pill.missing {
+    border-color: #c94c4c;
+    color: #a83a3a;
+    text-decoration: line-through;
+    text-decoration-color: rgba(168, 58, 58, 0.4);
+  }
+  .pf-pill .pf-have {
+    font-size: 9px;
+    color: var(--ink-mid);
+    background: rgba(0,0,0,0.06);
+    padding: 1px 4px;
+    border-radius: 99px;
+  }
+  .pf-arrow {
+    color: var(--accent-gold);
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .pf-output {
+    display: flex; flex-direction: column; gap: 2px;
+    flex-shrink: 0;
+  }
+  .pf-output-name {
+    font-family: var(--font-display);
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .pf-rolls {
+    font-size: 10px;
+    color: var(--ink-mid);
+    font-style: italic;
+  }
+  .pf-roll {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 0 4px;
+    margin-right: 2px;
+  }
+  .pf-locked-reason {
+    font-size: 11px;
+    color: #a83a3a;
+    margin-top: 4px;
+    font-style: italic;
+  }
   #spellbook, #pedestal {
     background: var(--paper);
     border: var(--bw-frame) solid transparent;
@@ -3618,6 +3767,7 @@
             <button id="cw-act-ink"     type="button" class="cw-act"><span class="cw-act-glyph">🜔</span><span class="cw-act-label">Mix Inks</span><span class="cw-act-sub">3×3 ingredients → ink</span></button>
             <button id="cw-act-rune"    type="button" class="cw-act"><span class="cw-act-glyph">✦</span><span class="cw-act-label">Press Runes</span><span class="cw-act-sub">ink + stone → rune</span></button>
             <button id="cw-act-chart"   type="button" class="cw-act"><span class="cw-act-glyph">▤</span><span class="cw-act-label">Inscribe Chart</span><span class="cw-act-sub">template + inks → chart</span></button>
+            <button id="cw-act-plinth"  type="button" class="cw-act"><span class="cw-act-glyph">🔮</span><span class="cw-act-label">Forge Orb</span><span class="cw-act-sub">inks + core + catalyst → orb</span></button>
             <button id="cw-act-journal" type="button" class="cw-act"><span class="cw-act-glyph">📓</span><span class="cw-act-label">Field Journal</span><span class="cw-act-sub">your sketches</span></button>
           </div>
           <div id="cw-sketches" class="cw-sketches">No sketches this session.</div>
@@ -3647,6 +3797,18 @@
         </div>
       </div>
     </div>
+    <!-- Plinth Forge — orb-forging UI surfaced from the Wayfinding Workshop -->
+    <div id="plinth-forge-backdrop">
+      <div id="plinth-forge">
+        <div id="plinth-forge-head">
+          <span class="pf-title">The Plinth</span>
+          <span class="pf-sub">Slot inks + a core + a catalyst into the stone.</span>
+          <button id="plinth-forge-close" type="button" title="Close (Esc)">×</button>
+        </div>
+        <div id="plinth-forge-body"></div>
+      </div>
+    </div>
+
     <!-- Inscribing Table modal — functional layout, no flair. Style pass later. -->
     <div id="inscribing-table-backdrop">
       <div id="inscribing-table">

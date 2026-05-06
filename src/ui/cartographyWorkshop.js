@@ -81,6 +81,7 @@ function bindOnce() {
   document.getElementById('cw-act-ink')?.addEventListener('click', () => launch('ink'));
   document.getElementById('cw-act-rune')?.addEventListener('click', () => launch('rune'));
   document.getElementById('cw-act-chart')?.addEventListener('click', () => launch('chart'));
+  document.getElementById('cw-act-plinth')?.addEventListener('click', () => launch('plinth'));
   document.getElementById('cw-act-journal')?.addEventListener('click', () => launch('journal'));
   document.getElementById('cw-atlas-link')?.addEventListener('click', () => launch('atlas'));
   document.getElementById('cw-materials-browse')?.addEventListener('click', () => launch('browse'));
@@ -100,6 +101,7 @@ function launch(which) {
   if (which === 'ink' && deps.openInscribingTable)   deps.openInscribingTable();
   else if (which === 'rune' && deps.openPedestal)    deps.openPedestal();
   else if (which === 'chart' && deps.openCharting)   deps.openCharting();
+  else if (which === 'plinth' && deps.openPlinthForge) deps.openPlinthForge();
   else if (which === 'journal' && deps.openFieldJournal) deps.openFieldJournal();
   else if (which === 'atlas' && deps.openAtlas)      deps.openAtlas();
   else if (which === 'browse' && deps.openMaterialsBrowser) deps.openMaterialsBrowser();

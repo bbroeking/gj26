@@ -36,6 +36,7 @@ import { showInscribingTable, closeInscribingTable, isInscribingTableOpen, inscr
 import { showSpellbook, closeSpellbook, isSpellbookOpen } from './ui/spellbook.js';
 import { showPedestal, closePedestal, isPedestalOpen } from './ui/pedestal.js';
 import { showWayfindingWorkshop, closeWayfindingWorkshop, isWayfindingWorkshopOpen, reopenIfWasOpen as reopenWayfindingWorkshop, noteSketchThisSession, setWorkshopTarget } from './ui/cartographyWorkshop.js';
+import { showPlinthForge, closePlinthForge, isPlinthForgeOpen } from './ui/plinthForge.js';
 import { showAtlasMap, closeAtlasMap, isAtlasMapOpen } from './ui/atlasMap.js';
 import { showMaterialsBrowser, closeMaterialsBrowser, isMaterialsBrowserOpen } from './ui/materialsBrowser.js';
 import { ensureAtlasLoaded, recordChartCompletion, isBiomeUnlocked } from './game/atlas.js';
@@ -4094,6 +4095,10 @@ function openWayfindingWorkshop() {
     }),
     openPedestal:        () => showPedestal(player, log),
     openCharting:        () => openChartmaker(),
+    openPlinthForge:     () => showPlinthForge(player, log, {
+      onChange: () => { renderInv(); renderStats(); },
+      onClose:  () => reopenWayfindingWorkshop(),
+    }),
     openFieldJournal:    () => showFieldJournal(player),
     openAtlas:           () => openAtlasMap(),
     openMaterialsBrowser:() => openMaterialsBrowserUI(),
