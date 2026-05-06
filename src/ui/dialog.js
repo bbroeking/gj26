@@ -8,11 +8,35 @@
 const backdrop = document.getElementById('dialog-backdrop');
 const dialog   = document.getElementById('dialog');
 const speakerEl = dialog.querySelector('.speaker');
+const portraitEl = dialog.querySelector('.dialog-portrait');
 const linesEl   = dialog.querySelector('.lines');
 const choicesEl = dialog.querySelector('.choices');
 const hintEl    = dialog.querySelector('.hint');
 
 let currentOnClose = null;
+// Active typewriter handle so a new dialog (or Space skip) can cancel
+// any in-flight character emission.
+let _typeTimer = null;
+let _typePending = null;     // { node, full, idx, onDone }
+
+// Portrait file mapping per speaker. Mirrors NPC_PORTRAITS in codex.js
+// — kept here so the engine can render dialogs without importing the
+// codex module. Add new speakers here as we add NPCs.
+const PORTRAITS = {
+  'Maud Pennycress':                 'npc-maud-pennycress.png',
+  'Old Hod Tenter':                  'npc-hod-tenter.png',
+  'Hod':                             'npc-hod-tenter.png',
+  'Quill':                           'npc-quill.png',
+  'Sir Withering':                   'npc-sir-withering.png',
+  'Eldra the Lampwright':            'npc-eldra-lampwright.png',
+  'Eldra':                           'npc-eldra-lampwright.png',
+  'Cricket the Letter-Carrier':      'npc-cricket.png',
+  'Cricket':                         'npc-cricket.png',
+  'Brother Pell of the Stone Cloister': 'npc-pell.png',
+  'Brother Pell':                    'npc-pell.png',
+  'Mother Onywyn the Herb-Witch':    'npc-onywyn.png',
+  'Mother Onywyn':                   'npc-onywyn.png',
+};
 
 // Queue: showLevelUp during an open dialog stacks rather than overwriting.
 const _queue = [];
@@ -31,10 +55,31 @@ function _drainQueue() {
  *          closes the dialog.
  * @param {Function} [opts.onClose]    — fires when modal closes by any path
  */
-export function showDialog({ speaker, lines = [], choices, onClose } = {}) {
+export function showDialog({ speaker, lines = [], choices, onClose, portrait, variant } = {}) {
+  // Reset any prior variant class — keeps level-up / death from
+  // sticking when the next plain dialog opens.
+  dialog.classList.remove('levelup', 'death');
+  if (variant === 'death') dialog.classList.add('death');
   import('../core/sfx.js').then(m => m.sfx.dialogOpen()).catch(() => {});
+  _cancelTypewriter();
   speakerEl.textContent = speaker || '';
-  linesEl.innerHTML = lines.map(l => `<p>${escapeHTML(l)}</p>`).join('');
+  // Portrait — explicit `portrait` arg wins; otherwise look up by speaker
+  // name. Empty string hides the portrait altogether (level-up etc.).
+  const portraitFile = portrait === ''
+    ? null
+    : (portrait || PORTRAITS[speaker] || null);
+  if (portraitFile && portraitEl) {
+    portraitEl.src = `docs/concept-art/${portraitFile}`;
+    portraitEl.style.display = 'block';
+    portraitEl.alt = speaker || '';
+  } else if (portraitEl) {
+    portraitEl.style.display = 'none';
+    portraitEl.removeAttribute('src');
+  }
+  // Render lines as <p>s, then run the typewriter.
+  linesEl.innerHTML = lines.map(() => '<p></p>').join('');
+  const paragraphs = Array.from(linesEl.querySelectorAll('p'));
+  _runTypewriter(paragraphs, lines);
   choicesEl.innerHTML = '';
 
   const cs = choices && choices.length
@@ -136,10 +181,70 @@ function escapeHTML(s) {
     .replace(/>/g, '&gt;');
 }
 
-// ESC closes; click on backdrop (not inner card) closes.
+// ---------- TYPEWRITER ----------
+// Reveals dialog text one paragraph at a time, ~32 chars/sec. Space or
+// Enter skips immediately to the full text without closing the dialog.
+const _CHARS_PER_SEC = 60;
+function _runTypewriter(paragraphs, fullLines) {
+  if (!paragraphs.length) return;
+  let pIdx = 0;
+  const tickOne = () => {
+    if (pIdx >= paragraphs.length) { _typeTimer = null; _typePending = null; return; }
+    const p = paragraphs[pIdx];
+    const full = fullLines[pIdx] || '';
+    let cIdx = 0;
+    _typePending = {
+      node: p, full,
+      idx: cIdx,
+      onDone: () => { pIdx++; tickOne(); },
+    };
+    const stepMs = Math.max(8, Math.round(1000 / _CHARS_PER_SEC));
+    const step = () => {
+      if (!_typePending) return;
+      _typePending.idx += 1;
+      _typePending.node.textContent = _typePending.full.slice(0, _typePending.idx);
+      if (_typePending.idx >= _typePending.full.length) {
+        const onDone = _typePending.onDone;
+        _typePending = null;
+        _typeTimer = null;
+        // Brief pause between paragraphs reads naturally.
+        _typeTimer = setTimeout(() => { _typeTimer = null; onDone && onDone(); }, 140);
+      } else {
+        _typeTimer = setTimeout(step, stepMs);
+      }
+    };
+    _typeTimer = setTimeout(step, stepMs);
+  };
+  tickOne();
+}
+function _cancelTypewriter() {
+  if (_typeTimer) clearTimeout(_typeTimer);
+  _typeTimer = null;
+  // Snap any partially-typed paragraph to its full text + finish remaining.
+  if (_typePending) {
+    _typePending.node.textContent = _typePending.full;
+    const onDone = _typePending.onDone;
+    _typePending = null;
+    if (onDone) onDone();
+  }
+}
+function _isTyping() {
+  return !!(_typeTimer || _typePending);
+}
+
+// ESC closes; click on backdrop (not inner card) closes. Space / Enter
+// skip the typewriter without dismissing — only after typing finishes
+// will Space close the dialog.
 window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && isDialogOpen()) {
+  if (!isDialogOpen()) return;
+  if (e.key === 'Escape') {
     closeDialog();
+    e.stopPropagation();
+    return;
+  }
+  if ((e.key === ' ' || e.key === 'Enter') && _isTyping()) {
+    _cancelTypewriter();
+    e.preventDefault();
     e.stopPropagation();
   }
 });

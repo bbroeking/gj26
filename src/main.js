@@ -4163,7 +4163,9 @@ function handleDeath() {
   player.combatTarget = null;
   renderStats();
   showDialog({
-    speaker: 'You died',
+    speaker: 'You faded into the wolds',
+    portrait: '',     // no portrait — keeps the slate clear
+    variant: 'death',
     lines: [
       'A wave of soft moss wraps around you and drags you back to the village square.',
       'You wake at Old Mother Well, no worse for it. The Wolds keep their own counsel.',

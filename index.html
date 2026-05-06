@@ -2956,17 +2956,33 @@
     font-size: var(--fs-md);
   }
 
+  #dialog .dialog-head {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    margin-bottom: var(--s-2);
+    padding-bottom: var(--s-2);
+    background-image: var(--squiggle);
+    background-repeat: repeat-x;
+    background-position: bottom;
+    background-size: 60px 4px;
+  }
+  #dialog .dialog-portrait {
+    width: 72px; height: 72px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--accent-gold);
+    background: #f4ecd8;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+  }
   #dialog .speaker {
     font-family: var(--font-heading);
     font-size: var(--fs-md);
     letter-spacing: 2px;
     text-transform: uppercase;
-    margin: 0 0 var(--s-2) 0;
-    padding-bottom: var(--s-1);
-    background-image: var(--squiggle);
-    background-repeat: repeat-x;
-    background-position: bottom;
-    background-size: 60px 4px;
+    margin: 0;
+    padding: 0;
     line-height: 1.4;
   }
   #dialog .speaker::first-letter {
@@ -3356,6 +3372,52 @@
   #charting .ch-footer { margin-top: var(--s-2); }
 
   /* ---- Level-up celebration variant of the dialog ---- */
+  /* ---- Death variant ---- */
+  /* Heavier backdrop wash and a slow vignette-in so the moment lands. */
+  #dialog-backdrop:has(#dialog.death) {
+    background: radial-gradient(circle at center, rgba(20, 14, 10, 0.6), rgba(8, 4, 2, 0.95));
+  }
+  #dialog.death {
+    text-align: center;
+    animation: death-fade-in 1200ms cubic-bezier(.2,.65,.2,1) both;
+    border-color: rgba(96, 36, 36, 0.65);
+    background: linear-gradient(180deg, var(--paper) 0%, #ddc8a8 100%);
+  }
+  @keyframes death-fade-in {
+    0%   { opacity: 0; transform: scale(0.96); filter: blur(4px); }
+    100% { opacity: 1; transform: scale(1.00); filter: blur(0); }
+  }
+  #dialog.death .dialog-head {
+    flex-direction: column;
+    background-image: none;
+    border-bottom: 1px solid rgba(96, 36, 36, 0.35);
+    padding-bottom: var(--s-3);
+  }
+  #dialog.death .dialog-portrait { display: none; }
+  #dialog.death .speaker {
+    color: rgba(96, 36, 36, 0.85);
+    font-size: var(--fs-lg);
+    letter-spacing: 3px;
+    background-image: none;
+    text-shadow: 0 1px 0 rgba(0,0,0,0.15);
+  }
+  #dialog.death .speaker::first-letter {
+    color: rgba(96, 36, 36, 0.85);
+  }
+  #dialog.death .lines p {
+    font-style: italic;
+    color: var(--ink-mid);
+    line-height: 1.6;
+  }
+  #dialog.death .choices .choice-btn {
+    background: rgba(96, 36, 36, 0.92);
+    color: #f4ecd8;
+    border-color: rgba(96, 36, 36, 0.92);
+  }
+  #dialog.death .choices .choice-btn:hover {
+    background: rgba(120, 50, 50, 0.95);
+  }
+
   #dialog.levelup { text-align: center; }
   #dialog.levelup .speaker {
     background-image: none;
@@ -4126,10 +4188,13 @@
 </div>
 <div id="dialog-backdrop">
   <div id="dialog" role="dialog" aria-modal="true">
-    <div class="speaker">Speaker</div>
+    <div class="dialog-head">
+      <img class="dialog-portrait" alt="" />
+      <div class="speaker">Speaker</div>
+    </div>
     <div class="lines"></div>
     <div class="choices"></div>
-    <div class="hint">Press <kbd>Esc</kbd> or click outside to close</div>
+    <div class="hint">Press <kbd>Esc</kbd> or click outside · <kbd>Space</kbd> to skip typing</div>
   </div>
 </div>
 <div id="settings-backdrop">
