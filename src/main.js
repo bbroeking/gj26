@@ -1737,6 +1737,125 @@ const WITHERING_TILE = { x: world.spawn.x - 1, y: world.spawn.y - 8 };
 const PRACTICE_STUMP_TILE = { x: world.spawn.x + 2, y: world.spawn.y + 1 };
 const PRACTICE_ORE_TILE   = { x: world.spawn.x + 6, y: world.spawn.y + 2 };
 
+// Refinement Stations — placed around the chartmaker stone so the
+// Wayfinding loop has a diegetic outdoor surface (mortar / grindstone /
+// vessel / curing / kiln). Click → opens the refinement modal filtered
+// to that station. Tile constants drive interactAt, classifyTile, and
+// the right-click verb menu.
+const STATION_TILES = [
+  { kind: 'mortar',     x: world.spawn.x + 4, y: world.spawn.y - 3, label: 'Mortar' },
+  { kind: 'grindstone', x: world.spawn.x + 5, y: world.spawn.y - 3, label: 'Grindstone' },
+  { kind: 'vessel',     x: world.spawn.x + 6, y: world.spawn.y - 3, label: 'Vessel' },
+  { kind: 'curing',     x: world.spawn.x + 4, y: world.spawn.y - 4, label: 'Curing Rack' },
+  { kind: 'kiln',       x: world.spawn.x + 6, y: world.spawn.y - 4, label: 'Kiln' },
+];
+
+/** Build a small procedural mesh for a refinement station. Stylized
+ *  primitives — readable at a glance from camera distance. */
+function buildStationMesh(kind) {
+  const g = new THREE.Group();
+  if (kind === 'mortar') {
+    // Squat stone pedestal with a dished bowl on top.
+    const base = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.22, 0.28, 0.45, 12),
+      new THREE.MeshToonMaterial({ color: 0x8a8278 }));
+    base.position.y = 0.225;
+    base.castShadow = true; base.receiveShadow = true;
+    g.add(base);
+    const bowl = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.20, 0.10, 0.10, 12),
+      new THREE.MeshToonMaterial({ color: 0x4a3528 }));
+    bowl.position.y = 0.50;
+    g.add(bowl);
+  } else if (kind === 'grindstone') {
+    // Vertical disc on a stout wood frame.
+    const disc = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.32, 0.32, 0.08, 18),
+      new THREE.MeshToonMaterial({ color: 0x9c8e76 }));
+    disc.rotation.z = Math.PI / 2;
+    disc.position.y = 0.45;
+    disc.castShadow = true;
+    g.add(disc);
+    // Two posts.
+    for (const dx of [-0.25, 0.25]) {
+      const post = new THREE.Mesh(
+        new THREE.BoxGeometry(0.06, 0.50, 0.06),
+        new THREE.MeshToonMaterial({ color: 0x6e4a2a }));
+      post.position.set(dx, 0.25, 0);
+      g.add(post);
+    }
+  } else if (kind === 'vessel') {
+    // Tall fired-clay urn — body + neck + lip.
+    const body = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.18, 0.14, 0.45, 14),
+      new THREE.MeshToonMaterial({ color: 0xb88456 }));
+    body.position.y = 0.225;
+    body.castShadow = true;
+    g.add(body);
+    const neck = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.10, 0.16, 0.10, 12),
+      new THREE.MeshToonMaterial({ color: 0xb88456 }));
+    neck.position.y = 0.50;
+    g.add(neck);
+    const lip = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.13, 0.10, 0.04, 12),
+      new THREE.MeshToonMaterial({ color: 0x8a5a30 }));
+    lip.position.y = 0.57;
+    g.add(lip);
+  } else if (kind === 'curing') {
+    // Two posts + a horizontal beam + a draped pelt.
+    for (const dx of [-0.30, 0.30]) {
+      const post = new THREE.Mesh(
+        new THREE.BoxGeometry(0.06, 0.85, 0.06),
+        new THREE.MeshToonMaterial({ color: 0x6e4a2a }));
+      post.position.set(dx, 0.425, 0);
+      post.castShadow = true;
+      g.add(post);
+    }
+    const beam = new THREE.Mesh(
+      new THREE.BoxGeometry(0.72, 0.06, 0.06),
+      new THREE.MeshToonMaterial({ color: 0x6e4a2a }));
+    beam.position.y = 0.85;
+    g.add(beam);
+    // Hanging pelt.
+    const pelt = new THREE.Mesh(
+      new THREE.BoxGeometry(0.42, 0.46, 0.04),
+      new THREE.MeshToonMaterial({ color: 0xa8784a }));
+    pelt.position.y = 0.55;
+    g.add(pelt);
+  } else if (kind === 'kiln') {
+    // Squat brick oven with a small chimney + door panel.
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(0.55, 0.55, 0.45),
+      new THREE.MeshToonMaterial({ color: 0x8a4a3a }));
+    body.position.y = 0.275;
+    body.castShadow = true;
+    g.add(body);
+    const door = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, 0.20, 0.06),
+      new THREE.MeshToonMaterial({ color: 0x2a1a14 }));
+    door.position.set(0, 0.20, 0.24);
+    g.add(door);
+    const chim = new THREE.Mesh(
+      new THREE.BoxGeometry(0.16, 0.30, 0.16),
+      new THREE.MeshToonMaterial({ color: 0x6a3a2a }));
+    chim.position.set(0.10, 0.70, -0.10);
+    g.add(chim);
+    // Glow at the door — tiny emissive plate.
+    const glow = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.16, 0.18),
+      new THREE.MeshBasicMaterial({ color: 0xffa346, transparent: true, opacity: 0.85 }));
+    glow.position.set(0, 0.20, 0.275);
+    g.add(glow);
+  } else {
+    return null;
+  }
+  return g;
+}
+
+// Station mesh placement deferred until after VILLAGE_TILES is declared
+// (~line 2203 in main.js). See `_placeStationTiles()` near the well placement.
+
 // 1) Fishing pond — overrides world tile grid to make a small water patch
 // (existing tryFish already keys off world.tileGrid==='water'). Renders a
 // flat blue plane on top so it reads visually.
@@ -2070,6 +2189,20 @@ if (eldraNpc?.mesh) {
 // Find the path's row (the road runs E-W across the map).
 const ROAD_Z = 12.5;   // matches the P-tile row in src/data/map.txt
 const VILLAGE_TILES = [];   // list of {x,y,kind,name} for blocking + interaction
+
+// Refinement station placement — runs after VILLAGE_TILES is declared.
+for (const s of STATION_TILES) {
+  const cx = s.x + 0.5, cz = s.y + 0.5;
+  const cy = terrainHeightAt(cx, cz);
+  const mesh = buildStationMesh(s.kind);
+  if (mesh) {
+    mesh.position.set(cx, cy, cz);
+    mesh.userData.kind = `station_${s.kind}`;
+    mesh.userData.name = s.label;
+    scene.add(mesh);
+  }
+  VILLAGE_TILES.push({ x: s.x, y: s.y, kind: `station_${s.kind}`, name: s.label });
+}
 
 const wellScene = await loadWellGLB();
 if (wellScene) {
@@ -4797,6 +4930,16 @@ function handleVillageTile(v) {
   }
   if (v.kind === 'bank') {
     openBank();
+    return;
+  }
+  // Refinement stations open the refinement modal pre-filtered to that
+  // station, so the player only sees the recipes that machine produces.
+  if (typeof v.kind === 'string' && v.kind.startsWith('station_')) {
+    const station = v.kind.slice('station_'.length);
+    showRefineStation(player, log, {
+      filterStation: station,
+      refineRecipe: (id) => tryRefine(id),
+    });
     return;
   }
 }

@@ -57,20 +57,33 @@ function _onKey(e) {
 function render() {
   const body = document.getElementById('refine-station-body');
   if (!body || !_state) return;
-  const { player } = _state;
+  const { player, deps } = _state;
+  const filter = deps?.filterStation || null;
   // Reagents = MATERIAL_DEFS entries with refines + station fields.
-  const reagents = MATERIAL_DEFS.filter(m => m.tier === 'reagent' && m.refines && m.station);
+  let reagents = MATERIAL_DEFS.filter(m => m.tier === 'reagent' && m.refines && m.station);
+  if (filter) reagents = reagents.filter(m => m.station === filter);
   const buckets = {};
   for (const m of reagents) (buckets[m.station] ||= []).push(m);
   const refinableCount = reagents.filter(m => _statusFor(player, m).ok).length;
+  // Update the head subtitle if a single station is selected, so the
+  // player knows which one they walked up to.
+  const sub = document.querySelector('#refine-station-head .pf-sub');
+  if (sub) {
+    sub.textContent = filter
+      ? `${STATION_LABELS[filter]?.label || filter} — ${STATION_LABELS[filter]?.desc || ''}`
+      : 'Pound, grind, bottle, cure, fire — raw materials → reagents.';
+  }
   let html = `<div class="pf-headline">${refinableCount} of ${reagents.length} refinable now</div>`;
   for (const stKey of STATION_ORDER) {
     const bucket = buckets[stKey];
     if (!bucket || bucket.length === 0) continue;
     const meta = STATION_LABELS[stKey];
+    // When a station filter is active, drop the station header — the
+    // modal subtitle already announces it.
+    const showHead = !filter;
     html += `<div class="rs-section">
-      <div class="rs-section-head">${escapeHtml(meta?.label || stKey)} <span class="codex-section-count">${bucket.length}</span></div>
-      <div class="rs-section-desc">${escapeHtml(meta?.desc || '')}</div>
+      ${showHead ? `<div class="rs-section-head">${escapeHtml(meta?.label || stKey)} <span class="codex-section-count">${bucket.length}</span></div>
+      <div class="rs-section-desc">${escapeHtml(meta?.desc || '')}</div>` : ''}
       ${bucket.map(_rowHTML).join('')}
     </div>`;
   }
