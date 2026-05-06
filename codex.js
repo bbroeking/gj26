@@ -20,6 +20,7 @@ import { ABILITIES } from './src/game/abilities.js';
 import { SKILL_MILESTONES } from './src/data/skill-milestones.js';
 import { CARTO_UNLOCKS } from './src/ui/worldMap.js';
 import { ENEMY_DEFS } from './src/data/enemy-defs.js';
+import { MATERIAL_DEFS, MATERIAL_TIERS, MATERIAL_GROUPS } from './src/data/materials.js';
 import { animateGLBKnight } from './src/anim/knight.js';
 import { animateQuadruped } from './src/anim/quadruped.js';
 import { phongifyMaterials } from './src/scene/characters.js';
@@ -37,6 +38,7 @@ tabsEl.addEventListener('click', (ev) => {
   if (which === 'models') ensureViewerStarted();
   if (which === 'research') ensureResearchGalleryLoaded();
   if (which === 'skills') ensureSkillsLoaded();
+  if (which === 'materials') renderMaterials();
   // Sync the global search box into the active tab's filter input so
   // the search persists visually when switching tabs.
   _syncGlobalSearchToActiveTab();
@@ -49,6 +51,7 @@ const globalSearchEl = document.getElementById('filter-global');
 const TAB_FILTER_IDS = {
   items: 'filter-items', npcs: 'filter-npcs',
   enemies: 'filter-enemies', abilities: 'filter-abilities',
+  materials: 'filter-materials',
 };
 function activeTab() {
   const on = tabsEl.querySelector('button.on');
@@ -78,6 +81,7 @@ function refreshNavBadges() {
   set('badge-npcs',      document.querySelectorAll('#grid-npcs .card').length);
   set('badge-enemies',   document.querySelectorAll('#grid-enemies .card').length);
   set('badge-abilities', document.querySelectorAll('#grid-abilities .card').length);
+  set('badge-materials', MATERIAL_DEFS.length);
 }
 
 // ---------------------------------------------------------------------------
@@ -359,6 +363,92 @@ function abilityTreeAffinity(it) {
   return null;
 }
 document.getElementById('filter-items').addEventListener('input', renderItems);
+
+// ---------------------------------------------------------------------------
+// Materials tab — tier-grouped view of MATERIAL_DEFS. Each card shows
+// the material's icon (from items.js), display name, group, and any
+// recipe inputs (for ink/core/catalyst tiers).
+// ---------------------------------------------------------------------------
+function _matGroupColor(group) {
+  const g = MATERIAL_GROUPS.find(x => x.key === group);
+  return g ? g.color : '#999';
+}
+function _matRecipeLine(m) {
+  if (m.refines) {
+    const def = ITEMS[m.refines];
+    return `<div class="mat-rec">refined from <b>${escapeHtml(def?.name || m.refines)}</b>${m.station ? ` · ${escapeHtml(m.station)}` : ''}</div>`;
+  }
+  if (m.inputs) {
+    const parts = Object.entries(m.inputs).map(([id, n]) => {
+      const def = ITEMS[id];
+      return `${n}× <b>${escapeHtml(def?.name || id)}</b>`;
+    });
+    return `<div class="mat-rec">recipe: ${parts.join(' + ')}</div>`;
+  }
+  if (m.tier === 'catalyst' && m.catalystEffect) {
+    return `<div class="mat-rec">effect: <b>${escapeHtml(m.catalystEffect.replace(/_/g, ' '))}</b></div>`;
+  }
+  if (m.source) {
+    return `<div class="mat-rec">source: <b>${escapeHtml(m.source)}</b></div>`;
+  }
+  return '';
+}
+function renderMaterials() {
+  const grid = document.getElementById('grid-materials');
+  const count = document.getElementById('count-materials');
+  const filter = document.getElementById('filter-materials').value.trim().toLowerCase();
+  const entries = MATERIAL_DEFS.filter(m => {
+    if (!filter) return true;
+    const def = ITEMS[m.id];
+    const blob = `${m.id} ${m.tier} ${m.group} ${def?.name || ''} ${def?.desc || ''}`.toLowerCase();
+    return blob.includes(filter);
+  });
+  count.textContent = `${entries.length} of ${MATERIAL_DEFS.length}`;
+
+  if (entries.length === 0) {
+    grid.innerHTML = '<div class="codex-empty">No materials match this filter.</div>';
+    return;
+  }
+
+  // Group by tier in declared order. Within tier, group by flavor group.
+  const byTier = {};
+  for (const m of entries) (byTier[m.tier] ||= []).push(m);
+
+  const cardHTML = (m) => {
+    const def = ITEMS[m.id];
+    const color = _matGroupColor(m.group);
+    if (!def) {
+      return `<div class="mat-card unknown" style="--group-color:${color}">
+        <div class="mat-ico">?</div>
+        <div>
+          <div class="mat-name">${escapeHtml(m.id)}</div>
+          <div class="mat-meta">${escapeHtml(m.group || '')} · NOT IN ITEMS.JS</div>
+        </div>
+      </div>`;
+    }
+    return `<div class="mat-card" style="--group-color:${color}" title="${escapeHtml(def.desc || '')}">
+      <div class="mat-ico">${escapeHtml(def.icon || '·')}</div>
+      <div>
+        <div class="mat-name">${escapeHtml(def.name || m.id)}</div>
+        <div class="mat-meta">${escapeHtml(m.group || '')}${m.orbScope ? ' · ' + escapeHtml(m.orbScope) : ''}${m.orbBias ? ' · ' + escapeHtml(m.orbBias) : ''}</div>
+        ${_matRecipeLine(m)}
+      </div>
+    </div>`;
+  };
+
+  let html = '';
+  for (const tier of MATERIAL_TIERS) {
+    const bucket = byTier[tier.key];
+    if (!bucket || bucket.length === 0) continue;
+    html += `<div class="mat-tier-section">
+      <div class="mat-tier-head">${escapeHtml(tier.label)} <span class="codex-section-count">${bucket.length}</span></div>
+      <div class="mat-tier-desc">${escapeHtml(tier.desc)}</div>
+      <div class="mat-grid">${bucket.map(cardHTML).join('')}</div>
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+document.getElementById('filter-materials')?.addEventListener('input', renderMaterials);
 
 // ---------------------------------------------------------------------------
 // NPCs tab — pulls from NPC_DEFS, shows the first dialog line as flavor preview

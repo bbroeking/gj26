@@ -517,6 +517,70 @@
     }
     .skill-content th { font-weight: 600; color: var(--ink-mid); }
 
+    /* ---- materials tier graph ---- */
+    .mat-tier-section { margin-bottom: var(--s-5); }
+    .mat-tier-head {
+      font-family: var(--font-display);
+      font-size: 16px;
+      letter-spacing: 0.05em;
+      color: var(--paper);
+      margin: var(--s-4) 0 4px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--ink-light);
+      display: flex; align-items: baseline; gap: var(--s-2);
+    }
+    .mat-tier-head:first-child { margin-top: 0; }
+    .mat-tier-desc {
+      font-size: 12px; color: var(--ink-light);
+      font-style: italic;
+      margin-bottom: var(--s-2);
+      line-height: 1.4;
+    }
+    .mat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 8px;
+    }
+    .mat-card {
+      --group-color: #999;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--group-color);
+      border-radius: 3px;
+      padding: 8px 10px;
+      color: var(--ink);
+      display: flex; gap: 8px; align-items: flex-start;
+    }
+    .mat-card .mat-ico {
+      font-size: 24px; line-height: 1;
+      width: 32px; text-align: center;
+      flex-shrink: 0;
+    }
+    .mat-card .mat-name {
+      font-family: var(--font-display);
+      font-size: 13px;
+      color: var(--ink);
+      margin-bottom: 2px;
+    }
+    .mat-card .mat-meta {
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 10px;
+      color: var(--ink-mid);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+    .mat-card .mat-rec {
+      font-size: 11px;
+      color: var(--ink-mid);
+      line-height: 1.4;
+    }
+    .mat-card .mat-rec b { color: var(--ink); }
+    .mat-card.unknown {
+      opacity: 0.4;
+      font-style: italic;
+    }
+
     /* ---- skill progression timeline ---- */
     .skill-doc-title {
       font-family: var(--font-display);
@@ -740,6 +804,7 @@
 
       <h4>Inventory</h4>
       <button data-tab="items" class="on">Items <span class="badge" id="badge-items"></span></button>
+      <button data-tab="materials">Materials <span class="badge" id="badge-materials"></span></button>
       <button data-tab="abilities">Abilities <span class="badge" id="badge-abilities"></span></button>
       <button data-tab="skills">Skills <span class="badge" id="badge-skills"></span></button>
 
@@ -774,6 +839,14 @@
           <span class="count" id="count-enemies"></span>
         </div>
         <div class="grid" id="grid-enemies"></div>
+      </section>
+
+      <section class="tab-pane" data-tab="materials">
+        <div class="filter-row">
+          <input id="filter-materials" type="search" placeholder="Filter materials by name, tier, group…">
+          <span class="count" id="count-materials"></span>
+        </div>
+        <div id="grid-materials"></div>
       </section>
 
       <section class="tab-pane" data-tab="abilities">

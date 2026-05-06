@@ -690,6 +690,79 @@ export const ITEMS = {
     reqSkill: 'cook', reqLevel: 10,
     questGift: 'cook',
   },
+
+  // ===========================================================
+  // MATERIALS — tier-2 reagents (one-step refinement of raw)
+  // ===========================================================
+  // Each is a single-input refinement of one raw material, produced at
+  // a workstation (mortar / grindstone / vessel / curing rack / kiln).
+  // Used as ingredients for tier-2b inks, cores, and tier-3 orbs.
+  crushed_herb:   { name: 'Crushed Herb',   icon: '🌱', stack: true,
+    desc: 'Wild herb pounded in a mortar. The base reagent for green-tinted inks.' },
+  fox_dust:       { name: 'Foxglove Dust',  icon: '🟪', stack: true,
+    desc: 'Foxglove petals dried and ground. Bitter, used in tinctures and inks.' },
+  rose_powder:    { name: 'Wishrose Powder', icon: '🌸', stack: true,
+    desc: 'Wishrose petals reduced to a sweet powder. Lumen-bias reagent.' },
+  ore_powder:     { name: 'Ore Powder',     icon: '🟫', stack: true,
+    desc: 'Mosswort ore ground at the grindstone. The earthen reagent for gray ink.' },
+  chalk_powder:   { name: 'Chalk Powder',   icon: '⬜', stack: true,
+    desc: 'Palechalk reduced to soft white powder. Brightens stone-bias inks.' },
+  iron_grit:      { name: 'Iron Grit',      icon: '⚫', stack: true,
+    desc: 'Coarse bogiron filings. Heavy, used in black inks and tusker cores.' },
+  ash_powder:     { name: 'Ash Powder',     icon: '◼', stack: true,
+    desc: 'Charcoal sticks ground fine. The binder in most multi-flavor inks.' },
+  bottled_water:  { name: 'Bottled Water',  icon: '💧', stack: true,
+    desc: 'Pond water in a clay vessel. Lumen reagent; carries a note of the source.' },
+  bottled_dew:    { name: 'Bottled Dew',    icon: '✨', stack: true,
+    desc: 'Dawn-only dewdrops, sealed before sunrise. Rare lumen reagent.' },
+  soft_leather:   { name: 'Soft Leather',   icon: '🟫', stack: true,
+    desc: 'Hare pelt cured to a workable hide. Used in pouches and binding.' },
+  wight_leather:  { name: 'Wight Leather',  icon: '🟪', stack: true,
+    desc: 'Wightpelt cured cold. Holds a faint blue glow. Echo reagent.' },
+  fired_clay:     { name: 'Fired Clay',     icon: '🟤', stack: true,
+    desc: 'River clay fired in the kiln. Used as vessel material for tier-3 inks.' },
+  mosspepper:     { name: 'Mosspepper',     icon: '🌿', stack: true,
+    desc: 'A small spice-bud from the deep wolds. Sharpens any cooked dish by one step.' },
+  dewdrop:        { name: 'Dewdrop',        icon: '💎', stack: true,
+    desc: 'A single dawn-bound dewdrop. Bottled before the sun lands on it.' },
+  river_clay:     { name: 'River Clay',     icon: '🟫', stack: true,
+    desc: 'Plastic gray clay from the river bend. Forms the body of fired vessels.' },
+
+  // ===========================================================
+  // CORES — concentrated single-flavor materials for orbs
+  // ===========================================================
+  // Cores echo the dungeon scope they bias — bramble_core nudges briar
+  // outcomes, tusker_core nudges sunken-hut, etc. Crafted from rare
+  // echo materials at the orb forge bench.
+  bramble_core: { name: 'Bramble Core', icon: '🟢', stack: true,
+    desc: 'A pulsing knot of thorn-essence. Steers an orb toward briar-maze biomes.' },
+  resin_core:   { name: 'Resin Core',   icon: '🟡', stack: true,
+    desc: 'Bramble resin condensed to a sticky bead. Steers toward forage-rich orbs.' },
+  tusker_core:  { name: 'Tusker Core',  icon: '🦷', stack: true,
+    desc: 'Tusker tusk fused with iron grit. Steers toward sunken-hut orbs.' },
+  wight_core:   { name: 'Wight Core',   icon: '🔵', stack: true,
+    desc: 'Wight leather and ash, bound cold. Steers toward delve / hedgewight orbs.' },
+
+  // ===========================================================
+  // CATALYSTS — found-not-crafted, nudge orb properties
+  // ===========================================================
+  // Catalysts are rare drops or discoveries that shift one rolled
+  // property of an orb. Players collect them passively; they can't be
+  // farmed at a workstation.
+  old_key:       { name: 'Old Key',       icon: '🗝', stack: true,
+    desc: 'A wrought iron key of unknown origin. Slotted into an orb, it adds a secret-room affix.' },
+  fey_blossom:   { name: 'Fey Blossom',   icon: '🌺', stack: true,
+    desc: 'A midnight bloom that closes by sunrise. Slot to bias one property toward its highest tier.' },
+  owl_feather:   { name: 'Owl Feather',   icon: '🪶', stack: true,
+    desc: 'A long charcoal feather, still warm. Slot to add a "night" modifier (dim light, more loot).' },
+  cracked_tile:  { name: 'Cracked Tile',  icon: '🧱', stack: true,
+    desc: 'A glazed tile from some ruined floor. Slot to add a "decay" modifier (fewer mobs, more chests).' },
+  sealed_letter: { name: 'Sealed Letter', icon: '✉', stack: true,
+    desc: 'Wax-sealed parchment, wax not yet broken. Slot to spawn a memory-vignette room.' },
+  hags_tooth:    { name: "Hag's Tooth",   icon: '🦷', stack: true,
+    desc: 'A long cracked canine, bone-white. Slot to force a boss-tier orb.' },
+  glass_shard:   { name: 'Glass Shard',   icon: '🔷', stack: true,
+    desc: 'A jagged piece of leaded glass from a broken urn. Slot to re-roll one property next forge.' },
 };
 
 export function isFood(id) { return ITEMS[id] && ITEMS[id].food; }
