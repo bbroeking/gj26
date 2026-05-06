@@ -1,0 +1,210 @@
+{
+  "updated": "2026-05-04T17:37:09.361337+00:00",
+  "count": 11,
+  "runs": [
+    {
+      "id": "r001_baseline",
+      "title": "Baseline \u2014 skinned variant 's' (control)",
+      "hypothesis": "Establishes the visual baseline for the autoresearch run. Same geometry as variant 'e' (cones, ovoid head, octagonal lanterns) plus the Mixamo-named armature and 24-frame Walk action. Floating grass tufts removed since they look like dirt-clumps left behind during the walk cycle.",
+      "params": {
+        "ELDRA_VARIANT": "s",
+        "ELDRA_SKIP_GRASS": "1"
+      },
+      "parent": null,
+      "rating": null,
+      "notes": "",
+      "outputs": {
+        "glb": "models/npc_eldra_v2_r001_baseline.glb",
+        "thumb": "docs/research/eldra/runs/r001_baseline/thumb.png"
+      },
+      "built_at": "2026-05-04T17:06:15.973534+00:00"
+    },
+    {
+      "id": "r002_drop_nano",
+      "title": "Drop nano-detail (stitches, motifs, buckle, hem trim)",
+      "hypothesis": "At chunky-character scale these 4-pixel features wash out and just add visual noise. Reference image (chibi knight) has zero stitch / motif / trim detail \u2014 only big silhouette shapes. Hypothesis: silhouette reads cleaner without them.",
+      "params": {
+        "ELDRA_VARIANT": "s",
+        "ELDRA_SKIP_GRASS": "1",
+        "ELDRA_FORM_MERGE": "1"
+      },
+      "parent": "r001_baseline",
+      "rating": null,
+      "notes": "",
+      "outputs": {
+        "glb": "models/npc_eldra_v2_r002_drop_nano.glb",
+        "thumb": "docs/research/eldra/runs/r002_drop_nano/thumb.png"
+      },
+      "built_at": "2026-05-04T17:06:22.393351+00:00"
+    },
+    {
+      "id": "r003_merge_panels",
+      "title": "Drop nano + merge panels (no shawl drapes, single tabard)",
+      "hypothesis": "Reference image has the cape/tabard as ONE continuous drape, not three stacked rectangles. Drop the side shawl drapes (they're small noise on the silhouette) and merge the three tabard segments into one elongated stripe. Should reduce the 'stacked panels' read substantially.",
+      "params": {
+        "ELDRA_VARIANT": "s",
+        "ELDRA_SKIP_GRASS": "1",
+        "ELDRA_FORM_MERGE": "2"
+      },
+      "parent": "r002_drop_nano",
+      "rating": null,
+      "notes": "",
+      "outputs": {
+        "glb": "models/npc_eldra_v2_r003_merge_panels.glb",
+        "thumb": "docs/research/eldra/runs/r003_merge_panels/thumb.png"
+      },
+      "built_at": "2026-05-04T17:06:28.953545+00:00"
+    },
+    {
+      "id": "r004_merge_cast_03",
+      "title": "Panels merged + Cast 0.3 on torso (CUBOID)",
+      "hypothesis": "After dropping nano-detail and merging panels, the remaining flat-front torso panels (tunic_core, shawl_top, shawl_back, apron_wrap, skirt) still read as flat slabs. Cast 0.3 with CUBOID target rounds their corners but DOESN'T bow the front face (avoids the ellipsoid-distortion bug from the original variant E experiment). Should give the chunky-but-smooth look of the reference.",
+      "params": {
+        "ELDRA_VARIANT": "s",
+        "ELDRA_SKIP_GRASS": "1",
+        "ELDRA_FORM_MERGE": "2",
+        "ELDRA_BODY_CAST": "0.3"
+      },
+      "parent": "r003_merge_panels",
+      "rating": null,
+      "notes": "",
+      "outputs": {
+        "glb": "models/npc_eldra_v2_r004_merge_cast_03.glb",
+        "thumb": "docs/research/eldra/runs/r004_merge_cast_03/thumb.png"
+      },
+      "built_at": "2026-05-04T17:06:35.452896+00:00"
+    },
+    {
+      "id": "r005_merge_cast_05",
+      "title": "Panels merged + Cast 0.5 on torso (more aggressive)",
+      "hypothesis": "Same as r004 but pushes Cast harder. If the silhouette starts losing the tabard's vertical stripe or the shawl's shoulder bulge becomes a uniform blob, we know we've gone too far. If r005 still reads as Eldra but feels more sculpted than r004, we've found a stronger setting we can adopt as the default.",
+      "params": {
+        "ELDRA_VARIANT": "s",
+        "ELDRA_SKIP_GRASS": "1",
+        "ELDRA_FORM_MERGE": "2",
+        "ELDRA_BODY_CAST": "0.5"
+      },
+      "parent": "r003_merge_panels",
+      "rating": null,
+      "notes": "",
+      "outputs": {
+        "glb": "models/npc_eldra_v2_r005_merge_cast_05.glb",
+        "thumb": "docs/research/eldra/runs/r005_merge_cast_05/thumb.png"
+      },
+      "built_at": "2026-05-04T17:06:41.771248+00:00"
+    },
+    {
+      "id": "r006_full_smooth",
+      "title": "Drop nano only + Cast 0.4 on torso (silhouette-preserving)",
+      "hypothesis": "Counter-experiment to r004/r005: instead of dropping panels, KEEP the tabard segments + shawl drapes (they ARE part of Eldra's silhouette identity) but soften ALL of them with Cast 0.4. Tests whether 'too blocky' is about panel COUNT (drop them) or about panel HARDNESS (soften them). If r006 looks better than r004, the answer is hardness; if worse, it's count.",
+      "params": {
+        "ELDRA_VARIANT": "s",
+        "ELDRA_SKIP_GRASS": "1",
+        "ELDRA_FORM_MERGE": "1",
+        "ELDRA_BODY_CAST": "0.4"
+      },
+      "parent": "r002_drop_nano",
+      "rating": null,
+      "notes": "",
+      "outputs": {
+        "glb": "models/npc_eldra_v2_r006_full_smooth.glb",
+        "thumb": "docs/research/eldra/runs/r006_full_smooth/thumb.png"
+      },
+      "built_at": "2026-05-04T17:06:48.040556+00:00"
+    },
+    {
+      "id": "r007_merge_cast_04",
+      "title": "Panels merged + Cast 0.4 (between r004 and r005)",
+      "hypothesis": "Fills the gap between r004's 0.3 (might be too subtle) and r005's 0.5 (might be too aggressive). Helps locate the sweet spot on the Cast curve. Same merge level as both \u2014 no other axes vary.",
+      "params": {
+        "ELDRA_VARIANT": "s",
+        "ELDRA_SKIP_GRASS": "1",
+        "ELDRA_FORM_MERGE": "2",
+        "ELDRA_BODY_CAST": "0.4"
+      },
+      "parent": "r003_merge_panels",
+      "rating": null,
+      "notes": "",
+      "outputs": {
+        "glb": "models/npc_eldra_v2_r007_merge_cast_04.glb",
+        "thumb": "docs/research/eldra/runs/r007_merge_cast_04/thumb.png"
+      },
+      "built_at": "2026-05-04T17:15:42.197426+00:00"
+    },
+    {
+      "id": "r008_merge_cast_06",
+      "title": "Panels merged + Cast 0.6 (push hardest)",
+      "hypothesis": "Tests the upper bound of CUBOID Cast. At 0.6 the panel corners pull substantially toward the bounding cuboid's center \u2014 vertices get rounded but flat faces stay. If silhouette starts losing key features (tabard stripe disappears, shawl becomes one blob with the body) we know we've crossed the line. If it still reads as Eldra and looks more sculpted, BODY_CAST=0.6 becomes our default ceiling.",
+      "params": {
+        "ELDRA_VARIANT": "s",
+        "ELDRA_SKIP_GRASS": "1",
+        "ELDRA_FORM_MERGE": "2",
+        "ELDRA_BODY_CAST": "0.6"
+      },
+      "parent": "r003_merge_panels",
+      "rating": null,
+      "notes": "",
+      "outputs": {
+        "glb": "models/npc_eldra_v2_r008_merge_cast_06.glb",
+        "thumb": "docs/research/eldra/runs/r008_merge_cast_06/thumb.png"
+      },
+      "built_at": "2026-05-04T17:15:48.796665+00:00"
+    },
+    {
+      "id": "r009_palette_desat",
+      "title": "One saturation peak \u2014 desat all colors except lantern_glow",
+      "hypothesis": "Wiki principle [color-and-lighting \u00a72.3]: 'A scene should have one most-saturated color, and everything else should be visibly desaturated relative to it. The eye goes where saturation is, so the saturation peak doubles as the scene's focal point.' Eldra's thematic identity is the lantern. This run multiplies saturation by 0.55 on every color except LANTERN_GLOW, leaving the warm yellow as the single saturation peak. Tests whether desaturating the rest makes the lantern read as her FOCAL POINT instead of competing with the shawl/tunic/skin.",
+      "params": {
+        "ELDRA_VARIANT": "s",
+        "ELDRA_SKIP_GRASS": "1",
+        "ELDRA_PALETTE": "desat"
+      },
+      "parent": "r001_baseline",
+      "rating": null,
+      "notes": "",
+      "outputs": {
+        "glb": "models/npc_eldra_v2_r009_palette_desat.glb",
+        "thumb": "docs/research/eldra/runs/r009_palette_desat/thumb.png"
+      },
+      "built_at": "2026-05-04T17:36:55.166992+00:00"
+    },
+    {
+      "id": "r010_palette_reduced",
+      "title": "Reduced palette \u2014 collapse 30 colors to 8 anchor swatches",
+      "hypothesis": "Wiki principle [color-and-lighting \u00a72.1]: '5 to 8 distinct hues per asset is a reliable working budget.' Eldra currently uses 30 distinct color constants \u2014 4\u00d7 the wiki budget. This run collapses them to 8 anchors: SKIN, HAIR, FABRIC_LIGHT, FABRIC_DARK, LEATHER, METAL, GLOW, GREEN. All 'shadow' / 'dark' / 'trim' variants alias to their anchor (TUNIC_SEAM \u2192 FABRIC_LIGHT, BEARD_WHITE \u2192 HAIR, PANT_DK \u2192 LEATHER, etc). Tests whether the limited-palette discipline makes the silhouette feel MORE intentional or just flat. If r010 reads cleaner than r001, our 30-color baseline is genuinely muddied; if r010 loses readability, some of those 'redundant' colors were carrying their weight.",
+      "params": {
+        "ELDRA_VARIANT": "s",
+        "ELDRA_SKIP_GRASS": "1",
+        "ELDRA_PALETTE": "reduced"
+      },
+      "parent": "r001_baseline",
+      "rating": null,
+      "notes": "",
+      "outputs": {
+        "glb": "models/npc_eldra_v2_r010_palette_reduced.glb",
+        "thumb": "docs/research/eldra/runs/r010_palette_reduced/thumb.png"
+      },
+      "built_at": "2026-05-04T17:37:02.528206+00:00"
+    },
+    {
+      "id": "r011_best_so_far_desat",
+      "title": "Best-so-far hypothesis (r004 params) + desat palette",
+      "hypothesis": "Combination experiment. r004 (FORM_MERGE=2 + BODY_CAST=0.3) is the leading candidate from the form-axis search; r009's PALETTE='desat' is a leading candidate from the color-axis search. This run combines them \u2014 testing whether form-discipline and color-discipline compose, or whether one undermines the other (e.g. when the palette desaturates, the soft-cast forms might lose silhouette read because they no longer have hue contrast to differentiate panels). If r011 looks better than both r004 and r009, the answer is 'compose'; if it looks like one of them, the dominant lever is whichever it matches.",
+      "params": {
+        "ELDRA_VARIANT": "s",
+        "ELDRA_SKIP_GRASS": "1",
+        "ELDRA_FORM_MERGE": "2",
+        "ELDRA_BODY_CAST": "0.3",
+        "ELDRA_PALETTE": "desat"
+      },
+      "parent": "r004_merge_cast_03",
+      "rating": null,
+      "notes": "",
+      "outputs": {
+        "glb": "models/npc_eldra_v2_r011_best_so_far_desat.glb",
+        "thumb": "docs/research/eldra/runs/r011_best_so_far_desat/thumb.png"
+      },
+      "built_at": "2026-05-04T17:37:09.359069+00:00"
+    }
+  ]
+}

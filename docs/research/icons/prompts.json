@@ -1,0 +1,902 @@
+{
+  "count": 128,
+  "master_stem": "storybook illustration of {ITEM}, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500",
+  "items": [
+    {
+      "id": "raw_brindle",
+      "name": "Raw Brindle",
+      "category": "food_raw",
+      "descriptor": "raw brindle (A slab of raw beef. Cook it on a fire to make it edible.), uncooked ingredient",
+      "prompt": "storybook illustration of raw brindle (A slab of raw beef. Cook it on a fire to make it edible.), uncooked ingredient, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "brindle_roast",
+      "name": "Brindle Roast",
+      "category": "food_cooked",
+      "descriptor": "cooked brindle roast (A nicely cooked piece of beef. Heals 5 HP when eaten.), served portion of food",
+      "prompt": "storybook illustration of cooked brindle roast (A nicely cooked piece of beef. Heals 5 HP when eaten.), served portion of food, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "charred_brindle",
+      "name": "Charred Brindle",
+      "category": "food_burnt",
+      "descriptor": "charred blackened brindle (You burnt it. Inedible.), ruined food, scorched and crumbling",
+      "prompt": "storybook illustration of charred blackened brindle (You burnt it. Inedible.), ruined food, scorched and crumbling, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "wool_flank",
+      "name": "Wool Flank",
+      "category": "monster_drop",
+      "descriptor": "a wool flank (A panel of brindle wool-flank. Useful for crafting leather goods.), monster drop / crafting material",
+      "prompt": "storybook illustration of a wool flank (A panel of brindle wool-flank. Useful for crafting leather goods.), monster drop / crafting material, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "brindle_sword",
+      "name": "Brindle Sword",
+      "category": "weapon",
+      "descriptor": "a simple plain undecorated brindle sword (A sturdy brindle-alloy sword)",
+      "prompt": "storybook illustration of a simple plain undecorated brindle sword (A sturdy brindle-alloy sword), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "leather_body",
+      "name": "Leather Body",
+      "category": "armor",
+      "descriptor": "a simple plain undecorated leather chest cuirass armor (A leather chest piece)",
+      "prompt": "storybook illustration of a simple plain undecorated leather chest cuirass armor (A leather chest piece), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "wooden_shield",
+      "name": "Wooden Shield",
+      "category": "shield",
+      "descriptor": "a simple plain undecorated wooden shield (A simple wooden shield), round shield with iron rim and central boss",
+      "prompt": "storybook illustration of a simple plain undecorated wooden shield (A simple wooden shield), round shield with iron rim and central boss, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "brindle_axe",
+      "name": "Brindle Axe",
+      "category": "tool",
+      "descriptor": "a brindle axe (A brindle-alloy axe for felling trees.), hand tool",
+      "prompt": "storybook illustration of a brindle axe (A brindle-alloy axe for felling trees.), hand tool, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "brindle_pickaxe",
+      "name": "Brindle Pickaxe",
+      "category": "tool",
+      "descriptor": "a brindle pickaxe (A brindle-alloy pickaxe for mining ore.), hand tool",
+      "prompt": "storybook illustration of a brindle pickaxe (A brindle-alloy pickaxe for mining ore.), hand tool, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "fishing_rod",
+      "name": "Fishing Rod",
+      "category": "tool",
+      "descriptor": "a fishing rod (A wooden rod for fishing in still waters.), hand tool",
+      "prompt": "storybook illustration of a fishing rod (A wooden rod for fishing in still waters.), hand tool, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "logs",
+      "name": "Logs",
+      "category": "raw_material",
+      "descriptor": "a stack of logs (Oak logs. Burn for fuel, refine for planks.), chopped wood",
+      "prompt": "storybook illustration of a stack of logs (Oak logs. Burn for fuel, refine for planks.), chopped wood, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "whitleberry",
+      "name": "Whitleberry",
+      "category": "food_cooked",
+      "descriptor": "cooked whitleberry (A handful of foraged berries. Heals 1 HP.), served portion of food",
+      "prompt": "storybook illustration of cooked whitleberry (A handful of foraged berries. Heals 1 HP.), served portion of food, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "hedgecap",
+      "name": "Hedgecap",
+      "category": "forageable",
+      "descriptor": "a hedgecap (A bright red mushroom. Edible? Try at your own risk.), foraged mushroom",
+      "prompt": "storybook illustration of a hedgecap (A bright red mushroom. Edible? Try at your own risk.), foraged mushroom, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "wishrose",
+      "name": "Wishrose",
+      "category": "misc",
+      "descriptor": "a wishrose (A common wild herb. Useful for brewing.)",
+      "prompt": "storybook illustration of a wishrose (A common wild herb. Useful for brewing.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "raw_sardine",
+      "name": "Raw Sardine",
+      "category": "food_raw",
+      "descriptor": "raw sardine (A small raw fish. Cook it for a snack.), uncooked ingredient",
+      "prompt": "storybook illustration of raw sardine (A small raw fish. Cook it for a snack.), uncooked ingredient, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "mosswort_ore",
+      "name": "Mosswort Ore",
+      "category": "raw_material",
+      "descriptor": "a chunk of raw mosswort ore (Soft mossy-green ore. Alloys with palechalk into brindle.), mineral ore",
+      "prompt": "storybook illustration of a chunk of raw mosswort ore (Soft mossy-green ore. Alloys with palechalk into brindle.), mineral ore, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "palechalk_ore",
+      "name": "Palechalk Ore",
+      "category": "raw_material",
+      "descriptor": "a chunk of raw palechalk ore (White-grey chalkstone. Alloys with mosswort into brindle.), mineral ore",
+      "prompt": "storybook illustration of a chunk of raw palechalk ore (White-grey chalkstone. Alloys with mosswort into brindle.), mineral ore, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "brindle_bar",
+      "name": "Brindle Bar",
+      "category": "raw_material",
+      "descriptor": "a brindle bar (A smelted brindle bar. Can be smithed.), smelted metal ingot",
+      "prompt": "storybook illustration of a brindle bar (A smelted brindle bar. Can be smithed.), smelted metal ingot, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "brindle_dagger",
+      "name": "Brindle Dagger",
+      "category": "weapon",
+      "descriptor": "a simple plain undecorated brindle dagger (A smithed brindle-alloy dagger)",
+      "prompt": "storybook illustration of a simple plain undecorated brindle dagger (A smithed brindle-alloy dagger), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "cooked_sardine",
+      "name": "Cooked Sardine",
+      "category": "food_cooked",
+      "descriptor": "cooked sardine (A cooked sardine. Heals 3 HP.), served portion of food",
+      "prompt": "storybook illustration of cooked sardine (A cooked sardine. Heals 3 HP.), served portion of food, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "burnt_sardine",
+      "name": "Burnt Sardine",
+      "category": "food_burnt",
+      "descriptor": "charred blackened sardine (You burnt it.), ruined food, scorched and crumbling",
+      "prompt": "storybook illustration of charred blackened sardine (You burnt it.), ruined food, scorched and crumbling, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "raw_pippin",
+      "name": "Raw Pippin",
+      "category": "food_raw",
+      "descriptor": "raw pippin (A plump chicken, plucked. Cook it on a fire.), uncooked ingredient",
+      "prompt": "storybook illustration of raw pippin (A plump chicken, plucked. Cook it on a fire.), uncooked ingredient, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "pippin_spit",
+      "name": "Pippin Spit",
+      "category": "food_cooked",
+      "descriptor": "cooked pippin spit (A cooked chicken. Heals 4 HP.), served portion of food",
+      "prompt": "storybook illustration of cooked pippin spit (A cooked chicken. Heals 4 HP.), served portion of food, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "charred_pippin",
+      "name": "Charred Pippin",
+      "category": "food_burnt",
+      "descriptor": "charred blackened pippin (Charcoal in the shape of a bird.), ruined food, scorched and crumbling",
+      "prompt": "storybook illustration of charred blackened pippin (Charcoal in the shape of a bird.), ruined food, scorched and crumbling, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "downfeather",
+      "name": "Downfeather",
+      "category": "monster_drop",
+      "descriptor": "a downfeather (A soft white downfeather. Useful for fletching.), monster drop / crafting material",
+      "prompt": "storybook illustration of a downfeather (A soft white downfeather. Useful for fletching.), monster drop / crafting material, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "raw_whicker",
+      "name": "Raw Whicker",
+      "category": "food_raw",
+      "descriptor": "raw whicker (A field-dressed hare. Cook it on a fire.), uncooked ingredient",
+      "prompt": "storybook illustration of raw whicker (A field-dressed hare. Cook it on a fire.), uncooked ingredient, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "whicker_stew",
+      "name": "Whicker Stew",
+      "category": "food_cooked",
+      "descriptor": "cooked whicker stew (A cooked hare. Heals 4 HP. Lean meat, good for the road.), served portion of food",
+      "prompt": "storybook illustration of cooked whicker stew (A cooked hare. Heals 4 HP. Lean meat, good for the road.), served portion of food, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "charred_whicker",
+      "name": "Charred Whicker",
+      "category": "food_burnt",
+      "descriptor": "charred blackened whicker (You burnt it.), ruined food, scorched and crumbling",
+      "prompt": "storybook illustration of charred blackened whicker (You burnt it.), ruined food, scorched and crumbling, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "whicker_pelt",
+      "name": "Whicker Pelt",
+      "category": "monster_drop",
+      "descriptor": "a whicker pelt (A soft hare pelt. Could be tanned for trim work.), monster drop / crafting material",
+      "prompt": "storybook illustration of a whicker pelt (A soft hare pelt. Could be tanned for trim work.), monster drop / crafting material, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "thorn_essence",
+      "name": "Thorn Essence",
+      "category": "monster_drop",
+      "descriptor": "a thorn essence (A globule of green sap from a bramble-cap. Faintly hums.), monster drop / crafting material",
+      "prompt": "storybook illustration of a thorn essence (A globule of green sap from a bramble-cap. Faintly hums.), monster drop / crafting material, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "raw_tusker",
+      "name": "Raw Tusker",
+      "category": "food_raw",
+      "descriptor": "raw tusker (A heavy cut of wild boar. Cook it on a fire — slowly.), uncooked ingredient",
+      "prompt": "storybook illustration of raw tusker (A heavy cut of wild boar. Cook it on a fire — slowly.), uncooked ingredient, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "tusker_crackling",
+      "name": "Tusker Crackling",
+      "category": "food_cooked",
+      "descriptor": "cooked tusker crackling (Slow-roasted wild boar. Restores 7 HP. Smoky, faintly bitter.), served portion of food",
+      "prompt": "storybook illustration of cooked tusker crackling (Slow-roasted wild boar. Restores 7 HP. Smoky, faintly bitter.), served portion of food, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "charred_tusker",
+      "name": "Charred Tusker",
+      "category": "food_burnt",
+      "descriptor": "charred blackened tusker (Charred to leather.), ruined food, scorched and crumbling",
+      "prompt": "storybook illustration of charred blackened tusker (Charred to leather.), ruined food, scorched and crumbling, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "tusker_tusk",
+      "name": "Tusker Tusk",
+      "category": "monster_drop",
+      "descriptor": "a tusker tusk (A curved yellow tusk. Useful for tools, charms, or starting fights.), monster drop / crafting material",
+      "prompt": "storybook illustration of a tusker tusk (A curved yellow tusk. Useful for tools, charms, or starting fights.), monster drop / crafting material, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "bogiron_ore",
+      "name": "Bogiron Ore",
+      "category": "raw_material",
+      "descriptor": "a chunk of raw bogiron ore (Heavier than mosswort, with a dull red rust where it sat in damp earth.), mineral ore",
+      "prompt": "storybook illustration of a chunk of raw bogiron ore (Heavier than mosswort, with a dull red rust where it sat in damp earth.), mineral ore, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "bogiron_bar",
+      "name": "Bogiron Bar",
+      "category": "raw_material",
+      "descriptor": "a bogiron bar (A black-grey ingot, smelted clean. The weight settles into your hand.), smelted metal ingot",
+      "prompt": "storybook illustration of a bogiron bar (A black-grey ingot, smelted clean. The weight settles into your hand.), smelted metal ingot, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "bogiron_sword",
+      "name": "Bogiron Sword",
+      "category": "weapon",
+      "descriptor": "a sturdy workmanlike riveted bogiron sword (A workmanlike blade. The hilt is wrapped in someone else's leather.)",
+      "prompt": "storybook illustration of a sturdy workmanlike riveted bogiron sword (A workmanlike blade. The hilt is wrapped in someone else's leather.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "bogiron_dagger",
+      "name": "Bogiron Dagger",
+      "category": "weapon",
+      "descriptor": "a sturdy workmanlike riveted bogiron dagger (Short and quick, favoured by hedge-walkers and orchard-thieves.)",
+      "prompt": "storybook illustration of a sturdy workmanlike riveted bogiron dagger (Short and quick, favoured by hedge-walkers and orchard-thieves.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "bogiron_axe",
+      "name": "Bogiron Axe",
+      "category": "tool",
+      "descriptor": "a bogiron axe (Cuts oak twice as quick as brindle. The grip smells of pine sap.), hand tool",
+      "prompt": "storybook illustration of a bogiron axe (Cuts oak twice as quick as brindle. The grip smells of pine sap.), hand tool, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "bogiron_pickaxe",
+      "name": "Bogiron Pickaxe",
+      "category": "tool",
+      "descriptor": "a bogiron pickaxe (A blunt iron head set into ash. Strikes harder than it looks.), hand tool",
+      "prompt": "storybook illustration of a bogiron pickaxe (A blunt iron head set into ash. Strikes harder than it looks.), hand tool, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "bogiron_cuirass",
+      "name": "Bogiron Cuirass",
+      "category": "armor",
+      "descriptor": "a sturdy workmanlike riveted bogiron cuirass chest cuirass armor (A hammered iron breastplate. Heavier than it looks; warmer in winter than you'd expect.)",
+      "prompt": "storybook illustration of a sturdy workmanlike riveted bogiron cuirass chest cuirass armor (A hammered iron breastplate. Heavier than it looks; warmer in winter than you'd expect.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "bogiron_shield",
+      "name": "Bogiron Shield",
+      "category": "shield",
+      "descriptor": "a simple plain undecorated bogiron shield (Plain ironwork on a wooden core. Dented in three places already.), round shield with iron rim and central boss",
+      "prompt": "storybook illustration of a simple plain undecorated bogiron shield (Plain ironwork on a wooden core. Dented in three places already.), round shield with iron rim and central boss, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "raw_hedgewight",
+      "name": "Raw Hedgewight",
+      "category": "food_raw",
+      "descriptor": "raw hedgewight (Stringy and dark. Cook it well or risk the fever.), uncooked ingredient",
+      "prompt": "storybook illustration of raw hedgewight (Stringy and dark. Cook it well or risk the fever.), uncooked ingredient, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "hedgewight_strip",
+      "name": "Hedgewight Strip",
+      "category": "food_cooked",
+      "descriptor": "cooked hedgewight strip (Stringy but filling. Restores 9 HP. Tastes faintly of pine.), served portion of food",
+      "prompt": "storybook illustration of cooked hedgewight strip (Stringy but filling. Restores 9 HP. Tastes faintly of pine.), served portion of food, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "charred_hedgewight",
+      "name": "Charred Hedgewight",
+      "category": "food_burnt",
+      "descriptor": "charred blackened hedgewight (You over-cooked it. Smells worse than the live one.), ruined food, scorched and crumbling",
+      "prompt": "storybook illustration of charred blackened hedgewight (You over-cooked it. Smells worse than the live one.), ruined food, scorched and crumbling, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "wightpelt",
+      "name": "Wightpelt",
+      "category": "monster_drop",
+      "descriptor": "a wightpelt (Coarse grey fur, still smelling of the hedge. Warm in winter.), monster drop / crafting material",
+      "prompt": "storybook illustration of a wightpelt (Coarse grey fur, still smelling of the hedge. Warm in winter.), monster drop / crafting material, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "coalrose",
+      "name": "Coalrose",
+      "category": "misc",
+      "descriptor": "a coalrose (Black and brittle. Burns hotter than wood — needed to forge steel.)",
+      "prompt": "storybook illustration of a coalrose (Black and brittle. Burns hotter than wood — needed to forge steel.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "cinderbloom_bar",
+      "name": "Cinderbloom Bar",
+      "category": "raw_material",
+      "descriptor": "a cinderbloom bar (Mottled grey, struck cold to test the ring. Twice the work of iron.), smelted metal ingot",
+      "prompt": "storybook illustration of a cinderbloom bar (Mottled grey, struck cold to test the ring. Twice the work of iron.), smelted metal ingot, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "cinderbloom_sword",
+      "name": "Cinderbloom Sword",
+      "category": "weapon",
+      "descriptor": "a fine well-made cinderbloom sword (A long, balanced blade. The crossguard is etched with someone's initials, badly.)",
+      "prompt": "storybook illustration of a fine well-made cinderbloom sword (A long, balanced blade. The crossguard is etched with someone's initials, badly.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "cinderbloom_dagger",
+      "name": "Cinderbloom Dagger",
+      "category": "weapon",
+      "descriptor": "a fine well-made cinderbloom dagger (Quick steel, half the weight of an iron blade. Slips through coats.)",
+      "prompt": "storybook illustration of a fine well-made cinderbloom dagger (Quick steel, half the weight of an iron blade. Slips through coats.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "cinderbloom_axe",
+      "name": "Cinderbloom Axe",
+      "category": "tool",
+      "descriptor": "a cinderbloom axe (A keen edge. Fells a yew in fewer strokes than any iron axe.), hand tool",
+      "prompt": "storybook illustration of a cinderbloom axe (A keen edge. Fells a yew in fewer strokes than any iron axe.), hand tool, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "cinderbloom_pickaxe",
+      "name": "Cinderbloom Pickaxe",
+      "category": "tool",
+      "descriptor": "a cinderbloom pickaxe (Heavy steel head, ash haft. Bites coal seams without complaint.), hand tool",
+      "prompt": "storybook illustration of a cinderbloom pickaxe (Heavy steel head, ash haft. Bites coal seams without complaint.), hand tool, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "cinderbloom_plate",
+      "name": "Cinderbloom Plate",
+      "category": "armor",
+      "descriptor": "a sturdy workmanlike riveted cinderbloom plate chest cuirass armor (A proper plate, fitted at the shoulder. Squeaks when you breathe deep.)",
+      "prompt": "storybook illustration of a sturdy workmanlike riveted cinderbloom plate chest cuirass armor (A proper plate, fitted at the shoulder. Squeaks when you breathe deep.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "cinderbloom_shield",
+      "name": "Cinderbloom Shield",
+      "category": "shield",
+      "descriptor": "a simple plain undecorated cinderbloom shield (A round steel-bound shield with a bronze boss. Heavier than it looks.), round shield with iron rim and central boss",
+      "prompt": "storybook illustration of a simple plain undecorated cinderbloom shield (A round steel-bound shield with a bronze boss. Heavier than it looks.), round shield with iron rim and central boss, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "field_journal",
+      "name": "Field Journal",
+      "category": "misc",
+      "descriptor": "a field journal (A leather-bound notebook for sketches. Cannot be dropped — every cartographer carries one.)",
+      "prompt": "storybook illustration of a field journal (A leather-bound notebook for sketches. Cannot be dropped — every cartographer carries one.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "wild_herb",
+      "name": "Wild Herb",
+      "category": "forageable",
+      "descriptor": "a sprig of wild herb (A clipped sprig of meadow herb. Faint green smell.), foraged herb",
+      "prompt": "storybook illustration of a sprig of wild herb (A clipped sprig of meadow herb. Faint green smell.), foraged herb, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "mossvine",
+      "name": "Mossvine",
+      "category": "misc",
+      "descriptor": "a mossvine (A coiled vine that grows where stone meets water. Pliant, slightly bitter to taste.)",
+      "prompt": "storybook illustration of a mossvine (A coiled vine that grows where stone meets water. Pliant, slightly bitter to taste.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "pond_water",
+      "name": "Pond Water",
+      "category": "misc",
+      "descriptor": "a pond water (A dipped flask of still water. Holds a sky-image when calm.)",
+      "prompt": "storybook illustration of a pond water (A dipped flask of still water. Holds a sky-image when calm.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "rivermud",
+      "name": "Rivermud",
+      "category": "misc",
+      "descriptor": "a rivermud (Wet clay scooped from a sand bank. Smells of root and rain.)",
+      "prompt": "storybook illustration of a rivermud (Wet clay scooped from a sand bank. Smells of root and rain.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "ore_dust",
+      "name": "Ore Dust",
+      "category": "misc",
+      "descriptor": "a ore dust (Smithing scrap — heavy iron-grit that catches the light.)",
+      "prompt": "storybook illustration of a ore dust (Smithing scrap — heavy iron-grit that catches the light.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "salt_chip",
+      "name": "Salt Chip",
+      "category": "misc",
+      "descriptor": "a salt chip (A flake of rock salt prised from a cave wall. Brittle.)",
+      "prompt": "storybook illustration of a salt chip (A flake of rock salt prised from a cave wall. Brittle.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "crow_feather",
+      "name": "Crow Feather",
+      "category": "monster_drop",
+      "descriptor": "a crow feather (A black feather, indigo at the tip. Rare to find unbroken.), monster drop / crafting material",
+      "prompt": "storybook illustration of a crow feather (A black feather, indigo at the tip. Rare to find unbroken.), monster drop / crafting material, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "morning_dew",
+      "name": "Morning Dew",
+      "category": "misc",
+      "descriptor": "a morning dew (Three beads of dawn-water. Catches the first light of day.)",
+      "prompt": "storybook illustration of a morning dew (Three beads of dawn-water. Catches the first light of day.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "foxfire_glow",
+      "name": "Foxfire Glow",
+      "category": "misc",
+      "descriptor": "a foxfire glow (A pinched seedhead of ghost-light fungus. Glows faintly when shaken.)",
+      "prompt": "storybook illustration of a foxfire glow (A pinched seedhead of ghost-light fungus. Glows faintly when shaken.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "aurora_shard",
+      "name": "Aurora Shard",
+      "category": "misc",
+      "descriptor": "a aurora shard (A hard splinter that fell from the night sky during the aurora. Cold to touch.)",
+      "prompt": "storybook illustration of a aurora shard (A hard splinter that fell from the night sky during the aurora. Cold to touch.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "surveyors_pole",
+      "name": "Surveyor's Pole",
+      "category": "misc",
+      "descriptor": "a surveyor's pole (A striped pole and plumb-bob. Plant on a vista to fix every visible landmark.)",
+      "prompt": "storybook illustration of a surveyor's pole (A striped pole and plumb-bob. Plant on a vista to fix every visible landmark.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "vellum",
+      "name": "Vellum",
+      "category": "misc",
+      "descriptor": "a vellum (A sheet of fine calf-skin paper, ready to take ink. The substrate of every chart.)",
+      "prompt": "storybook illustration of a vellum (A sheet of fine calf-skin paper, ready to take ink. The substrate of every chart.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "charcoal_stick",
+      "name": "Charcoal Stick",
+      "category": "misc",
+      "descriptor": "a charcoal stick (A snapped twig of hearth-charcoal. Sketches into a journal page in a steady hand.)",
+      "prompt": "storybook illustration of a charcoal stick (A snapped twig of hearth-charcoal. Sketches into a journal page in a steady hand.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "chart_blank",
+      "name": "Blank Chart",
+      "category": "misc",
+      "descriptor": "a blank chart (Folded vellum, ready for a cartographer's ink. Spent to fast-travel along a known line.)",
+      "prompt": "storybook illustration of a blank chart (Folded vellum, ready for a cartographer's ink. Spent to fast-travel along a known line.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "chart_tier_1",
+      "name": "Charted Map (Tier 1)",
+      "category": "misc",
+      "descriptor": "a charted map (tier 1) (A folded vellum chart of a small Wolds hollow. Open it to step inside.)",
+      "prompt": "storybook illustration of a charted map (tier 1) (A folded vellum chart of a small Wolds hollow. Open it to step inside.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "chart_snug",
+      "name": "Charted Snug",
+      "category": "misc",
+      "descriptor": "a charted snug (A pocket-sized scrap, scratched out in an afternoon. One cellar, in and out.)",
+      "prompt": "storybook illustration of a charted snug (A pocket-sized scrap, scratched out in an afternoon. One cellar, in and out.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "chart_delve",
+      "name": "Charted Delve",
+      "category": "misc",
+      "descriptor": "a charted delve (A long roll of vellum charting a deeper hollow. Bring rations and good ink.)",
+      "prompt": "storybook illustration of a charted delve (A long roll of vellum charting a deeper hollow. Bring rations and good ink.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "chart_hollow",
+      "name": "Charted Hollow",
+      "category": "misc",
+      "descriptor": "a charted hollow (A double-folded chart of a long, multi-room hollow. More floors, more chest.)",
+      "prompt": "storybook illustration of a charted hollow (A double-folded chart of a long, multi-room hollow. More floors, more chest.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "chart_briar_maze",
+      "name": "Charted Briar Maze",
+      "category": "misc",
+      "descriptor": "a charted briar maze (A twisted vellum, ink-knotted. The corridors outnumber the rooms.)",
+      "prompt": "storybook illustration of a charted briar maze (A twisted vellum, ink-knotted. The corridors outnumber the rooms.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "chart_sunken_hut",
+      "name": "Charted Sunken Hut",
+      "category": "misc",
+      "descriptor": "a charted sunken hut (A water-warped chart of a half-flooded hollow. Wet rooms, mist, and old stone.)",
+      "prompt": "storybook illustration of a charted sunken hut (A water-warped chart of a half-flooded hollow. Wet rooms, mist, and old stone.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "coin",
+      "name": "Bramblewood Coin",
+      "category": "trinket",
+      "descriptor": "a bramblewood coin (A small copper coin stamped with a hedge-rose. Universal trade in the Wolds.), small treasured object",
+      "prompt": "storybook illustration of a bramblewood coin (A small copper coin stamped with a hedge-rose. Universal trade in the Wolds.), small treasured object, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "hedge_ink",
+      "name": "Hedge Ink",
+      "category": "misc",
+      "descriptor": "a hedge ink (A vial of green-black ink pressed from bramble-imp pulp. Stains anything it touches.)",
+      "prompt": "storybook illustration of a hedge ink (A vial of green-black ink pressed from bramble-imp pulp. Stains anything it touches.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "lantern_oil",
+      "name": "Lantern Oil",
+      "category": "misc",
+      "descriptor": "a lantern oil (Eldra's slow-burn oil. One bottle holds four good charges; useful when the dark gets heavy.)",
+      "prompt": "storybook illustration of a lantern oil (Eldra's slow-burn oil. One bottle holds four good charges; useful when the dark gets heavy.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "iron_key",
+      "name": "Iron Key",
+      "category": "misc",
+      "descriptor": "a iron key (A blackened iron key, simple and heavy. Opens iron-bound doors.)",
+      "prompt": "storybook illustration of a iron key (A blackened iron key, simple and heavy. Opens iron-bound doors.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "gold_key",
+      "name": "Gold Key",
+      "category": "misc",
+      "descriptor": "a gold key (A bright brass key with cherry-blossom etching. Opens gilded doors — usually treasure.)",
+      "prompt": "storybook illustration of a gold key (A bright brass key with cherry-blossom etching. Opens gilded doors — usually treasure.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "thorn_key",
+      "name": "Thorn Key",
+      "category": "monster_drop",
+      "descriptor": "a thorn key (A briar-wrapped key that pricks the palm. Opens thorn-locked doors deep in the bramble.), monster drop / crafting material",
+      "prompt": "storybook illustration of a thorn key (A briar-wrapped key that pricks the palm. Opens thorn-locked doors deep in the bramble.), monster drop / crafting material, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "foxglove_sprig",
+      "name": "Foxglove Sprig",
+      "category": "misc",
+      "descriptor": "a foxglove sprig (A bell-shaped flower with a purple throat. Mother Onywyn grinds them for the bitter draught.)",
+      "prompt": "storybook illustration of a foxglove sprig (A bell-shaped flower with a purple throat. Mother Onywyn grinds them for the bitter draught.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "parchment_well_man",
+      "name": "A Child's Drawing",
+      "category": "paper",
+      "descriptor": "a a child's drawing (A child's drawing of a sleeping man, folded into a stub of parchment.), rolled parchment scroll",
+      "prompt": "storybook illustration of a a child's drawing (A child's drawing of a sleeping man, folded into a stub of parchment.), rolled parchment scroll, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "parchment_seventh_cottage",
+      "name": "Old Wagon-Road Tally",
+      "category": "paper",
+      "descriptor": "a old wagon-road tally (A scrap of vellum with cottages scratched in charcoal. Six are crossed through; a seventh is circled.), rolled parchment scroll",
+      "prompt": "storybook illustration of a old wagon-road tally (A scrap of vellum with cottages scratched in charcoal. Six are crossed through; a seventh is circled.), rolled parchment scroll, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "parchment_bramble_bargain",
+      "name": "Hedgemother's Margin Note",
+      "category": "paper",
+      "descriptor": "a hedgemother's margin note (A torn corner from a herbalist's ledger. The handwriting is not Mother Onywyn's — it is older, and slower.), rolled parchment scroll",
+      "prompt": "storybook illustration of a hedgemother's margin note (A torn corner from a herbalist's ledger. The handwriting is not Mother Onywyn's — it is older, and slower.), rolled parchment scroll, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "parchment_sallow_tide",
+      "name": "Tide-Table Fragment",
+      "category": "paper",
+      "descriptor": "a tide-table fragment (A page from a coastguard's tide table. The night the wreck happened is circled — and the column for that night is empty.), rolled parchment scroll",
+      "prompt": "storybook illustration of a tide-table fragment (A page from a coastguard's tide table. The night the wreck happened is circled — and the column for that night is empty.), rolled parchment scroll, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "parchment_linnet_vow",
+      "name": "Falconer's Note",
+      "category": "paper",
+      "descriptor": "a falconer's note (A page in a knight's hand. Two names share the page; one has been crossed through, then traced over again, faintly.), rolled parchment scroll",
+      "prompt": "storybook illustration of a falconer's note (A page in a knight's hand. Two names share the page; one has been crossed through, then traced over again, faintly.), rolled parchment scroll, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "stoneground_ink",
+      "name": "Stoneground Ink",
+      "category": "misc",
+      "descriptor": "a stoneground ink (A flat grey ink ground from ore dust. Reads even on damp vellum.)",
+      "prompt": "storybook illustration of a stoneground ink (A flat grey ink ground from ore dust. Reads even on damp vellum.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "bramblepress_ink",
+      "name": "Bramblepress Ink",
+      "category": "misc",
+      "descriptor": "a bramblepress ink (A red-black ink that smells faintly of iron. Quivers when first applied.)",
+      "prompt": "storybook illustration of a bramblepress ink (A red-black ink that smells faintly of iron. Quivers when first applied.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "wellspring_ink",
+      "name": "Wellspring Ink",
+      "category": "trinket",
+      "descriptor": "a wellspring ink (A pale blue ink that holds shimmer. Used for charts that should bloom.), small treasured object",
+      "prompt": "storybook illustration of a wellspring ink (A pale blue ink that holds shimmer. Used for charts that should bloom.), small treasured object, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "charcoal_bind",
+      "name": "Charcoal Bind",
+      "category": "misc",
+      "descriptor": "a charcoal bind (A pinch of pure charcoal binding. Steadies the line of any ink it joins.)",
+      "prompt": "storybook illustration of a charcoal bind (A pinch of pure charcoal binding. Steadies the line of any ink it joins.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "refined_ink",
+      "name": "Refined Ink",
+      "category": "misc",
+      "descriptor": "a refined ink (Hedge ink boiled down with copper salts. Steadies any roll it touches.)",
+      "prompt": "storybook illustration of a refined ink (Hedge ink boiled down with copper salts. Steadies any roll it touches.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "bog_ink",
+      "name": "Bog Ink",
+      "category": "misc",
+      "descriptor": "a bog ink (A pale blue ink dipped from still water, with a faint mineral shimmer.)",
+      "prompt": "storybook illustration of a bog ink (A pale blue ink dipped from still water, with a faint mineral shimmer.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "ember_ink",
+      "name": "Ember Ink",
+      "category": "misc",
+      "descriptor": "a ember ink (A red-orange ink that holds a warmth long after the press. Smells of smoke.)",
+      "prompt": "storybook illustration of a ember ink (A red-orange ink that holds a warmth long after the press. Smells of smoke.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "lustrous_ink",
+      "name": "Lustrous Ink",
+      "category": "misc",
+      "descriptor": "a lustrous ink (A grey ink shot through with golden flecks of refined ore.)",
+      "prompt": "storybook illustration of a lustrous ink (A grey ink shot through with golden flecks of refined ore.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "rune_stone",
+      "name": "Rune Stone",
+      "category": "misc",
+      "descriptor": "a rune stone (A small carved blank, ready to take a chant. Pressed at a Runestone Pedestal.)",
+      "prompt": "storybook illustration of a rune stone (A small carved blank, ready to take a chant. Pressed at a Runestone Pedestal.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "rune_air",
+      "name": "Air Rune",
+      "category": "misc",
+      "descriptor": "a air rune (A pale stone humming with quiet wind. Used in air-element spells.)",
+      "prompt": "storybook illustration of a air rune (A pale stone humming with quiet wind. Used in air-element spells.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "rune_earth",
+      "name": "Earth Rune",
+      "category": "misc",
+      "descriptor": "a earth rune (A heavy ochre stone. Used in earth-element spells.)",
+      "prompt": "storybook illustration of a earth rune (A heavy ochre stone. Used in earth-element spells.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "rune_fire",
+      "name": "Fire Rune",
+      "category": "misc",
+      "descriptor": "a fire rune (A warm carmine stone. Used in fire-element spells.)",
+      "prompt": "storybook illustration of a fire rune (A warm carmine stone. Used in fire-element spells.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "rune_mind",
+      "name": "Mind Rune",
+      "category": "misc",
+      "descriptor": "a mind rune (A pale grey stone. Catalyst for elemental strikes.)",
+      "prompt": "storybook illustration of a mind rune (A pale grey stone. Catalyst for elemental strikes.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "rune_water",
+      "name": "Water Rune",
+      "category": "misc",
+      "descriptor": "a water rune (A cool blue stone, slick to the touch. Used in water-element spells.)",
+      "prompt": "storybook illustration of a water rune (A cool blue stone, slick to the touch. Used in water-element spells.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "rune_body",
+      "name": "Body Rune",
+      "category": "misc",
+      "descriptor": "a body rune (A flesh-warm stone. Catalyst for body and binding spells.)",
+      "prompt": "storybook illustration of a body rune (A flesh-warm stone. Catalyst for body and binding spells.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "rune_chaos",
+      "name": "Chaos Rune",
+      "category": "misc",
+      "descriptor": "a chaos rune (A roiling stone, never quite still. Catalyst for tier-2 attack spells.)",
+      "prompt": "storybook illustration of a chaos rune (A roiling stone, never quite still. Catalyst for tier-2 attack spells.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "rune_cosmic",
+      "name": "Cosmic Rune",
+      "category": "misc",
+      "descriptor": "a cosmic rune (A still grey stone with a single white star carved at its center. Travel + utility magic.)",
+      "prompt": "storybook illustration of a cosmic rune (A still grey stone with a single white star carved at its center. Travel + utility magic.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "rune_law",
+      "name": "Law Rune",
+      "category": "misc",
+      "descriptor": "a law rune (A weighty stone, edges true and clean. Locks and binds; teleports and seals.)",
+      "prompt": "storybook illustration of a law rune (A weighty stone, edges true and clean. Locks and binds; teleports and seals.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "rune_nature",
+      "name": "Nature Rune",
+      "category": "misc",
+      "descriptor": "a nature rune (A vine-bound stone with fresh green at its core. Plant + animal magic.)",
+      "prompt": "storybook illustration of a nature rune (A vine-bound stone with fresh green at its core. Plant + animal magic.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "rune_death",
+      "name": "Death Rune",
+      "category": "misc",
+      "descriptor": "a death rune (A dark stone that drinks the warmth from your hand. Necrotic spells.)",
+      "prompt": "storybook illustration of a death rune (A dark stone that drinks the warmth from your hand. Necrotic spells.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "rune_blood",
+      "name": "Blood Rune",
+      "category": "misc",
+      "descriptor": "a blood rune (A red-flecked stone, faintly pulsing. Self-fuel spells (HP-cost casts).)",
+      "prompt": "storybook illustration of a blood rune (A red-flecked stone, faintly pulsing. Self-fuel spells (HP-cost casts).), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "rune_soul",
+      "name": "Soul Rune",
+      "category": "misc",
+      "descriptor": "a soul rune (A still, bright stone. Endgame: unique-named spells.)",
+      "prompt": "storybook illustration of a soul rune (A still, bright stone. Endgame: unique-named spells.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "cinderbloom_helm",
+      "name": "Cinderbloom Helm",
+      "category": "misc",
+      "descriptor": "a cinderbloom helm (A brimmed helm with a riveted nose-bar. The padding still smells of someone else.)",
+      "prompt": "storybook illustration of a cinderbloom helm (A brimmed helm with a riveted nose-bar. The padding still smells of someone else.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "apprentices_hammer",
+      "name": "Apprentice's Hammer",
+      "category": "tool",
+      "descriptor": "a apprentice's hammer (Hod hammered this from your first ore-strike. The grip's wrapped in his own old apron leather.), hand tool",
+      "prompt": "storybook illustration of a apprentice's hammer (Hod hammered this from your first ore-strike. The grip's wrapped in his own old apron leather.), hand tool, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "hods_anvil_token",
+      "name": "Hod's Anvil Token",
+      "category": "trinket",
+      "descriptor": "a hod's anvil token (A small bronze token shaped like an anvil. Bring it back when the work is done.), small treasured object",
+      "prompt": "storybook illustration of a hod's anvil token (A small bronze token shaped like an anvil. Bring it back when the work is done.), small treasured object, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "healing_draught",
+      "name": "Healing Draught",
+      "category": "food_cooked",
+      "descriptor": "cooked healing draught (A cloudy green tincture that smells faintly of moss and copper. Restores 12 HP.), served portion of food",
+      "prompt": "storybook illustration of cooked healing draught (A cloudy green tincture that smells faintly of moss and copper. Restores 12 HP.), served portion of food, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "bramble_resin",
+      "name": "Bramble Resin",
+      "category": "misc",
+      "descriptor": "a bramble resin (Sticky amber sap from withering bramble vines. Quill needs three.)",
+      "prompt": "storybook illustration of a bramble resin (Sticky amber sap from withering bramble vines. Quill needs three.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "falcons_whistle",
+      "name": "Falcon's Whistle",
+      "category": "tool",
+      "descriptor": "a falcon's whistle (A bone whistle Sir Withering carved for Pernel. Calls a falcon to scout overhead.), hand tool",
+      "prompt": "storybook illustration of a falcon's whistle (A bone whistle Sir Withering carved for Pernel. Calls a falcon to scout overhead.), hand tool, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "whickerhares_foot",
+      "name": "Whickerhare's Foot Charm",
+      "category": "misc",
+      "descriptor": "a whickerhare's foot charm (Velvet foot of a swift wold-hare. Withering says Pernel will follow its scent.)",
+      "prompt": "storybook illustration of a whickerhare's foot charm (Velvet foot of a swift wold-hare. Withering says Pernel will follow its scent.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "thorn_crown",
+      "name": "Thorn-Crown of the Hedgemother",
+      "category": "monster_drop",
+      "descriptor": "a thorn-crown of the hedgemother (A diadem of black bramble, still warm. Sir Withering bows when you wear it.), monster drop / crafting material",
+      "prompt": "storybook illustration of a thorn-crown of the hedgemother (A diadem of black bramble, still warm. Sir Withering bows when you wear it.), monster drop / crafting material, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "pantry_stew",
+      "name": "Maud's Pantry Stew",
+      "category": "food_cooked",
+      "descriptor": "cooked maud's pantry stew (Slow-simmered with hedgecap, whitleberry, and a bone for marrow. Restores 15 HP.), served portion of food",
+      "prompt": "storybook illustration of cooked maud's pantry stew (Slow-simmered with hedgecap, whitleberry, and a bone for marrow. Restores 15 HP.), served portion of food, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "skill_atk",
+      "name": "Atk skill icon",
+      "category": "skill",
+      "descriptor": "a stylized crossed-swords symbol, fairytale storybook icon",
+      "prompt": "storybook illustration of a stylized crossed-swords symbol, fairytale storybook icon, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "skill_str",
+      "name": "Str skill icon",
+      "category": "skill",
+      "descriptor": "a stylized flexed muscular arm in profile, fairytale storybook icon",
+      "prompt": "storybook illustration of a stylized flexed muscular arm in profile, fairytale storybook icon, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "skill_def",
+      "name": "Def skill icon",
+      "category": "skill",
+      "descriptor": "a stylized heater shield with a single metal boss at center, slightly battered fairytale shield silhouette",
+      "prompt": "storybook illustration of a stylized heater shield with a single metal boss at center, slightly battered fairytale shield silhouette, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "skill_hp",
+      "name": "Hp skill icon",
+      "category": "skill",
+      "descriptor": "a stylized red heart with a soft inner glow, fairytale storybook heart symbol",
+      "prompt": "storybook illustration of a stylized red heart with a soft inner glow, fairytale storybook heart symbol, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "skill_cook",
+      "name": "Cook skill icon",
+      "category": "skill",
+      "descriptor": "a stylized iron cooking pot with two wisps of steam, fairytale storybook icon",
+      "prompt": "storybook illustration of a stylized iron cooking pot with two wisps of steam, fairytale storybook icon, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "skill_wilds",
+      "name": "Wilds skill icon",
+      "category": "skill",
+      "descriptor": "a stylized leaf wreath, three leaves arranged in a tight circle, fairytale storybook icon",
+      "prompt": "storybook illustration of a stylized leaf wreath, three leaves arranged in a tight circle, fairytale storybook icon, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "skill_earth",
+      "name": "Earth skill icon",
+      "category": "skill",
+      "descriptor": "a stylized pickaxe crossed with a smelted metal bar, fairytale storybook icon",
+      "prompt": "storybook illustration of a stylized pickaxe crossed with a smelted metal bar, fairytale storybook icon, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "skill_carto",
+      "name": "Carto skill icon",
+      "category": "skill",
+      "descriptor": "a stylized rolled paper scroll with a wax seal, fairytale storybook icon",
+      "prompt": "storybook illustration of a stylized rolled paper scroll with a wax seal, fairytale storybook icon, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "skill_falconry",
+      "name": "Falconry skill icon",
+      "category": "skill",
+      "descriptor": "a stylized perched falcon silhouette on a gauntlet, fairytale storybook icon",
+      "prompt": "storybook illustration of a stylized perched falcon silhouette on a gauntlet, fairytale storybook icon, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    },
+    {
+      "id": "skill_magic",
+      "name": "Magic skill icon",
+      "category": "skill",
+      "descriptor": "a stylized rune stone with a single carved sigil glowing softly, fairytale storybook icon",
+      "prompt": "storybook illustration of a stylized rune stone with a single carved sigil glowing softly, fairytale storybook icon, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500"
+    }
+  ]
+}

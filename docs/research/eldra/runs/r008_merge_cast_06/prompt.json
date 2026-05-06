@@ -1,0 +1,19 @@
+{
+  "id": "r008_merge_cast_06",
+  "title": "Panels merged + Cast 0.6 (push hardest)",
+  "hypothesis": "Tests the upper bound of CUBOID Cast. At 0.6 the panel corners pull substantially toward the bounding cuboid's center \u2014 vertices get rounded but flat faces stay. If silhouette starts losing key features (tabard stripe disappears, shawl becomes one blob with the body) we know we've crossed the line. If it still reads as Eldra and looks more sculpted, BODY_CAST=0.6 becomes our default ceiling.",
+  "params": {
+    "ELDRA_VARIANT": "s",
+    "ELDRA_SKIP_GRASS": "1",
+    "ELDRA_FORM_MERGE": "2",
+    "ELDRA_BODY_CAST": "0.6"
+  },
+  "parent": "r003_merge_panels",
+  "rating": null,
+  "notes": "",
+  "outputs": {
+    "glb": "models/npc_eldra_v2_r008_merge_cast_06.glb",
+    "thumb": "docs/research/eldra/runs/r008_merge_cast_06/thumb.png"
+  },
+  "built_at": "2026-05-04T17:15:48.796665+00:00"
+}

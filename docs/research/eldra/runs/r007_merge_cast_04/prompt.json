@@ -1,0 +1,19 @@
+{
+  "id": "r007_merge_cast_04",
+  "title": "Panels merged + Cast 0.4 (between r004 and r005)",
+  "hypothesis": "Fills the gap between r004's 0.3 (might be too subtle) and r005's 0.5 (might be too aggressive). Helps locate the sweet spot on the Cast curve. Same merge level as both \u2014 no other axes vary.",
+  "params": {
+    "ELDRA_VARIANT": "s",
+    "ELDRA_SKIP_GRASS": "1",
+    "ELDRA_FORM_MERGE": "2",
+    "ELDRA_BODY_CAST": "0.4"
+  },
+  "parent": "r003_merge_panels",
+  "rating": null,
+  "notes": "",
+  "outputs": {
+    "glb": "models/npc_eldra_v2_r007_merge_cast_04.glb",
+    "thumb": "docs/research/eldra/runs/r007_merge_cast_04/thumb.png"
+  },
+  "built_at": "2026-05-04T17:15:42.197426+00:00"
+}

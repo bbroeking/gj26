@@ -1,0 +1,19 @@
+{
+  "id": "r004_merge_cast_03",
+  "title": "Panels merged + Cast 0.3 on torso (CUBOID)",
+  "hypothesis": "After dropping nano-detail and merging panels, the remaining flat-front torso panels (tunic_core, shawl_top, shawl_back, apron_wrap, skirt) still read as flat slabs. Cast 0.3 with CUBOID target rounds their corners but DOESN'T bow the front face (avoids the ellipsoid-distortion bug from the original variant E experiment). Should give the chunky-but-smooth look of the reference.",
+  "params": {
+    "ELDRA_VARIANT": "s",
+    "ELDRA_SKIP_GRASS": "1",
+    "ELDRA_FORM_MERGE": "2",
+    "ELDRA_BODY_CAST": "0.3"
+  },
+  "parent": "r003_merge_panels",
+  "rating": null,
+  "notes": "",
+  "outputs": {
+    "glb": "models/npc_eldra_v2_r004_merge_cast_03.glb",
+    "thumb": "docs/research/eldra/runs/r004_merge_cast_03/thumb.png"
+  },
+  "built_at": "2026-05-04T17:06:35.452896+00:00"
+}

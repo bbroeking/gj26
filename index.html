@@ -2,206 +2,3797 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Agent Sprite Forge — Level 1: Lumbridge Plains</title>
+<title>Bramblewood</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=IM+Fell+English:ital@0;1&family=Caveat:wght@500;700&family=Cinzel:wght@500;700&family=EB+Garamond:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="src/ui/tokens.css">
+
 <style>
-  :root {
-    --bg: #0d0d10;
-    --panel: #181820;
-    --border: #2a2a36;
-    --gold: #d4af37;
-    --text: #e8e8ee;
-    --dim: #888;
-    --hp: #c0392b;
-    --xp: #2a8b6c;
-    --quest: #d4af37;
-  }
+  /* Implementation CSS. Tokens come from src/ui/tokens.css.
+     Rule: no raw hex codes, no raw px values for color/spacing/font.
+     Use var(--token) only. (A few raw px remain for fixed-size
+     game-canvas dimensions like 800/576 — those are content, not theme.) */
+
   * { box-sizing: border-box; }
   html, body {
-    margin: 0; padding: 0; background: var(--bg); color: var(--text);
-    font-family: 'Courier New', ui-monospace, monospace;
-    height: 100%;
+    margin: 0; padding: 0; height: 100%; overflow: hidden;
+    background: var(--bg-game);
+    color: var(--text);
+    font-family: var(--font-body);
+    background-image: var(--paper-grain);
   }
   body {
-    display: flex; justify-content: center; align-items: center;
-    padding: 12px; min-height: 100vh;
-  }
-  #wrap {
-    display: grid;
-    grid-template-columns: 800px 240px;
-    gap: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--s-3);
     user-select: none;
   }
+  /* HUD wireframe layout: single-column wrap holding the stage. The old
+     right rail (#panel) is hidden and content overlays the canvas. */
+  #wrap { display: block; padding: 0; }
+
+  /* ---- 3D stage: 1280x800 base, all HUD elements overlay this ---- */
   #stage {
     position: relative;
-    width: 800px; height: 576px;
-    background: #000;
-    border: 4px solid var(--border);
-    border-radius: 4px;
+    width: 1280px; height: 800px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 32px);
+    margin: 0 auto;
+    background: var(--bg-stage);
+    border-radius: var(--r-md);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
   }
-  canvas {
-    display: block;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
-  }
-  #title {
-    position: absolute; top: 6px; left: 8px;
-    font-size: 11px; color: var(--gold);
-    text-shadow: 1px 1px 0 #000;
+  body { background: var(--bg-deep); }
+  /* Old right-rail panel — slides in as a popup overlay when Bag or
+     Skills is opened. Otherwise hidden via transform off-screen. */
+  #panel {
+    position: fixed;
+    top: 50%;
+    right: 24px;
+    transform: translate(120%, -50%);
+    width: 360px;
+    max-height: 80vh;
+    z-index: 95;
+    transition: transform 240ms var(--ease, ease-out);
     pointer-events: none;
   }
-  #overlay {
-    position: absolute; inset: 0;
+  body.hud-panel-open #panel {
+    transform: translate(0, -50%);
+    pointer-events: auto;
+  }
+  /* Tools cluster — round buttons stacked vertically on the LEFT rail,
+     under the player bars. Moved off the right rail so the Adventurer
+     panel + minimap own that column without overlap. */
+  #hud-tools {
+    position: absolute;
+    left: 24px;
+    top: 152px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 88;
+  }
+  #hud-tools .tool-btn {
+    width: 44px; height: 44px;
+    border-radius: var(--r-md);
+    background: var(--paper);
+    border: 1px solid var(--accent-gold);
+    color: var(--ink);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    transition: transform var(--t-fast, 120ms) ease, background var(--t-fast, 120ms) ease;
+  }
+  #hud-tools .tool-btn:hover {
+    transform: translateY(-2px);
+    background: var(--paper-deep);
+  }
+  #hud-tools .tool-btn.active {
+    background: var(--accent-gold);
+    color: var(--paper);
+  }
+  #hud-tools .tool-btn .tool-key {
+    position: absolute;
+    bottom: 2px; right: 4px;
+    font-family: var(--font-display);
+    font-size: 9px;
+    color: var(--ink-mid);
+    letter-spacing: 0.5px;
+  }
+  #hud-tools .tool-btn { position: relative; }
+  /* Hover-out label so the player doesn't have to memorize 5 emoji.
+     Reads "Bag" / "Skills" / "Quest" / "Map" / "Journal" depending on
+     which button. Slides out from the left edge of the cluster, stays
+     out for the duration of the hover. Pillar 4 of HUD design — "name
+     things, don't make people guess". */
+  #hud-tools .tool-btn::before {
+    content: attr(aria-label);
+    position: absolute;
+    left: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(20, 14, 10, 0.92);
+    color: #f0d8a8;
+    border: 1px solid rgba(255, 220, 170, 0.30);
+    border-radius: 3px;
+    padding: 3px 9px;
+    font-family: var(--font-body);
+    font-size: 11px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 100ms ease;
+  }
+  #hud-tools .tool-btn:hover::before { opacity: 1; }
+
+  /* ---- World map (Wayfinding) modal ---- */
+  #world-map-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 14, 10, 0.65);
     display: none;
-    flex-direction: column; justify-content: center; align-items: center;
-    background: rgba(0,0,0,0.78);
-    color: var(--gold);
-    text-align: center;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+  }
+  #world-map-backdrop.open { display: flex; }
+  #world-map {
+    background: var(--paper);
+    border: var(--bw-frame) solid transparent;
+    border-image: var(--frame-ink) 18 / var(--bw-frame) / 0 stretch;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    padding: var(--s-3);
+    max-width: 1180px;
+    width: 92vw;
+    color: var(--ink);
+  }
+  #wm-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s-4);
+    padding-bottom: var(--s-2);
+    border-bottom: 1px dashed var(--accent-gold);
+    margin-bottom: var(--s-2);
+  }
+  .wm-title {
+    font-family: var(--font-display);
+    font-size: var(--fs-xl);
+    letter-spacing: 0.06em;
+    color: var(--ink);
+    flex: 1;
+  }
+  .wm-meta {
+    font-family: var(--font-body);
+    font-size: var(--fs-sm);
+    color: var(--ink-mid);
+    letter-spacing: 0.02em;
+  }
+  .wm-meta span { color: var(--ink); font-weight: 600; }
+  #wm-close {
+    width: 28px; height: 28px;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-size: 22px;
+    line-height: 1;
+    color: var(--ink-mid);
+  }
+  #wm-close:hover { color: var(--ink); }
+  #wm-canvas-wrap {
+    position: relative;
+    background: #f0e3c4;
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-md);
+    padding: var(--s-2);
+    display: flex;
+    justify-content: center;
+  }
+  #wm-canvas {
+    image-rendering: pixelated;
+    box-shadow: inset 0 0 8px rgba(58, 47, 31, 0.18);
+  }
+  #wm-name-form {
+    position: absolute;
+    display: none;
+    flex-direction: row;
+    gap: 4px;
+    padding: 4px;
+    background: var(--paper);
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
     z-index: 10;
   }
-  #overlay h2 { font-size: 28px; margin: 6px 0; letter-spacing: 2px; }
-  #overlay p { color: #eee; font-size: 13px; margin: 4px 0; }
-  #overlay button {
-    margin-top: 14px; padding: 8px 18px;
-    background: var(--gold); color: #000;
-    border: 0; cursor: pointer; font-family: inherit;
-    font-weight: bold; letter-spacing: 1px;
+  #wm-name-form.open { display: flex; }
+  #wm-name-input {
+    width: 140px;
+    padding: 4px 6px;
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    background: var(--paper-deep);
+    color: var(--ink);
+    font: inherit;
   }
-  #panel {
-    background: var(--panel);
-    border: 4px solid var(--border);
-    border-radius: 4px;
-    padding: 10px;
-    height: 576px;
+  #wm-name-form button {
+    padding: 4px 8px;
+    background: var(--paper-deep);
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  #wm-name-form button:hover { background: var(--paper); }
+  .wm-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-3);
+    padding-top: var(--s-2);
+    margin-top: var(--s-2);
+    border-top: 1px dashed var(--accent-gold);
+    font-family: var(--font-body);
+    font-size: var(--fs-sm);
+    color: var(--ink-mid);
+  }
+  .wm-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+  .wm-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    display: inline-block;
+  }
+  .wm-dot.wm-player   { background: var(--accent-red);    border-radius: 50%; }
+  .wm-dot.wm-tree     { background: #3a5d28; border-radius: 50%; }
+  .wm-dot.wm-forage   { background: #c2497a; }
+  .wm-dot.wm-landmark { background: var(--accent-gold);   border-radius: 50%; }
+  .wm-dot.wm-enemy    { background: #7a1f1f; clip-path: polygon(50% 0,100% 100%,0 100%); }
+  .wm-dot.wm-waypoint { background: #7a99a8; border-radius: 50%; }
+  .wm-fog { font-style: italic; opacity: 0.85; }
+  .wm-milestone {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: var(--fs-sm);
+    color: var(--ink-mid);
+    padding-top: var(--s-2);
+    margin-top: var(--s-2);
+    border-top: 1px dashed var(--accent-gold);
+  }
+
+  #wm-tooltip {
+    position: fixed;
+    z-index: 220;
+    padding: 4px 8px;
+    background: rgba(58, 47, 31, 0.9);
+    color: #f0e3c4;
+    font-family: var(--font-body);
+    font-size: 12px;
+    border-radius: var(--r-sm);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 100ms ease;
+  }
+
+  /* ============================================================
+     Spellbook + Runestone Pedestal + Wayfinding Workshop modals
+     ============================================================ */
+  #spellbook-backdrop, #pedestal-backdrop,
+  #cartography-workshop-backdrop, #atlas-map-backdrop,
+  #materials-browser-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(20, 14, 10, 0.65);
+    display: none; align-items: center; justify-content: center;
+    z-index: 200;
+  }
+  #spellbook-backdrop.open, #pedestal-backdrop.open,
+  #cartography-workshop-backdrop.open, #atlas-map-backdrop.open,
+  #materials-browser-backdrop.open { display: flex; }
+  #spellbook, #pedestal {
+    background: var(--paper);
+    border: var(--bw-frame) solid transparent;
+    border-image: var(--frame-ink) 18 / var(--bw-frame) / 0 stretch;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    padding: var(--s-3);
+    width: 760px; max-width: 94vw; max-height: 86vh;
+    color: var(--ink);
     display: flex; flex-direction: column;
+    font-family: var(--font-body);
+  }
+  /* Spellbook */
+  #sb-head {
+    display: flex; align-items: baseline; gap: var(--s-3);
+    padding-bottom: var(--s-2);
+    border-bottom: 1px dashed var(--accent-gold);
+  }
+  .sb-title {
+    font-family: var(--font-display); font-size: var(--fs-xl);
+    letter-spacing: 0.06em; flex: 1;
+  }
+  .sb-meta {
+    font-size: var(--fs-sm); color: var(--ink-mid);
+  }
+  .sb-meta span { color: var(--ink); font-weight: 600; }
+  #sb-close, #pd-close {
+    width: 28px; height: 28px; background: transparent; border: 0;
+    cursor: pointer; font-family: var(--font-display);
+    font-size: 22px; line-height: 1; color: var(--ink-mid);
+  }
+  #sb-close:hover, #pd-close:hover { color: var(--ink); }
+  #sb-body { flex: 1; overflow-y: auto; padding-top: var(--s-2); min-height: 0; }
+  .sb-row {
+    background: var(--paper-deep);
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    padding: var(--s-2);
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: background var(--t-fast) ease, transform var(--t-fast) ease;
+  }
+  .sb-row:hover { background: var(--paper-warm); transform: translateX(2px); }
+  .sb-row.sb-locked { opacity: 0.5; cursor: not-allowed; }
+  .sb-row.sb-locked:hover { transform: none; background: var(--paper-deep); }
+  /* Stub spells — listed for the v2 catalog but not yet wired. Distinct
+     from locked: hatched border so it reads as "design exists, code doesn't" */
+  .sb-row.sb-stub { background: repeating-linear-gradient(
+    -45deg, var(--paper) 0 6px, var(--paper-deep) 6px 12px); }
+  .sb-stub-badge {
+    background: var(--ink-mid); color: var(--paper);
+    padding: 1px 5px; border-radius: 3px;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.5px;
+  }
+  .sb-row.sb-active-row {
+    background: rgba(122, 153, 86, 0.18);
+    border-color: var(--accent-green);
+    box-shadow: 0 0 8px rgba(122, 153, 86, 0.25);
+  }
+  .sb-row-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 4px;
+  }
+  .sb-name {
+    font-family: var(--font-display); font-weight: 600;
+    color: var(--ink); font-size: var(--fs-md);
+  }
+  .sb-tag {
+    font-size: var(--fs-xs); color: var(--ink-mid);
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .sb-desc { font-size: var(--fs-sm); color: var(--ink); margin-bottom: 4px; }
+  .sb-cost { font-size: var(--fs-xs); color: var(--ink-mid); }
+  .sb-cost-ok  { color: var(--ink); }
+  .sb-cost-low { color: var(--accent-red); }
+  .sb-tip {
+    margin-top: var(--s-2); padding-top: var(--s-2);
+    border-top: 1px dashed var(--accent-gold);
+    font-size: var(--fs-sm); font-style: italic; color: var(--ink-mid);
+  }
+  .sb-tip kbd {
+    display: inline-block; padding: 1px 6px;
+    background: var(--paper-deep); border: 1px solid var(--accent-gold);
+    border-radius: 3px; font-family: var(--font-display); font-size: 12px;
+  }
+  /* Action bar header pips */
+  #sb-bar {
+    display: flex; gap: 4px;
+    padding: var(--s-2) 0;
+    border-bottom: 1px dashed var(--accent-gold);
+  }
+  .sb-bar-pip {
+    flex: 1; min-height: 56px;
+    background: var(--paper-deep);
+    border: 2px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer;
+    position: relative;
+  }
+  .sb-bar-pip:hover { background: var(--paper-warm); border-color: var(--ink); }
+  .sb-bar-pip.sb-bar-empty { opacity: 0.5; border-style: dashed; }
+  .sb-bar-pip.sb-bar-pip-dragover {
+    background: rgba(122, 153, 86, 0.25);
+    border-color: var(--accent-green);
+    border-style: solid;
+    transform: scale(1.05);
+  }
+  .sb-bar-pip.sb-bar-rebinding {
+    background: rgba(184, 134, 55, 0.30);
+    border-color: var(--accent-gold);
+    animation: sb-rebind-pulse 0.6s ease-in-out infinite;
+  }
+  @keyframes sb-rebind-pulse {
+    0%, 100% { box-shadow: 0 0 4px rgba(184, 134, 55, 0.4); }
+    50%      { box-shadow: 0 0 12px rgba(184, 134, 55, 0.8); }
+  }
+  .sb-row[draggable="true"]:hover { cursor: grab; }
+  .sb-row.sb-row-dragging { opacity: 0.4; }
+  .sb-bar-key {
+    position: absolute; top: 2px; right: 4px;
+    font-family: var(--font-display); font-size: 10px;
+    color: var(--ink-mid);
+  }
+  .sb-bar-icon { font-size: 22px; line-height: 1; }
+  /* Tabs */
+  #sb-tabs {
+    display: flex; gap: 2px;
+    padding-top: var(--s-2);
+    margin-bottom: var(--s-2);
+  }
+  .sb-tab {
+    flex: 1; padding: 6px 4px;
+    background: var(--paper-deep);
+    border: 1px solid var(--accent-gold);
+    border-bottom: 0;
+    border-radius: var(--r-sm) var(--r-sm) 0 0;
+    font-family: var(--font-display);
+    font-size: var(--fs-xs); font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--ink-mid); cursor: pointer;
+  }
+  .sb-tab:hover { background: var(--paper-warm); }
+  .sb-tab.sb-tab-active {
+    background: var(--paper);
+    color: var(--ink);
+    border-bottom: 1px solid var(--paper);
+    margin-bottom: -1px;
+  }
+  /* Row variants by kind */
+  .sb-row { position: relative; }
+  .sb-row-melee  { border-left: 4px solid #c94c4c; }
+  .sb-row-magic  { border-left: 4px solid #5a90c8; }
+  .sb-row-ranged { border-left: 4px solid #b58637; }
+  .sb-row.sb-bound-row {
+    background: rgba(184, 165, 106, 0.30);
+    border-color: var(--ink);
+  }
+  .sb-row-icon {
+    display: inline-block; width: 22px; text-align: center;
+    margin-right: 6px;
+  }
+  /* Benefits/drawbacks line */
+  .sb-pros {
+    display: flex; gap: var(--s-3);
+    font-size: var(--fs-xs); margin: 4px 0;
+  }
+  .sb-benefit  { color: var(--accent-green); }
+  .sb-drawback { color: var(--accent-red); }
+  .sb-cost-meta { color: var(--ink-mid); margin-left: 6px; }
+
+  /* Pedestal */
+  #pd-head {
+    display: flex; align-items: baseline; gap: var(--s-3);
+    padding-bottom: var(--s-2);
+    border-bottom: 1px dashed var(--accent-gold);
+  }
+  .pd-title {
+    flex: 1; font-family: var(--font-display);
+    font-size: var(--fs-xl); letter-spacing: 0.06em;
+  }
+  #pd-body { padding-top: var(--s-3); }
+  #pd-slots-row {
+    display: flex; align-items: center; justify-content: center;
+    gap: var(--s-3); padding: var(--s-3) 0;
+  }
+  .pd-slot {
+    width: 110px; min-height: 110px;
+    background: var(--paper); border: 2px solid var(--accent-gold);
+    border-radius: var(--r-sm); padding: var(--s-2);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+  }
+  .pd-slot-empty { border-style: dashed; opacity: 0.7; }
+  .pd-slot-icon { font-size: 32px; line-height: 1; margin-bottom: 4px; }
+  .pd-slot-label {
+    font-family: var(--font-display); font-size: var(--fs-sm);
+    color: var(--ink); font-weight: 600;
+  }
+  .pd-slot-meta { font-size: var(--fs-xs); color: var(--ink-mid); }
+  .pd-plus, .pd-arrow-big {
+    font-family: var(--font-display); font-size: 32px;
+    color: var(--ink-mid);
+  }
+  #pd-output {
+    width: 140px; min-height: 110px;
+    background: var(--paper); border: 2px solid var(--accent-gold);
+    border-radius: var(--r-sm); padding: var(--s-2);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+  }
+  .pd-output-empty {
+    color: var(--ink-mid); font-style: italic; font-size: var(--fs-xs);
+  }
+  .pd-output-success { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .pd-icon-big { font-size: 36px; line-height: 1; }
+  .pd-out-name {
+    font-family: var(--font-display); font-size: var(--fs-md);
+    font-weight: 600; color: var(--ink);
+  }
+  .pd-out-meta {
+    font-size: var(--fs-xs); color: var(--ink-mid);
+    line-height: 1.3; margin-top: 2px;
+  }
+  #pd-press-btn {
+    display: block; margin: var(--s-2) auto var(--s-3);
+    padding: var(--s-2) var(--s-8);
+    background: var(--accent-gold); color: var(--paper);
+    border: 1px solid var(--ink); border-radius: var(--r-sm);
+    font-family: var(--font-display); font-size: var(--fs-md);
+    font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; cursor: pointer;
+    box-shadow: 0 2px 0 var(--ink);
+  }
+  #pd-press-btn:hover:not(:disabled) { background: var(--ink); transform: translateY(-1px); }
+  #pd-press-btn:disabled {
+    background: var(--paper-deep); color: var(--ink-light);
+    cursor: not-allowed; box-shadow: none;
+  }
+  .pd-section-title {
+    font-family: var(--font-display); font-size: var(--fs-sm);
+    letter-spacing: 0.10em; text-transform: uppercase;
+    color: var(--ink-mid); padding-top: var(--s-2);
+    border-top: 1px dashed var(--accent-gold); margin-bottom: var(--s-2);
+  }
+  #pd-ink-list { max-height: 220px; overflow-y: auto; }
+  .pd-ink {
+    display: flex; gap: var(--s-2); align-items: center;
+    width: 100%; padding: var(--s-1) var(--s-2); margin-bottom: 4px;
+    background: var(--paper); border: 1px solid var(--accent-gold);
+    border-radius: var(--r-sm); cursor: pointer;
+    font-family: var(--font-body); font-size: var(--fs-sm);
+    color: var(--ink); text-align: left;
+  }
+  .pd-ink:hover { background: var(--paper-warm); }
+  .pd-ink-active {
+    background: rgba(184, 165, 106, 0.25);
+    border-color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--ink);
+  }
+  .pd-icon { width: 18px; text-align: center; }
+  .pd-name { flex: 1; }
+  .pd-qty { color: var(--ink-mid); margin-right: 4px; }
+  .pd-arrow { color: var(--accent-green); font-weight: 600; }
+  .pd-empty { color: var(--ink-mid); font-style: italic; padding: var(--s-3); text-align: center; font-size: var(--fs-sm); }
+
+  /* ============================================================
+     Wayfinding Workshop — keystone status panel.
+     Shares the spellbook/pedestal frame; adds its own header bar,
+     section pills, and 4-up action grid.
+     ============================================================ */
+  #cartography-workshop {
+    background: var(--paper);
+    border: var(--bw-frame) solid transparent;
+    border-image: var(--frame-ink) 18 / var(--bw-frame) / 0 stretch;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    padding: var(--s-3);
+    width: 720px; max-width: 94vw; max-height: 86vh;
+    color: var(--ink);
+    display: flex; flex-direction: column;
+    font-family: var(--font-body);
+  }
+  #cw-head {
+    display: flex; align-items: baseline; gap: var(--s-3);
+    padding-bottom: var(--s-2);
+    border-bottom: 1px dashed var(--accent-gold);
+  }
+  .cw-title {
+    flex: 1; font-family: var(--font-display);
+    font-size: var(--fs-xl); letter-spacing: 0.06em;
+  }
+  .cw-meta { font-size: var(--fs-sm); color: var(--ink-mid); }
+  .cw-meta #cw-lv { color: var(--ink); font-weight: 600; }
+  #cw-close {
+    width: 28px; height: 28px; background: transparent; border: 0;
+    cursor: pointer; font-family: var(--font-display);
+    font-size: 22px; line-height: 1; color: var(--ink-mid);
+  }
+  #cw-close:hover { color: var(--ink); }
+  .cw-bar {
+    width: 100%; height: 8px; background: var(--paper-deep);
+    border: 1px solid var(--accent-gold); border-radius: var(--r-sm);
+    margin-top: var(--s-2); overflow: hidden;
+  }
+  .cw-bar-fill {
+    height: 100%; width: 0%;
+    background: var(--accent-green);
+    transition: width var(--t-med) ease;
+  }
+  .cw-milestone {
+    margin-top: 6px; font-size: var(--fs-xs); color: var(--ink-mid);
+    font-style: italic; line-height: 1.4;
+  }
+  #cw-body {
+    flex: 1; overflow-y: auto; min-height: 0;
+    padding-top: var(--s-3);
+    display: flex; flex-direction: column; gap: var(--s-3);
+  }
+  .cw-section { display: flex; flex-direction: column; gap: 4px; }
+  .cw-section-title {
+    font-family: var(--font-display);
+    font-size: var(--fs-xs); letter-spacing: 0.10em;
+    text-transform: uppercase; color: var(--ink-mid);
+  }
+  .cw-pill-list {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    min-height: 28px;
+  }
+  .cw-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 8px;
+    background: var(--paper-deep);
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    font-size: var(--fs-sm);
+  }
+  .cw-pill-icon { font-size: 14px; line-height: 1; }
+  .cw-pill-name { color: var(--ink); }
+  .cw-pill-qty  { color: var(--ink-mid); font-variant-numeric: tabular-nums; }
+  .cw-pill-empty { opacity: 0.55; border-style: dashed; }
+  /* Materials section — grouped by essence. Each group is its own
+     subsection with a small label + pill row. Hints appear below. */
+  .cw-mat-group { margin-bottom: 6px; }
+  .cw-mat-group-title {
+    font-family: var(--font-display);
+    font-size: 10px; letter-spacing: 0.10em; text-transform: uppercase;
+    color: var(--ink-mid);
+    margin-bottom: 3px;
+  }
+  .cw-mat-hints {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--accent-gold);
+    display: flex; flex-direction: column; gap: 3px;
+    font-size: var(--fs-xs);
+  }
+  .cw-hint {
+    font-style: italic;
+    line-height: 1.4;
+  }
+  .cw-hint-good { color: var(--accent-green); }
+  .cw-hint-warn { color: var(--accent-stamina); }
+  /* Shopping-list highlight — pills the player needs for the targeted
+     recipe gain a tick mark + green border. */
+  .cw-pill-needed {
+    border-color: var(--accent-green) !important;
+    box-shadow: 0 0 6px rgba(122, 153, 86, 0.25);
+  }
+  .cw-pill-tick {
+    color: var(--accent-green);
+    font-weight: 700;
+    margin-right: 2px;
+  }
+  .cw-empty {
+    color: var(--ink-mid); font-style: italic; font-size: var(--fs-xs);
+    padding: 4px 0;
+  }
+  #cw-actions {
+    display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-2);
+    margin-top: var(--s-2);
+  }
+  .cw-act {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+    padding: var(--s-2) var(--s-3);
+    background: var(--paper-deep);
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    cursor: pointer; text-align: left;
+    color: var(--ink); font-family: var(--font-body);
+    transition: background var(--t-fast) ease, transform var(--t-fast) ease;
+  }
+  .cw-act:hover {
+    background: var(--paper-warm);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 0 var(--accent-gold);
+  }
+  .cw-act-glyph {
+    font-size: 22px; line-height: 1; color: var(--accent-gold);
+  }
+  .cw-act-label {
+    font-family: var(--font-display); font-weight: 600;
+    font-size: var(--fs-md); letter-spacing: 0.04em;
+  }
+  .cw-act-sub { font-size: var(--fs-xs); color: var(--ink-mid); }
+  .cw-sketches {
+    margin-top: var(--s-2); padding-top: var(--s-2);
+    border-top: 1px dashed var(--accent-gold);
+    font-size: var(--fs-xs); color: var(--ink-mid); font-style: italic;
+  }
+  .cw-atlas-link {
+    margin-left: 8px;
+    background: transparent;
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    padding: 2px 8px;
+    font-family: var(--font-display); font-size: var(--fs-xs);
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--ink-mid); cursor: pointer;
+    transition: background var(--t-fast) ease;
+  }
+  .cw-atlas-link:hover { background: var(--paper-deep); color: var(--ink); }
+
+  /* ============================================================
+     Living Atlas — region overview modal.
+     ============================================================ */
+  #atlas-map {
+    background: var(--paper);
+    border: var(--bw-frame) solid transparent;
+    border-image: var(--frame-ink) 18 / var(--bw-frame) / 0 stretch;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    padding: var(--s-3);
+    width: 820px; max-width: 94vw; max-height: 86vh;
+    color: var(--ink);
+    display: flex; flex-direction: column;
+    font-family: var(--font-body);
+  }
+  #am-head {
+    display: flex; align-items: baseline; gap: var(--s-3);
+    padding-bottom: var(--s-2);
+    border-bottom: 1px dashed var(--accent-gold);
+  }
+  .am-title {
+    font-family: var(--font-display);
+    font-size: var(--fs-xl); letter-spacing: 0.06em;
+  }
+  .am-meta { flex: 1; font-size: var(--fs-sm); color: var(--ink-mid); font-style: italic; }
+  #am-close {
+    width: 28px; height: 28px; background: transparent; border: 0;
+    cursor: pointer; font-family: var(--font-display);
+    font-size: 22px; line-height: 1; color: var(--ink-mid);
+  }
+  #am-close:hover { color: var(--ink); }
+  #am-grid {
+    flex: 1; overflow-y: auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3);
+    padding: var(--s-3) 0;
+    min-height: 0;
+  }
+  .am-card {
+    background: var(--paper-deep);
+    border: 1px solid var(--accent-gold); border-radius: var(--r-sm);
+    padding: var(--s-3);
+    display: flex; flex-direction: column; gap: var(--s-2);
+  }
+  .am-card-unlocked {
+    border-color: var(--accent-green);
+    box-shadow: 0 0 12px rgba(122, 153, 86, 0.18);
+  }
+  .am-card-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .am-card-name {
+    font-family: var(--font-display); font-size: var(--fs-md);
+    font-weight: 600; color: var(--ink); letter-spacing: 0.04em;
+  }
+  .am-card-ledger {
+    font-size: var(--fs-xs); color: var(--ink-mid);
+    font-variant-numeric: tabular-nums;
+  }
+  .am-bar {
+    width: 100%; height: 6px;
+    background: var(--paper); border: 1px solid var(--accent-gold);
+    border-radius: var(--r-sm); overflow: hidden;
+  }
+  .am-bar-fill {
+    height: 100%; background: var(--accent-green);
+    transition: width var(--t-med) ease;
+  }
+  .am-lore {
+    font-size: var(--fs-sm); color: var(--ink-mid);
+    font-style: italic; line-height: 1.4;
+  }
+  .am-biome {
+    font-size: var(--fs-xs); color: var(--ink);
+    padding: var(--s-2);
+    background: var(--paper);
+    border: 1px dashed var(--accent-gold); border-radius: var(--r-sm);
+    line-height: 1.4;
+  }
+  .am-biome-icon { color: var(--accent-gold); margin-right: 4px; font-size: 14px; }
+  .am-biome-name { font-weight: 600; }
+  .am-biome-desc { color: var(--ink-mid); font-style: italic; }
+  .am-locked {
+    text-align: center; padding: var(--s-2);
+    font-size: var(--fs-xs); color: var(--ink-mid);
+    font-style: italic;
+    border: 1px dashed var(--ink-light); border-radius: var(--r-sm);
+  }
+  .am-walk {
+    display: block; width: 100%;
+    padding: var(--s-2);
+    background: var(--accent-gold); color: var(--paper);
+    border: 1px solid var(--ink); border-radius: var(--r-sm);
+    font-family: var(--font-display); font-size: var(--fs-sm);
+    font-weight: 600; letter-spacing: 0.06em;
+    cursor: pointer; box-shadow: 0 2px 0 var(--ink);
+  }
+  .am-walk:hover { background: var(--ink); transform: translateY(-1px); }
+  .am-tip {
+    margin-top: var(--s-2); padding-top: var(--s-2);
+    border-top: 1px dashed var(--accent-gold);
+    font-size: var(--fs-xs); color: var(--ink-mid);
+    font-style: italic; text-align: center;
+  }
+
+  /* ============================================================
+     Materials Browser — full catalog modal.
+     ============================================================ */
+  #materials-browser {
+    background: var(--paper);
+    border: var(--bw-frame) solid transparent;
+    border-image: var(--frame-ink) 18 / var(--bw-frame) / 0 stretch;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    padding: var(--s-3);
+    width: 920px; max-width: 96vw; max-height: 88vh;
+    color: var(--ink);
+    display: flex; flex-direction: column;
+    font-family: var(--font-body);
+  }
+  #mb-head {
+    display: flex; align-items: baseline; gap: var(--s-3);
+    padding-bottom: var(--s-2);
+    border-bottom: 1px dashed var(--accent-gold);
+  }
+  .mb-title {
+    flex: 1; font-family: var(--font-display);
+    font-size: var(--fs-xl); letter-spacing: 0.06em;
+  }
+  #mb-close {
+    width: 28px; height: 28px; background: transparent; border: 0;
+    cursor: pointer; font-family: var(--font-display);
+    font-size: 22px; line-height: 1; color: var(--ink-mid);
+  }
+  #mb-close:hover { color: var(--ink); }
+  #mb-tabs {
+    display: flex; gap: 4px;
+    margin-top: var(--s-2);
+    padding-bottom: var(--s-2);
+    border-bottom: 1px dashed var(--accent-gold);
+  }
+  .mb-tab {
+    padding: 4px 12px;
+    background: var(--paper-deep);
+    border: 1px solid var(--accent-gold); border-radius: var(--r-sm);
+    font-family: var(--font-display); font-size: var(--fs-xs);
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--ink-mid); cursor: pointer;
+  }
+  .mb-tab:hover { color: var(--ink); }
+  .mb-tab-active {
+    background: var(--accent-gold); color: var(--paper); border-color: var(--ink);
+  }
+  #mb-body {
+    flex: 1; overflow-y: auto; min-height: 0;
+    padding-top: var(--s-3);
+  }
+  .mb-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--s-3);
+  }
+  @media (max-width: 720px) { .mb-grid { grid-template-columns: 1fr; } }
+  .mb-card {
+    background: var(--paper-deep);
+    border: 1px solid var(--accent-gold); border-radius: var(--r-sm);
+    padding: var(--s-2);
+    display: flex; flex-direction: column; gap: 6px;
+    font-size: var(--fs-sm);
+  }
+  .mb-card-empty { opacity: 0.55; border-style: dashed; }
+  .mb-card-recipe { gap: 4px; }
+  .mb-card-head {
+    display: flex; align-items: baseline; gap: 6px;
+  }
+  .mb-card-icon { font-size: 18px; line-height: 1; }
+  .mb-card-name {
+    flex: 1; font-family: var(--font-display);
+    font-weight: 600; color: var(--ink);
+    font-size: var(--fs-md); letter-spacing: 0.04em;
+  }
+  .mb-card-qty { font-size: var(--fs-xs); color: var(--ink-mid); font-variant-numeric: tabular-nums; }
+  .mb-card-meta { font-size: var(--fs-xs); color: var(--ink-mid); font-style: italic; }
+  .mb-card-sources, .mb-card-usedin, .mb-card-need {
+    font-size: var(--fs-xs); color: var(--ink);
+  }
+  .mb-card-sources b, .mb-card-usedin b, .mb-card-need b {
+    color: var(--ink-mid); font-weight: 600;
+    font-family: var(--font-display); letter-spacing: 0.06em;
+    text-transform: uppercase; font-size: 9px;
+  }
+  .mb-card-sources ul, .mb-card-need ul {
+    margin: 2px 0 0; padding-left: 14px; line-height: 1.4;
+  }
+  .mb-recipe-link {
+    color: var(--accent-green); cursor: pointer;
+    text-decoration: none; border-bottom: 1px dashed var(--accent-green);
+  }
+  .mb-recipe-link:hover { color: var(--ink); border-color: var(--ink); }
+  .mb-mix-good { font-size: var(--fs-xs); color: var(--accent-green); }
+  .mb-mix-warn { font-size: var(--fs-xs); color: var(--accent-stamina); }
+  .mb-badge {
+    padding: 2px 6px; border-radius: 3px; font-size: 10px;
+    font-family: var(--font-display); letter-spacing: 0.04em;
+  }
+  .mb-badge-good   { background: var(--accent-green); color: var(--paper); }
+  .mb-badge-warn   { background: var(--accent-stamina); color: var(--ink); }
+  .mb-badge-locked { background: var(--paper); color: var(--ink-mid); border: 1px dashed var(--ink-mid); }
+  .mb-card-jump { margin-top: 4px; font-size: var(--fs-xs); }
+  .mb-empty { color: var(--ink-mid); font-style: italic; padding: var(--s-3); text-align: center; }
+  .mb-dim { color: var(--ink-mid); }
+
+  /* ============================================================
+     Inscribing Table — Phase A polish using existing design tokens.
+     Cohesive with World Map + Field Journal.
+     ============================================================ */
+  #inscribing-table-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(20, 14, 10, 0.65);
+    display: none; align-items: center; justify-content: center;
+    z-index: 200;
+  }
+  #inscribing-table-backdrop.open { display: flex; }
+  #inscribing-table {
+    background: var(--paper);
+    border: var(--bw-frame) solid transparent;
+    border-image: var(--frame-ink) 18 / var(--bw-frame) / 0 stretch;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    padding: var(--s-3);
+    width: 1040px; max-width: 96vw; max-height: 90vh;
+    color: var(--ink);
+    display: flex; flex-direction: column;
+    font-family: var(--font-body);
+  }
+
+  /* Header */
+  #it-head {
+    display: flex; align-items: baseline; gap: var(--s-3);
+    padding-bottom: var(--s-2);
+    border-bottom: 1px dashed var(--accent-gold);
+  }
+  .it-title {
+    font-family: var(--font-display);
+    font-size: var(--fs-xl);
+    letter-spacing: 0.06em;
+    color: var(--ink);
+  }
+  .it-hint {
+    font-size: var(--fs-sm);
+    color: var(--ink-mid);
+    flex: 1;
+    font-style: italic;
+  }
+  #it-close {
+    width: 28px; height: 28px;
+    background: transparent; border: 0; cursor: pointer;
+    font-family: var(--font-display);
+    font-size: 22px; line-height: 1;
+    color: var(--ink-mid);
+  }
+  #it-close:hover { color: var(--ink); }
+
+  /* Three-column body */
+  #it-body {
+    display: grid;
+    grid-template-columns: 220px 1fr 260px;
+    gap: var(--s-3);
+    padding-top: var(--s-3);
+    flex: 1; min-height: 0;
+  }
+  .it-panel {
+    background: var(--paper-deep);
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-md);
+    padding: var(--s-2);
+    overflow-y: auto;
+    min-height: 0;
+  }
+  .it-panel-title {
+    font-family: var(--font-display);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--ink-mid);
+    margin-bottom: var(--s-2);
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--accent-gold);
+  }
+
+  /* LEFT: ingredient list */
+  .it-ingredient {
+    display: flex; gap: var(--s-2); align-items: center;
+    width: 100%;
+    padding: var(--s-1) var(--s-2);
+    margin-bottom: 4px;
+    background: var(--paper);
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: var(--fs-sm);
+    color: var(--ink);
+    text-align: left;
+    transition: background var(--t-fast) ease, transform var(--t-fast) ease;
+  }
+  .it-ingredient:hover { background: var(--paper-warm); transform: translateX(2px); }
+  .it-ingredient.disabled { opacity: 0.4; cursor: not-allowed; }
+  .it-ingredient.disabled:hover { transform: none; background: var(--paper); }
+  .it-icon { width: 18px; text-align: center; font-size: 16px; }
+  .it-name { flex: 1; }
+  .it-qty { color: var(--ink-mid); font-variant-numeric: tabular-nums; }
+  .it-empty {
+    color: var(--ink-mid); font-style: italic;
+    padding: var(--s-3) var(--s-2); text-align: center; font-size: var(--fs-sm);
+  }
+
+  /* CENTER: grid → arrow → ink well, button below */
+  .it-flow {
+    display: flex; align-items: center; justify-content: center;
+    gap: var(--s-4);
+    padding: var(--s-4) 0;
+  }
+  #it-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 60px);
+    grid-template-rows: repeat(3, 60px);
+    gap: 4px;
+  }
+  .it-cell {
+    background: var(--paper);
+    border: 2px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    cursor: pointer;
+    user-select: none;
+    transition: background var(--t-fast) ease, border-color var(--t-fast) ease, transform var(--t-fast) ease;
+    box-shadow: inset 0 0 0 1px rgba(255, 250, 230, 0.4);
+  }
+  .it-cell:hover { background: var(--paper-warm); border-color: var(--ink-mid); transform: scale(1.04); }
+  .it-cell.it-cell-ghost {
+    background: var(--paper-deep);
+    color: var(--accent-gold);
+    opacity: 0.55;
+    border-style: dashed;
+  }
+  .it-cell.it-cell-ghost::after { content: attr(data-ghost); }
+  /* Vessel slot — sits between the grid and the arrow. Required for tier-3
+     inks; ignored otherwise. Empty slot is dashed; filled slot gets a
+     gold border + the vessel's icon. */
+  #it-vessel-slot {
+    width: 64px; min-height: 88px;
+    border: 2px dashed var(--accent-gold); border-radius: var(--r-sm);
+    background: var(--paper);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer;
+    text-align: center;
+    transition: background var(--t-fast) ease, border-style var(--t-fast) ease;
+  }
+  #it-vessel-slot:hover { background: var(--paper-warm); }
+  #it-vessel-slot.it-vessel-filled {
+    border-style: solid;
+    border-color: var(--accent-green);
+    box-shadow: 0 0 8px rgba(122, 153, 86, 0.18);
+  }
+  #it-vessel-icon {
+    font-size: 26px; line-height: 1; color: var(--ink-mid);
+  }
+  #it-vessel-slot.it-vessel-filled #it-vessel-icon { color: var(--ink); }
+  #it-vessel-label {
+    font-size: var(--fs-xs); color: var(--ink-mid);
+    letter-spacing: 0.04em; margin-top: 4px;
+    font-family: var(--font-display);
+  }
+  #it-arrow {
+    font-family: var(--font-display);
+    font-size: 36px;
+    color: var(--ink-mid);
+    line-height: 1;
+    text-shadow: 0 1px 0 rgba(255, 250, 230, 0.4);
+  }
+  #it-output {
+    width: 96px;
+    text-align: center;
+    border: 2px dashed var(--accent-gold);
+    border-radius: var(--r-sm);
+    padding: var(--s-3) var(--s-2);
+    background: var(--paper);
+    min-height: 88px;
+    display: flex; flex-direction: column; justify-content: center; gap: 4px;
+    transition: background var(--t-med) ease, border-color var(--t-med) ease;
+  }
+  #it-output-bottle {
+    font-size: 30px;
+    line-height: 1;
+    min-height: 30px;
+    color: var(--ink-mid);
+  }
+  #it-output-label {
+    font-family: var(--font-body);
+    font-size: var(--fs-xs);
+    color: var(--ink-mid);
+    letter-spacing: 0.06em;
+  }
+  #it-output.it-output-success {
+    border-style: solid;
+    border-color: var(--accent-green);
+    background: rgba(122, 153, 86, 0.16);
+    box-shadow: 0 0 16px rgba(122, 153, 86, 0.35);
+  }
+  #it-output.it-output-success #it-output-bottle { color: var(--accent-green); }
+  #it-output.it-output-success #it-output-label { color: var(--ink); font-weight: 600; }
+  #it-output.it-output-fail {
+    border-style: solid;
+    border-color: var(--ink-mid);
+    background: rgba(96, 80, 60, 0.12);
+  }
+  #it-output.it-output-wild {
+    border-style: solid;
+    border-color: var(--accent-gold);
+    background: rgba(184, 134, 55, 0.16);
+  }
+
+  /* Inscribe button — state-aware, illuminated style */
+  #it-inscribe-btn {
+    display: block;
+    margin: var(--s-3) auto 0;
+    padding: var(--s-2) var(--s-8);
+    background: var(--accent-gold);
+    color: var(--paper);
+    border: 1px solid var(--ink);
+    border-radius: var(--r-sm);
+    font-family: var(--font-display);
+    font-size: var(--fs-md);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    min-width: 240px;
+    box-shadow: 0 2px 0 var(--ink);
+    transition: background var(--t-fast) ease, transform var(--t-fast) ease;
+  }
+  #it-inscribe-btn:hover { background: var(--ink); transform: translateY(-1px); }
+  #it-inscribe-btn:active { transform: translateY(1px); box-shadow: 0 0 0 var(--ink); }
+  #it-inscribe-btn:disabled {
+    background: var(--paper-deep);
+    color: var(--ink-light);
+    cursor: not-allowed;
+    border-color: var(--accent-gold);
+    box-shadow: none;
+  }
+  #it-inscribe-btn.it-btn-known    { background: var(--accent-green); border-color: #4a6428; }
+  #it-inscribe-btn.it-btn-known:hover { background: #4a6428; }
+  #it-inscribe-btn.it-btn-unknown  { background: var(--accent-gold); border-color: #7a5722; }
+  #it-inscribe-btn.it-btn-unknown:hover { background: #7a5722; }
+
+  /* RIGHT: codex tabs */
+  #it-tabs { display: flex; gap: 2px; margin-bottom: var(--s-2); }
+  .it-tab {
+    flex: 1; padding: 6px 4px;
+    background: var(--paper-deep);
+    border: 1px solid var(--accent-gold);
+    border-bottom: 0;
+    border-radius: var(--r-sm) var(--r-sm) 0 0;
+    font-family: var(--font-display);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-mid);
+    cursor: pointer;
+  }
+  .it-tab:hover { background: var(--paper-warm); }
+  .it-tab-active {
+    background: var(--paper);
+    color: var(--ink);
+    border-bottom: 1px solid var(--paper);
+    margin-bottom: -1px;
+  }
+  #it-tab-body { padding-top: 4px; }
+
+  /* Codex rows */
+  .it-codex-row {
+    padding: var(--s-1) var(--s-2);
+    margin-bottom: 4px;
+    background: var(--paper);
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: var(--fs-sm);
+    color: var(--ink);
+    transition: background var(--t-fast) ease;
+  }
+  .it-codex-row:hover { background: var(--paper-warm); }
+  .it-codex-row.it-codex-unknown { opacity: 0.55; cursor: default; font-style: italic; }
+  .it-codex-row.it-codex-unknown:hover { background: var(--paper); }
+  .it-codex-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .it-codex-tag {
+    font-family: var(--font-body);
+    font-size: var(--fs-xs);
+    color: var(--ink-mid);
+    font-weight: 400;
+  }
+  .it-codex-meta {
+    color: var(--ink-mid);
+    font-size: var(--fs-xs);
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+
+  /* History rows — passive log */
+  .it-history-row {
+    padding: 4px 8px;
+    margin-bottom: 2px;
+    font-size: var(--fs-xs);
+    font-family: var(--font-mono);
+    border-left: 2px solid transparent;
+    color: var(--ink);
+  }
+  .it-history-row.it-history-success { border-left-color: var(--accent-green); }
+  .it-history-row.it-history-wild    { border-left-color: var(--accent-gold); color: var(--ink-mid); font-style: italic; }
+  .it-history-row.it-history-smudge  { border-left-color: var(--ink-light); color: var(--ink-mid); }
+  .it-history-time { color: var(--ink-light); margin-right: 6px; }
+
+  /* ---- Field Journal modal ---- */
+  #field-journal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 14, 10, 0.65);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+  }
+  #field-journal-backdrop.open { display: flex; }
+  #field-journal {
+    background: var(--paper);
+    border: var(--bw-frame) solid transparent;
+    border-image: var(--frame-ink) 18 / var(--bw-frame) / 0 stretch;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    padding: var(--s-3);
+    width: 720px;
+    max-width: 92vw;
+    max-height: 80vh;
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+  }
+  #fj-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s-4);
+    padding-bottom: var(--s-2);
+    border-bottom: 1px dashed var(--accent-gold);
+  }
+  .fj-title {
+    font-family: var(--font-display);
+    font-size: var(--fs-xl);
+    letter-spacing: 0.06em;
+    flex: 1;
+  }
+  .fj-meta { font-family: var(--font-body); font-size: var(--fs-sm); color: var(--ink-mid); }
+  .fj-meta span { color: var(--ink); font-weight: 600; }
+  #fj-close {
+    width: 28px; height: 28px;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-size: 22px;
+    line-height: 1;
+    color: var(--ink-mid);
+  }
+  #fj-close:hover { color: var(--ink); }
+  #fj-cat-summary {
+    display: flex; flex-wrap: wrap; gap: var(--s-2);
+    padding: var(--s-2) 0;
+    font-family: var(--font-body);
+    font-size: var(--fs-sm);
+    color: var(--ink-mid);
+  }
+  .fj-cat-pill {
+    background: var(--paper-deep);
+    border: 1px solid var(--accent-gold);
+    border-radius: 999px;
+    padding: 2px 10px;
+  }
+  #fj-body {
+    flex: 1;
+    overflow-y: auto;
+    padding-top: var(--s-2);
+  }
+  .fj-empty {
+    text-align: center;
+    color: var(--ink-mid);
+    padding: var(--s-6) var(--s-4);
+    font-family: var(--font-body);
+  }
+  .fj-empty kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    background: var(--paper-deep);
+    border: 1px solid var(--accent-gold);
+    border-radius: 3px;
+    font-family: var(--font-display);
     font-size: 12px;
   }
-  .section { margin-bottom: 10px; }
-  .section h1 {
-    font-size: 11px; letter-spacing: 1px;
-    color: var(--gold);
-    margin: 0 0 4px 0;
-    text-transform: uppercase;
-    border-bottom: 1px solid var(--border);
+  .fj-section { margin-bottom: var(--s-4); }
+  .fj-section-title {
+    font-family: var(--font-display);
+    font-size: var(--fs-md);
+    color: var(--ink);
+    letter-spacing: 0.06em;
+    margin: 0 0 var(--s-2) 0;
     padding-bottom: 2px;
+    border-bottom: 1px dashed var(--accent-gold);
   }
-  .stat-row {
-    display: flex; justify-content: space-between; align-items: center;
-    margin: 3px 0;
+  .fj-count { color: var(--ink-mid); font-weight: 400; font-size: var(--fs-sm); }
+  .fj-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: var(--s-2);
   }
-  .stat-label { color: var(--dim); }
-  .stat-value { color: var(--text); }
-  .bar {
-    height: 10px; background: #0a0a0e;
-    border: 1px solid var(--border);
-    margin-top: 2px; overflow: hidden;
+  .fj-card {
+    background: var(--paper-deep);
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    padding: var(--s-2);
   }
-  .bar.tiny { height: 5px; }
-  .bar-fill { height: 100%; transition: width 180ms ease-out; }
-  .bar-fill.hp { background: var(--hp); }
-  .bar-fill.xp { background: var(--xp); }
-  #skills {
-    margin-top: 6px;
+  .fj-card-name {
+    font-family: var(--font-display);
+    font-size: var(--fs-sm);
+    color: var(--ink);
+  }
+  .fj-card-meta {
+    font-family: var(--font-body);
+    font-size: var(--fs-xs);
+    color: var(--ink-mid);
+    margin-top: 2px;
+  }
+  .fj-tip {
+    margin-top: var(--s-2);
+    padding-top: var(--s-2);
+    border-top: 1px dashed var(--accent-gold);
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: var(--fs-sm);
+    color: var(--ink-mid);
+  }
+  .fj-tip kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    background: var(--paper-deep);
+    border: 1px solid var(--accent-gold);
+    border-radius: 3px;
+    font-family: var(--font-display);
+    font-size: 12px;
+  }
+  .fj-progress {
+    margin-top: var(--s-2);
+    padding-top: var(--s-2);
+    border-top: 1px dashed var(--accent-gold);
+  }
+  .fj-progress-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 4px;
+  }
+  .fj-progress-label {
+    font-family: var(--font-body);
+    font-size: var(--fs-sm);
+    color: var(--ink-mid);
+    letter-spacing: 0.04em;
+  }
+  .fj-progress-val {
+    font-family: var(--font-display);
+    font-size: var(--fs-md);
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .fj-progress-next {
+    font-family: var(--font-body);
+    font-size: var(--fs-xs);
+    color: var(--accent-green);
+    font-style: italic;
+  }
+  #three { width: 100%; height: 100%; display: block; cursor: pointer; }
+  #title {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.30em;
+    color: rgba(232, 220, 192, 0.55);
+    text-shadow: 0 1px 0 rgba(0,0,0,0.6);
+    pointer-events: none;
+    /* Auto-fade after 6s — watermark has zero gameplay function and
+       was clogging the top-center. Player wants the world, not a label. */
+    animation: title-fade 6s ease-in 6s forwards;
+  }
+  @keyframes title-fade {
+    from { opacity: 1; }
+    to   { opacity: 0; pointer-events: none; visibility: hidden; }
+  }
+  /* FPS counter — dev info. Hidden by default; show with ?dev URL param
+     or by toggling body.dev-mode in DevTools. Keeps the in-play screen
+     clean for normal players. */
+  #fps {
+    position: absolute; top: var(--s-2); right: var(--s-3);
+    font-size: var(--fs-sm);
+    font-family: var(--font-body);
+    color: #c8b894;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.7);
+    pointer-events: none;
+    display: none;
+  }
+  body.dev-mode #fps { display: block; }
+  #floaters { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  /* Cross-nav — collapsed into a hamburger button at the top-right.
+     Click toggles the link strip open/closed. Clean play surface by
+     default; one click for the dev who wants the codex/editor. */
+  #lab-nav {
+    position: absolute; top: 12px; right: var(--s-3);
+    z-index: 5;
+    display: flex; flex-direction: column; align-items: flex-end;
+    gap: 6px;
+  }
+  #lab-nav-toggle {
+    width: 32px; height: 32px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(20, 14, 10, 0.55);
+    color: #c8b894;
+    font-size: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    line-height: 30px;
+    text-align: center;
+    padding: 0;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+  #lab-nav-toggle:hover { background: rgba(40, 28, 20, 0.85); color: var(--accent-gold, #d4af37); }
+  #lab-links {
+    display: none;
+    flex-direction: column; gap: 4px;
+  }
+  #lab-nav.open #lab-links { display: flex; }
+  #lab-links a {
+    color: #c8b894;
+    background: rgba(20, 14, 10, 0.85);
+    padding: 4px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 3px;
+    font-family: var(--font-body);
+    font-size: var(--fs-sm);
+    text-decoration: none;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.7);
+    text-align: right;
+    min-width: 80px;
+    transition: background 0.12s ease;
+  }
+  #lab-links a:hover {
+    background: rgba(40, 28, 20, 0.95);
+    color: var(--accent-gold, #d4af37);
+  }
+
+  /* ---- right-click context menu — torn paper note ---- */
+  #ctx-menu {
+    position: fixed;
+    display: none;
+    background: var(--bg-modal);
+    border: var(--bw-2) solid var(--border-strong);
+    font-family: var(--font-body);
+    color: var(--text);
+    font-size: var(--fs-md);
+    padding: var(--s-2) 0;
+    min-width: 170px;
+    z-index: 100;
+    user-select: none;
+    box-shadow: 3px 5px 0 rgba(58,44,32,0.20), 0 0 0 2px var(--paper);
+  }
+  #ctx-menu .ctx-title {
+    color: var(--text-mid);
+    padding: var(--s-1) var(--s-3);
+    border-bottom: 1px dashed var(--border);
+    font-family: var(--font-heading);
+    font-size: var(--fs-sm);
+    letter-spacing: 1.5px;
+  }
+  #ctx-menu .ctx-item {
+    padding: var(--s-1) var(--s-3);
+    cursor: pointer;
+    color: var(--text);
+    font-size: var(--fs-md);
+    line-height: 1.3;
+  }
+  #ctx-menu .ctx-item:hover { background: var(--wash-cream); color: var(--hp); }
+  #ctx-menu .ctx-item .verb   { color: var(--hp); font-weight: 600; }
+  #ctx-menu .ctx-item .target { color: var(--text-mid); font-size: var(--fs-sm); }
+
+  /* ---- combat target card — red wash for danger affordance ---- */
+  #combat-target {
+    background: var(--wash-red);
+    border: var(--bw-1) solid var(--border);
+    padding: var(--s-2);
+    font-size: var(--fs-sm);
+    color: var(--text);
+    border-radius: var(--r-sm);
+  }
+  #combat-target.ct-empty {
+    color: var(--text-dim);
+    text-align: center;
+    font-style: italic;
+  }
+  #combat-target .ct-name {
+    color: var(--hp);
+    margin-bottom: var(--s-1);
+    font-family: var(--font-heading);
+    font-size: var(--fs-md);
+  }
+  #combat-target .ct-hp-row {
+    display: flex; justify-content: space-between;
+    font-size: var(--fs-sm);
+    color: var(--text-mid);
+  }
+
+  /* ---- combat style buttons — parchment tabs ---- */
+  #combat-style {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 3px 8px;
+    gap: var(--s-1);
+    margin-top: var(--s-2);
   }
-  #skills .sk {
-    font-size: 10px;
-    color: var(--dim);
+  .cs-btn {
+    background: var(--paper);
+    color: var(--text-mid);
+    border: var(--bw-1) solid var(--border);
+    padding: var(--s-1) var(--s-2);
+    font-family: var(--font-heading);
+    font-size: var(--fs-sm);
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    transition: all var(--t-fast) var(--ease);
   }
-  #skills .sk .row {
-    display: flex; justify-content: space-between;
+  .cs-btn:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+    background: var(--wash-cream);
   }
-  #skills .sk .lv { color: var(--text); }
+  .cs-btn.cs-active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--border-strong);
+  }
 
+  /* ---- hover tooltip — small label near the cursor over a tile ---- */
+  #hover-tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: rgba(28, 18, 14, 0.78);
+    color: #ffe6b0;
+    border: 1px solid rgba(255, 220, 170, 0.4);
+    border-radius: var(--r-sm);
+    padding: 2px 7px;
+    font-family: var(--font-hand);
+    font-size: var(--fs-sm);
+    line-height: 1.2;
+    z-index: 92;
+    opacity: 0;
+    transition: opacity 100ms ease;
+    white-space: nowrap;
+    transform: translate(12px, -8px);
+  }
+  #hover-tooltip.show { opacity: 0.96; }
+
+  /* Ability hover tooltip — appears above the skillbar slot the cursor
+     is on. Multi-line rich content (name, kind/req, description, cost,
+     cooldown). Distinct from the tile #hover-tooltip so the two don't
+     collide. */
+  #sb-tip {
+    position: fixed;
+    pointer-events: none;
+    background: rgba(20, 14, 10, 0.96);
+    color: #ffe6b0;
+    border: 1px solid rgba(255, 220, 170, 0.45);
+    border-radius: var(--r-sm);
+    padding: 8px 10px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    line-height: 1.42;
+    z-index: 95;
+    opacity: 0;
+    transition: opacity 100ms ease;
+    max-width: 280px;
+    transform: translate(-50%, -100%);
+    box-shadow: 0 6px 22px rgba(0,0,0,0.45);
+  }
+  #sb-tip.show { opacity: 0.97; }
+  #sb-tip .sbt-name { font-family: var(--font-display); font-size: 14px; color: #fff3cf; letter-spacing: 0.04em; }
+  #sb-tip .sbt-tag  { font-size: 10px; opacity: 0.6; letter-spacing: 0.06em; text-transform: uppercase; margin: 1px 0 5px; }
+  #sb-tip .sbt-desc { color: #f0d8a8; }
+  #sb-tip .sbt-cost { margin-top: 6px; font-family: var(--font-mono, ui-monospace, monospace); font-size: 11px; opacity: 0.85; }
+  #sb-tip .sbt-cd   { margin-top: 2px; font-family: var(--font-mono, ui-monospace, monospace); font-size: 11px; opacity: 0.7; }
+  #sb-tip .sbt-locked { color: #c98080; margin-top: 4px; }
+
+  /* ---- hurt vignette ---- */
+  #hurt-vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 88;
+    background: radial-gradient(ellipse at center,
+      rgba(193, 56, 51, 0) 50%,
+      rgba(193, 56, 51, 0.55) 100%);
+    opacity: 0;
+    transition: opacity 220ms ease-out;
+  }
+  #hurt-vignette.show { opacity: var(--vignette-strength, 0.85); }
+
+  /* ---- minimap (top-right) ---- */
+  /* B: Minimap — 160×160, top-right per wireframe spec */
+  #minimap {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    width: 160px; height: 160px;
+    background: rgba(232, 220, 192, 0.95);
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-md);
+    pointer-events: none;
+    z-index: 87;
+    image-rendering: pixelated;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+  }
+
+  /* ---- boss HP bar (top center) ---- */
+  #boss-bar {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-6px);
+    width: 360px;
+    padding: 6px 10px 8px;
+    background: rgba(28, 18, 14, 0.65);
+    border: 1px solid rgba(255, 220, 170, 0.4);
+    border-radius: var(--r-md);
+    color: #ffe6b0;
+    font-family: var(--font-display);
+    pointer-events: none;
+    z-index: 90;
+    opacity: 0;
+    transition: opacity 200ms ease, transform 200ms ease;
+    box-shadow: 0 0 14px rgba(0, 0, 0, 0.4);
+  }
+  #boss-bar.boss-bar-show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  #boss-bar .boss-bar-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+  }
+  #boss-bar .boss-bar-name {
+    font-size: 16px;
+    letter-spacing: 0.06em;
+    text-shadow: 0 1px 0 rgba(0,0,0,0.7);
+  }
+  #boss-bar .boss-bar-num {
+    font-size: 12px;
+    color: rgba(255, 220, 170, 0.7);
+    font-variant-numeric: tabular-nums;
+  }
+  #boss-bar .boss-bar-track {
+    height: 10px;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 220, 170, 0.5);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  #boss-bar .boss-bar-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(180deg, #d8412e, #5a1e1a);
+    transition: width 120ms linear;
+  }
+
+  /* ---- boss intro banner ---- */
+  #boss-banner {
+    position: absolute;
+    top: 24%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    padding: 10px 28px 14px;
+    text-align: center;
+    color: #fff2c0;
+    background: linear-gradient(180deg,
+      rgba(58, 22, 22, 0) 0%,
+      rgba(58, 22, 22, 0.55) 30%,
+      rgba(58, 22, 22, 0.55) 70%,
+      rgba(58, 22, 22, 0) 100%);
+    border-top:    1px solid rgba(255, 230, 170, 0.55);
+    border-bottom: 1px solid rgba(255, 230, 170, 0.55);
+    pointer-events: none;
+    z-index: 95;
+    opacity: 0;
+    transition: opacity 200ms ease, transform 200ms ease;
+  }
+  #boss-banner.boss-banner-show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  #boss-banner .boss-banner-name {
+    font-family: var(--font-display);
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-shadow:
+      0 2px 0 rgba(0,0,0,0.6),
+      0 0 14px rgba(255, 80, 60, 0.55);
+  }
+  #boss-banner .boss-banner-sub {
+    font-family: var(--font-hand);
+    font-size: 14px;
+    font-style: italic;
+    color: rgba(255, 230, 170, 0.85);
+    margin-top: 2px;
+    letter-spacing: 0.04em;
+  }
+
+  /* ---- controls hint overlay (bottom-RIGHT now; bottom-left is the log) ---- */
+  #hints {
+    position: absolute;
+    right: 14px;
+    bottom: 110px;
+    width: 220px;
+    background: rgba(248, 240, 220, 0.92);
+    border: var(--bw-1) solid var(--border-strong);
+    border-radius: var(--r-md);
+    padding: 8px 10px 6px;
+    font-family: var(--font-hand);
+    font-size: var(--fs-sm);
+    color: var(--text);
+    box-shadow: var(--shadow-paper);
+    z-index: 80;
+    transform: translateY(8px);
+    opacity: 0;
+    transition: opacity 200ms ease, transform 200ms ease;
+    pointer-events: none;
+  }
+  #hints.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  #hints .hints-title {
+    font-family: var(--font-display);
+    font-size: var(--fs-md);
+    margin-bottom: 4px;
+    border-bottom: 1px dashed var(--border);
+    padding-bottom: 3px;
+  }
+  #hints .hints-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 2px 0;
+  }
+  #hints .hints-tip {
+    color: var(--text-dim);
+    font-style: italic;
+    margin-top: 4px;
+    border-top: 1px dashed var(--border);
+    padding-top: 4px;
+  }
+  #hints kbd {
+    display: inline-block;
+    min-width: 16px;
+    padding: 1px 5px;
+    background: var(--paper);
+    border: var(--bw-1) solid var(--border);
+    border-radius: 3px;
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.1;
+    box-shadow: 0 1px 0 var(--border);
+  }
+  #hints-close {
+    position: absolute;
+    top: 4px; right: 6px;
+    width: 18px; height: 18px;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-size: 14px;
+    line-height: 1;
+    color: var(--text-dim);
+    padding: 0;
+  }
+  #hints-close:hover { color: var(--text); }
+  #hints-show {
+    position: absolute;
+    left: 14px;
+    bottom: 14px;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: rgba(248, 240, 220, 0.9);
+    border: var(--bw-1) solid var(--border-strong);
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 14px;
+    cursor: pointer;
+    z-index: 80;
+    display: none;
+    box-shadow: var(--shadow-paper);
+  }
+  #hints-show.open { display: block; }
+
+  /* ============================================================
+     HUD WIREFRAME — Layout & Spec (matches docs/ui-refs/hud-wireframe.png)
+     Base: 1280×800, 24px gutters, 8px grid, 16px panel padding.
+     ============================================================ */
+
+  /* A: Player bars — top-left, 240×64 (+ small icon row beneath) */
+  #player-bars {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    width: 240px;
+    padding: 8px;
+    background: var(--paper);
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-md);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+    font-family: var(--font-body);
+    color: var(--ink);
+    z-index: 80;
+  }
+  #player-bars .pb-row {
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 4px;
+  }
+  #player-bars .pb-row:last-of-type { margin-bottom: 0; }
+  #player-bars .pb-icon {
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--r-sm);
+    background: var(--paper-deep);
+    border: 1px solid var(--accent-gold);
+    font-size: 14px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  #player-bars .pb-icon.hp-icon  { color: var(--accent-red); }
+  #player-bars .pb-icon.sta-icon { color: var(--accent-stamina); }
+  #player-bars .pb-track {
+    position: relative;
+    flex: 1;
+    height: 18px;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid var(--accent-gold);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  #player-bars .pb-fill {
+    position: absolute; top: 0; left: 0; bottom: 0;
+    width: 100%;
+    transition: width 120ms linear;
+  }
+  #player-bars .pb-fill.hp-fill  {
+    background: linear-gradient(180deg, #d96666, var(--accent-red));
+  }
+  #player-bars .pb-fill.sta-fill {
+    background: linear-gradient(180deg, #d8be78, var(--accent-stamina));
+  }
+  #player-bars .pb-label {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 8px;
+    line-height: 18px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: #fff;
+    text-shadow: 0 1px 0 rgba(0,0,0,0.55);
+  }
+  #player-bars .pb-mini-row {
+    display: flex; gap: 6px;
+    margin-top: 6px;
+  }
+  #player-bars .pb-mini {
+    width: 24px; height: 24px;
+    background: var(--paper-deep);
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    color: var(--ink);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    transition: background 120ms ease;
+  }
+  #player-bars .pb-mini:hover { background: var(--paper); }
+
+  /* C: Context Panel — right side, 260px wide, dynamic height */
+  #context-panel {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    width: 260px;
+    min-height: 180px;
+    max-height: 360px;
+    padding: 16px;
+    background: var(--paper);
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-md);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+    color: var(--ink);
+    font-family: var(--font-body);
+    z-index: 78;
+    /* Push past the minimap by accounting for its 160 + 24 gutter */
+    margin-top: calc(160px + 8px);
+    overflow: hidden;
+  }
+  #context-panel .cp-state { display: block; }
+  #context-panel .cp-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--accent-gold);
+    padding-bottom: 6px;
+  }
+  #context-panel .cp-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    color: var(--ink);
+  }
+  #context-panel .cp-settings {
+    width: 22px; height: 22px;
+    background: transparent;
+    border: 1px solid var(--accent-gold);
+    border-radius: 50%;
+    cursor: pointer;
+    color: var(--ink);
+    font-size: 12px;
+    line-height: 1;
+    padding: 0;
+  }
+  #context-panel .cp-coin {
+    display: flex; align-items: center; gap: 4px;
+    margin-bottom: 12px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--accent-gold);
+  }
+  #context-panel .cp-coin-mark { color: var(--accent-gold); }
+  #context-panel .cp-section-title {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.10em;
+    color: var(--ink);
+    margin: 8px 0 6px;
+    border-top: 1px solid var(--accent-gold);
+    padding-top: 6px;
+  }
+  #context-panel .cp-stat-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 0;
+    font-size: 12px;
+    color: var(--ink-mid);
+  }
+  #context-panel .cp-stat-icon { width: 18px; text-align: center; color: var(--ink); }
+  #context-panel .cp-stat-icon-img { width: 18px; height: 18px; object-fit: contain; vertical-align: middle; }
+  #context-panel .cp-stat-name { flex: 1; color: var(--ink); }
+  #context-panel .cp-stat-val {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    color: var(--ink);
+  }
+  /* Combat state extras */
+  #context-panel .cp-bar-row { margin: 8px 0 6px; }
+  #context-panel .cp-hp-track,
+  #context-panel .cp-gather-track {
+    position: relative;
+    height: 18px;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid var(--accent-gold);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  #context-panel .gather-fill {
+    background: linear-gradient(180deg, #9ed490, var(--accent-green));
+  }
+  #context-panel .cp-status-row {
+    display: flex; align-items: center; gap: 6px;
+    min-height: 24px;
+    margin-bottom: 6px;
+  }
+  #context-panel .cp-status-empty { color: var(--ink-mid); font-size: 11px; }
+  #context-panel .cp-status-icon {
+    width: 22px; height: 22px;
+    background: var(--paper-deep);
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+  }
+  /* 2x2 combat style grid */
+  #context-panel .cp-style-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  #context-panel .cp-style-btn {
+    background: var(--paper-deep);
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    padding: 6px 4px;
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 120ms ease;
+  }
+  #context-panel .cp-style-btn:hover { background: var(--paper); }
+  #context-panel .cp-style-btn.cs-active {
+    background: var(--accent-gold);
+    color: var(--paper);
+  }
+  /* Interact state */
+  #context-panel .cp-desc {
+    font-size: 12px;
+    color: var(--ink-mid);
+    margin: 4px 0 12px;
+    line-height: 1.4;
+  }
+  #context-panel .cp-action-btn {
+    width: 100%;
+    background: var(--accent-gold);
+    color: var(--paper);
+    border: 1px solid var(--ink);
+    border-radius: var(--r-sm);
+    padding: 8px;
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    cursor: pointer;
+    transition: background 120ms ease;
+  }
+  #context-panel .cp-action-btn:hover {
+    background: #C9B57A;
+  }
+
+  /* E: Log panel — bottom-left chronicle. Compact by default (~4 lines
+     visible); hover or focus to expand to the full 120px scroll-back.
+     Pillar 4 of HUD design: information density inverse to combat
+     intensity. The full log is always available; the resting state
+     just doesn't shout for attention. */
+  #log-panel {
+    position: absolute;
+    left: 24px;
+    bottom: 24px;
+    width: 280px;
+    height: 64px;
+    background: rgba(28, 22, 14, 0.78);
+    border: 1px solid rgba(184, 144, 96, 0.55);
+    border-radius: var(--r-md);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    z-index: 79;
+    padding: 6px 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 14px;
+    color: #d6c8a0;
+    overflow: hidden;
+    transition: height 180ms ease, background 180ms ease, border-color 180ms ease;
+  }
+  #log-panel:hover, #log-panel:focus-within {
+    height: 200px;
+    background: rgba(28, 22, 14, 0.95);
+    border-color: var(--accent-gold);
+  }
+  #log-panel #log-list {
+    height: 100%;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+  }
+  #log-panel #log-list::-webkit-scrollbar { width: 4px; }
+  #log-panel #log-list::-webkit-scrollbar-thumb { background: rgba(184, 165, 106, 0.5); border-radius: 2px; }
+  #log-panel .entry { margin: 1px 0; }
+  #log-panel .entry .ts  { color: rgba(184, 165, 106, 0.7); margin-right: 4px; }
+  #log-panel .entry strong { color: var(--accent-gold); font-weight: 600; }
+  #log-panel .entry .hot { color: #f0a060; }
+  #log-panel .entry.combat { color: #d6c8a0; }
+  #log-panel .entry.skill  { color: #cce0a8; }
+  #log-panel .entry.quest  { color: #f0d680; font-weight: 500; }
+  #log-panel .entry.hint   { color: #b9c8c0; font-style: italic; }
+  #log-panel .entry.entry-new {
+    animation: log-new-pulse-dark 0.7s ease-out;
+  }
+  @keyframes log-new-pulse-dark {
+    0%   { background: rgba(184, 165, 106, 0.3); padding-left: 4px; }
+    100% { background: transparent; padding-left: 0; }
+  }
+
+  /* D: Action bar — 480×72 bottom-center, 8 numbered slots */
+  #skillbar {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 480px; height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 6px 8px;
+    background: var(--paper);
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-md);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    z-index: 88;
+    pointer-events: none;
+  }
+  #skillbar .sb-slot {
+    position: relative;
+    width: 52px; height: 56px;
+    background: linear-gradient(180deg, #2a2418, #1c1610);
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+    pointer-events: auto;
+  }
+  #skillbar .sb-slot.sb-active {
+    border: 2px solid var(--accent-green);
+    box-shadow: 0 0 8px rgba(111, 175, 111, 0.55);
+  }
+  #skillbar .sb-icon {
+    font-size: 26px;
+    line-height: 1;
+    filter: drop-shadow(0 1px 0 rgba(0,0,0,0.45));
+    color: #f0e0b0;
+  }
+  #skillbar .sb-key {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--accent-gold);
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7);
+  }
+  /* Cooldown sweep — conic-gradient mask. JS sets --cd from 1.0 (full) → 0.0 (ready). */
+  #skillbar .sb-cd {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: conic-gradient(rgba(20, 16, 12, 0.55) calc(var(--cd, 0) * 360deg), transparent 0);
+    transition: background 60ms linear;
+  }
+  #skillbar .sb-slot.sb-locked .sb-icon { opacity: 0.25; filter: grayscale(1); }
+  #skillbar .sb-slot.sb-locked         { border-style: dashed; }
+  #skillbar .sb-slot.sb-locked::after {
+    content: '🔒';
+    position: absolute;
+    top: 2px; left: 3px;
+    font-size: 10px;
+    opacity: 0.85;
+  }
+  #skillbar .sb-slot.sb-empty          { opacity: 0.45; }
+  #skillbar .sb-slot.sb-utility {
+    border: 1px solid var(--accent-gold);
+    background: linear-gradient(180deg, #2a2418, #1c1610);
+    cursor: pointer;
+  }
+  #skillbar .sb-slot.sb-utility:hover {
+    border-color: var(--accent-stamina);
+    transform: translateY(-1px);
+  }
+  #skillbar .sb-divider {
+    width: 1px;
+    background: var(--border);
+    margin: 2px 4px;
+  }
+  #skillbar .sb-slot.sb-dodge { background: var(--wash-cream); }
+  /* Numeric cooldown — shown only while a slot is on cd. */
+  #skillbar .sb-cdtext {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffe6a0;
+    text-shadow: 0 1px 0 rgba(0,0,0,0.7);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 80ms linear;
+  }
+  #skillbar .sb-slot.sb-cooling .sb-cdtext { opacity: 1; }
+  #skillbar .sb-slot.sb-cooling .sb-icon  { opacity: 0.45; }
+  /* Combo chip — small "N / 3" pip floating just above the skill bar */
+  #combo-chip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-6px);
+    background: rgba(58, 44, 32, 0.78);
+    color: #ffd864;
+    border: var(--bw-1) solid #ffd864;
+    border-radius: 999px;
+    padding: 2px 12px;
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    line-height: 1.1;
+    text-shadow: 0 1px 0 rgba(0,0,0,0.6);
+    box-shadow: 0 0 8px rgba(255, 216, 100, 0.4);
+    transition: opacity 200ms ease, transform 200ms ease;
+    pointer-events: none;
+  }
+  #combo-chip.combo-hidden { opacity: 0; transform: translateX(-50%) translateY(2px); }
+  #combo-chip.combo-pulse { animation: combo-pulse-anim 200ms ease-out; }
+  @keyframes combo-pulse-anim {
+    0%   { transform: translateX(-50%) translateY(-6px) scale(1.30); }
+    100% { transform: translateX(-50%) translateY(-6px) scale(1.00); }
+  }
+  #combo-chip .combo-of { color: rgba(255, 216, 100, 0.55); margin-left: 2px; }
+
+  /* Activation flash — brief bright border + tactile press scale-down so
+     the keystroke reads even before the cooldown sweep starts. */
+  #skillbar .sb-slot {
+    transition: transform 80ms ease-out, border-color 80ms ease-out;
+  }
+  #skillbar .sb-slot.sb-firing {
+    box-shadow: 0 0 0 2px #fff3a8, 0 0 12px 4px rgba(255, 230, 120, 0.55);
+    border-color: #fff3a8;
+    transform: scale(0.92);
+  }
+
+  /* ---- floating XP/damage popups — handwritten margin notes ---- */
+  .floater {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    font-family: var(--font-hand);
+    font-size: var(--fs-lg);
+    font-weight: 700;
+    color: var(--text);
+    text-shadow:
+      1px 1px 0 var(--paper),
+      -1px -1px 0 var(--paper),
+      1px -1px 0 var(--paper),
+      -1px 1px 0 var(--paper);
+    white-space: nowrap;
+  }
+  /* XP gain — brief pop + warm glow so it reads as advancement. */
+  .floater-xp {
+    text-shadow:
+      0 0 6px rgba(255, 216, 100, 0.85),
+      0 0 12px rgba(255, 216, 100, 0.45),
+      1px 1px 0 var(--paper),
+      -1px -1px 0 var(--paper);
+    animation: xp-pop 0.45s ease-out;
+  }
+  @keyframes xp-pop {
+    0%   { transform: translate(-50%, -100%) scale(0.7); }
+    35%  { transform: translate(-50%, -100%) scale(1.25); }
+    100% { transform: translate(-50%, -100%) scale(1.00); }
+  }
+  /* Level-up — same energy, brighter + bigger. */
+  .floater-level {
+    font-size: calc(var(--fs-lg) * 1.15);
+    text-shadow:
+      0 0 8px rgba(255, 240, 160, 0.95),
+      0 0 18px rgba(255, 240, 160, 0.55),
+      1px 1px 0 var(--paper),
+      -1px -1px 0 var(--paper);
+    animation: xp-pop 0.55s ease-out;
+  }
+
+  /* ---- side panel — wobbly hand-drawn frame matching stage ---- */
+  #panel {
+    background: var(--bg-panel);
+    border: var(--bw-frame) solid transparent;
+    border-image: var(--frame-ink) 18 / var(--bw-frame) / 0 stretch;
+    box-shadow: var(--shadow-paper);
+    padding: var(--s-1) var(--s-2) var(--s-2);
+    display: flex; flex-direction: column;
+    font-size: var(--fs-md);
+    color: var(--text);
+    overflow-y: auto;
+  }
+  .section { margin-bottom: var(--s-3); }
+
+  /* Section headers — squiggly ink underline + illuminated drop-cap */
+  .section h1 {
+    font-family: var(--font-heading);
+    font-size: var(--fs-md);
+    letter-spacing: 2px;
+    color: var(--text);
+    margin: 0 0 var(--s-2) 0;
+    text-transform: uppercase;
+    padding-bottom: var(--s-1);
+    border-bottom: none;
+    background-image: var(--squiggle);
+    background-repeat: repeat-x;
+    background-position: bottom;
+    background-size: 60px 4px;
+    line-height: 1.4;
+  }
+  /* ::first-letter requires non-flex parent — keep .section h1 block-level. */
+  .section h1::first-letter {
+    font-family: var(--font-body);
+    font-size: var(--fs-cap);
+    color: var(--hp);
+    letter-spacing: 0;
+    margin-right: 1px;
+    font-weight: 700;
+    text-transform: uppercase;
+    line-height: 1;
+    vertical-align: -2px;
+  }
+
+  .stat-row {
+    display: flex; justify-content: space-between;
+    margin: 3px 0;
+    align-items: baseline;
+  }
+  .stat-label { color: var(--text-mid); font-style: italic; }
+  .coin-row .coin-num {
+    font-family: var(--font-hand);
+    color: var(--accent-gold);
+    font-weight: 700;
+    font-size: var(--fs-lg);
+    line-height: 1;
+  }
+  .coin-row .coin-num::before { content: '◉ '; opacity: 0.85; }
+
+  /* ---- bars (HP, XP) ---- */
+  .bar {
+    height: 11px;
+    background: var(--paper);
+    border: var(--bw-1) solid var(--border);
+    margin-top: 3px;
+    overflow: hidden;
+    border-radius: var(--r-sm);
+    position: relative;
+  }
+  .bar.tiny { height: 5px; }
+  .bar-fill {
+    height: 100%;
+    transition: width var(--t-med) var(--ease);
+    box-shadow: inset 0 0 0 1px rgba(58,44,32,0.10);
+  }
+  .bar-fill.hp { background: var(--hp); }
+  .bar-fill.xp { background: var(--xp); }
+  .bar-fill.sta {
+    background: linear-gradient(180deg, #d8b04a, #8a6438);
+    transition: width 80ms linear;
+  }
+  /* Failure-flash: brief red wash when an action couldn't pay its stamina. */
+  .bar.sta-pulse .bar-fill.sta {
+    box-shadow: 0 0 0 2px rgba(193, 56, 51, 0.85);
+    animation: sta-pulse-anim 0.4s ease-out;
+  }
+  @keyframes sta-pulse-anim {
+    0%   { filter: brightness(1.6); }
+    100% { filter: brightness(1.0); }
+  }
+  /* Exhausted: greys the bar + adds an "Exhausted!" tag overlay. */
+  .bar.sta-exhausted {
+    position: relative;
+  }
+  .bar.sta-exhausted .bar-fill.sta {
+    filter: saturate(0.4) brightness(0.7);
+  }
+  .bar.sta-exhausted::after {
+    content: 'Exhausted!';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-hand);
+    font-weight: 700;
+    font-size: var(--fs-sm);
+    color: var(--accent-red);
+    text-shadow: 0 1px 0 var(--paper);
+    pointer-events: none;
+    letter-spacing: 0.04em;
+  }
+
+  /* ---- skills grid ---- */
+  #skills {
+    margin-top: var(--s-2);
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: var(--s-1) var(--s-2);
+  }
+  #skills .sk { font-size: var(--fs-sm); color: var(--text-mid); min-width: 0; }
+  #skills .sk .row {
+    display: flex; align-items: baseline; gap: 4px;
+    justify-content: space-between;
+    min-width: 0;             /* allow children to shrink inside the grid cell */
+  }
+  /* Label span (icon + name) — shrinks and ellipsizes if the cell is narrow,
+     so "Wayfinding" and "Woodcutting" don't wrap their level onto a new line. */
+  #skills .sk .row > span:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #skills .sk .lv { color: var(--text); font-weight: 600; flex: 0 0 auto; white-space: nowrap; }
+  /* UI B — milestone hint under the XP bar. Smaller, dim ink so it
+     doesn't fight the level number; bold name draws the eye. */
+  #skills .sk .sk-next {
+    margin-top: 2px; font-size: 11px; color: var(--ink-mid); line-height: 1.3;
+  }
+  #skills .sk .sk-next b { color: var(--ink); font-weight: 600; }
+  #skills .sk .sk-togo { opacity: 0.7; }
+  .sk-ico { color: var(--ink-mid); }
+  /* Skill PNG icon (replaces SVG glyph when assets/icons/<key>.png exists). */
+  .sk-ico-img {
+    width: 16px; height: 16px;
+    object-fit: contain;
+    vertical-align: -3px;
+    margin-right: 2px;
+  }
+
+  /* ---- equipped slots — teal wash for character state ---- */
+  #equipped {
+    background: var(--wash-teal);
+    border: var(--bw-1) solid var(--border);
+    padding: var(--s-2);
+    font-size: var(--fs-sm);
+    line-height: 1.6;
+    border-radius: var(--r-sm);
+    box-shadow: var(--shadow-inset);
+  }
+  #equipped .eq-slot {
+    display: flex; justify-content: space-between;
+    padding: 1px 2px;
+    align-items: center;
+  }
+  #equipped .eq-slot .empty { color: var(--text-dim); font-style: italic; }
+  #equipped .eq-slot span:first-child {
+    color: var(--text-mid);
+    text-transform: uppercase;
+    font-family: var(--font-heading);
+    font-size: var(--fs-xs);
+    letter-spacing: 1px;
+  }
+
+  /* ---- inventory grid (28 parchment squares) ---- */
   #inv {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(7, 1fr);
     gap: 3px;
   }
   .slot {
     aspect-ratio: 1 / 1;
-    background: #0a0a0e;
-    border: 1px solid var(--border);
+    background: var(--paper);
+    border: var(--bw-1) solid var(--border);
     position: relative;
-    font-size: 9px;
-    color: var(--gold);
+    font-size: var(--fs-xs);
+    color: var(--text);
+    font-family: var(--font-hand);
+    font-weight: 700;
     display: flex; align-items: flex-end; justify-content: flex-end;
-    padding: 1px;
+    padding: 1px 3px;
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    transition: all var(--t-fast) var(--ease);
+  }
+  .slot[data-idx]:hover {
+    border-color: var(--border-strong);
+    background: var(--wash-cream);
+    box-shadow: var(--shadow-hover);
+  }
+  /* Brief pop when a slot's content/qty grows, so loot acquisition reads. */
+  .slot.slot-bump {
+    animation: slot-bump-pop 0.32s ease-out;
+  }
+  @keyframes slot-bump-pop {
+    0%   { transform: scale(1.00); background: rgba(255, 226, 130, 0.65); }
+    35%  { transform: scale(1.15); }
+    100% { transform: scale(1.00); background: var(--paper); }
   }
   .slot .icon {
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
+    font-size: var(--fs-lg);
+  }
+  .item-img {
+    width: 80%; height: 80%;
+    object-fit: contain;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    pointer-events: none;
+  }
+  #equipped .item-img { width: 16px; height: 16px; vertical-align: middle; }
+  #ctx-menu .ctx-title .item-img { width: 14px; height: 14px; vertical-align: middle; }
+  /* Inline-SVG orb icon — a glowing artefact, not a flat sprite. The
+     drop-shadow gives the orb the "lit from within" feel; subtle pulse
+     keeps an unspent orb feeling alive in the inventory. */
+  .orb-icon {
+    width: 88%; height: 88%;
+    pointer-events: none;
+    filter: drop-shadow(0 0 4px rgba(255, 230, 170, 0.55));
+    animation: orb-pulse 2.6s ease-in-out infinite;
+  }
+  #equipped .orb-icon { width: 18px; height: 18px; vertical-align: middle; }
+  #ctx-menu .ctx-title .orb-icon { width: 14px; height: 14px; vertical-align: middle; }
+  @keyframes orb-pulse {
+    0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 230, 170, 0.45)); }
+    50%      { filter: drop-shadow(0 0 7px rgba(255, 230, 170, 0.75)); }
   }
 
+  /* ---- gear-comparison tooltip — appears next to a hovered inventory slot ---- */
+  #gear-tip {
+    position: fixed;
+    display: none;
+    pointer-events: none;
+    z-index: 1200;
+    min-width: 180px; max-width: 240px;
+    background: var(--bg-panel);
+    border: var(--bw-1) solid var(--border-strong);
+    border-radius: var(--r-md);
+    padding: var(--s-2) var(--s-3);
+    box-shadow: var(--shadow-paper);
+    font-family: var(--font-hand);
+    font-size: var(--fs-sm);
+    color: var(--text);
+    line-height: 1.35;
+  }
+  #gear-tip .gt-name { font-weight: 700; font-size: var(--fs-md); margin-bottom: 2px; }
+  #gear-tip .gt-sub  { color: var(--text-dim); font-style: italic; margin-bottom: 4px; }
+  #gear-tip .gt-row  { display: flex; justify-content: space-between; gap: var(--s-2); }
+  #gear-tip .gt-row .stat { color: var(--text-dim); }
+  #gear-tip .gt-row .delta.up    { color: var(--xp);            font-weight: 700; }
+  #gear-tip .gt-row .delta.down  { color: var(--accent-red);    font-weight: 700; }
+  #gear-tip .gt-row .delta.same  { color: var(--text-dim); }
+  #gear-tip .gt-hr { border: 0; border-top: 1px dashed var(--border); margin: 4px 0; }
+  #gear-tip .gt-foot { color: var(--text-dim); font-style: italic; font-size: var(--fs-xs); }
+
+  /* ---- quest panel — green wash for goal/progress ---- */
   #quest {
-    background: #0a0a0e;
-    border: 1px dashed var(--border);
-    padding: 6px;
-    font-size: 11px;
+    background: var(--wash-green);
+    border: var(--bw-1) solid var(--border);
+    padding: var(--s-2);
+    font-size: var(--fs-sm);
     line-height: 1.5;
-    min-height: 70px;
+    min-height: 60px;
+    border-radius: var(--r-sm);
+    box-shadow: inset 0 0 12px rgba(122,153,86,0.10);
   }
-  #quest .step { color: var(--dim); }
-  #quest .step.active { color: var(--quest); }
-  #quest .step.done { color: #4a8; text-decoration: line-through; }
+  #quest .step { color: var(--text-mid); }
+  #quest .step.active { color: var(--text); font-weight: 600; }
+  #quest .step.done { color: var(--text-dim); text-decoration: line-through; }
 
+  /* ---- log panel — ruled chronicle pages ---- */
   #log {
     flex: 1;
-    background: #060608;
-    border: 1px solid var(--border);
-    padding: 5px;
-    font-size: 10px;
-    overflow: hidden;
-    line-height: 1.4;
-    color: #aaa;
+    background:
+      repeating-linear-gradient(
+        transparent 0,
+        transparent 16px,
+        rgba(160,135,112,0.13) 16px,
+        rgba(160,135,112,0.13) 17px
+      ),
+      var(--paper);
+    border: var(--bw-1) solid var(--border);
+    padding: var(--s-2);
+    font-family: var(--font-body);
+    font-size: var(--fs-sm);
+    overflow-y: auto;
+    line-height: 17px;
+    color: var(--text-mid);
+    border-radius: var(--r-sm);
+    scroll-behavior: smooth;
   }
+  #log::-webkit-scrollbar { width: 5px; }
+  #log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
   #log .entry { margin: 1px 0; }
-  #log .entry.combat { color: #e88; }
-  #log .entry.skill { color: #8c8; }
-  #log .entry.quest { color: var(--gold); }
-  #log .entry.hint { color: #6cb; }
+  #log .entry.combat { color: var(--hp); }
+  #log .entry.skill  { color: var(--xp); }
+  #log .entry.quest  { color: var(--gold); font-weight: 600; }
+  #log .entry.hint   { color: var(--accent-teal); font-style: italic; }
+  #log .entry.entry-new {
+    animation: log-new-pulse 0.7s ease-out;
+  }
+  @keyframes log-new-pulse {
+    0%   { background: rgba(255, 226, 130, 0.55); padding-left: 6px; }
+    100% { background: rgba(255, 226, 130, 0); padding-left: 0; }
+  }
 
+  /* ---- controls hint ---- */
   #controls {
-    font-size: 10px; color: var(--dim);
-    text-align: center; margin-top: 4px;
+    font-size: var(--fs-sm);
+    color: var(--text-mid);
+    text-align: center;
+    margin-top: var(--s-2);
+    font-style: italic;
   }
   kbd {
     display: inline-block;
-    padding: 1px 4px;
-    background: #222;
-    border: 1px solid #333;
-    border-radius: 2px;
-    font-size: 9px;
-    color: #ddd;
+    padding: 1px var(--s-1);
+    background: var(--paper);
+    border: var(--bw-1) solid var(--border);
+    border-bottom-width: 2px;
+    border-radius: var(--r-sm);
+    font-family: var(--font-heading);
+    font-size: var(--fs-xs);
+    color: var(--text);
+    letter-spacing: 1px;
   }
+
+  /* ================================================================
+     Dialog modal — NPC speech / level-up / shop overlays
+     ================================================================ */
+  #dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(58, 44, 32, 0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+  #dialog-backdrop.open { display: flex; }
+
+  #dialog {
+    position: relative;
+    width: 480px;
+    max-width: 90vw;
+    background: var(--bg-modal);
+    border: var(--bw-frame) solid transparent;
+    border-image: var(--frame-ink) 18 / var(--bw-frame) / 0 stretch;
+    box-shadow: var(--shadow-paper);
+    padding: var(--s-3) var(--s-4) var(--s-3);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: var(--fs-md);
+  }
+
+  #dialog .speaker {
+    font-family: var(--font-heading);
+    font-size: var(--fs-md);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 0 0 var(--s-2) 0;
+    padding-bottom: var(--s-1);
+    background-image: var(--squiggle);
+    background-repeat: repeat-x;
+    background-position: bottom;
+    background-size: 60px 4px;
+    line-height: 1.4;
+  }
+  #dialog .speaker::first-letter {
+    font-family: var(--font-body);
+    font-size: var(--fs-cap);
+    color: var(--hp);
+    margin-right: 1px;
+    font-weight: 700;
+    line-height: 1;
+    vertical-align: -2px;
+  }
+
+  #dialog .lines {
+    margin: var(--s-3) 0;
+    line-height: 1.6;
+    color: var(--text);
+  }
+  #dialog .lines p {
+    margin: 0 0 var(--s-2) 0;
+  }
+  #dialog .lines p::first-letter {
+    /* small typeset "drop" on the first paragraph */
+    font-size: var(--fs-lg);
+    font-family: var(--font-heading);
+    color: var(--text);
+    margin-right: 1px;
+  }
+
+  #dialog .choices {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+    margin-top: var(--s-3);
+  }
+  #dialog .choice-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--paper);
+    color: var(--text);
+    border: var(--bw-1) solid var(--border);
+    padding: var(--s-2) var(--s-3);
+    font-family: var(--font-body);
+    font-size: var(--fs-md);
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    transition: all var(--t-fast) var(--ease);
+  }
+  #dialog .choice-btn:hover {
+    background: var(--wash-cream);
+    border-color: var(--border-strong);
+    color: var(--hp);
+    box-shadow: var(--shadow-hover);
+  }
+  #dialog .choice-btn .num {
+    color: var(--accent-gold);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    margin-right: var(--s-2);
+  }
+
+  #dialog .hint {
+    margin-top: var(--s-2);
+    text-align: center;
+    color: var(--text-mid);
+    font-size: var(--fs-sm);
+    font-style: italic;
+  }
+
+  /* ============================================================
+     Charting UI — New World-style crafting modal for Wayfinding.
+     Three columns: Templates / Slots / Predicted Outcome.
+     ============================================================ */
+  #charting-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(58, 44, 32, 0.45);
+    display: none; align-items: center; justify-content: center;
+    z-index: 200;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+  #charting-backdrop.open { display: flex; }
+
+  /* ---- Settings modal ---- */
+  .settings-btn {
+    float: right;
+    background: transparent;
+    border: var(--bw-1) solid var(--border);
+    border-radius: 50%;
+    width: 22px; height: 22px;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--text);
+    padding: 0;
+    transition: all var(--t-fast) var(--ease);
+  }
+  .settings-btn:hover {
+    background: var(--wash-cream);
+    border-color: var(--border-strong);
+    transform: rotate(45deg);
+  }
+  #settings-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(58, 44, 32, 0.45);
+    display: none; align-items: center; justify-content: center;
+    z-index: 250;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+  #settings-backdrop.open { display: flex; }
+  #settings-modal {
+    width: 320px;
+    background: var(--bg-modal);
+    border: var(--bw-frame) solid transparent;
+    border-image: var(--frame-ink) 18 / var(--bw-frame) / 0 stretch;
+    box-shadow: var(--shadow-paper);
+    padding: var(--s-3) var(--s-4) var(--s-4);
+    color: var(--text);
+    font-family: var(--font-hand);
+  }
+  #settings-modal .settings-title {
+    font-family: var(--font-display);
+    font-size: var(--fs-lg);
+    margin-bottom: var(--s-3);
+    border-bottom: 1px dashed var(--border);
+    padding-bottom: var(--s-2);
+  }
+  #settings-modal .settings-row {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    margin-bottom: var(--s-3);
+  }
+  #settings-modal .settings-row label {
+    flex: 0 0 60px;
+    font-size: var(--fs-md);
+  }
+  #settings-modal .settings-row input[type="range"] {
+    flex: 1 1 auto;
+    accent-color: var(--accent-green, #6f8aa3);
+  }
+  #settings-modal .settings-row span {
+    flex: 0 0 38px;
+    text-align: right;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  #settings-modal .settings-actions {
+    display: flex; justify-content: flex-end;
+  }
+  #settings-modal .settings-actions button {
+    background: var(--bg-panel);
+    border: var(--bw-1) solid var(--border-strong);
+    padding: var(--s-1) var(--s-3);
+    cursor: pointer;
+    border-radius: var(--r-md);
+    font-family: var(--font-hand);
+    color: var(--text);
+    transition: all var(--t-fast) var(--ease);
+  }
+  #settings-modal .settings-actions button:hover {
+    background: var(--wash-cream);
+    box-shadow: var(--shadow-hover);
+  }
+  #charting {
+    position: relative;
+    width: 760px; max-width: 95vw;
+    background: var(--bg-modal);
+    border: var(--bw-frame) solid transparent;
+    border-image: var(--frame-ink) 18 / var(--bw-frame) / 0 stretch;
+    box-shadow: var(--shadow-paper);
+    padding: var(--s-2) var(--s-3) var(--s-2);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: var(--fs-md);
+  }
+  #charting .ch-title {
+    font-family: var(--font-heading);
+    font-size: var(--fs-lg);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text);
+    margin: 0 0 var(--s-2) 0;
+    padding-bottom: var(--s-1);
+    background-image: var(--squiggle);
+    background-repeat: repeat-x;
+    background-position: bottom;
+    background-size: 60px 4px;
+    text-align: center;
+  }
+  #charting .ch-title::first-letter {
+    color: var(--hp);
+    font-family: var(--font-body);
+    font-size: var(--fs-cap);
+    margin-right: 1px;
+  }
+  #charting .ch-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1fr;
+    gap: var(--s-2);
+    margin-bottom: var(--s-2);
+  }
+  #charting .ch-col {
+    background: var(--wash-cream);
+    border: var(--bw-1) solid var(--border);
+    padding: var(--s-2);
+    min-height: 280px;
+    border-radius: var(--r-sm);
+  }
+  #charting .ch-col-title {
+    font-family: var(--font-heading);
+    font-size: var(--fs-sm);
+    letter-spacing: 2px;
+    color: var(--text-mid);
+    text-transform: uppercase;
+    margin-bottom: var(--s-2);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 2px;
+  }
+
+  /* template list */
+  #charting .ch-template {
+    background: var(--paper);
+    border: var(--bw-1) solid var(--border);
+    border-radius: var(--r-sm);
+    padding: var(--s-2);
+    margin-bottom: var(--s-1);
+    cursor: pointer;
+    transition: all var(--t-fast) var(--ease);
+  }
+  #charting .ch-template:hover { background: var(--wash-cream); border-color: var(--border-strong); }
+  #charting .ch-template.selected { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  #charting .ch-template .name { font-family: var(--font-heading); font-size: var(--fs-md); letter-spacing: 1px; }
+  #charting .ch-template .meta { font-size: var(--fs-sm); color: var(--text-mid); font-style: italic; }
+  #charting .ch-template.selected .meta { color: var(--paper); opacity: 0.85; }
+
+  /* slot rows */
+  #charting .ch-slot {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--paper);
+    border: 1px dashed var(--border);
+    border-radius: var(--r-sm);
+    padding: var(--s-2);
+    margin-bottom: var(--s-1);
+    cursor: pointer;
+    min-height: 40px;
+    transition: all var(--t-fast) var(--ease);
+  }
+  #charting .ch-slot:hover { border-style: solid; border-color: var(--border-strong); background: var(--wash-cream); }
+  #charting .ch-slot.empty { color: var(--text-dim); font-style: italic; }
+  #charting .ch-slot.filled { border-style: solid; }
+  #charting .ch-slot .stab {
+    font-family: var(--font-heading);
+    font-size: var(--fs-sm);
+    color: var(--accent-gold);
+  }
+  #charting .ch-slot.locked .stab { color: var(--xp); }
+  /* Ink bag panel — replaces affix-picker */
+  #charting .ch-ink-bag {
+    background: var(--paper);
+    border: var(--bw-1) solid var(--border);
+    border-radius: var(--r-sm);
+    padding: var(--s-2);
+    margin-top: var(--s-2);
+  }
+  #charting .ch-bag-title {
+    font-family: var(--font-heading);
+    font-size: var(--fs-sm);
+    color: var(--text-mid);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: var(--s-2);
+  }
+  #charting .ch-ink {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px;
+    width: 100%; margin-bottom: 4px;
+    background: var(--wash-cream);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    text-align: left;
+    font-size: var(--fs-sm);
+  }
+  #charting .ch-ink:hover { background: var(--paper-deep); border-color: var(--border-strong); }
+  #charting .ch-ink-icon { width: 18px; text-align: center; font-size: 16px; }
+  #charting .ch-ink-name { flex: 1; }
+  #charting .ch-ink-qty  { color: var(--text-mid); font-variant-numeric: tabular-nums; }
+  #charting .ch-ink-empty { color: var(--text-mid); font-style: italic; padding: 8px; font-size: 12px; }
+
+  /* Prediction histogram */
+  #charting .ch-pred-list { margin-top: 8px; }
+  #charting .ch-pred-row {
+    display: grid;
+    grid-template-columns: 1fr 100px 36px 70px;
+    gap: 6px; align-items: center;
+    margin-bottom: 4px;
+    font-size: 12px;
+  }
+  #charting .ch-pred-name { color: var(--text); font-weight: 600; }
+  #charting .ch-pred-bar {
+    height: 8px; background: rgba(0,0,0,0.08);
+    border-radius: 4px; overflow: hidden;
+  }
+  #charting .ch-pred-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-gold), var(--accent-green));
+    transition: width 200ms ease;
+  }
+  #charting .ch-pred-pct { font-variant-numeric: tabular-nums; color: var(--text-mid); text-align: right; }
+  #charting .ch-pred-stab { font-size: 11px; color: var(--accent-green); text-align: right; }
+
+  #charting .ch-affix-picker {
+    background: var(--paper);
+    border: var(--bw-1) solid var(--border);
+    border-radius: var(--r-sm);
+    padding: var(--s-2);
+    margin-top: var(--s-2);
+    display: none;
+  }
+  #charting .ch-affix-picker.open { display: block; }
+  #charting .ch-pick-title {
+    font-family: var(--font-heading);
+    font-size: var(--fs-sm);
+    color: var(--text-mid);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: var(--s-1);
+  }
+  #charting .ch-pick {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding: var(--s-1) var(--s-2);
+    border: 1px solid var(--border);
+    background: var(--wash-cream);
+    border-radius: var(--r-sm);
+    margin-bottom: var(--s-1);
+    cursor: pointer;
+    transition: all var(--t-fast) var(--ease);
+  }
+  #charting .ch-pick:hover { border-color: var(--border-strong); background: var(--paper); }
+  #charting .ch-pick.disabled { opacity: 0.45; cursor: not-allowed; }
+  #charting .ch-pick .left { flex: 1; }
+  #charting .ch-pick .pname { font-weight: 600; }
+  #charting .ch-pick .pdesc { color: var(--text-mid); font-size: var(--fs-sm); }
+  #charting .ch-pick .pcost { color: var(--text-dim); font-size: var(--fs-sm); margin-top: 2px; }
+  #charting .ch-pick .pstab {
+    font-family: var(--font-heading);
+    color: var(--accent-gold);
+    font-size: var(--fs-md);
+    margin-left: var(--s-2);
+  }
+
+  /* preview */
+  #charting .ch-preview-body {
+    font-size: var(--fs-md);
+    color: var(--text);
+    line-height: 1.5;
+    margin-bottom: var(--s-2);
+  }
+  #charting .ch-preview-body .pred {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    padding: var(--s-1) var(--s-2);
+    margin: var(--s-1) 0;
+  }
+  #charting .ch-preview-body .pred .gn { color: var(--xp); font-weight: 600; }
+  #charting .ch-preview-body .pred .bn { color: var(--hp); }
+  #charting .ch-roll {
+    width: 100%;
+    background: var(--ink);
+    color: var(--paper);
+    border: var(--bw-1) solid var(--ink);
+    padding: var(--s-2) var(--s-3);
+    font-family: var(--font-heading);
+    font-size: var(--fs-md);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    box-shadow: var(--shadow-hover);
+    transition: all var(--t-fast) var(--ease);
+  }
+  #charting .ch-roll:hover { background: var(--hp); border-color: var(--hp); }
+  #charting .ch-roll:disabled { opacity: 0.4; cursor: not-allowed; }
+  #charting .ch-footer { margin-top: var(--s-2); }
+
+  /* ---- Level-up celebration variant of the dialog ---- */
+  #dialog.levelup { text-align: center; }
+  #dialog.levelup .speaker {
+    background-image: none;
+    border-bottom: none;
+    color: var(--accent-gold);
+    font-size: var(--fs-lg);
+    letter-spacing: 4px;
+    padding-bottom: 0;
+  }
+  #dialog.levelup .speaker::first-letter {
+    color: var(--accent-gold);
+    font-size: var(--fs-lg);
+    vertical-align: 0;
+  }
+  #dialog.levelup .lvup-icon {
+    margin: var(--s-3) auto var(--s-2);
+    color: var(--ink);
+    width: 64px;
+    height: 64px;
+    display: block;
+  }
+  #dialog.levelup .lvup-skill {
+    font-family: var(--font-heading);
+    font-size: var(--fs-lg);
+    color: var(--text);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: var(--s-1);
+  }
+  #dialog.levelup .lvup-skill::first-letter {
+    color: var(--hp);
+    font-size: var(--fs-xl);
+    margin-right: 1px;
+  }
+  #dialog.levelup .lvup-level {
+    font-family: var(--font-body);
+    font-size: 56px;
+    line-height: 1;
+    color: var(--accent-gold);
+    margin: var(--s-2) 0 var(--s-3);
+    text-shadow:
+      0 0 4px rgba(181, 134, 55, 0.40),
+      0 0 12px rgba(181, 134, 55, 0.25);
+  }
+  #dialog.levelup .lvup-level .label {
+    display: block;
+    font-size: var(--fs-sm);
+    letter-spacing: 3px;
+    color: var(--text-mid);
+    text-transform: uppercase;
+    font-family: var(--font-heading);
+    margin-bottom: var(--s-1);
+    text-shadow: none;
+  }
+  #dialog.levelup::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, var(--wash-green) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  #dialog.levelup > * { position: relative; }
+
+  /* ================================================================
+     Character Creator — modal screen shown before the game starts
+     ================================================================ */
+  #char-creator {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+    background: var(--paper);
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.45  0 0 0 0 0.36  0 0 0 0 0.25  0 0 0 0.07 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+  #char-creator.cc-open { display: flex; }
+
+  #char-creator .cc-card {
+    width: 720px;
+    max-width: 95vw;
+    background: var(--paper-2, var(--paper));
+    border: 2px solid var(--ink);
+    box-shadow: 0 0 0 4px var(--paper), 4px 8px 0 rgba(58,44,32,0.20);
+    padding: var(--s-4);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s-4);
+  }
+
+  #char-creator .cc-title {
+    grid-column: 1 / -1;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 22px;
+    letter-spacing: 4px;
+    color: var(--ink);
+    text-align: center;
+    margin: 0 0 var(--s-2);
+    padding-bottom: var(--s-2);
+    border-bottom: 1px dashed var(--ink-light);
+  }
+
+  #char-creator .cc-preview-wrap {
+    background: var(--paper);
+    border: 1px solid var(--ink-light);
+    border-radius: var(--r-sm, 2px);
+    height: 360px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 24px rgba(58,44,32,0.08);
+  }
+  #cc-preview {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  #char-creator .cc-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    padding: var(--s-2);
+  }
+
+  #char-creator label {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--ink-2);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  #cc-name {
+    width: 100%;
+    background: var(--paper);
+    border: 1px solid var(--ink-light);
+    border-radius: 1px;
+    padding: 6px 10px;
+    font-family: 'IM Fell English', serif;
+    font-size: 16px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 120ms;
+  }
+  #cc-name:focus { border-color: var(--ink); background: var(--wash-cream, #fff); }
+
+  .cc-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .cc-sw {
+    width: 28px;
+    height: 28px;
+    border: 1.5px solid var(--ink-light);
+    border-radius: 50%;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 100ms, border-color 100ms, box-shadow 100ms;
+    background-color: var(--paper);
+  }
+  .cc-sw:hover {
+    transform: scale(1.08);
+    border-color: var(--ink);
+  }
+  .cc-sw.cc-sw-on {
+    border-color: var(--ink);
+    border-width: 2.5px;
+    box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px var(--ink);
+  }
+  .cc-sw.cc-sw-none {
+    background: var(--paper);
+    color: var(--ink-2);
+    font-family: 'IM Fell English', serif;
+    font-size: 14px;
+    line-height: 24px;
+  }
+
+  #cc-begin {
+    margin-top: var(--s-3);
+    width: 100%;
+    background: var(--ink);
+    color: var(--paper);
+    border: 1px solid var(--ink);
+    padding: 10px 16px;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 14px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 1px;
+    transition: background 120ms, color 120ms, transform 60ms;
+    box-shadow: 2px 3px 0 rgba(58,44,32,0.25);
+  }
+  #cc-begin:hover {
+    background: var(--hp);
+    color: var(--paper);
+    border-color: var(--hp);
+  }
+  #cc-begin:active { transform: translate(1px, 2px); box-shadow: none; }
+
+  /* ---- name overlay below the preview canvas ---- */
+  #char-creator .cc-preview-wrap { position: relative; }
+  #char-creator .cc-preview-name {
+    position: absolute;
+    bottom: var(--s-2);
+    left: 0; right: 0;
+    text-align: center;
+    font-family: var(--font-heading);
+    font-size: var(--fs-md);
+    letter-spacing: 2px;
+    color: var(--text);
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+  #char-creator .cc-preview-name::first-letter {
+    color: var(--hp);
+    font-size: var(--fs-cap);
+    font-family: var(--font-body);
+    margin-right: 1px;
+    vertical-align: -2px;
+  }
+
+  /* ---- preset strip — small portrait-style buttons ---- */
+  #char-creator .cc-presets { gap: var(--s-1); flex-wrap: wrap; }
+  #char-creator .cc-preset {
+    flex: 1 1 30%;
+    background: var(--paper);
+    color: var(--text);
+    border: var(--bw-1) solid var(--border);
+    padding: var(--s-1) var(--s-2);
+    font-family: var(--font-heading);
+    font-size: var(--fs-sm);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    transition: all var(--t-fast) var(--ease);
+  }
+  #char-creator .cc-preset:hover {
+    background: var(--wash-cream);
+    border-color: var(--border-strong);
+    color: var(--hp);
+  }
+  #char-creator .cc-preset.cc-preset-on {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--border-strong);
+  }
+
+  .cc-skip-tutorial {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--ink-mid);
+    margin-top: 8px; cursor: pointer;
+    user-select: none;
+  }
+  .cc-skip-tutorial input { margin: 0; }
+  .cc-skip-tutorial:hover { color: var(--ink); }
+
+  /* ---- actions row — random + begin side by side ---- */
+  #char-creator .cc-actions {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--s-2);
+    margin-top: var(--s-2);
+  }
+  #cc-random {
+    background: var(--paper);
+    color: var(--text);
+    border: var(--bw-1) solid var(--border);
+    padding: var(--s-2) var(--s-3);
+    font-family: var(--font-body);
+    font-size: var(--fs-md);
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    box-shadow: var(--shadow-hover);
+    transition: all var(--t-fast) var(--ease);
+  }
+  #cc-random:hover {
+    background: var(--wash-cream);
+    border-color: var(--border-strong);
+    color: var(--hp);
+  }
+  #cc-random:active { transform: translate(1px, 1px); box-shadow: none; }
 </style>
+
+<script type="importmap">
+{
+  "imports": {
+    "three":          "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/":  "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
 </head>
 <body>
 <div id="wrap">
   <div id="stage">
-    <canvas id="game" width="800" height="576"></canvas>
-    <div id="title">AGENT SPRITE FORGE — LEVEL 1: LUMBRIDGE PLAINS</div>
-    <div id="overlay">
-      <h2 id="overlay-title">LEVEL COMPLETE</h2>
-      <p id="overlay-text">You've conquered the plains, adventurer.</p>
-      <button id="overlay-btn">Play Again</button>
+    <canvas id="three"></canvas>
+    <div id="title">BRAMBLEWOOD</div>
+    <div id="fps"></div>
+    <!-- Cross-nav to the side surfaces. Collapsed into a hamburger so the
+         play surface stays clean. Click to reveal Codex + Editor links;
+         click outside to close. Persists open-state across reloads via
+         localStorage so power users can leave it open if they want. -->
+    <div id="lab-nav">
+      <button id="lab-nav-toggle" type="button" title="Open lab links" aria-label="Open lab links">☰</button>
+      <nav id="lab-links" aria-label="Labs">
+        <a href="codex.html" target="_blank" rel="noopener">Codex</a>
+        <a href="editor.html" target="_blank" rel="noopener">Editor</a>
+      </nav>
+    </div>
+    <div id="floaters"></div>
+    <div id="hurt-vignette"></div>
+    <div id="hover-tooltip"></div>
+    <div id="sb-tip"></div>
+    <div id="boss-banner">
+      <div class="boss-banner-name"></div>
+      <div class="boss-banner-sub"></div>
+    </div>
+    <!-- A: HP + Stamina bars — top-left, 240×64 -->
+    <div id="player-bars">
+      <div class="pb-row">
+        <div class="pb-icon hp-icon">♥</div>
+        <div class="pb-track">
+          <div class="pb-fill hp-fill" id="pb-hp-fill"></div>
+          <div class="pb-label"><span class="pb-name">HP</span><span class="pb-num"><span id="pb-hp-num">10</span> / <span id="pb-hp-max">10</span></span></div>
+        </div>
+      </div>
+      <div class="pb-row">
+        <div class="pb-icon sta-icon">⚡</div>
+        <div class="pb-track">
+          <div class="pb-fill sta-fill" id="pb-sta-fill"></div>
+          <div class="pb-label"><span class="pb-name">STAMINA</span><span class="pb-num"><span id="pb-sta-num">100</span> / <span id="pb-sta-max">100</span></span></div>
+        </div>
+      </div>
+      <div class="pb-mini-row">
+        <button class="pb-mini" title="Defence">🛡</button>
+        <button class="pb-mini" title="Vial">🧪</button>
+        <button class="pb-mini" title="Spell">✨</button>
+      </div>
+    </div>
+
+    <!-- C: Context panel — right side, 260px wide, dynamic content. -->
+    <div id="context-panel">
+      <!-- Default: Adventurer state -->
+      <div id="cp-adventurer" class="cp-state">
+        <div class="cp-head">
+          <span class="cp-title">ADVENTURER</span>
+          <button id="settings-btn" class="cp-settings" title="Settings">⚙</button>
+        </div>
+        <div class="cp-coin"><span class="cp-coin-mark">●</span><span id="cp-coin-num">0</span></div>
+        <!-- Key stats are dynamic (UI A): atk/str/def by default; rotates to
+             cook/wc/etc when the player has been gathering recently. The
+             three rows are id'd so renderContextPanel() can swap their
+             icons + labels + values without re-creating DOM. -->
+        <div class="cp-section-title">KEY STATS</div>
+        <div class="cp-stat-row" id="cp-stat-row-1"><span class="cp-stat-icon" id="cp-stat-icon-1">⚔</span><span class="cp-stat-name" id="cp-stat-name-1">Attack</span><span id="cp-stat-atk" class="cp-stat-val">1</span></div>
+        <div class="cp-stat-row" id="cp-stat-row-2"><span class="cp-stat-icon" id="cp-stat-icon-2">💪</span><span class="cp-stat-name" id="cp-stat-name-2">Strength</span><span id="cp-stat-str" class="cp-stat-val">1</span></div>
+        <div class="cp-stat-row" id="cp-stat-row-3"><span class="cp-stat-icon" id="cp-stat-icon-3">🛡</span><span class="cp-stat-name" id="cp-stat-name-3">Defence</span><span id="cp-stat-def" class="cp-stat-val">1</span></div>
+        <!-- Combat style picker — always visible (UI C). Same .cs-btn class
+             as the in-combat one so the existing handler at main.js:2881
+             keeps the active state synced across both copies. -->
+        <div class="cp-section-title">COMBAT STYLE</div>
+        <div class="cp-style-grid">
+          <button class="cp-style-btn cs-btn" data-style="accurate">Accurate</button>
+          <button class="cp-style-btn cs-btn" data-style="aggressive">Aggressive</button>
+          <button class="cp-style-btn cs-btn" data-style="defensive">Defensive</button>
+          <button class="cp-style-btn cs-btn cs-active" data-style="controlled">Controlled</button>
+        </div>
+      </div>
+      <!-- Combat state: visible when player.combatTarget is alive -->
+      <div id="cp-combat" class="cp-state" style="display: none">
+        <div class="cp-head"><span id="cp-combat-name" class="cp-title">ENEMY</span></div>
+        <div class="cp-bar-row">
+          <div class="pb-track cp-hp-track">
+            <div id="cp-combat-hp-fill" class="pb-fill hp-fill"></div>
+            <div class="pb-label"><span class="pb-name">HP</span><span class="pb-num"><span id="cp-combat-hp-num">0</span> / <span id="cp-combat-hp-max">0</span></span></div>
+          </div>
+        </div>
+        <div class="cp-section-title">STATUS EFFECTS</div>
+        <div id="cp-combat-status" class="cp-status-row"><span class="cp-status-empty">—</span></div>
+        <div class="cp-section-title">COMBAT STYLE</div>
+        <div class="cp-style-grid">
+          <button class="cp-style-btn cs-btn" data-style="accurate">Accurate</button>
+          <button class="cp-style-btn cs-btn" data-style="aggressive">Aggressive</button>
+          <button class="cp-style-btn cs-btn" data-style="defensive">Defensive</button>
+          <button class="cp-style-btn cs-btn cs-active" data-style="controlled">Controlled</button>
+        </div>
+      </div>
+      <!-- Gathering state: visible when chopping/mining/foraging -->
+      <div id="cp-gather" class="cp-state" style="display: none">
+        <div class="cp-head"><span id="cp-gather-name" class="cp-title">RESOURCE</span></div>
+        <div class="cp-bar-row">
+          <div class="pb-track cp-gather-track">
+            <div id="cp-gather-fill" class="pb-fill gather-fill"></div>
+            <div class="pb-label"><span class="pb-name">PROGRESS</span><span class="pb-num"><span id="cp-gather-num">0</span> / <span id="cp-gather-max">0</span></span></div>
+          </div>
+        </div>
+        <div class="cp-stat-row"><span class="cp-stat-icon">🛠</span><span class="cp-stat-name">Tool:</span><span id="cp-gather-tool" class="cp-stat-val">—</span></div>
+        <div class="cp-stat-row"><span class="cp-stat-icon">★</span><span class="cp-stat-name">Effectiveness:</span><span id="cp-gather-eff" class="cp-stat-val">—</span></div>
+      </div>
+      <!-- Interact state: visible when over a clickable thing -->
+      <div id="cp-interact" class="cp-state" style="display: none">
+        <div class="cp-head"><span id="cp-interact-name" class="cp-title">OBJECT</span></div>
+        <div id="cp-interact-desc" class="cp-desc">—</div>
+        <button id="cp-interact-btn" class="cp-action-btn">Open</button>
+      </div>
+    </div>
+
+    <canvas id="minimap" width="160" height="160"></canvas>
+    <div id="boss-bar">
+      <div class="boss-bar-row">
+        <span id="boss-bar-name" class="boss-bar-name"></span>
+        <span id="boss-bar-num" class="boss-bar-num"></span>
+      </div>
+      <div class="boss-bar-track"><div id="boss-bar-fill" class="boss-bar-fill"></div></div>
+    </div>
+    <div id="hints">
+      <button id="hints-close" type="button" title="Close">×</button>
+      <div class="hints-title">Controls</div>
+      <div class="hints-row"><kbd>WASD</kbd> / <kbd>Click</kbd> Move</div>
+      <div class="hints-row"><kbd>E</kbd> Interact</div>
+      <div class="hints-row"><kbd>Space</kbd> Dodge</div>
+      <div class="hints-row"><kbd>1</kbd>-<kbd>4</kbd> Abilities</div>
+      <div class="hints-row"><kbd>Tab</kbd> Swap Target</div>
+      <div class="hints-row"><kbd>Q</kbd> Quick-quaff Food</div>
+      <div class="hints-row"><kbd>J</kbd> Journal</div>
+      <div class="hints-row"><kbd>N</kbd> Sketch (Wayfinding)</div>
+      <div class="hints-row"><kbd>R</kbd> Cast active spell</div>
+      <div class="hints-row"><kbd>V</kbd> Spellbook</div>
+      <div class="hints-row hints-tip">Land 3 swings for a power strike.</div>
+    </div>
+    <button id="hints-show" class="open" type="button" title="Show controls">?</button>
+    <!-- HUD tool cluster — opens the Bag / Skills / Quest popup -->
+    <div id="hud-tools">
+      <button class="tool-btn" id="tool-bag"     title="Bag (B)"     aria-label="Bag">🎒<span class="tool-key">B</span></button>
+      <button class="tool-btn" id="tool-skills"  title="Skills (K)"  aria-label="Skills">📖<span class="tool-key">K</span></button>
+      <button class="tool-btn" id="tool-quest"   title="Quest (J)"   aria-label="Quest">📜<span class="tool-key">J</span></button>
+      <button class="tool-btn" id="tool-map"     title="World Map (M)" aria-label="Map">🗺<span class="tool-key">M</span></button>
+      <button class="tool-btn" id="tool-carto"   title="Wayfinding Workshop (C)" aria-label="Wayfinding">📐<span class="tool-key">C</span></button>
+      <button class="tool-btn" id="tool-journal" title="Field Journal (open) · N to sketch" aria-label="Journal">📓<span class="tool-key">F</span></button>
+    </div>
+    <!-- Abilities Book modal -->
+    <div id="spellbook-backdrop">
+      <div id="spellbook">
+        <div id="sb-head">
+          <span class="sb-title">Abilities Book</span>
+          <button id="sb-close" type="button" title="Close (Esc)">×</button>
+        </div>
+        <!-- Action bar header — shows what's bound to each slot 1..8 -->
+        <div id="sb-bar"></div>
+        <!-- Tabs: All / Melee / Magic / Ranged -->
+        <div id="sb-tabs">
+          <button class="sb-tab sb-tab-active" data-tab="all">All</button>
+          <button class="sb-tab" data-tab="melee">Melee</button>
+          <button class="sb-tab" data-tab="magic">Magic</button>
+          <button class="sb-tab" data-tab="ranged">Ranged</button>
+        </div>
+        <div id="sb-body"></div>
+        <div class="sb-tip">Click an action to bind it (or drag onto a specific slot). Click a slot pip to unbind. Right-click a pip to rebind its key.</div>
+      </div>
+    </div>
+    <!-- Materials Browser — full catalog of materials, inks, vessels,
+         and recipes. Tabs along the top; each card shows source hints
+         and "used in" links. Click a recipe → workshop shopping-list. -->
+    <div id="materials-browser-backdrop">
+      <div id="materials-browser">
+        <div id="mb-head">
+          <span class="mb-title">Materials</span>
+          <button id="mb-close" type="button" title="Close (Esc)">×</button>
+        </div>
+        <div id="mb-tabs">
+          <button class="mb-tab mb-tab-active" data-tab="materials">Materials</button>
+          <button class="mb-tab" data-tab="inks">Inks</button>
+          <button class="mb-tab" data-tab="vessels">Vessels</button>
+          <button class="mb-tab" data-tab="recipes">Recipes</button>
+        </div>
+        <div id="mb-body"></div>
+      </div>
+    </div>
+    <!-- Living Atlas — region overview modal. Shows the 4 atlas regions
+         as parchment cards: lore, completion progress, biome unlock state. -->
+    <div id="atlas-map-backdrop">
+      <div id="atlas-map">
+        <div id="am-head">
+          <span class="am-title">Living Atlas</span>
+          <span id="am-summary" class="am-meta">Complete charts to fill the atlas.</span>
+          <button id="am-close" type="button" title="Close (Esc)">×</button>
+        </div>
+        <div id="am-grid"></div>
+        <div class="am-tip">Each chart you complete fills one region. Crossing a region's threshold unlocks a new biome you can walk to from this atlas.</div>
+      </div>
+    </div>
+    <!-- Wayfinding Workshop — unified status panel for the keystone skill.
+         Shows level/XP, materials/inks/runes/charts, and four action launchers
+         (Mix Inks / Press Runes / Inscribe Chart / Field Journal). Replaces
+         the old chartmaker-stone 4-choice dialog. -->
+    <div id="cartography-workshop-backdrop">
+      <div id="cartography-workshop">
+        <div id="cw-head">
+          <span class="cw-title">Wayfinding Workshop</span>
+          <span class="cw-meta"><span id="cw-lv">Lv 1</span> · <span id="cw-xp">0 / 0 XP</span></span>
+          <button id="cw-close" type="button" title="Close (Esc)">×</button>
+        </div>
+        <div class="cw-bar"><div id="cw-xp-fill" class="cw-bar-fill"></div></div>
+        <div id="cw-milestone" class="cw-milestone">Next: …</div>
+        <div id="cw-body">
+          <div class="cw-section">
+            <div class="cw-section-title">
+              Materials
+              <button id="cw-materials-browse" class="cw-atlas-link" type="button">📋 Browse all</button>
+              <button id="cw-target-clear" class="cw-atlas-link cw-target-clear" type="button" style="display:none">× clear target</button>
+            </div>
+            <div id="cw-materials"></div>
+          </div>
+          <div class="cw-section">
+            <div class="cw-section-title">Inks</div>
+            <div id="cw-inks" class="cw-pill-list"></div>
+          </div>
+          <div class="cw-section">
+            <div class="cw-section-title">Runes</div>
+            <div id="cw-runes" class="cw-pill-list"></div>
+          </div>
+          <div class="cw-section">
+            <div class="cw-section-title">
+              Charts
+              <button id="cw-atlas-link" class="cw-atlas-link" type="button">📜 Open Atlas</button>
+            </div>
+            <div id="cw-charts" class="cw-pill-list"></div>
+          </div>
+          <div id="cw-actions">
+            <button id="cw-act-ink"     type="button" class="cw-act"><span class="cw-act-glyph">🜔</span><span class="cw-act-label">Mix Inks</span><span class="cw-act-sub">3×3 ingredients → ink</span></button>
+            <button id="cw-act-rune"    type="button" class="cw-act"><span class="cw-act-glyph">✦</span><span class="cw-act-label">Press Runes</span><span class="cw-act-sub">ink + stone → rune</span></button>
+            <button id="cw-act-chart"   type="button" class="cw-act"><span class="cw-act-glyph">▤</span><span class="cw-act-label">Inscribe Chart</span><span class="cw-act-sub">template + inks → chart</span></button>
+            <button id="cw-act-journal" type="button" class="cw-act"><span class="cw-act-glyph">📓</span><span class="cw-act-label">Field Journal</span><span class="cw-act-sub">your sketches</span></button>
+          </div>
+          <div id="cw-sketches" class="cw-sketches">No sketches this session.</div>
+        </div>
+      </div>
+    </div>
+    <!-- Runestone Pedestal modal -->
+    <div id="pedestal-backdrop">
+      <div id="pedestal">
+        <div id="pd-head">
+          <span class="pd-title">Runestone Pedestal</span>
+          <button id="pd-close" type="button" title="Close (Esc)">×</button>
+        </div>
+        <div id="pd-body">
+          <div id="pd-slots-row">
+            <div id="pd-stone" class="pd-slot pd-slot-empty"></div>
+            <div class="pd-plus">+</div>
+            <div id="pd-ink-pick" class="pd-slot pd-slot-empty"></div>
+            <div class="pd-arrow-big">→</div>
+            <div id="pd-output" class="pd-output">
+              <div class="pd-output-empty">Pick an ink and ensure you have a rune stone.</div>
+            </div>
+          </div>
+          <button id="pd-press-btn" type="button" disabled>Press</button>
+          <div class="pd-section-title">Available Inks</div>
+          <div id="pd-ink-list"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Inscribing Table modal — functional layout, no flair. Style pass later. -->
+    <div id="inscribing-table-backdrop">
+      <div id="inscribing-table">
+        <div id="it-head">
+          <span class="it-title">The Inscribing Table</span>
+          <span id="it-hint" class="it-hint"></span>
+          <button id="it-close" type="button" title="Close (Esc)">×</button>
+        </div>
+        <div id="it-body">
+          <!-- LEFT: ingredient drawer -->
+          <div id="it-ingredients" class="it-panel">
+            <div class="it-panel-title">Ingredients</div>
+            <div id="it-ingredient-list"></div>
+          </div>
+          <!-- CENTER: grid → vessel → arrow → ink well, button below.
+               The vessel slot is required for tier-3 inks (Wayfinding
+               Depth #13). Click a vessel in the ingredient list to slot
+               it; click the slot itself to clear. -->
+          <div id="it-center" class="it-panel">
+            <div class="it-flow">
+              <div id="it-grid"></div>
+              <div id="it-vessel-slot" class="it-vessel-empty" title="Vessel (tier-3 inks)">
+                <div id="it-vessel-icon">·</div>
+                <div id="it-vessel-label">Vessel</div>
+              </div>
+              <div id="it-arrow">→</div>
+              <div id="it-output">
+                <div id="it-output-bottle"></div>
+                <div id="it-output-label">Ink Well</div>
+              </div>
+            </div>
+            <button id="it-inscribe-btn" type="button">Inscribe</button>
+          </div>
+          <!-- RIGHT: codex tabs -->
+          <div id="it-codex" class="it-panel">
+            <div id="it-tabs">
+              <button class="it-tab it-tab-active" data-tab="known">Known</button>
+              <button class="it-tab" data-tab="hints">Hints</button>
+              <button class="it-tab" data-tab="history">History</button>
+            </div>
+            <div id="it-tab-body"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Field journal modal -->
+    <div id="field-journal-backdrop">
+      <div id="field-journal">
+        <div id="fj-head">
+          <span class="fj-title">Field Journal</span>
+          <span class="fj-meta"><span id="fj-total">0</span> sketches</span>
+          <button id="fj-close" type="button" title="Close (Esc)">×</button>
+        </div>
+        <div id="fj-cat-summary"></div>
+        <div id="fj-body"></div>
+        <div class="fj-tip">Stand within 2 tiles of a feature and press <kbd>N</kbd> to sketch.</div>
+        <div class="fj-progress">
+          <div class="fj-progress-row">
+            <span class="fj-progress-label">Wayfinding Lv</span>
+            <span id="fj-carto-lv" class="fj-progress-val">1</span>
+          </div>
+          <div id="fj-next-unlock" class="fj-progress-next">Next: Lv 4 · Greengather — Mix Stoneground Ink.</div>
+        </div>
+      </div>
+    </div>
+    <!-- Wayfinding world map modal -->
+    <div id="world-map-backdrop">
+      <div id="world-map">
+        <div id="wm-head">
+          <span class="wm-title">Bramblewood Charter</span>
+          <span class="wm-meta">
+            Wayfinding Lv <span id="wm-carto-lv">1</span> ·
+            Explored <span id="wm-explored">0 / 0</span>
+          </span>
+          <button id="wm-close" type="button" title="Close (Esc)">×</button>
+        </div>
+        <div id="wm-canvas-wrap">
+          <canvas id="wm-canvas" width="800" height="400"></canvas>
+          <form id="wm-name-form" autocomplete="off">
+            <input id="wm-name-input" type="text" maxlength="32" />
+            <button type="submit" title="Confirm (Enter)">✓</button>
+            <button id="wm-name-cancel" type="button" title="Cancel (Esc)">×</button>
+          </form>
+        </div>
+        <div class="wm-legend">
+          <span class="wm-legend-item"><span class="wm-dot wm-player"></span> You</span>
+          <span class="wm-legend-item"><span class="wm-dot wm-tree"></span> Tree</span>
+          <span class="wm-legend-item"><span class="wm-dot wm-forage"></span> Forage</span>
+          <span class="wm-legend-item"><span class="wm-dot wm-landmark"></span> Landmark</span>
+          <span class="wm-legend-item"><span class="wm-dot wm-enemy"></span> Enemy (Lv 5+)</span>
+          <span class="wm-legend-item"><span class="wm-dot wm-waypoint"></span> Waypoint (Lv 25+)</span>
+          <span class="wm-legend-item wm-fog">Dim tiles = remembered, but not in sight</span>
+        </div>
+        <div id="wm-milestone" class="wm-milestone">Next: Lv 5 Field Surveyor — Enemies in sight appear on the map.</div>
+      </div>
+    </div>
+    <div id="wm-tooltip"></div>
+    <!-- D: Action bar — 480×72, 8 slots numbered 1-8 -->
+    <div id="skillbar">
+      <div id="combo-chip" class="combo-hidden"><span id="combo-count">0</span><span class="combo-of">/3</span></div>
+      <div class="sb-slot sb-active" data-slot="1"><div class="sb-icon"></div><div class="sb-key">1</div><div class="sb-cd"></div><div class="sb-cdtext"></div></div>
+      <div class="sb-slot" data-slot="2"><div class="sb-icon"></div><div class="sb-key">2</div><div class="sb-cd"></div><div class="sb-cdtext"></div></div>
+      <div class="sb-slot" data-slot="3"><div class="sb-icon"></div><div class="sb-key">3</div><div class="sb-cd"></div><div class="sb-cdtext"></div></div>
+      <div class="sb-slot" data-slot="4"><div class="sb-icon"></div><div class="sb-key">4</div><div class="sb-cd"></div><div class="sb-cdtext"></div></div>
+      <div class="sb-slot" data-slot="5"><div class="sb-icon"></div><div class="sb-key">5</div><div class="sb-cd"></div><div class="sb-cdtext"></div></div>
+      <div class="sb-slot" data-slot="6"><div class="sb-icon"></div><div class="sb-key">6</div><div class="sb-cd"></div><div class="sb-cdtext"></div></div>
+      <div class="sb-slot" data-slot="7"><div class="sb-icon"></div><div class="sb-key">7</div><div class="sb-cd"></div><div class="sb-cdtext"></div></div>
+      <div class="sb-slot" data-slot="8"><div class="sb-icon"></div><div class="sb-key">8</div><div class="sb-cd"></div><div class="sb-cdtext"></div></div>
+    </div>
+
+    <!-- E: Log — bottom-left, 280×120, dark background -->
+    <div id="log-panel">
+      <div id="log-list"></div>
     </div>
   </div>
+  <div id="ctx-menu">
+    <div class="ctx-title">Choose option</div>
+    <div class="ctx-items"></div>
+  </div>
+  <div id="gear-tip"></div>
   <div id="panel">
     <div class="section">
-      <h1>Adventurer</h1>
-      <div class="stat-row"><span class="stat-label">HP</span><span class="stat-value"><span id="hp-num">10</span>/<span id="hp-max">10</span></span></div>
+      <h1>Adventurer <button id="settings-btn" class="settings-btn" title="Settings">⚙</button></h1>
+      <div class="stat-row"><span class="stat-label">HP</span><span><span id="hp-num">10</span>/<span id="hp-max">10</span></span></div>
       <div class="bar"><div id="hp-bar" class="bar-fill hp" style="width:100%"></div></div>
+      <div class="stat-row"><span class="stat-label">Stamina</span><span><span id="sta-num">100</span>/<span id="sta-max">100</span></span></div>
+      <div class="bar"><div id="sta-bar" class="bar-fill sta" style="width:100%"></div></div>
+      <div class="stat-row coin-row"><span class="stat-label">Coin</span><span class="coin-num"><span id="coin-num">0</span></span></div>
       <div id="skills"></div>
     </div>
     <div class="section">
-      <h1>Equipped</h1>
-      <div id="equipped" style="font-size:11px; color:#aaa">Fists (no weapon)</div>
+      <h1>Combat</h1>
+      <div id="combat-target" class="ct-empty">No target</div>
+      <div id="combat-style">
+        <button class="cs-btn" data-style="accurate">Accurate</button>
+        <button class="cs-btn" data-style="aggressive">Aggressive</button>
+        <button class="cs-btn" data-style="defensive">Defensive</button>
+        <button class="cs-btn cs-active" data-style="controlled">Controlled</button>
+      </div>
     </div>
     <div class="section">
-      <h1>Inventory</h1>
+      <h1>Equipped</h1>
+      <div id="equipped"></div>
+    </div>
+    <div class="section">
+      <h1>Inventory (28)</h1>
       <div id="inv"></div>
     </div>
     <div class="section">
@@ -209,14 +3800,115 @@
       <div id="quest"></div>
     </div>
     <div class="section" style="flex:1; display:flex; flex-direction:column; min-height:0">
-      <h1>Combat Log</h1>
+      <h1>Log</h1>
       <div id="log"></div>
     </div>
     <div id="controls">
-      <kbd>WASD</kbd>/<kbd>Arrows</kbd> move &nbsp; <kbd>Space</kbd>/<kbd>E</kbd> interact
+      <kbd>Click</kbd> walk · <kbd>Drag</kbd> rotate · <kbd>R-click</kbd> menu · <kbd>Wheel</kbd> zoom
     </div>
   </div>
 </div>
-<script src="game.js"></script>
+<div id="dialog-backdrop">
+  <div id="dialog" role="dialog" aria-modal="true">
+    <div class="speaker">Speaker</div>
+    <div class="lines"></div>
+    <div class="choices"></div>
+    <div class="hint">Press <kbd>Esc</kbd> or click outside to close</div>
+  </div>
+</div>
+<div id="settings-backdrop">
+  <div id="settings-modal" role="dialog" aria-modal="true">
+    <div class="settings-title">Settings</div>
+    <div class="settings-row">
+      <label for="settings-volume">Sound</label>
+      <input id="settings-volume" type="range" min="0" max="1" step="0.01">
+      <span id="settings-volume-num">35%</span>
+    </div>
+    <div class="settings-actions">
+      <button id="settings-close" type="button">Done</button>
+    </div>
+  </div>
+</div>
+<div id="charting-backdrop">
+  <div id="charting" role="dialog" aria-modal="true">
+    <div class="ch-title">The Chartmaker's Stone</div>
+    <div class="ch-grid">
+      <div class="ch-col ch-templates">
+        <div class="ch-col-title">Templates</div>
+        <div class="ch-template-list" id="ch-template-list"></div>
+      </div>
+      <div class="ch-col ch-slots">
+        <div class="ch-col-title">Ink Slots</div>
+        <div class="ch-slot-list" id="ch-slot-list"></div>
+        <div class="ch-ink-bag" id="ch-ink-bag">
+          <div class="ch-bag-title">Available Inks</div>
+          <div id="ch-ink-list"></div>
+        </div>
+      </div>
+      <div class="ch-col ch-preview">
+        <div class="ch-col-title">Predicted Outcome</div>
+        <div class="ch-preview-body" id="ch-preview-body"></div>
+        <button id="ch-roll-btn" class="ch-roll">Inscribe Chart</button>
+      </div>
+    </div>
+    <div class="ch-footer hint">Press <kbd>Esc</kbd> or click outside to leave</div>
+  </div>
+</div>
+<div id="char-creator" role="dialog" aria-modal="true" aria-label="Character Creator">
+  <div class="cc-card">
+    <div class="cc-title">Name Thy Adventurer</div>
+    <div class="cc-preview-wrap">
+      <canvas id="cc-preview"></canvas>
+      <div class="cc-preview-name" id="cc-preview-name"></div>
+    </div>
+    <div class="cc-form">
+      <div>
+        <label for="cc-name">Name</label>
+        <input id="cc-name" type="text" maxlength="12" autocomplete="off" />
+      </div>
+      <div>
+        <label>Archetype</label>
+        <div class="cc-row cc-presets" id="cc-row-presets"></div>
+      </div>
+      <div>
+        <label>Hair</label>
+        <div class="cc-row" id="cc-row-hair"></div>
+      </div>
+      <div>
+        <label>Skin</label>
+        <div class="cc-row" id="cc-row-skin"></div>
+      </div>
+      <div>
+        <label>Tunic</label>
+        <div class="cc-row" id="cc-row-tunic"></div>
+      </div>
+      <div>
+        <label>Cape</label>
+        <div class="cc-row" id="cc-row-cape"></div>
+      </div>
+      <label class="cc-skip-tutorial" title="Mark all in-village hints as already seen so the welcome / walk / attack / loot / eat / NPC / chartmaker prompts don't fire on this run.">
+        <input type="checkbox" id="cc-skip-tutorial">
+        <span>Skip tutorial (returning player)</span>
+      </label>
+      <div class="cc-actions">
+        <button id="cc-random" type="button" title="Randomize all">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor"
+               stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"
+               style="vertical-align:-2px;margin-right:4px;">
+            <rect x="2.5" y="2.5" width="11" height="11" rx="1.2"/>
+            <circle cx="5" cy="5" r="0.6" fill="currentColor"/>
+            <circle cx="11" cy="5" r="0.6" fill="currentColor"/>
+            <circle cx="8" cy="8" r="0.6" fill="currentColor"/>
+            <circle cx="5" cy="11" r="0.6" fill="currentColor"/>
+            <circle cx="11" cy="11" r="0.6" fill="currentColor"/>
+          </svg>
+          Surprise Me
+        </button>
+        <button id="cc-begin">Begin Adventure</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="module" src="src/main.js"></script>
 </body>
 </html>

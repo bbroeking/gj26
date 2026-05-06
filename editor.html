@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bramblewood — Dungeon Editor</title>
+<script type="importmap">
+{
+  "imports": {
+    "three":          "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/":  "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<link rel="stylesheet" href="src/ui/tokens.css">
+<style>
+  :root {
+    --tile-px: 22px;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg-game, #1a1410);
+    color: var(--text, #e8dfc8);
+    font-family: var(--font-body, 'Lora', serif);
+    overflow: hidden;
+  }
+  body {
+    display: grid;
+    grid-template-columns: 220px 1fr 320px;
+    grid-template-rows: 48px 1fr;
+    height: 100vh;
+  }
+  header {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; gap: 16px;
+    padding: 0 16px;
+    background: var(--bg-panel, #2a2018);
+    border-bottom: 1px solid var(--border, #4a3a28);
+  }
+  header h1 { font-family: var(--font-heading, 'Cinzel', serif); font-size: 18px; margin: 0; color: var(--gold, #d4af37); }
+  header .actions { margin-left: auto; display: flex; gap: 8px; }
+  button {
+    background: var(--bg-game); color: var(--text);
+    border: 1px solid var(--border); padding: 6px 12px;
+    font-family: var(--font-body); font-size: 13px; cursor: pointer;
+    border-radius: 2px;
+  }
+  button:hover { background: var(--bg-panel); border-color: var(--gold, #d4af37); }
+  button.primary { background: var(--gold, #d4af37); color: var(--bg-game); border-color: var(--gold, #d4af37); }
+  aside.palette, aside.props { background: var(--bg-panel); border-right: 1px solid var(--border); overflow-y: auto; padding: 12px; }
+  aside.props { border-right: 0; border-left: 1px solid var(--border); }
+  aside h2 { font-family: var(--font-heading); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim, #b8a884); margin: 12px 0 6px; }
+  aside h2:first-child { margin-top: 0; }
+  .swatch {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 8px; cursor: pointer; border: 1px solid transparent;
+    border-radius: 2px; font-size: 12px;
+  }
+  .swatch:hover { border-color: var(--border); }
+  .swatch.active { border-color: var(--gold, #d4af37); background: rgba(212, 175, 55, 0.10); }
+  .swatch .chip { width: 16px; height: 16px; border: 1px solid #000; }
+  .canvas-wrap { overflow: auto; background: #0e0a08; position: relative; min-height: 0; }
+  #grid { display: block; image-rendering: pixelated; cursor: crosshair; margin: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.6); }
+  .field { margin: 6px 0; font-size: 12px; }
+  .field label { display: block; color: var(--text-dim); margin-bottom: 2px; }
+  .field input, .field select, .field textarea {
+    width: 100%; box-sizing: border-box;
+    background: var(--bg-game); color: var(--text);
+    border: 1px solid var(--border); padding: 4px 6px;
+    font-family: var(--font-body); font-size: 12px;
+  }
+  .field textarea { font-family: var(--font-mono, monospace); height: 100px; resize: vertical; }
+  #status { position: fixed; bottom: 8px; left: 240px; font-size: 11px; color: var(--text-dim); }
+  .mini-row { display: flex; gap: 6px; align-items: center; }
+  .mini-row > * { flex: 1; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Bramblewood — Dungeon Editor</h1>
+    <span style="color: var(--text-dim); font-size: 12px;">paint / right-erase / shift-sample / alt-drag-rect · W=wall F=floor 1-4=category · ⌘S=save ⌘↩=save+test · alt-drag → Save brush → stamp anywhere</span>
+    <nav style="display:flex; gap:8px; margin-left:auto; margin-right:12px;">
+      <a href="index.html" style="color:var(--text-dim); padding:4px 10px; border:1px solid var(--text-dim); border-radius:3px; font-size:12px; text-decoration:none;">Game</a>
+      <a href="codex.html" style="color:var(--text-dim); padding:4px 10px; border:1px solid var(--text-dim); border-radius:3px; font-size:12px; text-decoration:none;">Codex</a>
+    </nav>
+    <div class="actions">
+      <button id="btn-new">New</button>
+      <button id="btn-fill-walls">Reset to Walls</button>
+      <button id="btn-3d">3D preview</button>
+      <button id="btn-save-test" class="primary">Save & Test</button>
+      <button id="btn-test">Test</button>
+      <button id="btn-save">Save</button>
+      <button id="btn-load">Load…</button>
+      <button id="btn-save-brush">Save brush</button>
+      <button id="btn-brushes">Brushes…</button>
+      <button id="btn-export">Export JSON</button>
+      <button id="btn-import">Import…</button>
+    </div>
+  </header>
+
+  <div id="library-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:100; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-panel); border:1px solid var(--border); padding:18px; min-width:520px; max-width:720px; max-height:80vh; overflow-y:auto; border-radius:4px; box-shadow: 0 8px 32px rgba(0,0,0,0.7);">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <h2 style="font-family:var(--font-heading); color:var(--gold,#d4af37); margin:0; font-size:16px;">Saved Layouts</h2>
+        <button id="library-close" style="margin-left:auto;">Close</button>
+      </div>
+      <div id="library-list" style="display:flex; flex-direction:column; gap:6px; font-size:13px;"></div>
+    </div>
+  </div>
+
+  <div id="brushes-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:100; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-panel); border:1px solid var(--border); padding:18px; min-width:520px; max-width:720px; max-height:80vh; overflow-y:auto; border-radius:4px; box-shadow: 0 8px 32px rgba(0,0,0,0.7);">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <h2 style="font-family:var(--font-heading); color:var(--gold,#d4af37); margin:0; font-size:16px;">Saved Brushes</h2>
+        <button id="brushes-close" style="margin-left:auto;">Close</button>
+      </div>
+      <div id="brushes-list" style="display:flex; flex-direction:column; gap:6px; font-size:13px;"></div>
+    </div>
+  </div>
+
+  <aside class="palette">
+    <h2>Tiles</h2>
+    <div id="palette-tiles"></div>
+
+    <h2>Markers</h2>
+    <div id="palette-markers"></div>
+
+    <h2>Decor</h2>
+    <div id="palette-decor"></div>
+
+    <h2>Spawns</h2>
+    <div id="palette-spawns"></div>
+
+    <h2>Room tags <span style="color: var(--text-dim); font-size: 10px;">(scaffold)</span></h2>
+    <div id="palette-roomtags"></div>
+
+    <h2>Traps</h2>
+    <div id="palette-traps"></div>
+
+    <h2>Doors</h2>
+    <div id="palette-doors"></div>
+  </aside>
+
+  <main class="canvas-wrap">
+    <canvas id="grid"></canvas>
+    <div id="three-overlay" style="display:none; position:absolute; inset:0; background:#0e0a08;">
+      <canvas id="three-canvas" style="display:block; width:100%; height:100%;"></canvas>
+      <div style="position:absolute; left:10px; top:10px; background:rgba(232,220,192,0.92); color:var(--ink, #2a2018); padding:6px 10px; border-radius:3px; font-size:12px; pointer-events:none;">
+        <b>3D preview</b> · drag = rotate · scroll = zoom · right-drag = pan · click <b>3D preview</b> again to return to paint
+      </div>
+      <div style="position:absolute; right:10px; top:10px; display:flex; gap:6px;">
+        <button id="btn-3d-refresh" style="background: var(--bg-game,#1a1410); color: var(--text,#e8dfc8); border: 1px solid var(--border,#4a3a28); padding: 4px 10px; font-size: 12px; cursor: pointer; border-radius: 2px;">Refresh</button>
+      </div>
+      <div id="three-error" style="display:none; position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); background:rgba(196,102,128,0.95); color:#fff; padding:12px 18px; border-radius:4px; font-size:13px; max-width:60%; text-align:center; pointer-events:none;"></div>
+    </div>
+  </main>
+
+  <aside class="props">
+    <h2>Layout</h2>
+    <div class="field">
+      <label>Name</label>
+      <input id="prop-name" type="text" value="untitled-dungeon">
+    </div>
+    <div class="field">
+      <label>Scope</label>
+      <select id="prop-scope">
+        <option value="briar_maze">briar_maze</option>
+        <option value="sunken_hut">sunken_hut</option>
+        <option value="delve">delve</option>
+        <option value="hollow">hollow</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Mode</label>
+      <select id="prop-mode">
+        <option value="authored">authored — play exactly what's painted</option>
+        <option value="scaffold">scaffold — procgen connects + fills</option>
+      </select>
+    </div>
+    <div class="field" id="prop-padding-row">
+      <label><input id="prop-padding" type="checkbox" checked> Procgen padding (extra random rooms)</label>
+    </div>
+    <div class="field" id="prop-usebrushes-row">
+      <label><input id="prop-usebrushes" type="checkbox"> Use brushes (procgen stamps from library)</label>
+    </div>
+    <div class="field mini-row">
+      <div>
+        <label>Width</label>
+        <input id="prop-w" type="number" min="6" max="64" value="22">
+      </div>
+      <div>
+        <label>Height</label>
+        <input id="prop-h" type="number" min="6" max="64" value="22">
+      </div>
+    </div>
+    <div class="field">
+      <label>Boss kind (optional)</label>
+      <select id="prop-boss">
+        <option value="">— none —</option>
+        <option value="hedgemother">hedgemother</option>
+        <option value="burrow_boar">burrow_boar</option>
+        <option value="wolf_alpha">wolf_alpha</option>
+      </select>
+    </div>
+
+    <h2>Procgen knobs</h2>
+    <div class="field mini-row">
+      <div>
+        <label>Tier</label>
+        <select id="prop-tier">
+          <option value="1">1 — bronze</option>
+          <option value="2">2 — bog-iron</option>
+          <option value="3">3 — bog-iron+</option>
+          <option value="4">4 — cinderbloom</option>
+          <option value="5">5 — cinderbloom+</option>
+        </select>
+      </div>
+      <div>
+        <label>Rune</label>
+        <select id="prop-rune">
+          <option value="">— none —</option>
+          <option value="fire">fire — +30% loot</option>
+          <option value="earth">earth — stone chips</option>
+          <option value="water">water — +20% stamina</option>
+          <option value="air">air — enemies hit -1</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Seed (blank = random)</label>
+      <input id="prop-seed" type="text" placeholder="optional">
+    </div>
+    <div class="field">
+      <label>Affixes</label>
+      <div id="prop-affixes" style="display:flex; flex-direction:column; gap:2px; max-height:180px; overflow-y:auto; border:1px solid var(--border); padding:4px 6px; font-size:11px;"></div>
+    </div>
+
+    <h2>JSON</h2>
+    <div class="field">
+      <textarea id="json-pane" spellcheck="false"></textarea>
+    </div>
+    <div class="actions" style="display: flex; gap: 6px;">
+      <button id="btn-apply-json" style="flex:1">Apply JSON</button>
+      <button id="btn-copy-json" style="flex:1">Copy</button>
+    </div>
+
+    <h2>Stats</h2>
+    <div id="stats" style="font-size: 11px; color: var(--text-dim); line-height: 1.5;"></div>
+  </aside>
+
+  <div id="status">Ready.</div>
+
+  <script type="module" src="src/editor/editor.js"></script>
+</body>
+</html>

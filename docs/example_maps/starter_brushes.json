@@ -1,0 +1,781 @@
+{
+  "imp-ambush": {
+    "savedAt": 1777738926352,
+    "brush": {
+      "name": "imp-ambush",
+      "w": 5,
+      "h": 5,
+      "grid": [
+        [
+          "wall",
+          "wall",
+          "floor",
+          "wall",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "wall",
+          "floor",
+          "wall",
+          "wall"
+        ]
+      ],
+      "decor": [],
+      "spawns": [
+        {
+          "kind": "bramble_imp",
+          "x": 2,
+          "y": 0
+        },
+        {
+          "kind": "bramble_imp",
+          "x": 2,
+          "y": 4
+        }
+      ],
+      "roomTags": [
+        {
+          "tag": "mob",
+          "x": 0,
+          "y": 2
+        },
+        {
+          "tag": "mob",
+          "x": 4,
+          "y": 2
+        }
+      ],
+      "scope": "briar_maze"
+    }
+  },
+  "treasure-chamber": {
+    "savedAt": 1777738926352,
+    "brush": {
+      "name": "treasure-chamber",
+      "w": 7,
+      "h": 7,
+      "grid": [
+        [
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall"
+        ]
+      ],
+      "decor": [
+        {
+          "kind": "thorn_pillar",
+          "x": 1,
+          "y": 1
+        },
+        {
+          "kind": "thorn_pillar",
+          "x": 5,
+          "y": 1
+        },
+        {
+          "kind": "thorn_pillar",
+          "x": 1,
+          "y": 5
+        },
+        {
+          "kind": "thorn_pillar",
+          "x": 5,
+          "y": 5
+        }
+      ],
+      "spawns": [],
+      "roomTags": [
+        {
+          "tag": "treasure",
+          "x": 3,
+          "y": 3
+        }
+      ],
+      "scope": "briar_maze"
+    }
+  },
+  "shrine-room": {
+    "savedAt": 1777738926352,
+    "brush": {
+      "name": "shrine-room",
+      "w": 7,
+      "h": 7,
+      "grid": [
+        [
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall"
+        ]
+      ],
+      "decor": [
+        {
+          "kind": "thorn_pillar",
+          "x": 2,
+          "y": 2
+        },
+        {
+          "kind": "thorn_pillar",
+          "x": 4,
+          "y": 2
+        },
+        {
+          "kind": "thorn_pillar",
+          "x": 2,
+          "y": 4
+        },
+        {
+          "kind": "thorn_pillar",
+          "x": 4,
+          "y": 4
+        }
+      ],
+      "spawns": [],
+      "roomTags": [
+        {
+          "tag": "shrine",
+          "x": 3,
+          "y": 3
+        }
+      ],
+      "scope": "hollow"
+    }
+  },
+  "boss-arena": {
+    "savedAt": 1777738926352,
+    "brush": {
+      "name": "boss-arena",
+      "w": 9,
+      "h": 7,
+      "grid": [
+        [
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall"
+        ]
+      ],
+      "decor": [
+        {
+          "kind": "boulder",
+          "x": 2,
+          "y": 2
+        },
+        {
+          "kind": "boulder",
+          "x": 6,
+          "y": 2
+        }
+      ],
+      "spawns": [
+        {
+          "kind": "bramble_charger",
+          "x": 2,
+          "y": 4
+        },
+        {
+          "kind": "bramble_charger",
+          "x": 6,
+          "y": 4
+        }
+      ],
+      "roomTags": [
+        {
+          "tag": "boss",
+          "x": 4,
+          "y": 3
+        }
+      ],
+      "scope": "delve"
+    }
+  },
+  "ore-vein": {
+    "savedAt": 1777738926352,
+    "brush": {
+      "name": "ore-vein",
+      "w": 6,
+      "h": 7,
+      "grid": [
+        [
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall"
+        ]
+      ],
+      "decor": [
+        {
+          "kind": "ore_rock",
+          "x": 2,
+          "y": 1
+        },
+        {
+          "kind": "ore_rock",
+          "x": 3,
+          "y": 2
+        },
+        {
+          "kind": "ore_rock",
+          "x": 2,
+          "y": 4
+        },
+        {
+          "kind": "ore_rock",
+          "x": 3,
+          "y": 5
+        }
+      ],
+      "spawns": [
+        {
+          "kind": "iron_gob",
+          "x": 4,
+          "y": 3
+        }
+      ],
+      "roomTags": [
+        {
+          "tag": "mob",
+          "x": 1,
+          "y": 3
+        }
+      ],
+      "scope": "delve"
+    }
+  },
+  "puddle-pool": {
+    "savedAt": 1777738926352,
+    "brush": {
+      "name": "puddle-pool",
+      "w": 8,
+      "h": 6,
+      "grid": [
+        [
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall"
+        ]
+      ],
+      "decor": [
+        {
+          "kind": "puddle",
+          "x": 2,
+          "y": 1
+        },
+        {
+          "kind": "puddle",
+          "x": 3,
+          "y": 1
+        },
+        {
+          "kind": "puddle",
+          "x": 4,
+          "y": 1
+        },
+        {
+          "kind": "puddle",
+          "x": 1,
+          "y": 2
+        },
+        {
+          "kind": "puddle",
+          "x": 2,
+          "y": 2
+        },
+        {
+          "kind": "puddle",
+          "x": 4,
+          "y": 2
+        },
+        {
+          "kind": "puddle",
+          "x": 2,
+          "y": 3
+        },
+        {
+          "kind": "puddle",
+          "x": 3,
+          "y": 3
+        },
+        {
+          "kind": "puddle",
+          "x": 4,
+          "y": 3
+        }
+      ],
+      "spawns": [],
+      "roomTags": [
+        {
+          "tag": "mob",
+          "x": 3,
+          "y": 2
+        }
+      ],
+      "scope": "sunken_hut"
+    }
+  },
+  "archer-perch": {
+    "savedAt": 1777738926352,
+    "brush": {
+      "name": "archer-perch",
+      "w": 3,
+      "h": 10,
+      "grid": [
+        [
+          "wall",
+          "wall",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "wall",
+          "wall"
+        ]
+      ],
+      "decor": [],
+      "spawns": [
+        {
+          "kind": "bramble_archer",
+          "x": 1,
+          "y": 3
+        }
+      ],
+      "roomTags": [
+        {
+          "tag": "mob",
+          "x": 1,
+          "y": 6
+        }
+      ],
+      "scope": "briar_maze"
+    }
+  },
+  "cozy-alcove": {
+    "savedAt": 1777738926352,
+    "brush": {
+      "name": "cozy-alcove",
+      "w": 5,
+      "h": 5,
+      "grid": [
+        [
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "floor",
+          "floor",
+          "floor",
+          "wall"
+        ],
+        [
+          "wall",
+          "wall",
+          "wall",
+          "wall",
+          "wall"
+        ]
+      ],
+      "decor": [
+        {
+          "kind": "mossfloor",
+          "x": 1,
+          "y": 1
+        },
+        {
+          "kind": "mossfloor",
+          "x": 3,
+          "y": 1
+        },
+        {
+          "kind": "mossfloor",
+          "x": 1,
+          "y": 3
+        },
+        {
+          "kind": "mossfloor",
+          "x": 3,
+          "y": 3
+        }
+      ],
+      "spawns": [],
+      "roomTags": [
+        {
+          "tag": "puzzle",
+          "x": 2,
+          "y": 2
+        }
+      ],
+      "scope": "hollow"
+    }
+  }
+}

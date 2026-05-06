@@ -1,0 +1,18 @@
+{
+  "id": "r002_drop_nano",
+  "title": "Drop nano-detail (stitches, motifs, buckle, hem trim)",
+  "hypothesis": "At chunky-character scale these 4-pixel features wash out and just add visual noise. Reference image (chibi knight) has zero stitch / motif / trim detail \u2014 only big silhouette shapes. Hypothesis: silhouette reads cleaner without them.",
+  "params": {
+    "ELDRA_VARIANT": "s",
+    "ELDRA_SKIP_GRASS": "1",
+    "ELDRA_FORM_MERGE": "1"
+  },
+  "parent": "r001_baseline",
+  "rating": null,
+  "notes": "",
+  "outputs": {
+    "glb": "models/npc_eldra_v2_r002_drop_nano.glb",
+    "thumb": "docs/research/eldra/runs/r002_drop_nano/thumb.png"
+  },
+  "built_at": "2026-05-04T17:06:22.393351+00:00"
+}

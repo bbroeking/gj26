@@ -1,0 +1,18 @@
+{
+  "id": "r009_palette_desat",
+  "title": "One saturation peak \u2014 desat all colors except lantern_glow",
+  "hypothesis": "Wiki principle [color-and-lighting \u00a72.3]: 'A scene should have one most-saturated color, and everything else should be visibly desaturated relative to it. The eye goes where saturation is, so the saturation peak doubles as the scene's focal point.' Eldra's thematic identity is the lantern. This run multiplies saturation by 0.55 on every color except LANTERN_GLOW, leaving the warm yellow as the single saturation peak. Tests whether desaturating the rest makes the lantern read as her FOCAL POINT instead of competing with the shawl/tunic/skin.",
+  "params": {
+    "ELDRA_VARIANT": "s",
+    "ELDRA_SKIP_GRASS": "1",
+    "ELDRA_PALETTE": "desat"
+  },
+  "parent": "r001_baseline",
+  "rating": null,
+  "notes": "",
+  "outputs": {
+    "glb": "models/npc_eldra_v2_r009_palette_desat.glb",
+    "thumb": "docs/research/eldra/runs/r009_palette_desat/thumb.png"
+  },
+  "built_at": "2026-05-04T17:36:55.166992+00:00"
+}

@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Bramblewood Codex</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="src/ui/tokens.css">
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three":          "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/":  "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      background: var(--bg-deep);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+    }
+    a { color: var(--accent-gold); }
+
+    .codex-shell {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: var(--s-5) var(--s-5) var(--s-8);
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: var(--s-5);
+    }
+
+    header.codex-head {
+      grid-column: 1 / -1;
+      display: flex; align-items: baseline; gap: var(--s-5);
+      flex-wrap: wrap;
+      margin-bottom: var(--s-3);
+    }
+    header.codex-head h1 {
+      font-family: var(--font-display);
+      color: var(--paper);
+      font-size: 28px; letter-spacing: 0.02em;
+      margin: 0;
+    }
+    header.codex-head .sub {
+      color: var(--ink-light);
+      font-style: italic;
+    }
+    .codex-cross-nav { display: flex; gap: var(--s-2); }
+    .codex-cross-nav a {
+      color: var(--ink-light);
+      padding: 4px 10px;
+      border: 1px solid var(--ink-light);
+      border-radius: 3px;
+      font-family: var(--font-body);
+      font-size: 13px;
+      text-decoration: none;
+      transition: all 0.12s ease;
+    }
+    .codex-cross-nav a:hover {
+      background: var(--accent-gold, #b48a3a);
+      color: var(--ink);
+      border-color: var(--accent-gold, #b48a3a);
+    }
+    header.codex-head .global-search {
+      margin-left: auto;
+      flex: 0 0 320px;
+      max-width: 100%;
+    }
+    header.codex-head .global-search input {
+      width: 100%; box-sizing: border-box;
+      background: var(--paper);
+      color: var(--ink);
+      border: 1px solid var(--border);
+      padding: var(--s-2) var(--s-3);
+      border-radius: 2px;
+      font-family: var(--font-body); font-size: 13px;
+    }
+
+    /* ---- left-rail nav ---- */
+    aside.codex-nav {
+      align-self: start;
+      position: sticky; top: var(--s-3);
+      display: flex; flex-direction: column; gap: var(--s-1);
+      padding: var(--s-3);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+    }
+    aside.codex-nav h4 {
+      font-family: var(--font-display);
+      font-size: 11px;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      margin: var(--s-3) 0 var(--s-1);
+      padding: 0 var(--s-2);
+    }
+    aside.codex-nav h4:first-child { margin-top: 0; }
+    aside.codex-nav button {
+      font-family: var(--font-body);
+      font-size: 13px;
+      text-align: left;
+      background: transparent;
+      /* Cream-on-navy for inactive items so they read on the dark left
+         rail. Was var(--text) which is dark ink — invisible on this bg. */
+      color: var(--paper);
+      border: 1px solid transparent;
+      padding: var(--s-2) var(--s-3);
+      cursor: pointer;
+      border-radius: 2px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    aside.codex-nav button:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: var(--border);
+      color: #fff;
+    }
+    aside.codex-nav button.on {
+      background: var(--paper);
+      color: var(--ink);
+      border-color: var(--paper);
+    }
+    aside.codex-nav button .badge {
+      font-size: 11px;
+      /* Gold-tinted badge against cream text. Active state inherits the
+         normal --ink-light contrast against the paper bg. */
+      color: var(--ink-light);
+      font-variant-numeric: tabular-nums;
+      opacity: 0.85;
+    }
+    aside.codex-nav button.on .badge {
+      opacity: 1;
+    }
+    aside.codex-nav button.on .badge { color: var(--ink); opacity: 0.7; }
+
+    main { min-width: 0; }
+    section.tab-pane { display: none; }
+    section.tab-pane.on { display: block; }
+
+    /* ---- card grid for items / npcs / enemies ---- */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: var(--s-3);
+    }
+    .card {
+      background: var(--paper);
+      color: var(--ink);
+      padding: var(--s-3) var(--s-4);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    }
+    .card h3 {
+      margin: 0 0 var(--s-1);
+      font-family: var(--font-display);
+      font-size: 16px;
+      display: flex; align-items: center; gap: var(--s-2);
+    }
+    .card .icon { font-size: 22px; line-height: 1; }
+    .card .icon-img {
+      width: 36px; height: 36px;
+      image-rendering: pixelated;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .card .meta {
+      font-size: 11px; color: var(--ink-mid);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin: 2px 0 var(--s-2);
+    }
+    .card .desc {
+      font-size: 13px; line-height: 1.4;
+      color: var(--ink);
+    }
+    .card .stats {
+      display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-3);
+      margin-top: var(--s-2);
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 12px;
+      color: var(--ink-mid);
+    }
+    .card .stats b { color: var(--ink); font-weight: 600; }
+    .card .drops {
+      font-size: 11px; color: var(--ink-mid);
+      margin-top: var(--s-2);
+      font-style: italic;
+    }
+    .card .lore {
+      margin-top: var(--s-2);
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--ink-mid);
+      font-style: italic;
+      border-left: 2px solid var(--accent-gold, #b48a3a);
+      padding-left: 8px;
+    }
+    /* Cards with concept-art portraits use a horizontal layout. */
+    .card.has-portrait {
+      display: flex;
+      gap: var(--s-3);
+      padding: var(--s-3);
+    }
+    .card.has-portrait .portrait {
+      flex: 0 0 96px;
+      width: 96px; height: 96px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: #f4ecd8;
+    }
+    .card.has-portrait .card-body {
+      flex: 1; min-width: 0;
+    }
+    .card.has-portrait .card-body h3 { margin: 0 0 2px; }
+    .card.has-portrait .card-body .desc { font-size: 12px; }
+    /* Wider grid for portrait cards so two-column reads well. */
+    .tab-pane[data-tab="npcs"] .grid,
+    .tab-pane[data-tab="enemies"] .grid {
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    }
+
+    /* Items tab — quick-filter chip strip + section headers */
+    .codex-chip-row {
+      display: flex; flex-wrap: wrap; gap: var(--s-1);
+      margin: var(--s-2) 0 var(--s-3);
+      padding-bottom: var(--s-3);
+      border-bottom: 1px solid var(--ink-light);
+    }
+    .codex-chip {
+      background: var(--paper);
+      color: var(--ink);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-family: var(--font-display);
+      font-size: 12px; letter-spacing: 0.04em;
+      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: background 0.12s ease;
+    }
+    .codex-chip:hover { background: var(--paper-deep); }
+    .codex-chip.codex-chip-active {
+      background: var(--accent-gold, #b48a3a);
+      color: var(--ink);
+      border-color: var(--accent-gold, #b48a3a);
+    }
+    .codex-chip-count {
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 10px;
+      opacity: 0.75;
+      background: rgba(0,0,0,0.07);
+      padding: 1px 6px; border-radius: 99px;
+    }
+    .codex-section {
+      font-family: var(--font-display);
+      font-size: 18px; letter-spacing: 0.04em;
+      color: var(--paper);
+      margin: var(--s-5) 0 var(--s-2);
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--ink-light);
+      display: flex; align-items: baseline; gap: var(--s-2);
+    }
+    .codex-section:first-child { margin-top: 0; }
+    .codex-section-count {
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 11px;
+      opacity: 0.55;
+      letter-spacing: 0.04em;
+    }
+    .codex-section-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: var(--s-3);
+    }
+    .codex-empty {
+      padding: var(--s-6) var(--s-4);
+      text-align: center;
+      color: var(--ink-mid);
+      font-style: italic;
+      background: var(--paper);
+      border: 1px dashed var(--border);
+      border-radius: 4px;
+    }
+
+    /* Lore tab: chapter-style sections with cards */
+    .lore-section { margin-bottom: var(--s-6); }
+    .lore-section h2 {
+      font-family: var(--font-display);
+      font-size: 18px; letter-spacing: 0.04em;
+      color: var(--paper);
+      margin: 0 0 var(--s-2);
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--ink-light);
+    }
+    .lore-section .grid {
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+    .lore-card .meta {
+      color: var(--ink-light);
+    }
+    .lore-card .body {
+      font-size: 13px; line-height: 1.5;
+      color: var(--ink);
+    }
+    .card.tier-trivial { border-left: 3px solid #8aa68a; }
+    .card.tier-easy    { border-left: 3px solid #b8a56a; }
+    .card.tier-medium  { border-left: 3px solid #c89858; }
+    .card.tier-hard    { border-left: 3px solid #b86a4e; }
+    .card.tier-elite   { border-left: 3px solid #8a4a8a; }
+    .card.tier-boss    { border-left: 3px solid #c94c4c; }
+
+    /* Ability cards — tree-coded color stripes. tier- here re-uses the
+     * skill key (atk/def/str/hp) since cards use `tier-${reqSkill}` */
+    .card.tier-atk { border-left: 3px solid #c94c4c; }   /* red — offensive */
+    .card.tier-def { border-left: 3px solid #4a7eb0; }   /* blue — defensive */
+    .card.tier-str { border-left: 3px solid #d18028; }   /* orange — heavy */
+    .card.tier-hp  { border-left: 3px solid #6e9e5a; }   /* green — life */
+    /* Larger, framed icon on ability cards */
+    .tab-pane[data-tab="abilities"] .card .icon {
+      display: inline-block;
+      width: 32px; height: 32px; line-height: 32px; text-align: center;
+      background: rgba(0,0,0,0.06);
+      border-radius: 4px;
+      margin-right: 8px;
+      font-size: 18px;
+    }
+    .tab-pane[data-tab="abilities"] .card.tier-atk .icon { background: rgba(201, 76, 76, 0.15); }
+    .tab-pane[data-tab="abilities"] .card.tier-def .icon { background: rgba(74, 126, 176, 0.18); }
+    .tab-pane[data-tab="abilities"] .card.tier-str .icon { background: rgba(209, 128, 40, 0.18); }
+    .tab-pane[data-tab="abilities"] .card.tier-hp  .icon { background: rgba(110, 158, 90, 0.20); }
+
+    /* ---- search / filter row ---- */
+    .filter-row {
+      display: flex; gap: var(--s-3); align-items: center;
+      margin-bottom: var(--s-3);
+    }
+    .filter-row input {
+      flex: 1;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      padding: var(--s-2) var(--s-3);
+      font-family: var(--font-body);
+      color: var(--ink);
+      border-radius: 2px;
+    }
+    .filter-row .count {
+      color: var(--ink-light);
+      font-size: 12px;
+    }
+
+    /* ---- skills tab layout ---- */
+    .skills-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: var(--s-4);
+      min-height: 70vh;
+    }
+    .skills-layout #skill-list {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: var(--s-2);
+      overflow-y: auto;
+      max-height: 78vh;
+    }
+    .skills-layout #skill-list h5 {
+      font-family: var(--font-display);
+      margin: var(--s-2) var(--s-2) var(--s-1);
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--ink-mid);
+    }
+    .skills-layout #skill-list h5:first-child { margin-top: 0; }
+    .skills-layout #skill-list button {
+      display: block; width: 100%;
+      text-align: left;
+      background: transparent; border: none;
+      padding: 5px var(--s-2);
+      font: inherit;
+      cursor: pointer;
+      color: var(--ink);
+      border-radius: 2px;
+      font-size: 13px;
+    }
+    .skills-layout #skill-list button:hover { background: var(--paper-deep); }
+    .skills-layout #skill-list button.on {
+      background: var(--ink); color: var(--paper);
+    }
+    .skill-content {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: var(--s-5) var(--s-6);
+      max-width: 800px;
+      max-height: 78vh;
+      overflow-y: auto;
+      line-height: 1.55;
+      color: var(--ink);
+    }
+    .skill-content h1 {
+      font-family: var(--font-display);
+      font-size: 26px; margin: 0 0 var(--s-2);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: var(--s-2);
+    }
+    .skill-content h2 {
+      font-family: var(--font-display);
+      font-size: 16px; margin: var(--s-5) 0 var(--s-2);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--ink-mid);
+    }
+    .skill-content h3 { font-size: 14px; margin: var(--s-4) 0 var(--s-1); }
+    .skill-content p { margin: 0 0 var(--s-3); }
+    .skill-content blockquote {
+      margin: 0 0 var(--s-3); padding: var(--s-2) var(--s-3);
+      border-left: 3px solid var(--accent-gold);
+      background: var(--paper-deep);
+      font-style: italic; color: var(--ink-mid);
+    }
+    .skill-content ul, .skill-content ol { margin: 0 0 var(--s-3); padding-left: var(--s-5); }
+    .skill-content li { margin-bottom: 4px; }
+    .skill-content code {
+      font-family: var(--font-mono);
+      background: var(--paper-deep); padding: 1px 5px; border-radius: 2px;
+      font-size: 12px;
+    }
+    .skill-content table {
+      width: 100%; border-collapse: collapse; margin: 0 0 var(--s-4);
+      font-size: 13px;
+    }
+    .skill-content th, .skill-content td {
+      text-align: left; padding: 5px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .skill-content th { font-weight: 600; color: var(--ink-mid); }
+
+    /* ---- model viewer layout ---- */
+    .viewer {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: var(--s-4);
+      min-height: 70vh;
+    }
+    .viewer aside {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: var(--s-2);
+      overflow-y: auto;
+      max-height: 78vh;
+    }
+    .viewer aside h4 {
+      font-family: var(--font-display);
+      margin: var(--s-2) var(--s-2) var(--s-1);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--ink-mid);
+    }
+    .viewer aside button {
+      display: block; width: 100%;
+      text-align: left;
+      background: transparent;
+      border: none;
+      padding: 4px var(--s-2);
+      font: inherit;
+      cursor: pointer;
+      color: var(--ink);
+      border-radius: 2px;
+    }
+    .viewer aside button:hover { background: var(--paper-deep); }
+    .viewer aside button.on {
+      background: var(--ink);
+      color: var(--paper);
+    }
+    .viewer .stage {
+      background: var(--bg-stage);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      position: relative;
+      overflow: hidden;
+    }
+    .viewer canvas { display: block; width: 100%; height: 100%; position: relative; z-index: 1; }
+    .viewer .concept-overlay {
+      position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+      object-fit: contain;
+      opacity: 0; transition: opacity 200ms;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .viewer .concept-overlay.on { opacity: 0.30; }
+    .viewer .overlay {
+      position: absolute; left: var(--s-3); top: var(--s-3); right: var(--s-3);
+      pointer-events: none;
+      display: flex; gap: var(--s-3); align-items: flex-start;
+      flex-wrap: wrap;
+      z-index: 3;
+    }
+    .viewer .overlay .info {
+      background: rgba(232, 220, 192, 0.92);
+      color: var(--ink);
+      padding: var(--s-2) var(--s-3);
+      border-radius: 3px;
+      font-size: 12px;
+      line-height: 1.4;
+      pointer-events: auto;
+    }
+    .viewer .overlay .info b { font-weight: 600; }
+    .viewer .controls {
+      position: absolute; right: var(--s-3); bottom: var(--s-3);
+      pointer-events: auto;
+      display: flex; gap: var(--s-2);
+      background: rgba(232, 220, 192, 0.92);
+      padding: var(--s-2);
+      border-radius: 3px;
+      z-index: 3;
+    }
+    .viewer .controls label {
+      font-size: 12px; color: var(--ink);
+      display: flex; align-items: center; gap: 4px;
+      cursor: pointer;
+    }
+    .viewer .empty {
+      color: var(--ink-light);
+      padding: var(--s-6);
+      text-align: center;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="codex-shell">
+    <header class="codex-head">
+      <h1>Bramblewood Codex</h1>
+      <span class="sub">a working list of every thing in the wolds</span>
+      <nav class="codex-cross-nav">
+        <a href="index.html">Game</a>
+        <a href="editor.html">Editor</a>
+      </nav>
+      <div class="global-search">
+        <input id="filter-global" type="search" placeholder="Search the codex (filters the active section)…">
+      </div>
+    </header>
+
+    <aside class="codex-nav" id="tabs">
+      <h4>Cast</h4>
+      <button data-tab="npcs">NPCs <span class="badge" id="badge-npcs"></span></button>
+
+      <h4>Bestiary</h4>
+      <button data-tab="enemies">Enemies <span class="badge" id="badge-enemies"></span></button>
+
+      <h4>Inventory</h4>
+      <button data-tab="items" class="on">Items <span class="badge" id="badge-items"></span></button>
+      <button data-tab="abilities">Abilities <span class="badge" id="badge-abilities"></span></button>
+      <button data-tab="skills">Skills <span class="badge" id="badge-skills"></span></button>
+
+      <h4>World</h4>
+      <button data-tab="lore">Lore</button>
+      <button data-tab="models">Models</button>
+
+      <h4>Lab</h4>
+      <button data-tab="research">Eldra Research</button>
+    </aside>
+
+    <main>
+      <section class="tab-pane on" data-tab="items">
+        <div class="filter-row">
+          <input id="filter-items" type="search" placeholder="Filter items by name, slot, or description…">
+          <span class="count" id="count-items"></span>
+        </div>
+        <div class="grid" id="grid-items"></div>
+      </section>
+
+      <section class="tab-pane" data-tab="npcs">
+        <div class="filter-row">
+          <input id="filter-npcs" type="search" placeholder="Filter NPCs…">
+          <span class="count" id="count-npcs"></span>
+        </div>
+        <div class="grid" id="grid-npcs"></div>
+      </section>
+
+      <section class="tab-pane" data-tab="enemies">
+        <div class="filter-row">
+          <input id="filter-enemies" type="search" placeholder="Filter enemies by tier or kind…">
+          <span class="count" id="count-enemies"></span>
+        </div>
+        <div class="grid" id="grid-enemies"></div>
+      </section>
+
+      <section class="tab-pane" data-tab="abilities">
+        <div class="filter-row">
+          <input id="filter-abilities" type="search" placeholder="Filter abilities by tree or name…">
+          <span class="count" id="count-abilities"></span>
+        </div>
+        <div class="grid" id="grid-abilities"></div>
+      </section>
+
+      <section class="tab-pane" data-tab="skills">
+        <div class="filter-row">
+          <input id="filter-skills" type="search" placeholder="Filter skills by name or category…">
+          <span class="count" id="count-skills"></span>
+        </div>
+        <div class="skills-layout" id="skills-layout">
+          <aside id="skill-list"></aside>
+          <article id="skill-content" class="skill-content">
+            <em style="opacity:0.6">Pick a skill from the list to see its progression.</em>
+          </article>
+        </div>
+      </section>
+
+      <section class="tab-pane" data-tab="lore">
+        <div class="filter-row">
+          <input id="filter-lore" type="search" placeholder="Filter legends, festivals, places…">
+          <span class="count" id="count-lore"></span>
+        </div>
+        <div id="lore-sections"></div>
+      </section>
+
+      <section class="tab-pane" data-tab="models">
+        <div class="viewer">
+          <aside id="model-list"></aside>
+          <div class="stage">
+            <canvas id="model-canvas"></canvas>
+            <img id="concept-overlay" class="concept-overlay" alt="">
+            <div class="overlay">
+              <div class="info" id="model-info">Pick a model from the list.</div>
+            </div>
+            <div class="controls">
+              <label><input type="radio" name="shading" id="opt-toon" checked> toon (cel, 4-band)</label>
+              <label><input type="radio" name="shading" id="opt-flat-phong"> flat phong (tinyskies)</label>
+              <label><input type="radio" name="shading" id="opt-pbr"> PBR (raw GLB)</label>
+              <label><input type="checkbox" id="opt-outline"> ink outline</label>
+              <label><input type="checkbox" id="opt-spin"  checked> auto-rotate</label>
+              <label><input type="checkbox" id="opt-grid"  checked> grid</label>
+              <label><input type="checkbox" id="opt-concept"> concept overlay</label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-pane" data-tab="research">
+        <div class="filter-row">
+          <span class="count" id="count-research"></span>
+          <span style="opacity:0.6;font-size:13px">Each card = one autoresearch experiment. Click a thumbnail to load that variant in the Models walk-lab viewer.</span>
+        </div>
+        <div id="research-grid" style="display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));padding:8px"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Markdown renderer for the Skills tab. CDN is fine here — codex is a
+       dev / docs surface, not the shipped game. ~30KB transferred. -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script type="module" src="codex.js"></script>
+</body>
+</html>

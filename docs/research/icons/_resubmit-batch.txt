@@ -1,0 +1,89 @@
+# [1/30] charred_brindle
+storybook illustration of charred blackened brindle (You burnt it. Inedible.), ruined food, scorched and crumbling, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [2/30] wool_flank
+storybook illustration of a wool flank (A panel of brindle wool-flank. Useful for crafting leather goods.), monster drop / crafting material, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [3/30] mosswort_ore
+storybook illustration of a chunk of raw mosswort ore (Soft mossy-green ore. Alloys with palechalk into brindle.), mineral ore, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [4/30] charred_hedgewight
+storybook illustration of charred blackened hedgewight (You over-cooked it. Smells worse than the live one.), ruined food, scorched and crumbling, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [5/30] wightpelt
+storybook illustration of a wightpelt (Coarse grey fur, still smelling of the hedge. Warm in winter.), monster drop / crafting material, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [6/30] cinderbloom_dagger
+storybook illustration of a fine well-made cinderbloom dagger (Quick steel, half the weight of an iron blade. Slips through coats.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [7/30] mossvine
+storybook illustration of a mossvine (A coiled vine that grows where stone meets water. Pliant, slightly bitter to taste.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [8/30] ore_dust
+storybook illustration of a ore dust (Smithing scrap — heavy iron-grit that catches the light.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [9/30] aurora_shard
+storybook illustration of a aurora shard (A hard splinter that fell from the night sky during the aurora. Cold to touch.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [10/30] chart_tier_1
+storybook illustration of a charted map (tier 1) (A folded vellum chart of a small Wolds hollow. Open it to step inside.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [11/30] chart_briar_maze
+storybook illustration of a charted briar maze (A twisted vellum, ink-knotted. The corridors outnumber the rooms.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [12/30] chart_sunken_hut
+storybook illustration of a charted sunken hut (A water-warped chart of a half-flooded hollow. Wet rooms, mist, and old stone.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [13/30] iron_key
+storybook illustration of a iron key (A blackened iron key, simple and heavy. Opens iron-bound doors.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [14/30] gold_key
+storybook illustration of a gold key (A bright brass key with cherry-blossom etching. Opens gilded doors — usually treasure.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [15/30] thorn_key
+storybook illustration of a thorn key (A briar-wrapped key that pricks the palm. Opens thorn-locked doors deep in the bramble.), monster drop / crafting material, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [16/30] parchment_bramble_bargain
+storybook illustration of a hedgemother's margin note (A torn corner from a herbalist's ledger. The handwriting is not Mother Onywyn's — it is older, and slower.), rolled parchment scroll, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [17/30] parchment_sallow_tide
+storybook illustration of a tide-table fragment (A page from a coastguard's tide table. The night the wreck happened is circled — and the column for that night is empty.), rolled parchment scroll, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [18/30] parchment_linnet_vow
+storybook illustration of a falconer's note (A page in a knight's hand. Two names share the page; one has been crossed through, then traced over again, faintly.), rolled parchment scroll, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [19/30] wellspring_ink
+storybook illustration of a wellspring ink (A pale blue ink that holds shimmer. Used for charts that should bloom.), small treasured object, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [20/30] bog_ink
+storybook illustration of a bog ink (A pale blue ink dipped from still water, with a faint mineral shimmer.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [21/30] rune_air
+storybook illustration of a air rune (A pale stone humming with quiet wind. Used in air-element spells.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [22/30] rune_earth
+storybook illustration of a earth rune (A heavy ochre stone. Used in earth-element spells.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [23/30] rune_fire
+storybook illustration of a fire rune (A warm carmine stone. Used in fire-element spells.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [24/30] rune_chaos
+storybook illustration of a chaos rune (A roiling stone, never quite still. Catalyst for tier-2 attack spells.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [25/30] rune_cosmic
+storybook illustration of a cosmic rune (A still grey stone with a single white star carved at its center. Travel + utility magic.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [26/30] rune_nature
+storybook illustration of a nature rune (A vine-bound stone with fresh green at its core. Plant + animal magic.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [27/30] rune_soul
+storybook illustration of a soul rune (A still, bright stone. Endgame: unique-named spells.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [28/30] cinderbloom_helm
+storybook illustration of a cinderbloom helm (A brimmed helm with a riveted nose-bar. The padding still smells of someone else.), single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [29/30] skill_def
+storybook illustration of a stylized heater shield with a single metal boss at center, slightly battered fairytale shield silhouette, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500
+
+# [30/30] skill_hp
+storybook illustration of a stylized red heart with a soft inner glow, fairytale storybook heart symbol, single centered object, hand-painted game inventory icon, chunky low-poly fantasy RPG asset, thick warm-brown ink outline, painterly texture with visible brush strokes, no scene, no people, flat plain background, square crop --ar 1:1 --stylize 500

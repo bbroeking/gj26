@@ -1,0 +1,18 @@
+{
+  "id": "r010_palette_reduced",
+  "title": "Reduced palette \u2014 collapse 30 colors to 8 anchor swatches",
+  "hypothesis": "Wiki principle [color-and-lighting \u00a72.1]: '5 to 8 distinct hues per asset is a reliable working budget.' Eldra currently uses 30 distinct color constants \u2014 4\u00d7 the wiki budget. This run collapses them to 8 anchors: SKIN, HAIR, FABRIC_LIGHT, FABRIC_DARK, LEATHER, METAL, GLOW, GREEN. All 'shadow' / 'dark' / 'trim' variants alias to their anchor (TUNIC_SEAM \u2192 FABRIC_LIGHT, BEARD_WHITE \u2192 HAIR, PANT_DK \u2192 LEATHER, etc). Tests whether the limited-palette discipline makes the silhouette feel MORE intentional or just flat. If r010 reads cleaner than r001, our 30-color baseline is genuinely muddied; if r010 loses readability, some of those 'redundant' colors were carrying their weight.",
+  "params": {
+    "ELDRA_VARIANT": "s",
+    "ELDRA_SKIP_GRASS": "1",
+    "ELDRA_PALETTE": "reduced"
+  },
+  "parent": "r001_baseline",
+  "rating": null,
+  "notes": "",
+  "outputs": {
+    "glb": "models/npc_eldra_v2_r010_palette_reduced.glb",
+    "thumb": "docs/research/eldra/runs/r010_palette_reduced/thumb.png"
+  },
+  "built_at": "2026-05-04T17:37:02.528206+00:00"
+}

@@ -1,0 +1,17 @@
+{
+  "id": "r001_baseline",
+  "title": "Baseline \u2014 skinned variant 's' (control)",
+  "hypothesis": "Establishes the visual baseline for the autoresearch run. Same geometry as variant 'e' (cones, ovoid head, octagonal lanterns) plus the Mixamo-named armature and 24-frame Walk action. Floating grass tufts removed since they look like dirt-clumps left behind during the walk cycle.",
+  "params": {
+    "ELDRA_VARIANT": "s",
+    "ELDRA_SKIP_GRASS": "1"
+  },
+  "parent": null,
+  "rating": null,
+  "notes": "",
+  "outputs": {
+    "glb": "models/npc_eldra_v2_r001_baseline.glb",
+    "thumb": "docs/research/eldra/runs/r001_baseline/thumb.png"
+  },
+  "built_at": "2026-05-04T17:06:15.973534+00:00"
+}

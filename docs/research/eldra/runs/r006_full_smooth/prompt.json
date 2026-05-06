@@ -1,0 +1,19 @@
+{
+  "id": "r006_full_smooth",
+  "title": "Drop nano only + Cast 0.4 on torso (silhouette-preserving)",
+  "hypothesis": "Counter-experiment to r004/r005: instead of dropping panels, KEEP the tabard segments + shawl drapes (they ARE part of Eldra's silhouette identity) but soften ALL of them with Cast 0.4. Tests whether 'too blocky' is about panel COUNT (drop them) or about panel HARDNESS (soften them). If r006 looks better than r004, the answer is hardness; if worse, it's count.",
+  "params": {
+    "ELDRA_VARIANT": "s",
+    "ELDRA_SKIP_GRASS": "1",
+    "ELDRA_FORM_MERGE": "1",
+    "ELDRA_BODY_CAST": "0.4"
+  },
+  "parent": "r002_drop_nano",
+  "rating": null,
+  "notes": "",
+  "outputs": {
+    "glb": "models/npc_eldra_v2_r006_full_smooth.glb",
+    "thumb": "docs/research/eldra/runs/r006_full_smooth/thumb.png"
+  },
+  "built_at": "2026-05-04T17:06:48.040556+00:00"
+}

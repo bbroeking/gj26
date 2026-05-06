@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Editor / agent state
+.claude/
+
+# Backups + research GLB iterations (not used by the game; keep repo lean)
+models/*.bak
+models/*_r[0-9][0-9][0-9]_*.glb
+models/cook_v30.glb.bak
+models/cow_old.glb.bak
+
+# Eldra autoresearch GLB outputs (~hundreds of MB if run)
+docs/research/eldra/*.glb
+
+# Generated / temp
+*.log
+*.tmp
+node_modules/
