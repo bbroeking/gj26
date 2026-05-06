@@ -763,6 +763,198 @@ export const ITEMS = {
     desc: 'A long cracked canine, bone-white. Slot to force a boss-tier orb.' },
   glass_shard:   { name: 'Glass Shard',   icon: '🔷', stack: true,
     desc: 'A jagged piece of leaded glass from a broken urn. Slot to re-roll one property next forge.' },
+
+  // ===========================================================
+  // AURORA TIER — endgame metal (above cinderbloom)
+  // ===========================================================
+  // Smelted from cinderbloom + a hag's-tooth catalyst, aurora alloy reads
+  // pearl-white in the haft and rune-blue at the edge. Gated at Earth 50.
+  aurora_bar: {
+    name: 'Aurora Bar', icon: '🟦', stack: true, tier: 'aurora',
+    desc: 'A bar of aurora alloy. Top-tier smithing material — reads warmer than steel, holds an edge longer.' },
+  aurora_dagger: {
+    name: 'Aurora Dagger', icon: '🗡', stack: false,
+    slot: 'weapon', equipBonus: { atk: 8, str: 4, def: 0 },
+    weaponClass: 'dagger', cdMul: 0.85, dmgMul: 1.0, tier: 'aurora',
+    reqSkill: 'earth', reqLevel: 50,
+    desc: 'A whisper-quick aurora blade. +8 Atk, +4 Str. Fastest swing in the game.' },
+  aurora_sword: {
+    name: 'Aurora Sword', icon: '⚔', stack: false,
+    slot: 'weapon', equipBonus: { atk: 5, str: 8, def: 0 },
+    weaponClass: 'sword', cdMul: 1.0, dmgMul: 1.2, tier: 'aurora',
+    reqSkill: 'earth', reqLevel: 52,
+    desc: 'A long aurora blade. +5 Atk, +8 Str. Hums faintly when bared.' },
+  aurora_axe: {
+    name: 'Aurora Axe', icon: '🪓', stack: false,
+    slot: 'weapon', equipBonus: { atk: 4, str: 9, def: 0 },
+    weaponClass: 'axe', cdMul: 1.1, dmgMul: 1.3, tier: 'aurora', tool: 'axe',
+    reqSkill: 'earth', reqLevel: 51,
+    desc: 'A heavy aurora axe. Chops oak in two strikes. +4 Atk, +9 Str.' },
+  aurora_pickaxe: {
+    name: 'Aurora Pickaxe', icon: '⛏', stack: false,
+    slot: 'weapon', equipBonus: { atk: 3, str: 5, def: 0 },
+    tool: 'pickaxe', tier: 'aurora',
+    reqSkill: 'earth', reqLevel: 51,
+    desc: 'A glittering pickaxe of aurora alloy. Cracks palechalk on the first strike.' },
+  aurora_helm: {
+    name: 'Aurora Helm', icon: '⛑', stack: false,
+    slot: 'head', equipBonus: { atk: 0, str: 0, def: 6 }, tier: 'aurora',
+    reqSkill: 'earth', reqLevel: 53,
+    desc: 'A helm with a faint inner glow. +6 Defence. Cuts magic damage taken by 5%.' },
+  aurora_shield: {
+    name: 'Aurora Shield', icon: '🛡', stack: false,
+    slot: 'shield', equipBonus: { atk: 0, str: 0, def: 9 }, tier: 'aurora',
+    reqSkill: 'earth', reqLevel: 55,
+    desc: 'A shield that hums in storms. +9 Defence. Riposte window doubled while equipped.' },
+  aurora_plate: {
+    name: 'Aurora Plate', icon: '🦺', stack: false,
+    slot: 'body', equipBonus: { atk: 0, str: 2, def: 12 }, tier: 'aurora',
+    reqSkill: 'earth', reqLevel: 58,
+    desc: 'A pearled plate, rune-stitched at the seams. +12 Defence. The flagship endgame body slot.' },
+
+  // ===========================================================
+  // HIGH-TIER FOOD — beyond Maud's pantry stew
+  // ===========================================================
+  bog_stew: {
+    name: 'Bog Stew', icon: '🍲', stack: true, food: { heal: 12 },
+    reqSkill: 'cook', reqLevel: 28,
+    desc: 'Marsh-rat tail, river clay garlic, and a splash of bottled water. Heals 12.' },
+  coalrose_loaf: {
+    name: 'Coalrose Loaf', icon: '🍞', stack: true, food: { heal: 14 },
+    reqSkill: 'cook', reqLevel: 32,
+    desc: 'Dense bread baked over coalrose embers. Heals 14. Travels well, never stales.' },
+  wightwine: {
+    name: 'Wightwine', icon: '🍷', stack: true, food: { heal: 16 },
+    reqSkill: 'cook', reqLevel: 38,
+    desc: 'A blue-tinted vintage. Heals 16 + brief +20% defence for 10s.' },
+  hagsbreath_stew: {
+    name: "Hag's-Breath Stew", icon: '🥘', stack: true, food: { heal: 20 },
+    reqSkill: 'cook', reqLevel: 50,
+    desc: 'Bramble-resin braised with thorn essence. Heals 20. Tastes worse with every spoonful.' },
+  dawnberry_tart: {
+    name: 'Dawnberry Tart', icon: '🥧', stack: true, food: { heal: 18 },
+    reqSkill: 'cook', reqLevel: 55,
+    desc: 'Wishrose-glazed dawn-bloom berries on a fired clay pan. Heals 18 + stamina-regen +50% for 30s.' },
+  fey_honey: {
+    name: 'Fey Honey', icon: '🍯', stack: true, food: { heal: 25 },
+    reqSkill: 'cook', reqLevel: 60,
+    desc: 'Honey rendered from fey-blossom dew. Heals 25. Once per dungeon.' },
+  tideink_bisque: {
+    name: 'Tideink Bisque', icon: '🦞', stack: true, food: { heal: 30 },
+    reqSkill: 'cook', reqLevel: 70,
+    desc: "Briarcoast fish in a tideink reduction. Heals 30. Sir Withering's birthday dish." },
+  aurora_banquet: {
+    name: 'Aurora Banquet', icon: '🎂', stack: false, food: { heal: 50 },
+    reqSkill: 'cook', reqLevel: 80,
+    desc: 'A multi-course feast plated by Maud at the festival. Full restore + 60s of doubled stamina.' },
+  fey_mushroom_pie: {
+    name: 'Fey Mushroom Pie', icon: '🍕', stack: true, food: { heal: 22 },
+    reqSkill: 'cook', reqLevel: 65,
+    desc: 'Hedgecap and foxfire-glow on fired clay. Heals 22 + 1 minute night-vision.' },
+  hedgemother_heart_stew: {
+    name: "Hedgemother's-Heart Stew", icon: '❤', stack: false, food: { heal: 99 },
+    reqSkill: 'cook', reqLevel: 90,
+    desc: 'A once-per-day full restore. The Heart simmers a single time. Eat it; bow your head.' },
+
+  // ===========================================================
+  // LORE PARCHMENTS — whispered legends found in chests + drops
+  // ===========================================================
+  parchment_falconers_creed: {
+    name: "The Falconer's Creed", icon: '📜', stack: true, lore: true,
+    desc: 'A folded vow on bark-paper. "Wing in winter, voice in spring. Steady to the lure."' },
+  parchment_eldras_lantern: {
+    name: "Eldra's Lantern Notes", icon: '📜', stack: true, lore: true,
+    desc: "Eldra's hand: 'The wicks burn longer if you cut them at dusk and bless them at dawn.'" },
+  parchment_hods_first_apprentice: {
+    name: "Hod's First Apprentice", icon: '📜', stack: true, lore: true,
+    desc: "An old workbench note. 'Marrow took to the hammer faster than any of us. Don't ask where she went.'" },
+  parchment_quill_recipe: {
+    name: "Quill's Lost Recipe", icon: '📜', stack: true, lore: true,
+    desc: 'A torn page from a herbalist\'s book. The bottom half is missing — the "binding" step is gone.' },
+  parchment_bramblewolds_history: {
+    name: 'A Bramblewolds History', icon: '📜', stack: true, lore: true,
+    desc: 'A pedlar\'s pamphlet listing all six festivals. The Hag-Crowning is crossed through with red ink.' },
+  parchment_cricket_route: {
+    name: "Cricket's Old Route", icon: '📜', stack: true, lore: true,
+    desc: 'A letter-carrier\'s round, drawn in chalk and water-stained. Mentions a seventh cottage no map shows.' },
+  parchment_pell_inscription: {
+    name: "Brother Pell's Inscription", icon: '📜', stack: true, lore: true,
+    desc: '"Read slowly, with the dust falling. The walls hold what you do not."' },
+  parchment_sunken_tide: {
+    name: 'The Sunken Tide', icon: '📜', stack: true, lore: true,
+    desc: 'A bog-warped page: \'When the third moon walks the marsh, the hut breathes once.\'' },
+  parchment_delvers_warning: {
+    name: "The Delver's Warning", icon: '📜', stack: true, lore: true,
+    desc: '"Below palechalk is more palechalk. Below that, the chalk listens."' },
+  parchment_onywyn_remedy: {
+    name: "Mother Onywyn's Remedy", icon: '📜', stack: true, lore: true,
+    desc: "Foxglove + ash + a single drop of dew. Useless without the song. Onywyn won't sing it for you." },
+
+  // ===========================================================
+  // GEMS — gem_seam affix output, tier-3+ smithing inputs
+  // ===========================================================
+  gem_ruby:      { name: 'Ruby',      icon: '💎', stack: true, tier: 'gem',
+    desc: 'A faceted red gemstone. Endgame smithing reagent.' },
+  gem_sapphire:  { name: 'Sapphire',  icon: '🔷', stack: true, tier: 'gem',
+    desc: 'A faceted blue gemstone. Pairs with tideink alloys.' },
+  gem_emerald:   { name: 'Emerald',   icon: '🟩', stack: true, tier: 'gem',
+    desc: 'A faceted green gemstone. Pairs with bramble-bound steels.' },
+  gem_opal:      { name: 'Opal',      icon: '⚪', stack: true, tier: 'gem',
+    desc: 'A milky pearl-fire stone. Refracts light into the four elements.' },
+  gem_moonstone: { name: 'Moonstone', icon: '🌙', stack: true, tier: 'gem',
+    desc: 'Cool to the touch even at the forge. Cuts magic resist on the bearer.' },
+  gem_sunstone:  { name: 'Sunstone',  icon: '☀', stack: true, tier: 'gem',
+    desc: 'Holds a faint heat by day, glows faintly at night.' },
+
+  // ===========================================================
+  // LATE-GAME RAW MATERIALS — gather + drop ladder above tier-3
+  // ===========================================================
+  briarcoast_fish: {
+    name: 'Briarcoast Fish', icon: '🐠', stack: true,
+    desc: 'A pale, deep-running fish. Catchable only at the briarcoast salt pools.' },
+  hard_ash: {
+    name: 'Hard Ash Logs', icon: '🪵', stack: true,
+    desc: 'A dense pale wood from the highland Wolds. Fuels tier-3 smelting.' },
+  foxfire_glow: {
+    name: 'Foxfire Glow', icon: '✨', stack: true,
+    desc: 'A bright fungal pod that pulses at night. Forageable only after sundown.' },
+  mossvine: {
+    name: 'Mossvine', icon: '🌿', stack: true,
+    desc: 'A trailing vine of soft moss-flowers. Mid-tier herbalist material.' },
+  hag_iron_ore: {
+    name: 'Hag-iron Ore', icon: '⬛', stack: true,
+    desc: 'A black-veined iron only found in Hedgemother-cleared regions. Smelts with Aurora alloy.' },
+  tideink_essence: {
+    name: 'Tideink Essence', icon: '🌊', stack: true,
+    desc: 'A vial of deep-tide essence. Tier-3 ink reagent.' },
+  aurora_essence: {
+    name: 'Aurora Essence', icon: '🌌', stack: true,
+    desc: 'Captured aurora light, vibrating gently. Tier-3 ink reagent + aurora-alloy quench.' },
+
+  // ===========================================================
+  // QUEST + UNIQUE — late-game story keys
+  // ===========================================================
+  hag_relic: {
+    name: 'Hag Relic', icon: '💀', stack: false,
+    desc: 'A bone amulet from the Hedgemother\'s den. Worn around the neck by the worthy.' },
+  dawn_kindling: {
+    name: 'Dawn Kindling', icon: '🔥', stack: true,
+    desc: 'Tinder cut at first sunrise of the festival. Lights any fire on the first strike.' },
+  briar_thread: {
+    name: 'Briar Thread', icon: '🧵', stack: true,
+    desc: 'A reinforced fiber spun from thorn-essence. Used to bind tier-4 leather.' },
+  cartographers_compass: {
+    name: "Cartographer's Compass", icon: '🧭', stack: false,
+    desc: 'A working compass with an unsteady needle. Re-anchors the world map after a fast-travel mishap.' },
+  fey_pact: {
+    name: 'Fey Pact', icon: '📜', stack: false,
+    desc: 'A folded pledge written in wishrose ink. Pact-bound players cannot harvest fey-blossom by hand.' },
+  parchment_makers_mark: {
+    name: "The Maker's Mark", icon: '📜', stack: true, lore: true,
+    desc: 'Three lines, scratched into bone-paper: "Before the wolds, the wolds. Before the wolds, the door. Before the door, the maker."' },
+  hedge_charm: {
+    name: 'Hedge Charm', icon: '🍀', stack: true,
+    desc: 'A small woven knot of hedgerow grass. +5% forage chance while in your inventory.' },
 };
 
 export function isFood(id) { return ITEMS[id] && ITEMS[id].food; }
