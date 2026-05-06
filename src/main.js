@@ -38,6 +38,8 @@ import { showPedestal, closePedestal, isPedestalOpen } from './ui/pedestal.js';
 import { showWayfindingWorkshop, closeWayfindingWorkshop, isWayfindingWorkshopOpen, reopenIfWasOpen as reopenWayfindingWorkshop, noteSketchThisSession, setWorkshopTarget } from './ui/cartographyWorkshop.js';
 import { showPlinthForge, closePlinthForge, isPlinthForgeOpen } from './ui/plinthForge.js';
 import { showCookFire, closeCookFire, isCookFireOpen } from './ui/cookFire.js';
+import { showRefineStation, closeRefineStation, isRefineStationOpen } from './ui/refineStation.js';
+import { MATERIAL_DEFS } from './data/materials.js';
 import { showAtlasMap, closeAtlasMap, isAtlasMapOpen } from './ui/atlasMap.js';
 import { showMaterialsBrowser, closeMaterialsBrowser, isMaterialsBrowserOpen } from './ui/materialsBrowser.js';
 import { ensureAtlasLoaded, recordChartCompletion, isBiomeUnlocked } from './game/atlas.js';
@@ -3790,6 +3792,53 @@ function _doCook(r) {
   return true;
 }
 
+// ---------- REFINE (raw → reagent) ----------
+// Reads MATERIAL_DEFS — each reagent declares { refines, station } and
+// gets minted at its station. v1: no skill gate; XP routes by station
+// (mortar/vessel/curing → wilds; grindstone/kiln → earth).
+const _STATION_SKILL = {
+  mortar: 'wilds', vessel: 'wilds', curing: 'wilds',
+  grindstone: 'earth', kiln: 'earth',
+};
+function tryRefine(reagentId) {
+  const def = MATERIAL_DEFS.find(m => m.id === reagentId);
+  if (!def || !def.refines) {
+    log('hint', `'${reagentId}' isn't a refinable reagent.`);
+    return false;
+  }
+  if (player.attackCd > 0) return false;
+  const have = player.inventory.count(def.refines);
+  if (have < 1) {
+    const src = ITEMS[def.refines];
+    log('hint', `Missing 1× ${src?.name || def.refines}.`);
+    return false;
+  }
+  player.attackCd = 30;
+  triggerAttack(player);
+  player.inventory.remove(def.refines, 1);
+  // Yield rolls 1-3 — biased high by the relevant skill so a high-level
+  // refinement feels rewarding. At skill 1 → mostly 1; at 99 → mostly 3.
+  const skillKey = _STATION_SKILL[def.station] || 'wilds';
+  const skillLv = player.skills[skillKey]?.lv || 1;
+  const bias = Math.min(2, Math.floor(skillLv / 33));
+  const yieldN = 1 + bias + Math.floor(Math.random() * 2);
+  const ok = player.inventory.add(def.id, yieldN);
+  if (!ok) {
+    // Bag full — restore the source raw.
+    player.inventory.add(def.refines, 1);
+    log('hint', 'Your bag is full.');
+    return false;
+  }
+  const wp = new THREE.Vector3(player.pos.x, 0.8, player.pos.z);
+  import('./game/skills.js').then(m => m.awardXp(player, skillKey, 6, log, { worldPos: wp }));
+  const outName = ITEMS[def.id]?.name || def.id;
+  log('skill', yieldN > 1
+    ? `🜔 Refined ${yieldN}× ${outName}.`
+    : `🜔 Refined ${outName}.`);
+  renderInv();
+  return true;
+}
+
 // ---------- ORB FORGE ----------
 // Reads ORB_RECIPES from src/data/orb-recipes.js. Each recipe lists
 // inks + optional core + optional catalyst + a hollow-orb blank. The
@@ -4137,6 +4186,9 @@ function openWayfindingWorkshop() {
     openPlinthForge:     () => showPlinthForge(player, log, {
       onChange: () => { renderInv(); renderStats(); },
       onClose:  () => reopenWayfindingWorkshop(),
+    }),
+    openRefineStation:   () => showRefineStation(player, log, {
+      refineRecipe: (id) => tryRefine(id),
     }),
     openFieldJournal:    () => showFieldJournal(player),
     openAtlas:           () => openAtlasMap(),

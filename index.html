@@ -281,7 +281,7 @@
   #spellbook-backdrop, #pedestal-backdrop,
   #cartography-workshop-backdrop, #atlas-map-backdrop,
   #materials-browser-backdrop, #plinth-forge-backdrop,
-  #cook-fire-backdrop {
+  #cook-fire-backdrop, #refine-station-backdrop {
     position: fixed; inset: 0;
     background: rgba(20, 14, 10, 0.65);
     display: none; align-items: center; justify-content: center;
@@ -290,7 +290,54 @@
   #spellbook-backdrop.open, #pedestal-backdrop.open,
   #cartography-workshop-backdrop.open, #atlas-map-backdrop.open,
   #materials-browser-backdrop.open, #plinth-forge-backdrop.open,
-  #cook-fire-backdrop.open { display: flex; }
+  #cook-fire-backdrop.open, #refine-station-backdrop.open { display: flex; }
+  #refine-station {
+    background: var(--paper);
+    border: var(--bw-frame) solid transparent;
+    border-image: var(--frame-ink) 18 / var(--bw-frame) / 0 stretch;
+    border-radius: var(--r-md);
+    padding: var(--s-4);
+    width: min(720px, 92vw);
+    max-height: 84vh;
+    overflow-y: auto;
+    color: var(--ink);
+    font-family: var(--font-body);
+    box-shadow: 0 12px 36px rgba(0,0,0,0.45);
+  }
+  #refine-station-head {
+    display: flex; align-items: baseline; gap: var(--s-2);
+    margin-bottom: var(--s-3);
+    padding-bottom: var(--s-2);
+    border-bottom: 1px solid var(--accent-gold);
+  }
+  #refine-station-close {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    color: var(--ink);
+    width: 28px; height: 28px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+  }
+  #refine-station-close:hover { background: var(--paper-deep); }
+  .rs-section { margin-bottom: var(--s-4); }
+  .rs-section-head {
+    font-family: var(--font-display);
+    font-size: 14px;
+    color: var(--ink);
+    margin-bottom: 2px;
+    padding-bottom: 2px;
+    border-bottom: 1px dashed var(--ink-light);
+    display: flex; align-items: baseline; gap: 6px;
+  }
+  .rs-section-desc {
+    font-style: italic;
+    font-size: 11px;
+    color: var(--ink-mid);
+    margin-bottom: 6px;
+  }
   /* Cook Fire reuses the Plinth Forge .pf-* classes for its rows. */
   #cook-fire {
     background: var(--paper);
@@ -3806,6 +3853,7 @@
             <button id="cw-act-ink"     type="button" class="cw-act"><span class="cw-act-glyph">🜔</span><span class="cw-act-label">Mix Inks</span><span class="cw-act-sub">3×3 ingredients → ink</span></button>
             <button id="cw-act-rune"    type="button" class="cw-act"><span class="cw-act-glyph">✦</span><span class="cw-act-label">Press Runes</span><span class="cw-act-sub">ink + stone → rune</span></button>
             <button id="cw-act-chart"   type="button" class="cw-act"><span class="cw-act-glyph">▤</span><span class="cw-act-label">Inscribe Chart</span><span class="cw-act-sub">template + inks → chart</span></button>
+            <button id="cw-act-refine"  type="button" class="cw-act"><span class="cw-act-glyph">🜔</span><span class="cw-act-label">Refine</span><span class="cw-act-sub">raw materials → reagents</span></button>
             <button id="cw-act-plinth"  type="button" class="cw-act"><span class="cw-act-glyph">🔮</span><span class="cw-act-label">Forge Orb</span><span class="cw-act-sub">inks + core + catalyst → orb</span></button>
             <button id="cw-act-journal" type="button" class="cw-act"><span class="cw-act-glyph">📓</span><span class="cw-act-label">Field Journal</span><span class="cw-act-sub">your sketches</span></button>
           </div>
@@ -3836,6 +3884,18 @@
         </div>
       </div>
     </div>
+    <!-- Refinement Station — surfaces every reagent in materials.js -->
+    <div id="refine-station-backdrop">
+      <div id="refine-station">
+        <div id="refine-station-head">
+          <span class="pf-title">Refinement Stations</span>
+          <span class="pf-sub">Pound, grind, bottle, cure, fire — raw materials → reagents.</span>
+          <button id="refine-station-close" type="button" title="Close (Esc)">×</button>
+        </div>
+        <div id="refine-station-body"></div>
+      </div>
+    </div>
+
     <!-- Cook Fire — recipe browser opened by clicking a campfire / hearth -->
     <div id="cook-fire-backdrop">
       <div id="cook-fire">
