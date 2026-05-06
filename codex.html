@@ -258,6 +258,13 @@
       background: rgba(0,0,0,0.07);
       padding: 1px 6px; border-radius: 99px;
     }
+    /* When the parent .grid contains .codex-section headers we switch it
+       from a grid to a block-flow container so each section is its own
+       row. The .codex-section-grid inside each section keeps its own
+       column behavior. */
+    .grid:has(.codex-section) {
+      display: block;
+    }
     .codex-section {
       font-family: var(--font-display);
       font-size: 18px; letter-spacing: 0.04em;
@@ -278,6 +285,10 @@
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       gap: var(--s-3);
+    }
+    /* Enemy cards have portraits — give them more horizontal room. */
+    .tab-pane[data-tab="enemies"] .codex-section-grid {
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
     }
     .codex-empty {
       padding: var(--s-6) var(--s-4);

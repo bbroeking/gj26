@@ -241,15 +241,25 @@ function renderItems() {
   }
   // Sectioned layout. Group entries by their category, render a section
   // header before each non-empty bucket. Categories follow the declared order.
+  // Within each section sort by reqLevel ascending so the player reads
+  // bronze → iron → steel rather than alphabetic chaos. Items without a
+  // reqLevel sort first (mostly cosmetic / stack items).
   const buckets = {};
   for (const e of entries) {
     const k = categorizeItem(e);
     (buckets[k] ||= []).push(e);
   }
+  const sortByTier = (a, b) => {
+    const ra = a[1].reqLevel ?? -1;
+    const rb = b[1].reqLevel ?? -1;
+    if (ra !== rb) return ra - rb;
+    return (a[1].name || a[0]).localeCompare(b[1].name || b[0]);
+  };
   let html = '';
   for (const [key, label] of ITEM_CATEGORIES) {
     const bucket = buckets[key];
     if (!bucket || bucket.length === 0) continue;
+    bucket.sort(sortByTier);
     html += `<h2 class="codex-section">${escapeHtml(label)} <span class="codex-section-count">${bucket.length}</span></h2>`;
     html += `<div class="codex-section-grid">${bucket.map(cardHTML).join('')}</div>`;
   }
@@ -427,6 +437,16 @@ const ENEMIES = [
     desc: 'Bramblewood matriarch. Quest-locked spawn. Drops the Heart for the late game.',
     model: 'hedgemother.glb' },
 ];
+// Tier order — drives section ordering on the Enemies tab.
+const ENEMY_TIERS = [
+  { key: 'trivial', label: 'Trivial' },
+  { key: 'easy',    label: 'Easy' },
+  { key: 'medium',  label: 'Medium' },
+  { key: 'hard',    label: 'Hard' },
+  { key: 'elite',   label: 'Elite' },
+  { key: 'boss',    label: 'Boss' },
+];
+
 function renderEnemies() {
   const grid = document.getElementById('grid-enemies');
   const count = document.getElementById('count-enemies');
@@ -437,7 +457,13 @@ function renderEnemies() {
     return blob.includes(filter);
   });
   count.textContent = `${entries.length} of ${ENEMIES.length}`;
-  grid.innerHTML = entries.map(e => {
+
+  if (entries.length === 0) {
+    grid.innerHTML = '<div class="codex-empty">No enemies match this filter.</div>';
+    return;
+  }
+
+  const cardHTML = (e) => {
     const portrait = portraitHtml(ENEMY_PORTRAITS[e.kind]);
     const lore = ENEMY_QUOTES[e.kind];
     return `<div class="card has-portrait tier-${e.tier}">
@@ -457,7 +483,30 @@ function renderEnemies() {
         ${e.scope ? `<div class="drops" style="margin-top:4px;color:#7a6a4a">found in: ${escapeHtml(e.scope)}</div>` : ''}
       </div>
     </div>`;
-  }).join('');
+  };
+
+  // Section by tier — trivial → boss. Skip empty tiers. Within each tier
+  // sort by HP ascending so the section reads from softest to hardest.
+  const buckets = {};
+  for (const e of entries) (buckets[e.tier] ||= []).push(e);
+  for (const k of Object.keys(buckets)) buckets[k].sort((a, b) => a.hp - b.hp);
+
+  let html = '';
+  for (const { key, label } of ENEMY_TIERS) {
+    const bucket = buckets[key];
+    if (!bucket || bucket.length === 0) continue;
+    html += `<h2 class="codex-section">${escapeHtml(label)} <span class="codex-section-count">${bucket.length}</span></h2>`;
+    html += `<div class="codex-section-grid">${bucket.map(cardHTML).join('')}</div>`;
+  }
+  // Any tiers we didn't recognize fall through into a misc bucket so we
+  // never silently drop entries.
+  const known = new Set(ENEMY_TIERS.map(t => t.key));
+  const misc = entries.filter(e => !known.has(e.tier));
+  if (misc.length) {
+    html += `<h2 class="codex-section">Other <span class="codex-section-count">${misc.length}</span></h2>`;
+    html += `<div class="codex-section-grid">${misc.map(cardHTML).join('')}</div>`;
+  }
+  grid.innerHTML = html;
 }
 document.getElementById('filter-enemies').addEventListener('input', renderEnemies);
 
