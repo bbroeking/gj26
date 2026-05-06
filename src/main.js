@@ -3260,11 +3260,88 @@ function _orbSvgIcon(def) {
   </svg>`;
 }
 
+// Generator palettes for the procedural-icon families below. Keys map
+// item ids → fill colors. Falls back to a neutral default when the id
+// isn't listed.
+const _GEM_PALETTE = {
+  gem_ruby:      { core: '#ff7a7a', rim: '#7a1a1a', accent: '#ffc8c8' },
+  gem_sapphire:  { core: '#7aa8ff', rim: '#1a3a7a', accent: '#c8d8ff' },
+  gem_emerald:   { core: '#7adb78', rim: '#2a6a28', accent: '#c8f0c8' },
+  gem_opal:      { core: '#f0e8d8', rim: '#8a8478', accent: '#fff8e8' },
+  gem_moonstone: { core: '#c8d8ec', rim: '#5a6a8a', accent: '#e8f0fc' },
+  gem_sunstone:  { core: '#ffc878', rim: '#a87a2a', accent: '#fff0c8' },
+};
+const _CORE_PALETTE = {
+  bramble_core: { core: '#9ed870', rim: '#2c5a1f', accent: '#d4f0a8' },
+  resin_core:   { core: '#e8c878', rim: '#a8632a', accent: '#fff0c0' },
+  tusker_core:  { core: '#f0e8d8', rim: '#8a6a3a', accent: '#fff8e8' },
+  wight_core:   { core: '#9cc8e8', rim: '#3a4a78', accent: '#d4e8fc' },
+};
+
+/** Inline-SVG faceted gemstone icon. Diamond outline + radial-gradient
+ *  inside, with a glossy upper-left highlight. */
+function _gemSvgIcon(id) {
+  const p = _GEM_PALETTE[id] || { core: '#e0e0e0', rim: '#666', accent: '#fff' };
+  const u = 'g' + Math.random().toString(36).slice(2, 8);
+  return `<svg class="orb-icon" viewBox="0 0 36 36" width="100%" height="100%" aria-hidden="true">
+    <defs>
+      <linearGradient id="${u}" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="${p.accent}" />
+        <stop offset="55%" stop-color="${p.core}" />
+        <stop offset="100%" stop-color="${p.rim}" />
+      </linearGradient>
+    </defs>
+    <polygon points="18,4 30,14 24,32 12,32 6,14"
+      fill="url(#${u})" stroke="${p.rim}" stroke-width="0.8" stroke-linejoin="round" />
+    <polygon points="18,4 30,14 18,18 6,14" fill="rgba(255,255,255,0.18)" />
+    <polygon points="18,4 24,9 18,12 12,9" fill="rgba(255,255,255,0.4)" />
+  </svg>`;
+}
+
+/** Inline-SVG scroll / parchment icon. Used for lore items. */
+function _scrollSvgIcon() {
+  const u = 's' + Math.random().toString(36).slice(2, 8);
+  return `<svg class="orb-icon" viewBox="0 0 36 36" width="100%" height="100%" aria-hidden="true">
+    <defs>
+      <linearGradient id="${u}" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#f4ead8" />
+        <stop offset="100%" stop-color="#c8a878" />
+      </linearGradient>
+    </defs>
+    <ellipse cx="18" cy="6" rx="14" ry="3" fill="#a87a40" />
+    <rect x="4" y="6" width="28" height="22" fill="url(#${u})" stroke="#a87a40" stroke-width="0.5" />
+    <ellipse cx="18" cy="28" rx="14" ry="3" fill="#a87a40" />
+    <line x1="8" y1="13" x2="28" y2="13" stroke="#8a6a3a" stroke-width="0.4" opacity="0.6" />
+    <line x1="8" y1="17" x2="26" y2="17" stroke="#8a6a3a" stroke-width="0.4" opacity="0.6" />
+    <line x1="8" y1="21" x2="28" y2="21" stroke="#8a6a3a" stroke-width="0.4" opacity="0.6" />
+  </svg>`;
+}
+
+/** Inline-SVG core — small focused orb with stronger center glow. */
+function _coreSvgIcon(id) {
+  const p = _CORE_PALETTE[id] || { core: '#e0e0e0', rim: '#666', accent: '#fff' };
+  const u = 'c' + Math.random().toString(36).slice(2, 8);
+  return `<svg class="orb-icon" viewBox="0 0 36 36" width="100%" height="100%" aria-hidden="true">
+    <defs>
+      <radialGradient id="${u}" cx="40%" cy="35%" r="55%">
+        <stop offset="0%" stop-color="${p.accent}" />
+        <stop offset="35%" stop-color="${p.core}" />
+        <stop offset="100%" stop-color="${p.rim}" />
+      </radialGradient>
+    </defs>
+    <circle cx="18" cy="18" r="10" fill="url(#${u})" stroke="${p.rim}" stroke-width="0.6" />
+    <circle cx="18" cy="18" r="7" fill="none" stroke="${p.accent}" stroke-width="0.4" opacity="0.6" />
+  </svg>`;
+}
+
 function itemIconHTML(id, def) {
   // Orb items (charts + the blank) render as an inline SVG with a radial-
   // gradient glow per scope — the visual the player sees in inventory and
   // on the bar.
   if (def.chart || id === 'chart_blank') return _orbSvgIcon(def);
+  if (id.startsWith('gem_'))            return _gemSvgIcon(id);
+  if (id.endsWith('_core') && _CORE_PALETTE[id]) return _coreSvgIcon(id);
+  if (def.lore)                         return _scrollSvgIcon();
   return `<img class="item-img" src="assets/icons/${id}.png" alt="${def.icon}"
     onerror="this.outerHTML='${def.icon}'">`;
 }
