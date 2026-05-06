@@ -8,7 +8,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { CONFIG } from './data/config.js';
 import { ITEMS, pickRandomLoreParchment } from './data/items.js';
-import { isPressed, takeInteract, takeDodge, takeAbility, takeTargetSwap, takePotion, takeJournal, takeSketch, takeCast, getSlotKey, setSlotKey } from './core/input.js';
+import { isPressed, takeInteract, takeDodge, takeAbility, takeTargetSwap, takePotion, takeJournal, takeSketch, takeCast, getSlotKey, setSlotKey, getActionKey, setActionKey, ACTION_IDS, ACTION_LABELS } from './core/input.js';
 import { castSpell, canCast, SPELLS } from './game/spells.js';
 import { attachMouse, takeLeftClick, takeRightClick, getHoverTile } from './core/mouse.js';
 import { findPath, pathToAdjacent } from './core/pathfind.js';
@@ -1054,10 +1054,67 @@ window.addEventListener('keydown', (e) => {
     if (k.length !== 1) return;
     e.preventDefault();
     e.stopPropagation();
-    setSlotKey(_kbListening.slot, k);
+    if (_kbListening.kind === 'slot') setSlotKey(_kbListening.slot, k);
+    else if (_kbListening.kind === 'action') setActionKey(_kbListening.action, k);
     _stopRebind();
   }, true);
   _renderKeybinds();
+
+  // ---- Action key rebinder ----
+  const akGrid = document.getElementById('settings-action-keybinds');
+  function _renderActionKeybinds() {
+    if (!akGrid) return;
+    let html = '';
+    for (const id of ACTION_IDS) {
+      const k = getActionKey(id);
+      html += `<div class="keybind-cell" data-action="${id}">
+        <span class="kb-slot">${escapeHtml(ACTION_LABELS[id] || id)}</span>
+        <span class="kb-key">${escapeHtml((k || '·').toUpperCase().replace(' ', 'SPC'))}</span>
+      </div>`;
+    }
+    akGrid.innerHTML = html;
+    akGrid.querySelectorAll('.keybind-cell').forEach(cell => {
+      cell.addEventListener('click', () => {
+        if (_kbListening) _kbListening.cell.classList.remove('listening');
+        _kbListening = { kind: 'action', action: cell.dataset.action, cell };
+        cell.classList.add('listening');
+        cell.querySelector('.kb-key').textContent = '…';
+      });
+    });
+  }
+  // Slot rebinder needs a `kind` tag too so the keydown handler knows
+  // which path to take. Patch the existing render to add it.
+  const _oldRender = _renderKeybinds;
+  _renderKeybinds = function () {
+    _oldRender();
+    if (!kbGrid) return;
+    kbGrid.querySelectorAll('.keybind-cell').forEach(cell => {
+      // Replace the previous click handler to tag the listening kind.
+      const slot = parseInt(cell.dataset.slot, 10);
+      cell.onclick = () => {
+        if (_kbListening) _kbListening.cell.classList.remove('listening');
+        _kbListening = { kind: 'slot', slot, cell };
+        cell.classList.add('listening');
+        cell.querySelector('.kb-key').textContent = '…';
+      };
+    });
+  };
+  // _stopRebind needs to re-render BOTH groups now.
+  const _oldStopRebind = _stopRebind;
+  _stopRebind = function () {
+    if (_kbListening) _kbListening.cell.classList.remove('listening');
+    _kbListening = null;
+    _renderKeybinds();
+    _renderActionKeybinds();
+  };
+  // Re-run render once the new wrappers exist.
+  _renderKeybinds();
+  _renderActionKeybinds();
+}
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[c]);
 }
 
 // ---------- ONBOARDING ----------

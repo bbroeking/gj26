@@ -43,6 +43,66 @@ export function getSlotKey(slot) {
   return _SLOT_KEYS[slot - 1] || '';
 }
 
+// ---------- ACTION KEYS ----------
+// Action verbs that aren't tied to slot 1-8. Each id maps to one or
+// more lowercase keys. The keydown handler iterates this map so adding
+// a new action is a one-line edit. localStorage persistence + a
+// setActionKey() / getActionKey() pair drives the settings rebind UI.
+export const ACTION_IDS = ['interact', 'dodge', 'targetSwap', 'potion', 'journal', 'sketch', 'cast', 'spellbook'];
+export const ACTION_LABELS = {
+  interact:   'Interact',
+  dodge:      'Dodge',
+  targetSwap: 'Swap Target',
+  potion:     'Quick-quaff Food',
+  journal:    'Journal',
+  sketch:     'Sketch',
+  cast:       'Cast Spell',
+  spellbook:  'Spellbook',
+};
+const ACTION_DEFAULTS = {
+  interact:   ['e', 'enter'],
+  dodge:      ['v', ' '],
+  targetSwap: ['tab'],
+  potion:     ['q'],
+  journal:    ['j'],
+  sketch:     ['n'],
+  cast:       ['r'],
+  spellbook:  [],   // currently no default — the spellbook tool button covers it
+};
+const _ACTION_KEYS = (() => {
+  const out = {};
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('gj26.actionKeys') || '{}'); } catch (_) {}
+  for (const id of ACTION_IDS) {
+    const v = saved[id];
+    out[id] = Array.isArray(v) && v.length ? v.map(k => String(k).toLowerCase()) : ACTION_DEFAULTS[id].slice();
+  }
+  return out;
+})();
+export function getActionKey(id) {
+  return (_ACTION_KEYS[id] || [])[0] || '';
+}
+export function setActionKey(id, keyChar) {
+  if (!ACTION_IDS.includes(id)) return;
+  const k = String(keyChar || '').toLowerCase();
+  if (!k) return;
+  _ACTION_KEYS[id] = [k];
+  // Re-include any default secondaries other than the primary so things
+  // like Enter for interact / Space for dodge remain reachable. Skip if
+  // the default secondary is the primary the user just bound.
+  const defaults = ACTION_DEFAULTS[id] || [];
+  for (let i = 1; i < defaults.length; i++) {
+    if (defaults[i] !== k) _ACTION_KEYS[id].push(defaults[i]);
+  }
+  try { localStorage.setItem('gj26.actionKeys', JSON.stringify(_ACTION_KEYS)); } catch (_) {}
+}
+function _actionForKey(k) {
+  for (const id of ACTION_IDS) {
+    if ((_ACTION_KEYS[id] || []).includes(k)) return id;
+  }
+  return null;
+}
+
 let pendingInteract = false;
 let pendingDodge    = false;
 let pendingTargetSwap = false;
@@ -112,18 +172,19 @@ window.addEventListener('keydown', e => {
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' ', 'tab'].includes(k)) {
     e.preventDefault();
   }
-  if (k === 'e' || k === 'enter') pendingInteract = true;
-  // Space queues BOTH interact and dodge — main loop drains interact first
-  // (gated on a target tile), then falls through to dodge if nothing was
-  // available. V is a dedicated dodge key for players who'd rather keep
-  // them separate.
-  if (k === ' ') { pendingInteract = true; pendingDodge = true; }
-  if (k === 'v') pendingDodge = true;
-  if (k === 'tab') pendingTargetSwap = true;
-  if (k === 'q') pendingPotion = true;
-  if (k === 'j') pendingJournal = true;
-  if (k === 'n') pendingSketch  = true;
-  if (k === 'r') pendingCast    = true;
+  // Action lookup — single map drives every non-slot verb. Space stays
+  // a special case: it queues BOTH interact and dodge so the main loop
+  // can prefer interact when there's a target, fall through to dodge
+  // otherwise. (Bound to dodge by default; interact also fires on space.)
+  if (k === ' ') pendingInteract = true;
+  const action = _actionForKey(k);
+  if (action === 'interact')   pendingInteract = true;
+  else if (action === 'dodge') pendingDodge = true;
+  else if (action === 'targetSwap') pendingTargetSwap = true;
+  else if (action === 'potion')  pendingPotion = true;
+  else if (action === 'journal') pendingJournal = true;
+  else if (action === 'sketch')  pendingSketch = true;
+  else if (action === 'cast')    pendingCast = true;
   // Look up the remappable slot key (defaults to '1'..'8')
   const _slot = slotForKeyChar(k);
   if (_slot >= 1 && _slot <= 8) pendingAbility[_slot - 1] = true;
