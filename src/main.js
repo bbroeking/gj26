@@ -954,54 +954,155 @@ window.addEventListener('keydown', (e) => {
     // the user hears their slider changes immediately.
     btn.addEventListener('click', () => sfx.resume());
   }
+  // ---- Camera + Display preferences ----
+  // All persist to localStorage. Read once at boot; any future sliders /
+  // checkboxes added to the modal can mirror this same pattern.
+  const PREFS_KEY = 'gj26.prefs';
+  const prefs = (() => {
+    try {
+      const raw = localStorage.getItem(PREFS_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  })();
+  prefs.camYaw   ??= 1.0;
+  prefs.camInvert ??= false;
+  prefs.showFps  ??= false;
+  prefs.showFloaters ??= true;
+  window.__gj26_prefs = prefs;
+  function savePrefs() {
+    try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch {}
+  }
+  // Apply pref-driven CSS / runtime state.
+  function applyDisplayPrefs() {
+    const fps = document.getElementById('fps');
+    if (fps) fps.style.display = prefs.showFps ? '' : 'none';
+    const floaters = document.getElementById('floaters');
+    if (floaters) floaters.style.display = prefs.showFloaters ? '' : 'none';
+  }
+  applyDisplayPrefs();
+
+  const sens   = document.getElementById('settings-cam-sens');
+  const sensN  = document.getElementById('settings-cam-sens-num');
+  const inv    = document.getElementById('settings-cam-invert');
+  const fps    = document.getElementById('settings-show-fps');
+  const flo    = document.getElementById('settings-show-floaters');
+  if (sens) {
+    sens.value = String(prefs.camYaw);
+    if (sensN) sensN.textContent = Math.round(prefs.camYaw * 100) + '%';
+    sens.addEventListener('input', () => {
+      prefs.camYaw = parseFloat(sens.value);
+      if (sensN) sensN.textContent = Math.round(prefs.camYaw * 100) + '%';
+      savePrefs();
+    });
+  }
+  if (inv) {
+    inv.checked = !!prefs.camInvert;
+    inv.addEventListener('change', () => { prefs.camInvert = inv.checked; savePrefs(); });
+  }
+  if (fps) {
+    fps.checked = !!prefs.showFps;
+    fps.addEventListener('change', () => {
+      prefs.showFps = fps.checked; savePrefs(); applyDisplayPrefs();
+    });
+  }
+  if (flo) {
+    flo.checked = !!prefs.showFloaters;
+    flo.addEventListener('change', () => {
+      prefs.showFloaters = flo.checked; savePrefs(); applyDisplayPrefs();
+    });
+  }
 }
 
 // ---------- ONBOARDING ----------
 // Tutorial chain: ordered verb-gated hints. Each step fires once when its
 // trigger event first occurs and persists "seen" in localStorage so a
-// returning player doesn't get re-tutored. The welcome step shows on boot;
-// the rest unlock progressively as the player exercises each verb.
+// returning player doesn't get re-tutored. Two surface modes:
+//   - 'log'    → fires as an in-panel chronicle hint (low friction)
+//   - 'dialog' → opens the dialog modal with a portrait + multi-line
+//                copy (used for the first beat of major systems so the
+//                player can't miss them).
 const ONBOARD_KEY = 'gj26.onboard';
 const _onboardSeen = (() => {
   try { return new Set(JSON.parse(localStorage.getItem(ONBOARD_KEY) || '[]')); }
   catch { return new Set(); }
 })();
-function onboardHint(id, message) {
-  if (_onboardSeen.has(id)) return;
+function _markSeen(id) {
   _onboardSeen.add(id);
   try { localStorage.setItem(ONBOARD_KEY, JSON.stringify([..._onboardSeen])); } catch {}
+}
+function onboardHint(id, message) {
+  if (_onboardSeen.has(id)) return;
+  _markSeen(id);
   log('hint', `💡 ${message}`);
+}
+function onboardDialog(id, opts) {
+  if (_onboardSeen.has(id)) return;
+  _markSeen(id);
+  showDialog(opts);
 }
 // Step table. Order matters: each entry is matched against the next-firing
 // event in declaration order, so a kill fires the kill step even if the
 // player hasn't taken damage yet (the eat-prompt waits for HP < half).
 const TUTORIAL_STEPS = [
-  { id: 'walk',     evt: 'walk_started',
+  { id: 'walk',     evt: 'walk_started', mode: 'log',
     msg: 'Walking. Click an enemy (a brindlecow east of town will do) to attack it.' },
-  { id: 'cleave',   evt: 'enemy_attacked',
+  { id: 'cleave',   evt: 'enemy_attacked', mode: 'log',
     msg: 'Press 1 to Cleave — your sword ability — for a heavier strike.' },
-  { id: 'kill',     evt: 'enemy_killed',
+  { id: 'kill',     evt: 'enemy_killed', mode: 'log',
     msg: 'Felled. Walk over the corpse, or right-click your inventory to use what dropped.' },
-  { id: 'eat',      evt: 'hp_low',
+  { id: 'eat',      evt: 'hp_low', mode: 'log',
     msg: 'Hurt. Press Q to eat your smallest food — fast heal in a pinch.' },
-  { id: 'npc',      evt: 'enemy_killed',
+  { id: 'npc',      evt: 'enemy_killed', mode: 'log',
     msg: 'Maud Pennycress (the cook) lives in the stone hut north — she has work for you.' },
-  { id: 'chart',    evt: 'quest_accepted',
-    msg: 'The standing stone east of spawn is the chartmaker — craft a Tier 1 chart and step into a dungeon.' },
+  { id: 'chart',    evt: 'quest_accepted', mode: 'dialog',
+    dialog: {
+      speaker: 'Eldra the Lampwright',
+      lines: [
+        'A quest accepted — the wolds will remember you for it.',
+        "Walk east of the square to the chartmaker's stone. There you can mix inks, press runes, refine raw materials, forge orbs, and inscribe charts.",
+        'Each orb you forge spawns a hollow when you slot it into the Plinth. Bring the right inks + a core + a catalyst, and the orb rolls richer.',
+      ],
+      choices: [{ label: "I'll find the stone" }],
+    } },
+  { id: 'first_orb', evt: 'orb_forged', mode: 'dialog',
+    dialog: {
+      speaker: 'Eldra the Lampwright',
+      lines: [
+        'Your first orb. Look at the rolled properties — the Plinth tells you what kind of hollow waits inside.',
+        'Higher Wayfinding tightens the roll. So does a fey blossom slotted as a catalyst.',
+        'Slot it into the Plinth and step inside.',
+      ],
+      choices: [{ label: 'Onward' }],
+    } },
 ];
 function advanceTutorial(eventName) {
   for (const step of TUTORIAL_STEPS) {
     if (_onboardSeen.has(step.id)) continue;
     if (step.evt === eventName) {
-      onboardHint(step.id, step.msg);
-      return;             // one step per event so messages don't pile up
+      if (step.mode === 'dialog' && step.dialog) {
+        onboardDialog(step.id, step.dialog);
+      } else {
+        onboardHint(step.id, step.msg);
+      }
+      return;
     }
   }
 }
-// Boot welcome — only step that isn't gated on an in-world event.
+// Boot welcome — only step that isn't gated on an in-world event. Now a
+// proper dialog so first-time players have one clear orient-and-act
+// moment before the world opens.
 setTimeout(() => {
-  onboardHint('welcome',
-    'Welcome to Bramblewood. Click the ground to walk. Right-click for verbs, Tab to target, 1-4 for abilities, Q to eat.');
+  if (_onboardSeen.has('welcome')) return;
+  _markSeen('welcome');
+  showDialog({
+    speaker: 'Eldra the Lampwright',
+    lines: [
+      'Welcome to Bramblewood, traveller. The wolds are wide and the days are short.',
+      'Click the ground to walk. Right-click any tile to see what you can do there. Tab cycles your nearest target; 1–4 fire your ability slots; Q quaffs your smallest food.',
+      "When you're ready for a hollow, find the chartmaker's stone east of the square — it's where every Wayfinder starts.",
+    ],
+    choices: [{ label: "I'll find my way" }],
+  });
 }, 1500);
 
 // ---------- FALCONRY ----------
@@ -3927,6 +4028,7 @@ function tryForgeOrb(recipeId) {
     ? `🔮 Forged ${outName} (${rollSummary}).`
     : `🔮 Forged ${outName}.`);
   renderInv();
+  advanceTutorial('orb_forged');
   return { ok: true, output: r.output, rolls: rolled };
 }
 

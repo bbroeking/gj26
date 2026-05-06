@@ -58,8 +58,14 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 export function updateCamera(cam, playerPos, dt = 0.016, snap = false) {
   // pull accumulated input from the mouse module
   const inp = consumeCameraInput();
-  state.yaw   += inp.yaw;
-  state.pitch  = clamp(state.pitch + inp.pitch, PITCH_MIN, PITCH_MAX);
+  // User prefs (set in main.js settings panel). Yaw multiplier scales
+  // mouse-drag sensitivity; invertPitch flips the pitch sign so mouse-up
+  // tilts the camera away (instead of toward) the player.
+  const prefs = (typeof window !== 'undefined' && window.__gj26_prefs) || {};
+  const yawMul = prefs.camYaw ?? 1.0;
+  const pitchSign = prefs.camInvert ? -1 : 1;
+  state.yaw   += inp.yaw * yawMul;
+  state.pitch  = clamp(state.pitch + inp.pitch * pitchSign, PITCH_MIN, PITCH_MAX);
   state.distance = clamp(state.distance + inp.zoom, DIST_MIN, DIST_MAX);
 
   // Spherical → cartesian, anchored on the player

@@ -3118,18 +3118,41 @@
     margin-bottom: var(--s-3);
   }
   #settings-modal .settings-row label {
-    flex: 0 0 60px;
+    flex: 0 0 130px;
     font-size: var(--fs-md);
   }
   #settings-modal .settings-row input[type="range"] {
     flex: 1 1 auto;
     accent-color: var(--accent-green, #6f8aa3);
   }
+  #settings-modal .settings-row input[type="checkbox"] {
+    flex: 0 0 auto;
+    transform: scale(1.2);
+    margin-right: 6px;
+  }
   #settings-modal .settings-row span {
-    flex: 0 0 38px;
-    text-align: right;
+    flex: 0 0 auto;
     color: var(--text-dim);
     font-variant-numeric: tabular-nums;
+    font-size: var(--fs-sm);
+  }
+  #settings-modal .settings-row .settings-help {
+    flex: 1 1 auto;
+    text-align: left;
+    margin-left: 4px;
+    font-style: italic;
+    font-size: var(--fs-xs);
+    color: var(--text-dim);
+  }
+  #settings-modal .settings-section {
+    font-family: var(--font-display);
+    font-size: var(--fs-sm);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin: var(--s-3) 0 var(--s-2);
+    padding-bottom: 2px;
+    border-bottom: 1px dashed var(--border);
   }
   #settings-modal .settings-actions {
     display: flex; justify-content: flex-end;
@@ -4200,10 +4223,33 @@
 <div id="settings-backdrop">
   <div id="settings-modal" role="dialog" aria-modal="true">
     <div class="settings-title">Settings</div>
+    <div class="settings-section">Audio</div>
     <div class="settings-row">
       <label for="settings-volume">Sound</label>
       <input id="settings-volume" type="range" min="0" max="1" step="0.01">
       <span id="settings-volume-num">35%</span>
+    </div>
+    <div class="settings-section">Camera</div>
+    <div class="settings-row">
+      <label for="settings-cam-sens">Yaw sensitivity</label>
+      <input id="settings-cam-sens" type="range" min="0.25" max="2.5" step="0.05" value="1">
+      <span id="settings-cam-sens-num">100%</span>
+    </div>
+    <div class="settings-row">
+      <label for="settings-cam-invert">Invert pitch</label>
+      <input id="settings-cam-invert" type="checkbox">
+      <span class="settings-help">Mouse-up tilts camera away</span>
+    </div>
+    <div class="settings-section">Display</div>
+    <div class="settings-row">
+      <label for="settings-show-fps">Show FPS</label>
+      <input id="settings-show-fps" type="checkbox">
+      <span class="settings-help">Top-right counter</span>
+    </div>
+    <div class="settings-row">
+      <label for="settings-show-floaters">Damage numbers</label>
+      <input id="settings-show-floaters" type="checkbox" checked>
+      <span class="settings-help">Floating XP / damage popups</span>
     </div>
     <div class="settings-actions">
       <button id="settings-close" type="button">Done</button>
