@@ -87,6 +87,78 @@ export const ENEMY_DEFS = [
     drops: ['hedgemother_heart', 'thorn_crown', 'coin'],
     desc: 'Bramblewood matriarch. Quest-locked spawn. Drops the Heart for the late game.',
     model: 'hedgemother.glb' },
+
+  // ---- TRIVIAL adds ----
+  { kind: 'forest_squirrel', name: 'Forest Squirrel', tier: 'trivial', hp: 3,  atk: 1,  def: 1,  maxHit: 1, heightM: 0.30,
+    drops: ['hare_pelt', 'coin'],
+    desc: 'A jittery wolds-squirrel. Leaps two tiles when threatened. Easy starter XP.',
+    model: 'hare.glb' },
+
+  // ---- EASY adds ----
+  { kind: 'cave_bat',     name: 'Cave Bat',         tier: 'easy',    hp: 6,   atk: 2,  def: 1,  maxHit: 1, heightM: 0.45,
+    drops: ['downfeather', 'coin'],
+    desc: 'Glides in twos and threes from delve ceilings. Hits once and retreats to its perch.',
+    model: 'chicken.glb',
+    scope: 'delve' },
+  { kind: 'bog_toad',     name: 'Bog Toad',         tier: 'easy',    hp: 12,  atk: 4,  def: 2,  maxHit: 2, heightM: 0.55,
+    drops: ['rivermud', 'thorn_essence', 'coin'],
+    desc: 'Squat ambusher of the sunken-hut shallows. Spits a 2-tile thorn dart on a long windup.',
+    model: 'goblin_v2.glb',
+    scope: 'sunken_hut' },
+
+  // ---- MEDIUM adds ----
+  { kind: 'thorn_walker', name: 'Thorn Walker',     tier: 'medium',  hp: 36,  atk: 8,  def: 5,  maxHit: 3, heightM: 1.85,
+    drops: ['thorn_essence', 'bramble_resin', 'coin'],
+    desc: 'A slow, ambulatory bramble-totem. Roots grasp the floor — you can step around it but never run through it.',
+    model: 'bramble_imp.glb',
+    scope: 'briar_maze' },
+  { kind: 'bramble_brute', name: 'Bramble Brute',   tier: 'medium',  hp: 50,  atk: 9,  def: 6,  maxHit: 4, heightM: 1.55,
+    drops: ['bramble_resin', 'thorn_crown', 'bogiron_bar', 'coin'],
+    desc: 'A heavier bramble-cap variant — slow swing, +1 damage on every hit you don\'t dodge.',
+    model: 'bramble_imp.glb' },
+  { kind: 'peat_lurker',  name: 'Peat Lurker',      tier: 'medium',  hp: 42,  atk: 8,  def: 4,  maxHit: 3, heightM: 1.20,
+    drops: ['rivermud', 'wightpelt', 'coin'],
+    desc: 'Hides under bog tiles, breaks cover when an enemy steps adjacent. First hit gets +50% damage.',
+    model: 'hare_v2.glb',
+    scope: 'sunken_hut' },
+
+  // ---- HARD adds ----
+  { kind: 'pack_wolf',    name: 'Pack Hedgewolf',   tier: 'hard',    hp: 90,  atk: 16, def: 9,  maxHit: 6, heightM: 1.10,
+    drops: ['raw_hedgewight', 'wightpelt', 'fang', 'coin'],
+    desc: 'A hedgewolf in a pack of three. Damage scales 1.2× per pack-mate alive.',
+    model: 'hedgewight_v2.glb' },
+  { kind: 'stone_giant',  name: 'Stone Giant',      tier: 'hard',    hp: 130, atk: 14, def: 14, maxHit: 5, heightM: 2.40,
+    drops: ['palechalk_ore', 'mosswort_ore', 'coalrose', 'coin'],
+    desc: 'A slow chalk-veined behemoth, sleeps in delve corners. 3-tile reach, telegraphed slam.',
+    model: 'goblin_v2.glb',
+    scope: 'delve' },
+  { kind: 'bog_kraken_arm', name: 'Bog-Kraken Arm', tier: 'hard',    hp: 110, atk: 17, def: 7,  maxHit: 6, heightM: 1.50,
+    drops: ['rivermud', 'wightpelt', 'tideink_essence', 'coin'],
+    desc: 'A single tentacle erupting from a sunken floor tile. Alive while the tile is.',
+    model: 'boar_v2.glb',
+    scope: 'sunken_hut' },
+
+  // ---- ELITE adds ----
+  { kind: 'tusker_king',  name: 'Tusker King',      tier: 'elite',   hp: 260, atk: 24, def: 16, maxHit: 8, heightM: 1.85,
+    drops: ['raw_tusker', 'tusker_tusk', 'aurora_essence', 'coin'],
+    desc: 'A scarred boar-king of the bog. 5×5 amber slam telegraphed for a full second; sidestep or eat 8.',
+    model: 'boar_v2.glb',
+    scope: 'sunken_hut' },
+  { kind: 'bramble_titan', name: 'Bramble Titan',   tier: 'elite',   hp: 240, atk: 22, def: 18, maxHit: 7, heightM: 2.20,
+    drops: ['bramble_resin', 'thorn_crown', 'aurora_essence', 'briar_thread', 'coin'],
+    desc: 'A walking bramble-keep. Summons a thorn-line every 12s; step off the line or take 5/tick.',
+    model: 'bramble_imp.glb',
+    scope: 'briar_maze' },
+
+  // ---- BOSS adds ----
+  { kind: 'chartmaker_echo', name: "The Chartmaker's Echo", tier: 'boss', hp: 520, atk: 28, def: 24, maxHit: 9, heightM: 1.90,
+    drops: ['old_key', 'cartographers_compass', 'aurora_essence', 'coin'],
+    desc: 'A standing-stone echo of the original chartmaker. Speaks in three voices and folds rooms behind you mid-fight.',
+    model: 'chartmaker_stone.glb' },
+  { kind: 'pale_hag',     name: 'The Pale Hag',     tier: 'boss',    hp: 600, atk: 34, def: 26, maxHit: 11, heightM: 2.50,
+    drops: ['hags_tooth', 'hag_relic', 'hedgemother_heart', 'coin'],
+    desc: 'A washed-pale variant of the Hedgemother, found only on hag-toothed orbs. The wolds remember her name first.',
+    model: 'hedgemother.glb' },
 ];
 
 /** Look up a single enemy def by `kind`. Returns null if not found. */
