@@ -45,6 +45,7 @@ import { pickFor as pickDungeonSpawn } from './data/dungeonSpawns.js';
 import { showCharting } from './ui/charting.js';
 import { AFFIXES } from './data/affixes.js';
 import { SMITH_RECIPES } from './data/smith-recipes.js';
+import { COOK_RECIPES } from './data/cook-recipes.js';
 import { NPC_DEFS } from './data/npcs.js';
 import { ABILITIES, SLOT_BINDINGS, tryActivate as tryActivateAbility, isAbilityUnlocked } from './game/abilities.js';
 import { getAction, actionUnlocked, actionCanAfford, actionMissingReason, ALL_ACTION_IDS } from './game/actions.js';
@@ -3674,28 +3675,69 @@ function tryForage(tx, ty) {
   return true;
 }
 
+/** Pick the best cookable recipe the player can run right now: highest
+ *  reqLevel they meet, with all inputs in inventory. Returns the recipe
+ *  entry or null. Single-input recipes win over multi-input compounds
+ *  unless the player explicitly has the latter's whole ingredient list
+ *  (so cooking just beef doesn't accidentally consume the pantry-stew
+ *  spread). */
+function _pickCookRecipe() {
+  const lv = player.skills.cook.lv;
+  let best = null;
+  for (const [, r] of Object.entries(COOK_RECIPES)) {
+    const req = r.reqLevel || 1;
+    if (lv < req) continue;
+    const inputs = r.inputs ?? { [r.input]: 1 };
+    let canCook = true;
+    for (const [id, n] of Object.entries(inputs)) {
+      if (player.inventory.count(id) < n) { canCook = false; break; }
+    }
+    if (!canCook) continue;
+    // Prefer single-input recipes first (the canonical "I have meat,
+    // cook it" path), then fall through to compound recipes when the
+    // single-input path isn't an option.
+    const isCompound = !r.input;
+    if (!best
+        || (best.compound && !isCompound)
+        || (best.compound === isCompound && (r.reqLevel || 1) > (best.req || 1))) {
+      best = { r, compound: isCompound, req };
+    }
+  }
+  return best ? best.r : null;
+}
+
 function tryCook() {
   if (player.attackCd > 0) return true;
-  if (player.inventory.count('raw_brindle') === 0) {
-    log('hint', 'You need Raw Beef to cook here.');
+  const r = _pickCookRecipe();
+  if (!r) {
+    log('hint', 'You need a raw food to cook here. Try beef, hare, sardine, pippin, or tusker.');
     return true;
   }
-  player.attackCd = CONFIG.player.cookCdFrames;
-  triggerAttack(player);            // hand-over-fire gesture reuses the swing
-  player.inventory.remove('raw_brindle', 1);
-  const burnChance = Math.max(0,
-    CONFIG.cooking.burnChanceLv1 - CONFIG.cooking.burnDecayPerLv * (player.skills.cook.lv - 1));
+  player.attackCd = r.cd ?? CONFIG.player.cookCdFrames;
+  triggerAttack(player);
+  // Consume inputs.
+  const inputs = r.inputs ?? { [r.input]: 1 };
+  for (const [id, n] of Object.entries(inputs)) player.inventory.remove(id, n);
   const fireWorld = world.firePos
     ? new THREE.Vector3(world.firePos.x + 0.5, 1.0, world.firePos.y + 0.5)
     : null;
+  // Burn roll — base chance scales down with cook level. Compound dishes
+  // ignore the burn roll (they're recipes the player chose deliberately
+  // and the engine pre-empts with a reqLevel, so failure feels punitive).
+  const burnBase = r.burnBase ?? CONFIG.cooking.burnChanceLv1;
+  const burnChance = r.inputs ? 0 : Math.max(0,
+    burnBase - CONFIG.cooking.burnDecayPerLv * (player.skills.cook.lv - 1));
   if (Math.random() < burnChance) {
-    player.inventory.add('charred_brindle', 1);
-    import('./game/skills.js').then(m => m.awardXp(player, 'cook', CONFIG.cooking.cookXpPerBurn, log, { worldPos: fireWorld }));
-    log('skill', '🔥 Burnt the beef. Try again at higher Cooking.');
+    if (r.burnt) player.inventory.add(r.burnt, 1);
+    const xp = r.xpBurn ?? CONFIG.cooking.cookXpPerBurn;
+    import('./game/skills.js').then(m => m.awardXp(player, 'cook', xp, log, { worldPos: fireWorld }));
+    log('skill', '🔥 You burnt it. Try again at a higher Cooking level.');
   } else {
-    player.inventory.add('brindle_roast', 1);
-    import('./game/skills.js').then(m => m.awardXp(player, 'cook', CONFIG.cooking.cookXpPerSuccess, log, { worldPos: fireWorld }));
-    log('skill', '🍖 Cooked Beef.');
+    player.inventory.add(r.output, 1);
+    const xp = r.xp ?? CONFIG.cooking.cookXpPerSuccess;
+    import('./game/skills.js').then(m => m.awardXp(player, 'cook', xp, log, { worldPos: fireWorld }));
+    const outName = ITEMS[r.output]?.name || r.output;
+    log('skill', `🍳 ${outName}.`);
   }
   renderInv();
   return true;
