@@ -430,7 +430,7 @@ export function loadQuillGLB(url = 'models/npc_quill.glb') {
 export function loadWitheringGLB(url = 'models/npc_withering.glb') {
   return _loadOnce('npcWithering', 'npcWitheringPromise', url);
 }
-export function loadEldraGLB(url = 'models/npc_eldra.glb') {
+export function loadEldraGLB(url = 'models/npc_eldra_v3.glb') {
   return _loadOnce('npcEldra', 'npcEldraPromise', url);
 }
 export function loadCricketGLB(url = 'models/npc_cricket.glb') {
