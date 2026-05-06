@@ -46,6 +46,7 @@ import { showCharting } from './ui/charting.js';
 import { AFFIXES } from './data/affixes.js';
 import { SMITH_RECIPES } from './data/smith-recipes.js';
 import { COOK_RECIPES } from './data/cook-recipes.js';
+import { ORB_RECIPES } from './data/orb-recipes.js';
 import { NPC_DEFS } from './data/npcs.js';
 import { ABILITIES, SLOT_BINDINGS, tryActivate as tryActivateAbility, isAbilityUnlocked } from './game/abilities.js';
 import { getAction, actionUnlocked, actionCanAfford, actionMissingReason, ALL_ACTION_IDS } from './game/actions.js';
@@ -392,6 +393,12 @@ window.__game = { world, player, scene, camera, renderer };
 setTimeout(() => {
   window.__game.enterDungeon = enterDungeon;
   window.__game.enterAuthoredDungeon = enterAuthoredDungeon;
+  // Orb-forge handlers — dev-console accessible until a Plinth UI ships.
+  // listForgeableOrbs() returns recipe ids the player can run right now.
+  // forgeOrb(id) consumes inputs and produces a rolled orb in inventory.
+  window.__game.forgeOrb = tryForgeOrb;
+  window.__game.canForgeOrb = canForgeOrb;
+  window.__game.listForgeableOrbs = listForgeableOrbs;
 }, 0);
 
 /** Drop into a hand-authored dungeon. The JSON shape comes from
@@ -3741,6 +3748,97 @@ function tryCook() {
   }
   renderInv();
   return true;
+}
+
+// ---------- ORB FORGE ----------
+// Reads ORB_RECIPES from src/data/orb-recipes.js. Each recipe lists
+// inks + optional core + optional catalyst + a hollow-orb blank. The
+// player slots a recipe at the Plinth (chartmaker stone) and the engine
+// validates inputs, consumes them, and emits the rolled orb.
+
+/** Return the inputs map for a recipe (inks + core + catalyst + blank
+ *  flattened to one {itemId: count} dict). Used for both the affordability
+ *  check and the consumption pass. */
+function _orbRecipeInputs(r) {
+  const inputs = { ...(r.inks || {}) };
+  if (r.core)     inputs[r.core] = (inputs[r.core] || 0) + 1;
+  if (r.catalyst) inputs[r.catalyst] = (inputs[r.catalyst] || 0) + 1;
+  if (r.blank)    inputs[r.blank] = (inputs[r.blank] || 0) + 1;
+  return inputs;
+}
+
+/** Can the player run this recipe right now? Checks Wayfinding gate +
+ *  every input being in inventory in sufficient quantity. */
+function canForgeOrb(recipeId) {
+  const r = ORB_RECIPES[recipeId];
+  if (!r) return { ok: false, reason: `Unknown orb recipe '${recipeId}'.` };
+  const lv = player.skills.carto?.lv || 1;
+  if (r.reqLevel && lv < r.reqLevel) {
+    return { ok: false, reason: `Need Wayfinding ${r.reqLevel} (you have ${lv}).` };
+  }
+  const inputs = _orbRecipeInputs(r);
+  for (const [id, n] of Object.entries(inputs)) {
+    if (player.inventory.count(id) < n) {
+      const def = ITEMS[id];
+      return { ok: false, reason: `Missing ${n}× ${def?.name || id}.` };
+    }
+  }
+  return { ok: true, recipe: r };
+}
+
+/** Forge an orb from a recipe id. Consumes inputs, awards XP, adds
+ *  the rolled orb to inventory. Returns {ok, output, rolls?} for caller. */
+function tryForgeOrb(recipeId) {
+  const check = canForgeOrb(recipeId);
+  if (!check.ok) {
+    log('hint', check.reason);
+    return { ok: false, reason: check.reason };
+  }
+  const r = check.recipe;
+  // Consume inputs in declared order.
+  for (const [id, n] of Object.entries(_orbRecipeInputs(r))) {
+    player.inventory.remove(id, n);
+  }
+  // Roll properties — for each rollable property name, pick a tier
+  // weighted by player Wayfinding level. At Lv 1 the bias floors near
+  // "thin"; at Lv 99 the bias floors near "rich" with mother-lode chance.
+  const cartoLv = player.skills.carto?.lv || 1;
+  const tierBands = ['thin', 'normal', 'rich', 'mother_lode'];
+  const rolled = {};
+  for (const prop of (r.rolls || [])) {
+    // Skill bumps the bias up by ~1 tier per 30 levels.
+    const bias = Math.min(3, Math.floor(cartoLv / 30) + Math.floor(Math.random() * 2));
+    rolled[prop] = tierBands[bias];
+  }
+  // Mint the output orb. Stash rolled properties as `extra` so the
+  // chart-opening flow can read them at enter-dungeon time.
+  const ok = player.inventory.add(r.output, 1, rolled);
+  if (!ok) {
+    log('hint', 'Bag full — orb couldn\'t be added. Inputs returned.');
+    // Roll back inputs so the player isn't punished for inventory size.
+    for (const [id, n] of Object.entries(_orbRecipeInputs(r))) {
+      player.inventory.add(id, n);
+    }
+    return { ok: false, reason: 'bag full' };
+  }
+  // XP + log.
+  const wp = new THREE.Vector3(player.pos.x, 0.8, player.pos.z);
+  import('./game/skills.js').then(m => m.awardXp(player, 'carto', r.xp || 30, log, { worldPos: wp }));
+  const outName = ITEMS[r.output]?.name || r.output;
+  const rollSummary = Object.entries(rolled)
+    .map(([k, v]) => `${k}:${v}`).join(', ');
+  log('skill', rollSummary
+    ? `🔮 Forged ${outName} (${rollSummary}).`
+    : `🔮 Forged ${outName}.`);
+  renderInv();
+  return { ok: true, output: r.output, rolls: rolled };
+}
+
+/** Return the list of forgeable recipe ids for the current player state.
+ *  Used by the chartmaker UI to surface only the recipes that will
+ *  succeed if clicked. */
+function listForgeableOrbs() {
+  return Object.keys(ORB_RECIPES).filter(id => canForgeOrb(id).ok);
 }
 
 // Mirror at MIRROR_TILE — opens the char creator pre-filled with the
