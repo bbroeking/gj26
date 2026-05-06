@@ -229,9 +229,75 @@
     /* Items tab — quick-filter chip strip + section headers */
     .codex-chip-row {
       display: flex; flex-wrap: wrap; gap: var(--s-1);
+      align-items: center;
       margin: var(--s-2) 0 var(--s-3);
       padding-bottom: var(--s-3);
       border-bottom: 1px solid var(--ink-light);
+    }
+    .codex-chip-spacer { flex: 1; }
+    .codex-view-toggle {
+      font-size: 11px;
+      letter-spacing: 0.05em;
+    }
+    /* ---- dense item table view ---- */
+    .codex-item-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      font-size: 13px;
+      color: var(--ink);
+      margin-bottom: var(--s-4);
+      overflow: hidden;
+    }
+    .codex-item-table thead th {
+      text-align: left;
+      padding: 8px 10px;
+      background: var(--paper-deep);
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-display);
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--ink-mid);
+    }
+    .codex-item-table tbody td {
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .codex-item-table tbody tr:last-child td { border-bottom: 0; }
+    .codex-item-table tbody tr:hover { background: rgba(180, 138, 58, 0.06); }
+    .codex-item-table .t-icon {
+      width: 28px;
+      text-align: center;
+      font-size: 18px;
+    }
+    .codex-item-table .t-icon img {
+      width: 24px; height: 24px;
+      vertical-align: middle;
+      image-rendering: pixelated;
+    }
+    .codex-item-table .t-name { font-family: var(--font-display); font-size: 13px; }
+    .codex-item-table .t-name .t-id {
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 10px;
+      color: var(--ink-mid);
+      opacity: 0.7;
+    }
+    .codex-item-table .t-slot,
+    .codex-item-table .t-req,
+    .codex-item-table .t-bonus {
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 11px;
+      color: var(--ink-mid);
+      white-space: nowrap;
+    }
+    .codex-item-table .t-desc {
+      color: var(--ink-mid);
+      font-size: 12px;
+      max-width: 460px;
     }
     .codex-chip {
       background: var(--paper);

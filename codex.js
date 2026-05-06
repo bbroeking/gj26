@@ -19,6 +19,7 @@ import { NPC_DEFS } from './src/data/npcs.js';
 import { ABILITIES } from './src/game/abilities.js';
 import { SKILL_MILESTONES } from './src/data/skill-milestones.js';
 import { CARTO_UNLOCKS } from './src/ui/worldMap.js';
+import { ENEMY_DEFS } from './src/data/enemy-defs.js';
 import { animateGLBKnight } from './src/anim/knight.js';
 import { animateQuadruped } from './src/anim/quadruped.js';
 import { phongifyMaterials } from './src/scene/characters.js';
@@ -193,6 +194,18 @@ function categorizeItem(entry) {
   return 'misc';
 }
 let _itemFilterCategory = 'all';
+// 'cards' (default) or 'table' — table view is a dense single-row-per-item
+// layout for power-scanning the full ~150-item catalog. Persists across
+// reloads so the user's preference sticks.
+let _itemView = (() => {
+  try { return localStorage.getItem('gj26.codex.itemView') || 'cards'; }
+  catch (_) { return 'cards'; }
+})();
+function setItemView(v) {
+  _itemView = v;
+  try { localStorage.setItem('gj26.codex.itemView', v); } catch (_) {}
+  renderItems();
+}
 function renderItems() {
   const grid = document.getElementById('grid-items');
   const count = document.getElementById('count-items');
@@ -230,13 +243,34 @@ function renderItems() {
       ${treeAffinity ? `<div class="drops" style="margin-top:4px;color:#7a6a4a">pairs with: ${escapeHtml(treeAffinity)}</div>` : ''}
     </div>`;
   };
+  const rowHTML = (entry) => {
+    const [id, it] = entry;
+    const bonus = itemBonusLine(it.equipBonus);
+    const slot = it.slot || it.tool || (it.food ? 'food' : '') || '';
+    const req = (it.reqSkill && it.reqLevel) ? `${it.reqSkill} ${it.reqLevel}` : '';
+    return `<tr>
+      <td class="t-icon">${iconHtml(id, it)}</td>
+      <td class="t-name">${escapeHtml(it.name || id)}<div class="t-id">${escapeHtml(id)}</div></td>
+      <td class="t-slot">${escapeHtml(slot)}</td>
+      <td class="t-req">${escapeHtml(req)}</td>
+      <td class="t-bonus">${escapeHtml(bonus)}</td>
+      <td class="t-desc">${escapeHtml(it.desc || '')}</td>
+    </tr>`;
+  };
+  const tableForBucket = (rows) => `
+    <table class="codex-item-table">
+      <thead><tr><th></th><th>Name</th><th>Slot</th><th>Req</th><th>Bonus</th><th>Description</th></tr></thead>
+      <tbody>${rows.map(rowHTML).join('')}</tbody>
+    </table>`;
 
   if (entries.length === 0) {
     grid.innerHTML = '<div class="codex-empty">No items match this filter. Try clearing the search or picking another category.</div>';
     return;
   }
   if (_itemFilterCategory !== 'all') {
-    grid.innerHTML = entries.map(cardHTML).join('');
+    grid.innerHTML = (_itemView === 'table')
+      ? tableForBucket(entries)
+      : entries.map(cardHTML).join('');
     return;
   }
   // Sectioned layout. Group entries by their category, render a section
@@ -261,7 +295,9 @@ function renderItems() {
     if (!bucket || bucket.length === 0) continue;
     bucket.sort(sortByTier);
     html += `<h2 class="codex-section">${escapeHtml(label)} <span class="codex-section-count">${bucket.length}</span></h2>`;
-    html += `<div class="codex-section-grid">${bucket.map(cardHTML).join('')}</div>`;
+    html += (_itemView === 'table')
+      ? tableForBucket(bucket)
+      : `<div class="codex-section-grid">${bucket.map(cardHTML).join('')}</div>`;
   }
   grid.innerHTML = html;
 }
@@ -293,12 +329,20 @@ function renderItemChips() {
     if (!counts[key]) continue;
     html += chip(key, label, counts[key]);
   }
+  // View toggle — pushed to the right end of the chip row via spacer.
+  const isCards = _itemView === 'cards';
+  html += `<span class="codex-chip-spacer"></span>
+    <button class="codex-view-toggle codex-chip ${isCards ? 'codex-chip-active' : ''}" data-view="cards" title="Card view">⊞ Cards</button>
+    <button class="codex-view-toggle codex-chip ${isCards ? '' : 'codex-chip-active'}" data-view="table" title="Table view">≡ Table</button>`;
   row.innerHTML = html;
-  row.querySelectorAll('.codex-chip').forEach(btn => {
+  row.querySelectorAll('.codex-chip[data-cat]').forEach(btn => {
     btn.addEventListener('click', () => {
       _itemFilterCategory = btn.dataset.cat;
       renderItems();
     });
+  });
+  row.querySelectorAll('.codex-view-toggle').forEach(btn => {
+    btn.addEventListener('click', () => setItemView(btn.dataset.view));
   });
 }
 
@@ -357,86 +401,10 @@ function renderNpcs() {
 document.getElementById('filter-npcs').addEventListener('input', renderNpcs);
 
 // ---------------------------------------------------------------------------
-// Enemies tab — hand-rolled catalog (kept in sync with src/game/enemies.js).
-// If you add a new spawn factory, mirror its tier + stats here.
+// Enemies tab — pulls ENEMY_DEFS from src/data/enemy-defs.js so the codex
+// stays in sync with whatever the engine consumes (single source of truth).
 // ---------------------------------------------------------------------------
-// heightM is shoulder/withers height for quadrupeds, total height for upright
-// creatures. Used by the codex card and (eventually) the renderer's
-// `_scaleGLBToHeight` so all in-world models share one ruler.
-const ENEMIES = [
-  { kind: 'cow',          name: 'Brindlecow',    tier: 'trivial', hp: 8,   atk: 1,  def: 1,  maxHit: 1, heightM: 1.40,
-    drops: ['raw_brindle', 'wool_flank', 'coin'],
-    desc: 'Passive dairy beast of the south pasture. Cross when bramble-imps stir them.',
-    model: 'cow.glb' },
-  { kind: 'chicken',      name: 'Pippin Hen',    tier: 'trivial', hp: 2,   atk: 1,  def: 1,  maxHit: 0, heightM: 0.45,
-    drops: ['raw_pippin', 'downfeather'],
-    desc: 'Pecks the village paths. Easy XP for the freshly-arrived.',
-    model: 'chicken.glb' },
-  { kind: 'hare',         name: 'Whicker Hare',  tier: 'trivial', hp: 4,   atk: 1,  def: 1,  maxHit: 1, heightM: 0.40,
-    drops: ['hare_pelt', 'whickerhares_foot'],
-    desc: 'Skittish meadow hare. Bolts on first hit.',
-    model: 'hare.glb' },
-  { kind: 'skitterling',  name: 'Skitterling',   tier: 'trivial', hp: 4,   atk: 2,  def: 1,  maxHit: 1, heightM: 0.50,
-    drops: ['thorn_essence', 'hedge_ink', 'coin'],
-    desc: 'Tiny thorn-fae. Hops in twos and threes — a whisper of the bramblewolds.',
-    model: 'goblin_v2.glb',
-    scope: 'briar_maze, delve' },
-  { kind: 'marsh_rat',    name: 'Marsh Rat',     tier: 'easy',    hp: 8,   atk: 4,  def: 2,  maxHit: 2, heightM: 0.55,
-    drops: ['rivermud', 'whickerhares_foot', 'coin'],
-    desc: 'Bog-soaked rodent with sharp teeth. Darts in to bite, then retreats 3 tiles. Hard to corner.',
-    model: 'hare_v2.glb',
-    scope: 'sunken_hut' },
-  { kind: 'goblin',       name: 'Goblin',        tier: 'easy',    hp: 12,  atk: 4,  def: 2,  maxHit: 2, heightM: 1.20,
-    drops: ['rusty_dagger', 'coin'],
-    desc: 'Camp scavengers in the southeast. Nasty in numbers.',
-    model: 'goblin.glb' },
-  { kind: 'archer',       name: 'Bramble Archer', tier: 'easy',   hp: 14,  atk: 6,  def: 2,  maxHit: 3, heightM: 1.70,
-    drops: ['crow_feather', 'hedge_ink', 'coin'],
-    desc: 'Falcon-perched at the back of the room. Fires telegraphed shots from 3-6 tiles. Dodge or step off the marked tile.',
-    model: 'falcon_v2.glb' },
-  { kind: 'bramble_imp',  name: 'Bramble-Imp',   tier: 'easy',    hp: 10,  atk: 4,  def: 2,  maxHit: 2, heightM: 0.95,
-    drops: ['bramble_resin'],
-    desc: 'Thorn-fae goading the dairy herd. Drops bramble resin.',
-    model: 'bramble_imp.glb' },
-  { kind: 'iron_gob',     name: 'Iron Gob',      tier: 'medium',  hp: 28,  atk: 7,  def: 6,  maxHit: 3, heightM: 1.55,
-    drops: ['bogiron_ore', 'bogiron_bar', 'hedge_ink', 'coin'],
-    desc: 'Goblin in scavenged plate. Heavy as a sack of nails. Slow but punishing.',
-    model: 'goblin_v2.glb',
-    scope: 'delve' },
-  { kind: 'bramble_cap',  name: 'Bramble-Cap',   tier: 'medium',  hp: 35,  atk: 7,  def: 4,  maxHit: 3, heightM: 1.40,
-    drops: ['bramble_resin', 'thorn_crown', 'coin'],
-    desc: 'Champion variant in the goblin camp. Slower, harder hitting.',
-    model: 'bramble_imp.glb' },
-  { kind: 'boar',         name: 'Wild Boar',     tier: 'medium',  hp: 40,  atk: 8,  def: 5,  maxHit: 3, heightM: 1.05,
-    drops: ['raw_boar', 'tusk', 'coin'],
-    desc: 'Wood-edge brute. Charges if you stare too long.',
-    model: 'boar.glb' },
-  { kind: 'charger',      name: 'Bramble Charger', tier: 'medium', hp: 36,  atk: 10, def: 5,  maxHit: 5, heightM: 1.20,
-    drops: ['raw_tusker', 'tusker_tusk', 'bogiron_ore', 'coin'],
-    desc: 'Dark-tinted boar that paints a yellow line and DASHES. Sidestep out of the lane — back-pedaling stays in the line.',
-    model: 'boar_v2.glb' },
-  { kind: 'tusker_sow',   name: 'Tusker Sow',    tier: 'hard',    hp: 70,  atk: 12, def: 8,  maxHit: 4, heightM: 1.45,
-    drops: ['raw_tusker', 'tusker_tusk', 'bogiron_bar', 'coin'],
-    desc: 'A matriarch boar. Long 0.85s windup → 3×3 amber AoE slam. Step off the marked tile or eat the full hit.',
-    model: 'boar_v2.glb',
-    scope: 'sunken_hut' },
-  { kind: 'hedge_wolf',   name: 'Hedgewolf',     tier: 'hard',    hp: 80,  atk: 14, def: 9,  maxHit: 5, heightM: 1.10,
-    drops: ['raw_hedgewight', 'wightpelt', 'coalrose', 'bogiron_bar', 'coin'],
-    desc: 'Twilight hunter of the deep wolds. Fast, mean — actually a hedgewight in motion.',
-    model: 'hedgewight_v2.glb' },
-  { kind: 'burrow_boar',  name: 'Burrow Boar',   tier: 'hard',    hp: 110, atk: 16, def: 10, maxHit: 5, heightM: 1.50,
-    drops: ['raw_boar', 'tusk', 'coin'],
-    desc: 'Bigger cousin of the wood boar, lives in earth-warrens.',
-    model: 'burrow_boar.glb' },
-  { kind: 'wolf_alpha',   name: 'Alpha Hedgewolf', tier: 'elite', hp: 220, atk: 22, def: 14, maxHit: 7, heightM: 1.35,
-    drops: ['wolf_alpha_pelt', 'fang', 'coin'],
-    desc: 'Pack leader. Calls in two hedgewolves at half-HP.',
-    model: 'wolf_alpha.glb' },
-  { kind: 'hedgemother',  name: 'The Hedgemother', tier: 'boss',  hp: 480, atk: 32, def: 22, maxHit: 10, heightM: 2.40,
-    drops: ['hedgemother_heart', 'thorn_crown', 'coin'],
-    desc: 'Bramblewood matriarch. Quest-locked spawn. Drops the Heart for the late game.',
-    model: 'hedgemother.glb' },
-];
+const ENEMIES = ENEMY_DEFS;
 // Tier order — drives section ordering on the Enemies tab.
 const ENEMY_TIERS = [
   { key: 'trivial', label: 'Trivial' },
