@@ -3425,6 +3425,101 @@ function _coreSvgIcon(id) {
   </svg>`;
 }
 
+// Aurora-tier metal icon — pearl-white core with rune-blue rim. The
+// shape varies by item slot/tool so a sword still reads as a sword.
+function _auroraSvgIcon(def) {
+  const u = 'a' + Math.random().toString(36).slice(2, 8);
+  const grad = `<defs><linearGradient id="${u}" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#fff8e8" />
+    <stop offset="55%" stop-color="#bce6f0" />
+    <stop offset="100%" stop-color="#3a6e8a" />
+  </linearGradient></defs>`;
+  let shape = '';
+  if (def.tool === 'pickaxe' || def.weaponClass === 'pickaxe') {
+    shape = `<path d="M6,28 L18,16 L30,28 M18,16 L18,7" stroke="url(#${u})" stroke-width="3" fill="none" stroke-linecap="round" />`;
+  } else if (def.weaponClass === 'axe' || def.tool === 'axe') {
+    shape = `<path d="M6,30 L20,12 L26,18 L14,32 Z" fill="url(#${u})" stroke="#3a6e8a" stroke-width="0.7" />
+             <line x1="20" y1="12" x2="28" y2="6" stroke="#6a4a2a" stroke-width="2" />`;
+  } else if (def.weaponClass === 'sword') {
+    shape = `<polygon points="18,4 22,28 18,32 14,28" fill="url(#${u})" stroke="#3a6e8a" stroke-width="0.8" />
+             <rect x="12" y="26" width="12" height="2" fill="#6a4a2a" />`;
+  } else if (def.weaponClass === 'dagger') {
+    shape = `<polygon points="18,9 22,26 18,30 14,26" fill="url(#${u})" stroke="#3a6e8a" stroke-width="0.8" />
+             <rect x="13" y="24" width="10" height="2" fill="#6a4a2a" />`;
+  } else if (def.slot === 'shield') {
+    shape = `<path d="M18,4 L30,8 L28,22 L18,32 L8,22 L6,8 Z" fill="url(#${u})" stroke="#3a6e8a" stroke-width="0.8" />`;
+  } else if (def.slot === 'head') {
+    shape = `<path d="M8,18 Q8,8 18,8 Q28,8 28,18 L28,24 L8,24 Z" fill="url(#${u})" stroke="#3a6e8a" stroke-width="0.8" />
+             <line x1="18" y1="8" x2="18" y2="6" stroke="#3a6e8a" stroke-width="1.4" />`;
+  } else if (def.slot === 'body') {
+    shape = `<path d="M10,8 L26,8 L24,30 L12,30 Z" fill="url(#${u})" stroke="#3a6e8a" stroke-width="0.8" />
+             <line x1="18" y1="8" x2="18" y2="30" stroke="#3a6e8a" stroke-width="0.4" opacity="0.6" />`;
+  } else {
+    // Bars — flat ingot.
+    shape = `<rect x="6" y="14" width="24" height="8" rx="1.2" fill="url(#${u})" stroke="#3a6e8a" stroke-width="0.8" />`;
+  }
+  return `<svg class="orb-icon" viewBox="0 0 36 36" width="100%" height="100%" aria-hidden="true">
+    ${grad}${shape}
+  </svg>`;
+}
+
+// Catalyst icons — each shape is unique so the player learns "key vs
+// blossom vs feather vs tooth" at a glance. All small / understated.
+function _catalystSvgIcon(id) {
+  if (id === 'old_key') {
+    return `<svg class="orb-icon" viewBox="0 0 36 36" width="100%" height="100%" aria-hidden="true">
+      <circle cx="11" cy="18" r="6" fill="none" stroke="#5a4a3a" stroke-width="2.4" />
+      <circle cx="11" cy="18" r="2.4" fill="#5a4a3a" />
+      <line x1="17" y1="18" x2="30" y2="18" stroke="#5a4a3a" stroke-width="2.4" stroke-linecap="round" />
+      <line x1="26" y1="18" x2="26" y2="24" stroke="#5a4a3a" stroke-width="2.4" stroke-linecap="round" />
+      <line x1="22" y1="18" x2="22" y2="22" stroke="#5a4a3a" stroke-width="2.4" stroke-linecap="round" />
+    </svg>`;
+  }
+  if (id === 'fey_blossom') {
+    return `<svg class="orb-icon" viewBox="0 0 36 36" width="100%" height="100%" aria-hidden="true">
+      ${[0,1,2,3,4].map(i => {
+        const a = (i * 72 - 90) * Math.PI / 180;
+        const cx = 18 + Math.cos(a) * 7, cy = 18 + Math.sin(a) * 7;
+        return `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="5" fill="#e0a8d8" stroke="#a85a8a" stroke-width="0.6" />`;
+      }).join('')}
+      <circle cx="18" cy="18" r="3" fill="#ffd060" stroke="#a87a2a" stroke-width="0.5" />
+    </svg>`;
+  }
+  if (id === 'owl_feather') {
+    return `<svg class="orb-icon" viewBox="0 0 36 36" width="100%" height="100%" aria-hidden="true">
+      <path d="M12,32 Q14,18 22,8 Q28,12 26,22 Q22,30 12,32 Z" fill="#3a3a3a" stroke="#1a1a1a" stroke-width="0.7" />
+      <path d="M12,32 Q18,20 24,14" stroke="#5a5a5a" stroke-width="0.5" fill="none" />
+      <path d="M14,30 Q20,22 23,18" stroke="#5a5a5a" stroke-width="0.4" fill="none" />
+    </svg>`;
+  }
+  if (id === 'cracked_tile') {
+    return `<svg class="orb-icon" viewBox="0 0 36 36" width="100%" height="100%" aria-hidden="true">
+      <rect x="5" y="5" width="26" height="26" rx="2" fill="#7a8a96" stroke="#3a4a56" stroke-width="0.8" />
+      <polyline points="9,11 16,18 13,22 22,28" fill="none" stroke="#3a4a56" stroke-width="1.2" />
+    </svg>`;
+  }
+  if (id === 'sealed_letter') {
+    return `<svg class="orb-icon" viewBox="0 0 36 36" width="100%" height="100%" aria-hidden="true">
+      <rect x="5" y="9" width="26" height="18" fill="#f4ead8" stroke="#a87a40" stroke-width="0.8" />
+      <polyline points="5,9 18,20 31,9" fill="none" stroke="#a87a40" stroke-width="0.8" />
+      <circle cx="18" cy="20" r="3" fill="#a8413a" stroke="#5a1a1a" stroke-width="0.4" />
+    </svg>`;
+  }
+  if (id === 'hags_tooth') {
+    return `<svg class="orb-icon" viewBox="0 0 36 36" width="100%" height="100%" aria-hidden="true">
+      <path d="M14,4 L22,4 L20,28 L18,32 L16,28 Z" fill="#f0e8d4" stroke="#a07a4a" stroke-width="0.8" />
+      <line x1="18" y1="6" x2="18" y2="22" stroke="#a07a4a" stroke-width="0.4" opacity="0.5" />
+    </svg>`;
+  }
+  if (id === 'glass_shard') {
+    return `<svg class="orb-icon" viewBox="0 0 36 36" width="100%" height="100%" aria-hidden="true">
+      <polygon points="6,30 14,8 26,14 30,30" fill="#bce6f0" stroke="#5a8aa8" stroke-width="0.7" opacity="0.85" />
+      <polygon points="6,30 14,8 18,22" fill="#fff8e8" opacity="0.55" />
+    </svg>`;
+  }
+  return null;
+}
+
 function itemIconHTML(id, def) {
   // Orb items (charts + the blank) render as an inline SVG with a radial-
   // gradient glow per scope — the visual the player sees in inventory and
@@ -3433,6 +3528,10 @@ function itemIconHTML(id, def) {
   if (id.startsWith('gem_'))            return _gemSvgIcon(id);
   if (id.endsWith('_core') && _CORE_PALETTE[id]) return _coreSvgIcon(id);
   if (def.lore)                         return _scrollSvgIcon();
+  if (def.tier === 'aurora')            return _auroraSvgIcon(def);
+  if (id.startsWith('aurora_'))         return _auroraSvgIcon(def);
+  const cat = _catalystSvgIcon(id);
+  if (cat)                              return cat;
   return `<img class="item-img" src="assets/icons/${id}.png" alt="${def.icon}"
     onerror="this.outerHTML='${def.icon}'">`;
 }
