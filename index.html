@@ -280,7 +280,8 @@
      ============================================================ */
   #spellbook-backdrop, #pedestal-backdrop,
   #cartography-workshop-backdrop, #atlas-map-backdrop,
-  #materials-browser-backdrop, #plinth-forge-backdrop {
+  #materials-browser-backdrop, #plinth-forge-backdrop,
+  #cook-fire-backdrop {
     position: fixed; inset: 0;
     background: rgba(20, 14, 10, 0.65);
     display: none; align-items: center; justify-content: center;
@@ -288,7 +289,45 @@
   }
   #spellbook-backdrop.open, #pedestal-backdrop.open,
   #cartography-workshop-backdrop.open, #atlas-map-backdrop.open,
-  #materials-browser-backdrop.open, #plinth-forge-backdrop.open { display: flex; }
+  #materials-browser-backdrop.open, #plinth-forge-backdrop.open,
+  #cook-fire-backdrop.open { display: flex; }
+  /* Cook Fire reuses the Plinth Forge .pf-* classes for its rows. */
+  #cook-fire {
+    background: var(--paper);
+    border: var(--bw-frame) solid transparent;
+    border-image: var(--frame-ink) 18 / var(--bw-frame) / 0 stretch;
+    border-radius: var(--r-md);
+    padding: var(--s-4);
+    width: min(720px, 92vw);
+    max-height: 84vh;
+    overflow-y: auto;
+    color: var(--ink);
+    font-family: var(--font-body);
+    box-shadow: 0 12px 36px rgba(0,0,0,0.45);
+  }
+  #cook-fire-head {
+    display: flex; align-items: baseline; gap: var(--s-2);
+    margin-bottom: var(--s-3);
+    padding-bottom: var(--s-2);
+    border-bottom: 1px solid var(--accent-gold);
+  }
+  #cook-fire-close {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--accent-gold);
+    border-radius: var(--r-sm);
+    color: var(--ink);
+    width: 28px; height: 28px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+  }
+  #cook-fire-close:hover { background: var(--paper-deep); }
+  .cf-burn {
+    margin-left: 6px;
+    color: #a8633a;
+    font-style: italic;
+  }
 
   /* ---- Plinth Forge ---- */
   #plinth-forge {
@@ -3797,6 +3836,18 @@
         </div>
       </div>
     </div>
+    <!-- Cook Fire — recipe browser opened by clicking a campfire / hearth -->
+    <div id="cook-fire-backdrop">
+      <div id="cook-fire">
+        <div id="cook-fire-head">
+          <span class="pf-title">The Hearth</span>
+          <span class="pf-sub">Pick a dish. Burn risk decays as Cooking levels.</span>
+          <button id="cook-fire-close" type="button" title="Close (Esc)">×</button>
+        </div>
+        <div id="cook-fire-body"></div>
+      </div>
+    </div>
+
     <!-- Plinth Forge — orb-forging UI surfaced from the Wayfinding Workshop -->
     <div id="plinth-forge-backdrop">
       <div id="plinth-forge">

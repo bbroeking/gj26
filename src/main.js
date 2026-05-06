@@ -37,6 +37,7 @@ import { showSpellbook, closeSpellbook, isSpellbookOpen } from './ui/spellbook.j
 import { showPedestal, closePedestal, isPedestalOpen } from './ui/pedestal.js';
 import { showWayfindingWorkshop, closeWayfindingWorkshop, isWayfindingWorkshopOpen, reopenIfWasOpen as reopenWayfindingWorkshop, noteSketchThisSession, setWorkshopTarget } from './ui/cartographyWorkshop.js';
 import { showPlinthForge, closePlinthForge, isPlinthForgeOpen } from './ui/plinthForge.js';
+import { showCookFire, closeCookFire, isCookFireOpen } from './ui/cookFire.js';
 import { showAtlasMap, closeAtlasMap, isAtlasMapOpen } from './ui/atlasMap.js';
 import { showMaterialsBrowser, closeMaterialsBrowser, isMaterialsBrowserOpen } from './ui/materialsBrowser.js';
 import { ensureAtlasLoaded, recordChartCompletion, isBiomeUnlocked } from './game/atlas.js';
@@ -3714,17 +3715,55 @@ function _pickCookRecipe() {
   return best ? best.r : null;
 }
 
-function tryCook() {
+/** Run a specific cook recipe by id. Used by the Cook Fire modal so the
+ *  player picks the dish explicitly rather than auto-cooking the
+ *  highest-reqLevel match. Returns true (the click was consumed). */
+function _runCookRecipe(recipeId) {
   if (player.attackCd > 0) return true;
-  const r = _pickCookRecipe();
-  if (!r) {
-    log('hint', 'You need a raw food to cook here. Try beef, hare, sardine, pippin, or tusker.');
+  const r = COOK_RECIPES[recipeId];
+  if (!r) { log('hint', `Unknown recipe '${recipeId}'.`); return true; }
+  return _doCook(r);
+}
+
+/** Open the Cook Fire recipe browser. Replaces the old auto-pick path
+ *  so the player sees the full ladder + missing-ingredient hints. */
+function openCookFireModal() {
+  showCookFire(player, log, {
+    cookRecipe: (id) => _runCookRecipe(id),
+  });
+  return true;
+}
+
+function tryCook() {
+  // Open the recipe browser instead of auto-cooking the best available.
+  // Players still see the same outputs; they get to pick the dish + see
+  // what they're short on for higher tiers.
+  return openCookFireModal();
+}
+
+/** Body of the cook handler — split out so both the auto-pick legacy
+ *  path (now dormant) and the explicit recipe path can share it. */
+function _doCook(r) {
+  if (player.attackCd > 0) return true;
+  // Validate inputs again at fire-time (could be called by the modal
+  // after the player picked something they THOUGHT they had — but a
+  // background event consumed a sardine).
+  const inputs = r.inputs ?? { [r.input]: 1 };
+  for (const [id, n] of Object.entries(inputs)) {
+    if (player.inventory.count(id) < n) {
+      const def = ITEMS[id];
+      log('hint', `Missing ${n}× ${def?.name || id}.`);
+      return true;
+    }
+  }
+  const lv = player.skills.cook?.lv || 1;
+  if (r.reqLevel && lv < r.reqLevel) {
+    log('hint', `Need Cooking ${r.reqLevel} for that.`);
     return true;
   }
   player.attackCd = r.cd ?? CONFIG.player.cookCdFrames;
   triggerAttack(player);
-  // Consume inputs.
-  const inputs = r.inputs ?? { [r.input]: 1 };
+  // Consume inputs (validated above; safe to remove).
   for (const [id, n] of Object.entries(inputs)) player.inventory.remove(id, n);
   const fireWorld = world.firePos
     ? new THREE.Vector3(world.firePos.x + 0.5, 1.0, world.firePos.y + 0.5)
