@@ -2076,9 +2076,12 @@
     top: 24px;
     left: 24px;
     width: 240px;
-    padding: 8px;
+    padding: 10px;
     background: var(--paper);
-    border: 1px solid var(--accent-gold);
+    /* Hand-drawn ink frame — matches the modal surfaces so the HUD
+       lives in the same storybook world. */
+    border: var(--bw-frame) solid transparent;
+    border-image: var(--frame-ink) 18 / var(--bw-frame) / 0 stretch;
     border-radius: var(--r-md);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
     font-family: var(--font-body);
@@ -2105,22 +2108,36 @@
   #player-bars .pb-track {
     position: relative;
     flex: 1;
-    height: 18px;
-    background: rgba(0, 0, 0, 0.45);
+    height: 20px;
+    background: rgba(28, 22, 14, 0.55);
     border: 1px solid var(--accent-gold);
     border-radius: 999px;
     overflow: hidden;
+    /* Subtle inner shadow gives the track a "carved" feel — like the
+       ink-frame is etched, not painted on. */
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.45);
   }
   #player-bars .pb-fill {
     position: absolute; top: 0; left: 0; bottom: 0;
     width: 100%;
-    transition: width 120ms linear;
+    transition: width 220ms cubic-bezier(.2, .65, .2, 1);
+    /* Gradient for depth + a faint inner highlight at the top edge. */
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
   }
   #player-bars .pb-fill.hp-fill  {
-    background: linear-gradient(180deg, #d96666, var(--accent-red));
+    background: linear-gradient(180deg, #e07878, #b14a4a 60%, #944040);
   }
   #player-bars .pb-fill.sta-fill {
-    background: linear-gradient(180deg, #d8be78, var(--accent-stamina));
+    background: linear-gradient(180deg, #e9d18a, #c8a050 60%, #8e6c2f);
+  }
+  /* Damage flash — main.js can briefly toggle this class on the bar
+     after a hit. The keyframe pulses a white wash so the change reads. */
+  @keyframes pb-flash {
+    0%   { filter: brightness(1.55) saturate(1.2); }
+    100% { filter: none; }
+  }
+  #player-bars .pb-fill.pb-flash {
+    animation: pb-flash 240ms ease-out;
   }
   #player-bars .pb-label {
     position: relative;
@@ -2163,7 +2180,8 @@
     max-height: 360px;
     padding: 16px;
     background: var(--paper);
-    border: 1px solid var(--accent-gold);
+    border: var(--bw-frame) solid transparent;
+    border-image: var(--frame-ink) 18 / var(--bw-frame) / 0 stretch;
     border-radius: var(--r-md);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
     color: var(--ink);
@@ -2372,9 +2390,10 @@
     align-items: center;
     justify-content: space-between;
     gap: 6px;
-    padding: 6px 8px;
+    padding: 8px 10px;
     background: var(--paper);
-    border: 1px solid var(--accent-gold);
+    border: var(--bw-frame) solid transparent;
+    border-image: var(--frame-ink) 18 / var(--bw-frame) / 0 stretch;
     border-radius: var(--r-md);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
     z-index: 88;
@@ -2726,6 +2745,7 @@
     gap: 3px;
   }
   .slot {
+    --tier-color: transparent;
     aspect-ratio: 1 / 1;
     background: var(--paper);
     border: var(--bw-1) solid var(--border);
@@ -2739,11 +2759,27 @@
     cursor: pointer;
     border-radius: var(--r-sm);
     transition: all var(--t-fast) var(--ease);
+    box-shadow: inset 0 0 0 1px var(--tier-color);
   }
+  /* Tier coloring — sets a soft inset ring + slight border tint per tier.
+     Sticks with the parchment palette so it reads as ink-saturation,
+     not a different theme. Default (no tier) leaves the ring invisible. */
+  .slot[data-tier="common"]   { --tier-color: rgba(140, 110, 70, 0.40); }
+  .slot[data-tier="bronze"]   { --tier-color: rgba(168,  99,  58, 0.55); }
+  .slot[data-tier="iron"]     { --tier-color: rgba(124, 138, 166, 0.65); }
+  .slot[data-tier="steel"]    { --tier-color: rgba(120, 168, 200, 0.72); }
+  .slot[data-tier="aurora"]   { --tier-color: rgba(108, 200, 220, 0.82); }
+  .slot[data-tier="gem"]      { --tier-color: rgba(200, 138, 208, 0.78); }
+  .slot[data-tier="orb"]      { --tier-color: rgba(180, 138,  58, 0.72); }
+  .slot[data-tier="food"]     { --tier-color: rgba(110, 158,  90, 0.55); }
+  .slot[data-tier="lore"]     { --tier-color: rgba(168, 132,  74, 0.55); }
+  /* Higher tiers also pulse a faint outer glow so the eye picks them out. */
+  .slot[data-tier="aurora"],
+  .slot[data-tier="gem"]      { box-shadow: inset 0 0 0 1px var(--tier-color), 0 0 6px rgba(108, 200, 220, 0.30); }
   .slot[data-idx]:hover {
     border-color: var(--border-strong);
     background: var(--wash-cream);
-    box-shadow: var(--shadow-hover);
+    box-shadow: inset 0 0 0 1px var(--tier-color), var(--shadow-hover);
   }
   /* Brief pop when a slot's content/qty grows, so loot acquisition reads. */
   .slot.slot-bump {
@@ -2808,6 +2844,13 @@
   #gear-tip .gt-row .delta.up    { color: var(--xp);            font-weight: 700; }
   #gear-tip .gt-row .delta.down  { color: var(--accent-red);    font-weight: 700; }
   #gear-tip .gt-row .delta.same  { color: var(--text-dim); }
+  #gear-tip .gt-row .delta .delta-arrow {
+    display: inline-block;
+    font-size: 9px;
+    margin-right: 3px;
+    transform: translateY(-1px);
+  }
+  #gear-tip .gt-row .delta.same .delta-arrow { opacity: 0.35; }
   #gear-tip .gt-hr { border: 0; border-top: 1px dashed var(--border); margin: 4px 0; }
   #gear-tip .gt-foot { color: var(--text-dim); font-style: italic; font-size: var(--fs-xs); }
 

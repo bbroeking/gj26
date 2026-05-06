@@ -3007,7 +3007,13 @@ function renderInv() {
       if (!prev || prev.id !== s.id || (s.qty || 1) > (prev.qty || 1)) pulseSlots.add(i);
       const def = ITEMS[s.id];
       const equipped = Object.values(player.inventory.equipped).includes(s.id) ? ' ★' : '';
-      html += `<div class="slot" data-idx="${i}" title="${def.name}${equipped}">
+      // tier shape — explicit `tier` field wins; fall back to chart/lore/food
+      // categories so the slot border still color-codes thematically.
+      const tier = def.chart ? 'orb'
+                 : def.lore  ? 'lore'
+                 : def.food  ? 'food'
+                 : (def.tier || (def.equipBonus ? 'common' : ''));
+      html += `<div class="slot" data-idx="${i}" data-tier="${tier}" title="${def.name}${equipped}">
         <div class="icon">${itemIconHTML(s.id, def)}</div>${s.qty > 1 ? s.qty : ''}</div>`;
     } else {
       html += '<div class="slot"></div>';
@@ -3114,9 +3120,10 @@ function buildGearTipHTML(def, qty) {
       const d = newV - oldV;
       const cls = d > 0 ? 'up' : d < 0 ? 'down' : 'same';
       const sign = d > 0 ? '+' : '';
+      const arrow = d > 0 ? '▲' : d < 0 ? '▼' : '·';
       return `<div class="gt-row">
         <span class="stat">${stat}</span>
-        <span><span>${newV}</span> <span class="delta ${cls}">(${sign}${d})</span></span>
+        <span><span>${newV}</span> <span class="delta ${cls}"><span class="delta-arrow">${arrow}</span>${sign}${d}</span></span>
       </div>`;
     }).join('');
     const reqLine = (def.reqSkill && def.reqLevel)
