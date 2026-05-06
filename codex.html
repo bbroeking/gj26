@@ -517,6 +517,76 @@
     }
     .skill-content th { font-weight: 600; color: var(--ink-mid); }
 
+    /* ---- animations tab ---- */
+    .anim-card {
+      --kind-color: #999;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--kind-color);
+      border-radius: 3px;
+      padding: 8px 12px;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+    .anim-head {
+      display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+    .anim-name {
+      font-family: var(--font-display);
+      font-size: 13px;
+      color: var(--ink);
+    }
+    .anim-kind {
+      --kind-color: #999;
+      font-family: var(--font-body);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: var(--kind-color);
+      color: #fff;
+      padding: 1px 6px;
+      border-radius: 2px;
+    }
+    .anim-status {
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 10px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 1px 6px;
+      border-radius: 2px;
+      border: 1px solid;
+    }
+    .anim-status.live    { color: #2a8a3a; border-color: #2a8a3a; }
+    .anim-status.legacy  { color: #a8722a; border-color: #a8722a; }
+    .anim-status.planned { color: #6a6a6a; border-color: #6a6a6a; font-style: italic; }
+    .anim-status.broken  { color: #c94c4c; border-color: #c94c4c; }
+    .anim-id {
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 10px;
+      color: var(--ink-mid);
+      margin-left: auto;
+    }
+    .anim-meta, .anim-where, .anim-applies {
+      font-size: 12px;
+      color: var(--ink-mid);
+      line-height: 1.5;
+    }
+    .anim-meta b, .anim-where b, .anim-applies b { color: var(--ink); }
+    .anim-where code, .anim-meta code {
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 11px;
+      background: var(--paper-deep);
+      padding: 1px 4px;
+      border-radius: 2px;
+    }
+    .anim-notes {
+      font-size: 11px;
+      color: var(--ink-mid);
+      font-style: italic;
+      margin-top: 3px;
+    }
+
     /* ---- recipes tab ---- */
     .recipe-card {
       --station-color: #999;
@@ -867,6 +937,7 @@
       <h4>World</h4>
       <button data-tab="lore">Lore</button>
       <button data-tab="models">Models</button>
+      <button data-tab="animations">Animations <span class="badge" id="badge-animations"></span></button>
 
       <h4>Lab</h4>
       <button data-tab="research">Eldra Research</button>
@@ -962,6 +1033,14 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <section class="tab-pane" data-tab="animations">
+        <div class="filter-row">
+          <input id="filter-animations" type="search" placeholder="Filter animations by entity, kind, status…">
+          <span class="count" id="count-animations"></span>
+        </div>
+        <div id="grid-animations"></div>
       </section>
 
       <section class="tab-pane" data-tab="research">

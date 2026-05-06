@@ -25,6 +25,7 @@ import { SMITH_RECIPES } from './src/data/smith-recipes.js';
 import { COOK_RECIPES } from './src/data/cook-recipes.js';
 import { INK_RECIPES } from './src/data/inkRecipes.js';
 import { ORB_RECIPES } from './src/data/orb-recipes.js';
+import { ANIMATIONS } from './src/data/animations.js';
 import { animateGLBKnight } from './src/anim/knight.js';
 import { animateQuadruped } from './src/anim/quadruped.js';
 import { phongifyMaterials } from './src/scene/characters.js';
@@ -44,6 +45,7 @@ tabsEl.addEventListener('click', (ev) => {
   if (which === 'skills') ensureSkillsLoaded();
   if (which === 'materials') renderMaterials();
   if (which === 'recipes') renderRecipes();
+  if (which === 'animations') renderAnimations();
   // Sync the global search box into the active tab's filter input so
   // the search persists visually when switching tabs.
   _syncGlobalSearchToActiveTab();
@@ -57,6 +59,7 @@ const TAB_FILTER_IDS = {
   items: 'filter-items', npcs: 'filter-npcs',
   enemies: 'filter-enemies', abilities: 'filter-abilities',
   materials: 'filter-materials', recipes: 'filter-recipes',
+  animations: 'filter-animations',
 };
 function activeTab() {
   const on = tabsEl.querySelector('button.on');
@@ -92,6 +95,7 @@ function refreshNavBadges() {
     Object.keys(COOK_RECIPES).length +
     INK_RECIPES.length +
     Object.keys(ORB_RECIPES).length);
+  set('badge-animations', ANIMATIONS.length);
 }
 
 // ---------------------------------------------------------------------------
@@ -593,6 +597,80 @@ function renderRecipes() {
   grid.innerHTML = html;
 }
 document.getElementById('filter-recipes')?.addEventListener('input', renderRecipes);
+
+// ---------------------------------------------------------------------------
+// Animations tab — pulls from src/data/animations.js. Each card lists
+// the animation kind, technique, source file + function, what it
+// drives off, what fires it, and a status chip (live / legacy /
+// planned / broken). Grouped by kind.
+// ---------------------------------------------------------------------------
+const ANIM_KIND_COLORS = {
+  locomotion: '#3a6b8a',
+  action:     '#a8413a',
+  reaction:   '#7b4a9c',
+  channel:    '#a8633a',
+  effect:     '#5a7a3a',
+  camera:     '#3a3a3a',
+  hud:        '#b48a3a',
+};
+const ANIM_KINDS = ['locomotion', 'action', 'reaction', 'channel', 'effect', 'camera', 'hud'];
+
+function renderAnimations() {
+  const grid = document.getElementById('grid-animations');
+  const count = document.getElementById('count-animations');
+  const filterEl = document.getElementById('filter-animations');
+  const filter = (filterEl?.value || '').trim().toLowerCase();
+  const entries = ANIMATIONS.filter(a => {
+    if (!filter) return true;
+    const blob = `${a.id} ${a.name} ${a.kind} ${a.technique} ${a.status} ${(a.appliesTo || []).join(' ')}`.toLowerCase();
+    return blob.includes(filter);
+  });
+  count.textContent = `${entries.length} of ${ANIMATIONS.length}`;
+
+  if (entries.length === 0) {
+    grid.innerHTML = '<div class="codex-empty">No animations match this filter.</div>';
+    return;
+  }
+
+  const buckets = {};
+  for (const a of entries) (buckets[a.kind] ||= []).push(a);
+
+  const cardHTML = (a) => {
+    const kindColor = ANIM_KIND_COLORS[a.kind] || '#999';
+    const applies = (a.appliesTo && a.appliesTo.length)
+      ? `<div class="anim-applies"><b>applies to:</b> ${a.appliesTo.map(escapeHtml).join(', ')}</div>`
+      : '';
+    return `<div class="anim-card" style="--kind-color:${kindColor}">
+      <div class="anim-head">
+        <span class="anim-kind" style="--kind-color:${kindColor}">${escapeHtml(a.kind)}</span>
+        <span class="anim-name">${escapeHtml(a.name)}</span>
+        <span class="anim-status ${escapeHtml(a.status)}">${escapeHtml(a.status)}</span>
+        <span class="anim-id">${escapeHtml(a.id)}</span>
+      </div>
+      <div class="anim-meta"><b>${escapeHtml(a.technique)}</b>${a.duration ? ` · ${a.duration}s` : ''}${a.driver ? ` · driver <code>${escapeHtml(a.driver)}</code>` : ''}</div>
+      <div class="anim-where"><b>file:</b> <code>${escapeHtml(a.file || '?')}</code> · <b>fn:</b> <code>${escapeHtml(a.func || '?')}</code></div>
+      ${a.trigger ? `<div class="anim-where"><b>trigger:</b> ${escapeHtml(a.trigger)}</div>` : ''}
+      ${applies}
+      ${a.notes ? `<div class="anim-notes">${escapeHtml(a.notes)}</div>` : ''}
+    </div>`;
+  };
+
+  let html = '';
+  for (const kind of ANIM_KINDS) {
+    const bucket = buckets[kind];
+    if (!bucket || bucket.length === 0) continue;
+    const color = ANIM_KIND_COLORS[kind];
+    html += `<div class="mat-tier-section">
+      <div class="mat-tier-head" style="border-bottom-color:${color}">
+        ${escapeHtml(kind.charAt(0).toUpperCase() + kind.slice(1))}
+        <span class="codex-section-count">${bucket.length}</span>
+      </div>
+      ${bucket.map(cardHTML).join('')}
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+document.getElementById('filter-animations')?.addEventListener('input', renderAnimations);
 
 // ---------------------------------------------------------------------------
 // NPCs tab — pulls from NPC_DEFS, shows the first dialog line as flavor preview
