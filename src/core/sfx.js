@@ -84,6 +84,47 @@ function noiseBurst(dur, vol = 0.15, lpf = 1200) {
   src.start();
 }
 
+// White noise through a bandpass filter whose centre frequency glides from
+// f0 → f1 over `dur`. The "whoosh" primitive (arrow-fly, swung-blade, etc.).
+function sweepNoise(dur, vol, f0, f1, q = 4) {
+  const ctx = ensureCtx();
+  if (!ctx) return;
+  const buf = ctx.createBuffer(1, Math.max(1, Math.ceil(ctx.sampleRate * dur)), ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const bp = ctx.createBiquadFilter();
+  bp.type = 'bandpass'; bp.Q.value = q;
+  const g = ctx.createGain();
+  const now = ctx.currentTime;
+  bp.frequency.setValueAtTime(Math.max(40, f0), now);
+  bp.frequency.exponentialRampToValueAtTime(Math.max(40, f1), now + dur);
+  g.gain.setValueAtTime(0, now);
+  g.gain.linearRampToValueAtTime(vol, now + dur * 0.18);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  src.connect(bp).connect(g).connect(_master);
+  src.start(now); src.stop(now + dur);
+}
+
+// A single oscillator whose pitch glides from f0 → f1. The "twang"/"boing"
+// primitive (bowstring release, sproing, etc.).
+function glideTone(f0, f1, dur, type = 'triangle', vol = 0.2) {
+  const ctx = ensureCtx();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const g = ctx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(Math.max(20, f0), now);
+  osc.frequency.exponentialRampToValueAtTime(Math.max(20, f1), now + dur);
+  g.gain.setValueAtTime(0, now);
+  g.gain.linearRampToValueAtTime(vol, now + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  osc.connect(g).connect(_master);
+  osc.start(now); osc.stop(now + dur);
+}
+
 // ---- ambient drone --------------------------------------------------------
 // A single soft, low-frequency hum used inside dungeons. Two detuned
 // oscillators through a low-pass + slow LFO on the cutoff give it
@@ -244,6 +285,27 @@ export const sfx = {
   miss() {
     // Whiff — high noise, brief
     noiseBurst(0.10, 0.06, 2000);
+  },
+  // ---- archery ----
+  bowDraw() {
+    // String pulled back — a soft creak + a faint rising strain.
+    noiseBurst(0.28, 0.04, 700);
+    tone(150, 0.28, 'sine', 0.04, 0.06, 0.28);
+  },
+  bowRelease() {
+    // String snaps forward — a sharp downward twang + a flick of high air.
+    glideTone(440, 170, 0.16, 'triangle', 0.18);
+    noiseBurst(0.04, 0.05, 2400);
+  },
+  arrowWhoosh() {
+    // Fletched shaft cutting the air — bandpass noise sweeping down.
+    sweepNoise(0.26, 0.15, 1700, 280, 4);
+  },
+  arrowHit() {
+    // Thock into wood/ground — dry mid noise + a low thump + a click.
+    noiseBurst(0.06, 0.14, 650);
+    tone(220, 0.08, 'triangle', 0.12);
+    tone(1900, 0.02, 'square', 0.05);
   },
   parry() {
     // Bright metallic ping — clean parry
