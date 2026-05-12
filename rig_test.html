@@ -301,7 +301,7 @@ const clock = new THREE.Clock();
 function loop() {
   const dt = Math.min(0.05, clock.getDelta());
   camera.getWorldDirection(_f); _f.y=0; _f.normalize();
-  _r.set(_f.z,0,-_f.x);
+  _r.set(-_f.z, 0, _f.x);          // camera-right = forward × up (D = the viewer's right)
   _w.set(0,0,0);
   if (keys.KeyW||keys.ArrowUp)_w.add(_f); if(keys.KeyS||keys.ArrowDown)_w.sub(_f);
   if (keys.KeyD||keys.ArrowRight)_w.add(_r); if(keys.KeyA||keys.ArrowLeft)_w.sub(_r);
