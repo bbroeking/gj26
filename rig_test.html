@@ -144,8 +144,9 @@ window.retune = () => {
 // ── placement mode: drag a prop with a 3D gizmo, read back the ATTACH numbers ──
 // P toggles it. Tab cycles which prop is selected. R toggles the gizmo between
 // move and rotate. Drag the handles → the HUD prints the ATTACH entry to copy.
-const PLACE_KEYS = ['quiver','bowStow','bowHand'];   // bowStow/bowHand both edit props.bow (re-parented)
-const placement = { on:false, selIdx:0, tc:null, markers:[] };
+const PLACE_KEYS = ['quiver','bowStow','bowHand','arrowHand'];   // bowStow/bowHand both edit props.bow (re-parented); arrowHand uses a temp arrow
+const placement = { on:false, selIdx:0, tc:null, markers:[], tempArrow:null };
+function clearTempArrow() { if (placement.tempArrow) { placement.tempArrow.parent?.remove(placement.tempArrow); placement.tempArrow = null; } }
 function ensureGizmo() {
   if (placement.tc) return placement.tc;
   const tc = new TransformControls(camera, renderer.domElement);
@@ -166,10 +167,12 @@ function ensureGizmo() {
 function placeSelect(idx) {
   placement.selIdx = ((idx % PLACE_KEYS.length) + PLACE_KEYS.length) % PLACE_KEYS.length;
   const key = PLACE_KEYS[placement.selIdx];
+  if (key !== 'arrowHand') clearTempArrow();
   let p = null;
-  if (key === 'quiver')       p = props.quiver;
-  else if (key === 'bowStow') { p = props.bow; if (p) equip(p, 'bowStow'); }
-  else if (key === 'bowHand') { p = props.bow; if (p) equip(p, 'bowHand'); }
+  if (key === 'quiver')         p = props.quiver;
+  else if (key === 'bowStow')   { p = props.bow; if (p) equip(p, 'bowStow'); }
+  else if (key === 'bowHand')   { p = props.bow; if (p) equip(p, 'bowHand'); }
+  else if (key === 'arrowHand') { if (!placement.tempArrow) { placement.tempArrow = makeProp('arrow'); if (placement.tempArrow) equip(placement.tempArrow, 'arrowHand'); } p = placement.tempArrow; }
   if (p && placement.tc) placement.tc.attach(p); else placement.tc?.detach();
 }
 function togglePlacement() {
@@ -177,12 +180,12 @@ function togglePlacement() {
   placement.on = !placement.on;
   for (const mk of placement.markers) mk.mesh.visible = placement.on;
   if (placement.on) { controls.enabled = true; placeSelect(placement.selIdx); }
-  else { controls.enabled = false; placement.tc.detach(); }
+  else { controls.enabled = false; placement.tc.detach(); clearTempArrow(); }
 }
 function placementReadout() {
   if (!placement.on) return '';
   const key = PLACE_KEYS[placement.selIdx];
-  const p = (key === 'quiver') ? props.quiver : props.bow;
+  const p = (key === 'quiver') ? props.quiver : (key === 'arrowHand') ? placement.tempArrow : props.bow;
   if (!p) return `\n[placement] ${key}: prop not equipped`;
   const inv = p.userData.invScale || 1;
   const pos = [p.position.x/inv, p.position.y/inv, p.position.z/inv].map(v => +v.toFixed(3));
