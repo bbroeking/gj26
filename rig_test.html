@@ -65,10 +65,16 @@ document.body.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x2b3033);
 const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.05, 100);
-camera.position.set(0, 1.7, 4.2);
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true; controls.target.set(0, 0.85, 0);
+controls.enableDamping = true; controls.target.set(0, 1.0, 0);
 controls.minDistance = 1; controls.maxDistance = 12; controls.maxPolarAngle = Math.PI*0.49;
+controls.enabled = false;        // off by default — the TPS follow cam drives it; on in placement mode
+// Third-person follow: trails behind the player's facing, pitched down ~CAM_ANGLE.
+const CAM_HEAD_Y = 1.4;          // look at roughly head height
+let camDist = 5.2, camAngle = 42 * Math.PI/180;     // distance + downward angle (TPS-ish)
+camera.position.set(0, CAM_HEAD_Y + camDist*Math.sin(camAngle), camDist*Math.cos(camAngle));
+camera.lookAt(0, CAM_HEAD_Y, 0);
+addEventListener('wheel', e => { if (placement.on) return; camDist = Math.max(2.5, Math.min(11, camDist + Math.sign(e.deltaY)*0.45)); }, { passive:true });
 scene.add(new THREE.HemisphereLight(0xbcd0e8, 0x3a3f33, 0.7));
 const key = new THREE.DirectionalLight(0xfff2e0, 1.0);
 key.position.set(4,7,5); key.castShadow = true; key.shadow.mapSize.set(2048,2048);
@@ -178,7 +184,7 @@ function togglePlacement() {
   placement.on = !placement.on;
   for (const mk of placement.markers) mk.mesh.visible = placement.on;
   if (placement.on) { controls.enabled = true; placeSelect(placement.selIdx); }
-  else { placement.tc.detach(); }
+  else { controls.enabled = false; placement.tc.detach(); }
 }
 function placementReadout() {
   if (!placement.on) return '';
@@ -331,18 +337,31 @@ function loop() {
   if (!placement.on) { updateBow(dt); updateProjectiles(dt); }
   // bone markers follow their bones each frame (bones move with the walk)
   if (placement.on) for (const mk of placement.markers) { const b = bones[mk.bone]; if (b) b.getWorldPosition(mk.mesh.position); }
-  _co.copy(camera.position).sub(controls.target);
-  _tg.set(rig.position.x,0.85,rig.position.z);
-  controls.target.lerp(_tg, Math.min(1,8*dt));
-  camera.position.copy(controls.target).add(_co);
+
+  // ── camera ──
+  if (placement.on) {
+    // free orbit around the player (OrbitControls drives it)
+    controls.target.lerp(_tg.set(rig.position.x, 1.0, rig.position.z), Math.min(1, 8*dt));
+    controls.update();
+  } else {
+    // third-person follow: trail behind the player's facing, pitched down ~camAngle
+    const cf = Math.cos(camAngle), sf = Math.sin(camAngle);
+    _co.set(rig.position.x - Math.sin(move.facing)*camDist*cf,
+            CAM_HEAD_Y          + camDist*sf,
+            rig.position.z - Math.cos(move.facing)*camDist*cf);
+    camera.position.lerp(_co, Math.min(1, 6*dt));
+    _tg.set(rig.position.x, CAM_HEAD_Y, rig.position.z);
+    camera.lookAt(_tg);
+  }
   key.position.set(rig.position.x+4,7,rig.position.z+5); key.target.position.set(rig.position.x,0,rig.position.z);
+
   const moving = move.speed>0.05;
   hud.textContent = (placement.on ? 'PLACEMENT MODE — drag the gizmo' : $('cbWalk').checked?'walk (in place)':moving?(move.speed>=RUN-0.1?'run ':'walk')+'  '+move.speed.toFixed(1)+' m/s':'idle')
     + (placement.on ? '' : '   bow: ' + bow.state + (projectiles.length?' · arrows in flight: '+projectiles.length:''))
     + '\nclips: ' + (hud.dataset.clips||'?') + '  ·  bones: ' + (hud.dataset.bones||'?')
     + '\nequipped: ' + Object.keys(props).filter(k=>props[k]).join(', ')
     + placementReadout();
-  controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop);
+  renderer.render(scene, camera); requestAnimationFrame(loop);
 }
 loop();
 </script>
