@@ -24,7 +24,6 @@
   <span class="k">X</span> — draw &amp; fire the bow &nbsp;·&nbsp; <span class="k">P</span> — placement mode &nbsp;·&nbsp; in placement: <span class="k">Tab</span> next prop · <span class="k">R</span> move/rotate<br>
   <div style="margin-top:6px">
     <label><input type="checkbox" id="cbWalk"> always walk (in place)</label>
-    <label><input type="checkbox" id="cbCloak" checked> cloak</label>
     <label><input type="checkbox" id="cbQuiver" checked> quiver</label>
     <label><input type="checkbox" id="cbBow" checked> bow</label>
   </div>
@@ -41,15 +40,13 @@ addEventListener('keydown',   () => sfx.resume(), { once:true });
 addEventListener('pointerdown', () => sfx.resume(), { once:true });
 
 const BODY_URL  = 'models/ranger_anim_v1.glb';   // Meshy export: skinned mesh + Walking/Running, cm-scale
-const PROP_URLS = { cloak:'models/prop_cloak_v1.glb', quiver:'models/prop_quiver_v1.glb',
-                    bow:'models/prop_bow_v1.glb', arrow:'models/prop_arrow_v1.glb' };
+const PROP_URLS = { quiver:'models/prop_quiver_v1.glb', bow:'models/prop_bow_v1.glb', arrow:'models/prop_arrow_v1.glb' };
 // longest-axis target size (m) for each prop next to a ~1.7 m body
-const PROP_SIZE = { cloak:0.85, quiver:0.42, bow:0.95, arrow:0.7 };
+const PROP_SIZE = { quiver:0.42, bow:0.95, arrow:0.7 };
 // Which bone each prop hangs off, + the wrapper's local offset in METRES.
 // Spine/Spine01 frames: local +Y = up, local +Z = behind the character,
 // local +X = the character's left. So props go to +Z to sit on the back.
 const ATTACH = {
-  cloak:    { bone:'Spine',    pos:[0, 0.04, 0.10], rot:[0.10, 0, 0] },           // drapes down the back
   quiver:   { bone:'Spine01',  pos:[0.07, 0.06, 0.10], rot:[-0.35, 0, 0.25] },    // diagonal on the back, mouth over the L shoulder
   bowStow:  { bone:'Spine01',  pos:[0, 0.0, 0.11], rot:[0, 0, Math.PI/3] },       // slung diagonally on the back
   bowHand:  { bone:'LeftHand', pos:[0, 0, 0], rot:[0, 0, 0] },                     // gripped when drawn
@@ -131,26 +128,23 @@ function equip(propWrap, attachKey) {
   propWrap.rotation.set(...a.rot);
 }
 function attachOrDetach() {
-  const want = { cloak: $('cbCloak').checked, quiver: $('cbQuiver').checked, bow: $('cbBow').checked };
-  if (want.cloak && !props.cloak)  { props.cloak  = makeProp('cloak');  if(props.cloak)  equip(props.cloak,'cloak'); }
-  if (!want.cloak && props.cloak)  { props.cloak.parent?.remove(props.cloak); props.cloak = null; }
+  const want = { quiver: $('cbQuiver').checked, bow: $('cbBow').checked };
   if (want.quiver && !props.quiver){ props.quiver = makeProp('quiver'); if(props.quiver) equip(props.quiver,'quiver'); }
   if (!want.quiver && props.quiver){ props.quiver.parent?.remove(props.quiver); props.quiver = null; }
   if (want.bow && !props.bow)      { props.bow    = makeProp('bow');    if(props.bow)    equip(props.bow,'bowStow'); }
   if (!want.bow && props.bow)      { props.bow.parent?.remove(props.bow); props.bow = null; }
 }
 window.retune = () => {
-  if (props.cloak)  equip(props.cloak,'cloak');
   if (props.quiver) equip(props.quiver,'quiver');
   if (props.bow)    equip(props.bow,'bowStow');   // (assumes stowed; the X flow re-equips to bowHand)
   console.log('retuned — ATTACH:', JSON.stringify(ATTACH));
 };
-['cbCloak','cbQuiver','cbBow'].forEach(id => $(id).addEventListener('change', attachOrDetach));
+['cbQuiver','cbBow'].forEach(id => $(id).addEventListener('change', attachOrDetach));
 
 // ── placement mode: drag a prop with a 3D gizmo, read back the ATTACH numbers ──
 // P toggles it. Tab cycles which prop is selected. R toggles the gizmo between
 // move and rotate. Drag the handles → the HUD prints the ATTACH entry to copy.
-const PLACE_KEYS = ['cloak','quiver','bowStow','bowHand'];   // bowStow/bowHand both edit props.bow (re-parented)
+const PLACE_KEYS = ['quiver','bowStow','bowHand'];   // bowStow/bowHand both edit props.bow (re-parented)
 const placement = { on:false, selIdx:0, tc:null, markers:[] };
 function ensureGizmo() {
   if (placement.tc) return placement.tc;
@@ -173,8 +167,7 @@ function placeSelect(idx) {
   placement.selIdx = ((idx % PLACE_KEYS.length) + PLACE_KEYS.length) % PLACE_KEYS.length;
   const key = PLACE_KEYS[placement.selIdx];
   let p = null;
-  if (key === 'cloak')        p = props.cloak;
-  else if (key === 'quiver')  p = props.quiver;
+  if (key === 'quiver')       p = props.quiver;
   else if (key === 'bowStow') { p = props.bow; if (p) equip(p, 'bowStow'); }
   else if (key === 'bowHand') { p = props.bow; if (p) equip(p, 'bowHand'); }
   if (p && placement.tc) placement.tc.attach(p); else placement.tc?.detach();
@@ -189,7 +182,7 @@ function togglePlacement() {
 function placementReadout() {
   if (!placement.on) return '';
   const key = PLACE_KEYS[placement.selIdx];
-  const p = (key === 'cloak') ? props.cloak : (key === 'quiver') ? props.quiver : props.bow;
+  const p = (key === 'quiver') ? props.quiver : props.bow;
   if (!p) return `\n[placement] ${key}: prop not equipped`;
   const inv = p.userData.invScale || 1;
   const pos = [p.position.x/inv, p.position.y/inv, p.position.z/inv].map(v => +v.toFixed(3));
