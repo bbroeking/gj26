@@ -2,341 +2,181 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Rig sandbox — sockets + bow flow</title>
+<title>Rig test — walk + equip</title>
 <style>
-  html, body { margin: 0; height: 100%; background: #2a2f33; color: #ddd;
-               font: 13px/1.45 -apple-system, sans-serif; overflow: hidden; }
-  #info { position: fixed; top: 12px; left: 12px; padding: 10px 14px;
-          background: rgba(0,0,0,0.5); border-radius: 6px; max-width: 380px; user-select:none; }
-  #info b { color:#fff; } #info code { color:#9fd; background:rgba(255,255,255,0.06); padding:1px 4px; border-radius:3px; }
-  #info .k { display:inline-block; padding:1px 5px; margin:0 1px; border-radius:3px;
-             background:rgba(255,255,255,0.12); color:#fff; font-family:monospace; }
-  .row { margin-top:6px; color:#aaa; }
-  select { background:#1c1f22; color:#ddd; border:1px solid #444; border-radius:4px; padding:2px 4px; max-width:340px; }
-  #hud { position: fixed; bottom: 12px; left: 12px; font-family: monospace; font-size: 12px;
-         color: #8fb; background: rgba(0,0,0,0.45); padding: 8px 12px; border-radius: 4px; white-space: pre; }
+  html,body{margin:0;height:100%;background:#2b3033;overflow:hidden;font:13px/1.4 -apple-system,sans-serif;color:#ddd}
+  #hud{position:fixed;left:12px;bottom:12px;font-family:monospace;font-size:12px;background:rgba(0,0,0,.45);color:#9fb;padding:6px 10px;border-radius:4px;white-space:pre}
+  #help{position:fixed;left:12px;top:12px;background:rgba(0,0,0,.45);padding:8px 12px;border-radius:4px;user-select:none}
+  .k{display:inline-block;padding:1px 5px;margin:0 1px;border-radius:3px;background:rgba(255,255,255,.14);color:#fff;font-family:monospace}
+  label{margin-right:10px}
 </style>
 <script type="importmap">
 { "imports": {
-    "three":         "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  "three":"https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"
 } }
 </script>
 </head>
 <body>
-<div id="info">
-  <b>Rig sandbox — sockets + bow flow</b><br>
-  <span class="k">W</span><span class="k">A</span><span class="k">S</span><span class="k">D</span> / arrows — walk ·
-  <span class="k">Shift</span> — run ·
-  <span class="k">F</span> hold — draw &amp; aim, release to fire ·
-  <span class="k">Space</span> — quick shot (full draw→fire sequence)<br>
-  <div class="row">Mouse-drag to orbit · scroll to zoom.</div>
-  <div class="row">Model:
-    <select id="modelSel">
-      <option value="models/npc_ranger_body_v3.glb">npc_ranger_body_v3 — Meshy auto-rig, skinned, walk+run clips, 6 sockets ★</option>
-      <option value="models/npc_ranger_body_v2_sockets.glb">npc_ranger_body_v2 — stripped + 6 sockets (slice rig)</option>
-      <option value="models/npc_rigged_test_v2.glb">npc_rigged_test_v2 (welded + 5 sockets, props baked in)</option>
-      <option value="models/npc_rigged_test_v1.glb">npc_rigged_test_v1 (raw 29-bone)</option>
-    </select>
+<div id="help">
+  <b>Rig test — walk + equip</b><br>
+  <span class="k">W</span><span class="k">A</span><span class="k">S</span><span class="k">D</span>/<span class="k">↑</span><span class="k">←</span><span class="k">↓</span><span class="k">→</span> — walk · <span class="k">Shift</span> — run · mouse-drag — orbit · scroll — zoom<br>
+  <span class="k">X</span> — draw &amp; fire the bow<br>
+  <div style="margin-top:6px">
+    <label><input type="checkbox" id="cbWalk"> always walk (in place)</label>
+    <label><input type="checkbox" id="cbCloak" checked> cloak</label>
+    <label><input type="checkbox" id="cbQuiver" checked> quiver</label>
+    <label><input type="checkbox" id="cbBow" checked> bow</label>
   </div>
-  <div class="row" id="modelInfo">loading…</div>
-  <div class="row" id="socketInfo"></div>
 </div>
-<div id="hud">idle</div>
+<div id="hud">loading…</div>
 
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { animateRiggedWalk, resetRiggedPose } from './src/anim/rigged_walk.js';
-import { animateGLBKnight } from './src/anim/knight.js';
 
-// ─────────── renderer / scene ───────────
+const BODY_URL  = 'models/ranger_anim_v1.glb';   // Meshy export: skinned mesh + Walking/Running, cm-scale
+const PROP_URLS = { cloak:'models/prop_cloak_v1.glb', quiver:'models/prop_quiver_v1.glb',
+                    bow:'models/prop_bow_v1.glb', arrow:'models/prop_arrow_v1.glb' };
+// longest-axis target size (m) for each prop next to a ~1.7 m body
+const PROP_SIZE = { cloak:0.95, quiver:0.42, bow:1.1, arrow:0.7 };
+// Which bone each prop hangs off, + the wrapper's local offset in METRES
+// (the code converts to the bone's frame using the body's scale). r = euler XYZ.
+const ATTACH = {
+  cloak:    { bone:'Spine02',  pos:[0, -0.10, -0.05], rot:[0.2, 0, 0] },        // hangs down the back
+  quiver:   { bone:'Spine01',  pos:[0.08, 0.0, -0.10], rot:[0.25, 0, -0.20] },  // on the back, angled
+  bowStow:  { bone:'Spine01',  pos:[-0.05, 0.05, -0.12], rot:[0, 0.4, Math.PI/2.4] },  // slung on the back
+  bowHand:  { bone:'LeftHand', pos:[0, 0, 0], rot:[0, 0, 0] },                   // gripped when drawn
+  arrowHand:{ bone:'RightHand',pos:[0, 0, 0], rot:[0, 0, 0] },                   // nocked
+};
+window.ATTACH = ATTACH;
+
+// ── scene ──
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setPixelRatio(devicePixelRatio); renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
-
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x2a2f33);
-scene.fog = new THREE.Fog(0x2a2f33, 22, 50);
-
-const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 200);
+scene.background = new THREE.Color(0x2b3033);
+const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.05, 100);
+camera.position.set(0, 1.7, 4.2);
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true; controls.dampingFactor = 0.08;
-controls.minDistance = 1.2; controls.maxDistance = 16; controls.maxPolarAngle = Math.PI*0.49;
-camera.position.set(0, 2.6, 6.0); controls.target.set(0, 1.0, 0);
-
-scene.add(new THREE.HemisphereLight(0xbcd0e8, 0x3a3f33, 0.65));
-const keyL = new THREE.DirectionalLight(0xfff2e0, 1.05);
-keyL.position.set(5,8,4); keyL.castShadow = true; keyL.shadow.mapSize.set(2048,2048);
-const sc = keyL.shadow.camera; sc.left=-10; sc.right=10; sc.top=10; sc.bottom=-10; sc.near=0.5; sc.far=40;
-scene.add(keyL); scene.add(keyL.target);
-const fillL = new THREE.DirectionalLight(0x8fa8c8, 0.35); fillL.position.set(-4,3,-3); scene.add(fillL);
-
-const ground = new THREE.Mesh(new THREE.CircleGeometry(45,80), new THREE.MeshStandardMaterial({color:0x55663f, roughness:1}));
+controls.enableDamping = true; controls.target.set(0, 0.85, 0);
+controls.minDistance = 1; controls.maxDistance = 12; controls.maxPolarAngle = Math.PI*0.49;
+scene.add(new THREE.HemisphereLight(0xbcd0e8, 0x3a3f33, 0.7));
+const key = new THREE.DirectionalLight(0xfff2e0, 1.0);
+key.position.set(4,7,5); key.castShadow = true; key.shadow.mapSize.set(2048,2048);
+const sc = key.shadow.camera; sc.left=-6;sc.right=6;sc.top=6;sc.bottom=-6;sc.near=.5;sc.far=30;
+scene.add(key, key.target);
+const ground = new THREE.Mesh(new THREE.CircleGeometry(30,64), new THREE.MeshStandardMaterial({color:0x55663f, roughness:1}));
 ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
-const grid = new THREE.GridHelper(45,45,0x6b7d52,0x47512f); grid.position.y = 0.01; scene.add(grid);
+const grid = new THREE.GridHelper(30,30,0x6b7d52,0x47512f); grid.position.y = 0.01; scene.add(grid);
 
-// ─────────── character rig + props ───────────
-const rig = new THREE.Group(); scene.add(rig);   // wrapper we translate / yaw
-let M = null;                                    // current model state
-const move = { speed:0, facing:0 };
-
-// Placeholder prop factory — colored chunky shapes standing in for the real
-// bow / arrow / quiver / cape GLBs. Each has a sensible local origin so it
-// sits roughly right when parented to a socket; final offsets are tuned by
-// the per-socket TUNE table below.
-function makeBowPlaceholder() {
-  const g = new THREE.Group();
-  const limb = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.7, 0.03),
-    new THREE.MeshStandardMaterial({color:0x8a5a2b, roughness:0.8}));
-  g.add(limb);
-  const string = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.66, 0.005),
-    new THREE.MeshStandardMaterial({color:0xddccaa}));
-  string.position.z = -0.06; g.add(string);
-  g.castShadow = true; g.traverse(o=>{ if(o.isMesh) o.castShadow = true; });
-  return g;
-}
-function makeArrowPlaceholder() {
-  const g = new THREE.Group();
-  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.006,0.006,0.6,6),
-    new THREE.MeshStandardMaterial({color:0xc8b890}));
-  shaft.rotation.z = Math.PI/2; g.add(shaft);   // lie along local +X
-  const head = new THREE.Mesh(new THREE.ConeGeometry(0.018,0.05,6),
-    new THREE.MeshStandardMaterial({color:0x999999}));
-  head.rotation.z = -Math.PI/2; head.position.x = 0.32; g.add(head);
-  g.traverse(o=>{ if(o.isMesh) o.castShadow = true; });
-  return g;
-}
-function makeQuiverPlaceholder() {
-  const g = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.05,0.32,10),
-    new THREE.MeshStandardMaterial({color:0x5a3a1f, roughness:0.9}));
-  g.add(body);
-  for (let i=0;i<4;i++){
-    const a = new THREE.Mesh(new THREE.CylinderGeometry(0.005,0.005,0.34,5),
-      new THREE.MeshStandardMaterial({color:0xc8b890}));
-    a.position.set((i-1.5)*0.018, 0.22, 0.0); a.rotation.z = 0.12*(i-1.5);
-    g.add(a);
-  }
-  g.traverse(o=>{ if(o.isMesh) o.castShadow = true; });
-  return g;
-}
-function makeCapePlaceholder() {
-  const geo = new THREE.PlaneGeometry(0.4, 0.6, 1, 1);
-  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({color:0x2f5e3a, roughness:1, side:THREE.DoubleSide}));
-  m.castShadow = true; m.position.y = -0.3; m.position.z = -0.05;
-  const g = new THREE.Group(); g.add(m); return g;
-}
-
-// ── face expression atlas ──────────────────────────────────────────────
-// 4 cols × 2 rows: [neutral happy sad angry] / [surprised blink talkA talkO].
-const FACE_COLS = 4, FACE_ROWS = 2;
-const FACE_CELLS = { neutral:[0,0], happy:[1,0], sad:[2,0], angry:[3,0],
-                     surprised:[0,1], blink:[1,1], talkA:[2,1], talkO:[3,1] };
-let FACE_TEX = null;
-const FACE_TEX_READY = new Promise(res => new THREE.TextureLoader().load(
-  'docs/concept-art/ranger-props/ranger-face-atlas.png',
-  t => { t.colorSpace = THREE.SRGBColorSpace; t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; FACE_TEX = t; res(); },
-  undefined, () => { FACE_TEX = null; res(); }));
-function faceCellUV(mat, cell) {
-  const [c,r] = FACE_CELLS[cell] || FACE_CELLS.neutral;
-  mat.map.repeat.set(1/FACE_COLS, 1/FACE_ROWS);
-  mat.map.offset.set(c/FACE_COLS, 1 - (r+1)/FACE_ROWS);
-  mat.needsUpdate = true;
-}
-
-// ── real prop GLBs (Meshy → clean_ai_mesh.py) ──────────────────────────
-// Loaded once at startup. If a file is missing the matching placeholder
-// shape above is used instead, so the sandbox keeps working incrementally.
-const PROP_URLS = {
-  bow:    'models/prop_bow_v1.glb',
-  arrow:  'models/prop_arrow_v1.glb',
-  quiver: 'models/prop_quiver_v1.glb',
-  cloak:  'models/prop_cloak_v1.glb',
-};
-// Target longest-axis size (metres) so each prop is sane next to a ~1.7 m body.
-const PROP_TARGET_SIZE = { bow: 1.25, arrow: 0.72, quiver: 0.42, cloak: 1.05 };
-const PROP_GLB = {};   // kind → gltf.scene (or null if the file failed to load)
-const _propBox = new THREE.Box3(), _propCtr = new THREE.Vector3();
-
+// ── prop factory ──
+const PROP_GLB = {};
+const _box = new THREE.Box3(), _ctr = new THREE.Vector3();
 function makeProp(kind) {
   const src = PROP_GLB[kind];
-  if (src) {
-    const g = new THREE.Group();
-    const inst = src.clone(true);
-    inst.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });
-    // normalize to target size, then recenter so the prop's bbox centre sits
-    // at the wrapper's origin (TUNE offsets are applied to the wrapper).
-    inst.updateMatrixWorld(true);
-    _propBox.setFromObject(inst);
-    const span = Math.max(_propBox.max.x-_propBox.min.x, _propBox.max.y-_propBox.min.y, _propBox.max.z-_propBox.min.z) || 1;
-    inst.scale.setScalar(span > 0.001 ? (PROP_TARGET_SIZE[kind] || 0.5) / span : 1);
-    inst.updateMatrixWorld(true);
-    _propBox.setFromObject(inst); _propBox.getCenter(_propCtr);
-    inst.position.sub(_propCtr);
-    g.add(g.userData.inner = inst);
-    return g;
-  }
-  if (kind === 'bow')    return makeBowPlaceholder();
-  if (kind === 'arrow')  return makeArrowPlaceholder();
-  if (kind === 'quiver') return makeQuiverPlaceholder();
-  if (kind === 'cloak')  return makeCapePlaceholder();
-  return new THREE.Group();
+  if (!src) return null;
+  const g = new THREE.Group();
+  const inst = src.clone(true);
+  inst.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });
+  inst.updateMatrixWorld(true);
+  _box.setFromObject(inst);
+  const span = Math.max(_box.max.x-_box.min.x, _box.max.y-_box.min.y, _box.max.z-_box.min.z) || 1;
+  inst.scale.setScalar(span > 0.001 ? (PROP_SIZE[kind] || 0.5) / span : 1);
+  inst.updateMatrixWorld(true);
+  _box.setFromObject(inst); _box.getCenter(_ctr); inst.position.sub(_ctr);
+  g.add(inst);
+  return g;
 }
+// ── character ──
+const hud = document.getElementById('hud');
+const rig = new THREE.Group(); scene.add(rig);          // translate
+const yawPivot = new THREE.Group(); rig.add(yawPivot);  // facing-yaw only
+let model = null, mixer = null, actWalk = null, actRun = null;
+let BODY_SCALE = 1;          // the 1.7/height normalization factor (≈0.01 for the cm-scale GLB)
+const bones = {}, props = {};
+const move = { speed:0, facing:0 };
+const $ = id => document.getElementById(id);
 
-// Per-socket placement tuning (local transform of the prop wrapper *inside*
-// its socket). Eyeballed — re-tune in the browser as needed. r = euler XYZ.
-// The real GLBs come from clean_ai_mesh.py grounded at z=0 / centred x,y;
-// makeProp then recentres the bbox, so these offsets are relative to the
-// prop's geometric centre.
-const TUNE = {
-  socket_hand_L: { pos:[0.0,  0.06, 0.02], rot:[0, 0, 0.15] },      // bow held forward in off-hand
-  socket_hand_R: { pos:[-0.14, 0.0,  0.0], rot:[0, 0, 0] },         // arrow nocked, shaft toward bow
-  socket_back:   { pos:[0.0,  0.05, -0.06], rot:[0, 0, 1.05] },     // bow slung diagonally on the back
-  socket_quiver: { pos:[0.07, 0.04, -0.10], rot:[0.35, 0, -0.20] }, // quiver on the upper back
-  socket_cape:   { pos:[0.0,  0.0, -0.06], rot:[0, 0, 0] },         // cloak hangs from the spine
-  socket_face:   { pos:[0.0,  0.30,  0.06], rot:[0, 0, 0] },        // face quad up at head height
+// equip a prop wrapper onto a bone. The bone may live in a tiny local frame
+// (Meshy rigs often have an intermediate cm→m node scale), so we read the
+// bone's actual world scale and compensate: the prop renders at its intended
+// physical size, and `pos` (in METRES) is the world-space offset from the bone.
+const _bs = new THREE.Vector3();
+function equip(propWrap, attachKey) {
+  const a = ATTACH[attachKey]; if (!a) return;
+  const bone = bones[a.bone]; if (!bone) return;
+  bone.add(propWrap);
+  model.updateWorldMatrix(true, true);
+  bone.getWorldScale(_bs);
+  const inv = 1 / (_bs.x || 1);                        // bone's world scale → bone-local-units per metre
+  propWrap.scale.setScalar(inv);                       // so the prop renders at world-1×
+  propWrap.position.set(a.pos[0]*inv, a.pos[1]*inv, a.pos[2]*inv);   // metres → bone-local
+  propWrap.rotation.set(...a.rot);
+}
+function attachOrDetach() {
+  const want = { cloak: $('cbCloak').checked, quiver: $('cbQuiver').checked, bow: $('cbBow').checked };
+  if (want.cloak && !props.cloak)  { props.cloak  = makeProp('cloak');  if(props.cloak)  equip(props.cloak,'cloak'); }
+  if (!want.cloak && props.cloak)  { props.cloak.parent?.remove(props.cloak); props.cloak = null; }
+  if (want.quiver && !props.quiver){ props.quiver = makeProp('quiver'); if(props.quiver) equip(props.quiver,'quiver'); }
+  if (!want.quiver && props.quiver){ props.quiver.parent?.remove(props.quiver); props.quiver = null; }
+  if (want.bow && !props.bow)      { props.bow    = makeProp('bow');    if(props.bow)    equip(props.bow,'bowStow'); }
+  if (!want.bow && props.bow)      { props.bow.parent?.remove(props.bow); props.bow = null; }
+}
+window.retune = () => {
+  if (props.cloak)  equip(props.cloak,'cloak');
+  if (props.quiver) equip(props.quiver,'quiver');
+  if (props.bow)    equip(props.bow,'bowStow');   // (assumes stowed; the X flow re-equips to bowHand)
+  console.log('retuned — ATTACH:', JSON.stringify(ATTACH));
 };
-// Live tuning: in the browser console do  TUNE.socket_quiver.pos = [0.07, 0.04, -0.18]
-// then  retune()  to re-apply all offsets without reloading. Tell me the final
-// numbers and I'll bake them into this file.
-window.TUNE = TUNE;
-function placeInSocket(prop, socketName) {
-  const t = TUNE[socketName] || { pos:[0,0,0], rot:[0,0,0] };
-  prop.position.set(...t.pos);
-  prop.rotation.set(...t.rot);
-}
+['cbCloak','cbQuiver','cbBow'].forEach(id => $(id).addEventListener('change', attachOrDetach));
 
-function disposeCurrent() {
-  if (!M) return;
-  rig.remove(M.inner);
-  if (M.skeletonHelper) scene.remove(M.skeletonHelper);
-  M = null;
-}
-
-function loadModel(url) {
-  disposeCurrent();
-  document.getElementById('modelInfo').textContent = 'loading ' + url + ' …';
-  document.getElementById('socketInfo').textContent = '';
-  new GLTFLoader().load(url, (gltf) => {
-    const inner = gltf.scene;
-    let hasMesh = false;
-    inner.traverse(o => { if (o.isMesh||o.isSkinnedMesh){ hasMesh=true; o.castShadow=true; o.receiveShadow=false; o.frustumCulled=false; } });
-
-    // normalize scale + ground (bone-positions fallback for armature-only files)
-    const measure = () => {
-      inner.updateMatrixWorld(true);
-      const box = new THREE.Box3().setFromObject(inner);
-      if (box.isEmpty()) { const v=new THREE.Vector3(); inner.traverse(o=>{ if(o.isBone){ o.getWorldPosition(v); box.expandByPoint(v); } }); }
-      return box;
-    };
-    const bb = measure();
-    if (!bb.isEmpty()) {
-      const ht = (bb.max.y - bb.min.y) || 1;
-      inner.scale.setScalar(ht>0.01 ? 1.7/ht : 1);
-      const bb2 = measure(); inner.position.y -= bb2.min.y;
-    }
-    rig.add(inner);
-
-    M = { inner, hasMesh, mode:null, mixer:null, sockets:{}, props:{}, bow:null, arrow:null, projectiles:[],
-          bowState:'STOW', bowT:0, quickShotQueued:false, autoFire:false, autoAimT:0, skeletonHelper:null,
-          knightEntity:null, faceMat:null, expr:'neutral', blinkT: 2 + Math.random()*3, talking:false, talkT:0 };
-
-    // Mode: clips (AnimationMixer) > sliced (Body/Head/Arm_*/Leg_* empties →
-    // animateGLBKnight) > procedural (Bone_NNN skin → animateRiggedWalk).
-    const partNames = ['Body','Head','Arm_L','Arm_R','Leg_L','Leg_R','Knee_L','Knee_R','Elbow_L','Elbow_R'];
-    const parts = {}; for (const pn of partNames){ const o=inner.getObjectByName(pn); if(o) parts[pn]=o; }
-    if (gltf.animations.length) {
-      M.mode = 'clips'; M.mixer = new THREE.AnimationMixer(inner);
-      const byName = {}; for (const c of gltf.animations) byName[c.name.toLowerCase()] = c;
-      const find = (...ks)=>{ for(const k of ks) for(const n in byName) if(n.includes(k)) return byName[n]; return null; };
-      M.aWalk = M.mixer.clipAction(find('walk') || gltf.animations[0]);
-      M.aRun  = M.mixer.clipAction(find('run')  || (find('walk')||gltf.animations[0]));
-      M.aWalk.play(); M.aWalk.setEffectiveWeight(0); M.aRun.play(); M.aRun.setEffectiveWeight(0);
-      M.clipNames = gltf.animations.map(c=>c.name);
-    } else if (parts.Body && parts.Arm_L && parts.Leg_L) {
-      M.mode = 'sliced';
-      inner.userData.parts = parts;                       // animateGLBKnight reads mesh.userData.parts
-      M.knightEntity = { moving:false, running:false, combatStyle:null, attackPhase:null, hurtT:0 };
-    } else { M.mode = 'procedural'; resetRiggedPose(inner); }
-
-    // ── discover socket empties by name ──
-    const SOCKET_NAMES = ['socket_hand_L','socket_hand_R','socket_back','socket_quiver','socket_cape','socket_face'];
-    for (const sn of SOCKET_NAMES) {
-      const o = inner.getObjectByName(sn);
-      if (o) M.sockets[sn] = o;
-    }
-    const found = Object.keys(M.sockets);
-
-    // ── attach props (real GLB if loaded, else placeholder) ──
-    if (found.length) {
-      M.bow = makeProp('bow');                                    // starts stowed on the back
-      if (M.sockets.socket_back){ M.sockets.socket_back.add(M.bow); placeInSocket(M.bow,'socket_back'); }
-      if (M.sockets.socket_quiver){ const q = makeProp('quiver'); M.sockets.socket_quiver.add(q); placeInSocket(q,'socket_quiver'); M.props.quiver = q; }
-      if (M.sockets.socket_cape){ const c = makeProp('cloak'); M.sockets.socket_cape.add(c); placeInSocket(c,'socket_cape'); M.props.cape = c; }
-      // ── face quad: a flat card on socket_face showing one atlas cell ──
-      if (M.sockets.socket_face && FACE_TEX) {
-        const tex = FACE_TEX.clone(); tex.needsUpdate = true;
-        M.faceMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide });
-        faceCellUV(M.faceMat, 'neutral');
-        const q = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.34), M.faceMat);
-        q.position.set(...(TUNE.socket_face?.pos || [0,0,0]));
-        q.rotation.set(...(TUNE.socket_face?.rot || [0,0,0]));
-        M.sockets.socket_face.add(q); M.props.face = q;
-      }
-    }
-
-    if (!hasMesh) { M.skeletonHelper = new THREE.SkeletonHelper(inner); scene.add(M.skeletonHelper);
-      const dg=new THREE.SphereGeometry(0.03,8,6), dm=new THREE.MeshBasicMaterial({color:0x66ff99});
-      inner.traverse(o=>{ if(o.isBone) o.add(new THREE.Mesh(dg,dm)); }); }
-
-    document.getElementById('modelInfo').textContent =
-      `${url.split('/').pop()} — mesh:${hasMesh?'yes':'NO'} · clips:${gltf.animations.length?M.clipNames.join(', '):'none → procedural'}`;
-    const realProps = ['bow','arrow','quiver','cloak'].filter(k=>PROP_GLB[k]);
-    const phProps   = ['bow','arrow','quiver','cloak'].filter(k=>!PROP_GLB[k]);
-    document.getElementById('socketInfo').textContent =
-      `sockets: ${found.length ? found.join(', ') : 'NONE in this GLB'}`
-      + (found.length ? `  · real GLB: ${realProps.join(', ')||'none'} · placeholder: ${phProps.join(', ')||'none'}` : '');
-
-    rig.position.set(0,0,0); rig.rotation.set(0,0,0);
-    move.speed = 0; move.facing = 0;
-    controls.target.set(0,1.0,0); camera.position.set(0,2.6,6.0);
-    window.__dbg = { scene, rig, camera, controls, M };
-    // Live re-apply of the TUNE table to all attached props (no reload).
-    window.retune = () => {
-      if (!M) return;
-      if (M.bow && M.bow.parent) placeInSocket(M.bow, M.bow.parent.name);
-      if (M.props.quiver) placeInSocket(M.props.quiver, 'socket_quiver');
-      if (M.props.cape)   placeInSocket(M.props.cape, 'socket_cape');
-      if (M.props.face)   { M.props.face.position.set(...(TUNE.socket_face.pos)); M.props.face.rotation.set(...(TUNE.socket_face.rot)); }
-      if (M.arrow) placeInSocket(M.arrow, 'socket_hand_R');
-      console.log('retuned');
-    };
-  }, undefined, (err) => { document.getElementById('modelInfo').textContent = 'FAILED: ' + err.message; });
-}
-// Preload the real prop GLBs + face atlas, THEN load the body model so the
-// attach step sees whatever's available. Missing prop GLBs resolve to null
-// → matching placeholder shape.
+// load props first (so attach sees them), then the body
 Promise.all([
-  ...Object.entries(PROP_URLS).map(([kind, url]) =>
-    new Promise(res => new GLTFLoader().load(url,
-      g => { PROP_GLB[kind] = g.scene; res(); },
-      undefined,
-      () => { PROP_GLB[kind] = null; res(); }))),
-  FACE_TEX_READY,
-]).then(() => {
-  document.getElementById('modelSel').onchange = e => loadModel(e.target.value);
-  loadModel(document.getElementById('modelSel').value);
+  ...Object.entries(PROP_URLS).map(([k,u]) => new Promise(res => new GLTFLoader().load(u,
+    g => { PROP_GLB[k] = g.scene; res(); }, undefined, () => { PROP_GLB[k] = null; res(); }))),
+  new Promise(res => new GLTFLoader().load(BODY_URL, g => res(g), undefined, e => { hud.textContent = 'BODY FAILED: ' + e.message; res(null); })),
+]).then(results => {
+  const gltf = results[results.length - 1];
+  if (!gltf) return;
+  model = gltf.scene;
+  model.traverse(o => { if (o.isMesh||o.isSkinnedMesh){ o.castShadow=true; o.receiveShadow=false; o.frustumCulled=false; } });
+  model.updateMatrixWorld(true);
+  let bb = new THREE.Box3().setFromObject(model);
+  const h = (bb.max.y-bb.min.y) || 1;
+  BODY_SCALE = h>0.01 ? 1.7/h : 1;
+  model.scale.setScalar(BODY_SCALE);
+  model.updateMatrixWorld(true);
+  bb = new THREE.Box3().setFromObject(model);
+  model.position.y -= bb.min.y;
+  yawPivot.add(model);
+
+  // bones we attach things to
+  for (const bn of ['Spine','Spine01','Spine02','LeftHand','RightHand','Head','Hips']) {
+    const o = model.getObjectByName(bn); if (o) bones[bn] = o;
+  }
+  // animation
+  mixer = new THREE.AnimationMixer(model);
+  const byName = {}; for (const c of gltf.animations) byName[c.name.toLowerCase()] = c;
+  const pick = (...ks) => { for (const k of ks) for (const n in byName) if (n.includes(k)) return byName[n]; return gltf.animations[0]; };
+  actWalk = mixer.clipAction(pick('walk')); actRun = mixer.clipAction(pick('run'));
+  actWalk.play(); actWalk.setEffectiveWeight(0); actRun.play(); actRun.setEffectiveWeight(0);
+
+  attachOrDetach();
+  hud.dataset.clips = gltf.animations.map(c=>c.name).join(', ');
+  hud.dataset.bones = Object.keys(bones).join(', ');
+  window.__rig = { scene, rig, yawPivot, model, mixer, bones, props, BODY_SCALE };
 });
 
-// ─────────── input ───────────
-const keys = Object.create(null);
-const TRACK = new Set(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight','KeyF','Space']);
+// ── input ──
+const keys = {};
+const TRACK = new Set(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight','KeyX']);
 addEventListener('keydown', e=>{
   if(TRACK.has(e.code)){
-    if (e.code === 'Space' && !keys.Space && M) M.quickShotQueued = true;   // edge-triggered
+    if (e.code==='KeyX' && !keys.KeyX) bow.fireQueued = true;   // edge-triggered
     keys[e.code]=true; e.preventDefault();
   }
 });
@@ -344,174 +184,101 @@ addEventListener('keyup',   e=>{ if(TRACK.has(e.code)){ keys[e.code]=false; e.pr
 addEventListener('blur', ()=>{ for(const k in keys) keys[k]=false; });
 addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
 
-// ─────────── bow state machine ───────────
-// STOW → (F pressed) → DRAW → AIM → (F released) → RELEASE → STOW
-// reparent the placeholder bow between socket_back ↔ socket_hand_L,
-// spawn/destroy a nocked arrow on socket_hand_R, and on release fling an
-// arrow projectile across the ground.
-const DRAW_TIME = 0.5;       // s to reach full draw
-const RELEASE_TIME = 0.18;   // s recoil
-const NOCK_AT = 0.30;        // fraction of DRAW_TIME when the arrow appears
-const QUICK_AIM_HOLD = 0.18; // s to hold the aim pose during a Space quick-shot
-
-function reparentKeepLocalTune(prop, fromSocket, toSocket, toSocketName) {
-  if (fromSocket) fromSocket.remove(prop);
-  toSocket.add(prop);
-  placeInSocket(prop, toSocketName);
-}
-function spawnNockedArrow() {
-  if (!M.sockets.socket_hand_R) return;
-  M.arrow = makeProp("arrow");
-  M.sockets.socket_hand_R.add(M.arrow);
-  placeInSocket(M.arrow, 'socket_hand_R');
-}
-function fireArrow() {
-  // detach the nocked arrow → world projectile flying along the rig's forward.
-  let dir = new THREE.Vector3(0,0,1).applyEuler(new THREE.Euler(0, move.facing, 0)).normalize();
-  let origin = new THREE.Vector3();
-  if (M.arrow) { M.arrow.getWorldPosition(origin); M.arrow.parent.remove(M.arrow); }
-  else { rig.getWorldPosition(origin); origin.y += 1.2; }
-  const proj = makeProp("arrow");
-  proj.position.copy(origin);
-  proj.lookAt(origin.clone().add(dir));
-  proj.rotateY(Math.PI/2);   // model lies along +X; aim it down -Z of lookAt
-  scene.add(proj);
-  M.projectiles.push({ mesh: proj, vel: dir.multiplyScalar(22), life: 2.5 });
-  M.arrow = null;
-}
-function updateBow(dt, fHeldRaw) {
-  if (!M || !M.sockets.socket_hand_L) return;
-  const S = M;
-
-  // ── quick-shot (Space): scripted draw→aim→fire in one press ──
-  // Consume the queued press only from STOW so a mid-cycle press is ignored.
-  if (S.quickShotQueued) { S.quickShotQueued = false; if (S.bowState === 'STOW') { S.autoFire = true; S.autoAimT = 0; } }
-  // While autoFire is on it behaves like F-held; we drop it once the aim
-  // pose has been held briefly, which triggers RELEASE → fire.
-  if (S.autoFire && S.bowState === 'AIM') {
-    S.autoAimT += dt;
-    if (S.autoAimT >= QUICK_AIM_HOLD) S.autoFire = false;
-  }
-  const fHeld = fHeldRaw || S.autoFire;
-
-  switch (S.bowState) {
-    case 'STOW':
-      if (fHeld) { reparentKeepLocalTune(S.bow, S.sockets.socket_back, S.sockets.socket_hand_L, 'socket_hand_L'); S.bowState='DRAW'; S.bowT=0; }
-      break;
+// ── bow draw→fire state machine (placeholder draw: no body clip yet) ──
+// STOW → X tap → DRAW (bow Spine01→LeftHand, spawn arrow on RightHand) → AIM
+//      → RELEASE (arrow detaches → projectile) → STOW.
+const DRAW_T = 0.45, NOCK_AT = 0.15, AIM_T = 0.18, RELEASE_T = 0.18;
+const bow = { state:'STOW', t:0, fireQueued:false, arrow:null };
+const projectiles = [];
+const _arrowOrigin = new THREE.Vector3(), _arrowDir = new THREE.Vector3();
+function updateBow(dt) {
+  if (!props.bow) { bow.state = 'STOW'; bow.fireQueued = false; return; }
+  if (bow.fireQueued) { bow.fireQueued = false; if (bow.state === 'STOW') { bow.state = 'DRAW'; bow.t = 0; equip(props.bow, 'bowHand'); } }
+  switch (bow.state) {
     case 'DRAW':
-      S.bowT += dt;
-      if (!S.arrow && S.bowT >= NOCK_AT*DRAW_TIME) spawnNockedArrow();
-      if (S.bowT >= DRAW_TIME) S.bowState='AIM';
-      if (!fHeld) { /* cancelled mid-draw */ if(S.arrow){ S.arrow.parent.remove(S.arrow); S.arrow=null; } reparentKeepLocalTune(S.bow, S.sockets.socket_hand_L, S.sockets.socket_back, 'socket_back'); S.bowState='STOW'; S.autoFire=false; }
+      bow.t += dt;
+      if (!bow.arrow && bow.t >= NOCK_AT) { bow.arrow = makeProp('arrow'); if (bow.arrow) equip(bow.arrow, 'arrowHand'); }
+      if (bow.t >= DRAW_T) { bow.state = 'AIM'; bow.t = 0; }
       break;
     case 'AIM':
-      if (!fHeld) { fireArrow(); S.bowState='RELEASE'; S.bowT=0; }
-      break;
-    case 'RELEASE':
-      S.bowT += dt;
-      if (S.bowT >= RELEASE_TIME) {
-        if (fHeld) { S.bowState='DRAW'; S.bowT=0; }   // hold F → re-nock, rapid fire
-        else { reparentKeepLocalTune(S.bow, S.sockets.socket_hand_L, S.sockets.socket_back, 'socket_back'); S.bowState='STOW'; S.autoFire=false; }
+      bow.t += dt;
+      if (bow.t >= AIM_T) {
+        // fire: detach arrow → world projectile along the character's facing
+        _arrowDir.set(Math.sin(move.facing), 0.06, Math.cos(move.facing)).normalize();
+        if (bow.arrow) { bow.arrow.getWorldPosition(_arrowOrigin); bow.arrow.parent?.remove(bow.arrow); }
+        else { _arrowOrigin.set(rig.position.x, 1.0, rig.position.z); }
+        const proj = makeProp('arrow') || new THREE.Group();
+        proj.position.copy(_arrowOrigin);
+        proj.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0), _arrowDir.clone());  // arrow GLB lies along +X
+        scene.add(proj);
+        projectiles.push({ mesh: proj, vel: _arrowDir.clone().multiplyScalar(18), life: 2.5 });
+        bow.arrow = null;
+        bow.state = 'RELEASE'; bow.t = 0;
       }
       break;
-  }
-  // drive a crude "draw pose" on the arms while drawing — pull socket_hand_R back
-  // toward the chest (purely for the placeholder; real version drives body clips).
-  if (S.mode === 'procedural' && S.sockets.socket_hand_R) {
-    const drawF = S.bowState==='DRAW' ? Math.min(1,S.bowT/DRAW_TIME)
-                : S.bowState==='AIM' ? 1
-                : S.bowState==='RELEASE' ? Math.max(0,1-S.bowT/RELEASE_TIME) : 0;
-    // (left as a hook — body-clip crossfade goes here once we have draw clips)
-    S._drawF = drawF;
+    case 'RELEASE':
+      bow.t += dt;
+      if (bow.t >= RELEASE_T) { equip(props.bow, 'bowStow'); bow.state = 'STOW'; }
+      break;
   }
 }
+function updateProjectiles(dt) {
+  for (const p of projectiles) {
+    p.life -= dt;
+    p.mesh.position.addScaledVector(p.vel, dt);
+    p.vel.y -= 9.8 * dt * 0.5;          // mild arc
+    if (p.vel.lengthSq() > 1e-4) p.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0), p.vel.clone().normalize());
+    if (p.mesh.position.y < 0.02) p.life = Math.min(p.life, 0.3);
+  }
+  for (let i = projectiles.length-1; i >= 0; i--) if (projectiles[i].life <= 0) { scene.remove(projectiles[i].mesh); projectiles.splice(i,1); }
+}
 
-// ─────────── loop ───────────
-const WALK=2.4, RUN=5.0, ACCEL=18, TURN=12;
-const hud = document.getElementById('hud');
+// ── loop ──
+const WALK = 1.8, RUN = 4.0, ACCEL = 14, TURN = 10;
 const _f=new THREE.Vector3(), _r=new THREE.Vector3(), _w=new THREE.Vector3(), _co=new THREE.Vector3(), _tg=new THREE.Vector3();
 const clock = new THREE.Clock();
-
 function loop() {
   const dt = Math.min(0.05, clock.getDelta());
-
-  // movement
   camera.getWorldDirection(_f); _f.y=0; _f.normalize();
   _r.set(_f.z,0,-_f.x);
   _w.set(0,0,0);
-  if (keys.KeyW||keys.ArrowUp) _w.add(_f);
-  if (keys.KeyS||keys.ArrowDown) _w.sub(_f);
-  if (keys.KeyD||keys.ArrowRight) _w.add(_r);
-  if (keys.KeyA||keys.ArrowLeft) _w.sub(_r);
-  const wishing = _w.lengthSq()>1e-4; if (wishing) _w.normalize();
+  if (keys.KeyW||keys.ArrowUp)_w.add(_f); if(keys.KeyS||keys.ArrowDown)_w.sub(_f);
+  if (keys.KeyD||keys.ArrowRight)_w.add(_r); if(keys.KeyA||keys.ArrowLeft)_w.sub(_r);
+  const wishing = _w.lengthSq()>1e-4; if(wishing)_w.normalize();
   const running = wishing && (keys.ShiftLeft||keys.ShiftRight);
-  const tgtSpeed = wishing ? (running?RUN:WALK) : 0;
-  move.speed += (move.speed<tgtSpeed ? 1 : -1) * ACCEL * dt;
+  const target = wishing ? (running?RUN:WALK) : 0;
+  move.speed += (move.speed<target?1:-1)*ACCEL*dt;
   move.speed = Math.max(0, Math.min(RUN, move.speed));
-  if (Math.abs(move.speed-tgtSpeed) < ACCEL*dt) move.speed = tgtSpeed;
-  if (move.speed>0.01 && wishing) {
+  if (Math.abs(move.speed-target)<ACCEL*dt) move.speed = target;
+  if (move.speed>0.02 && wishing) {
     rig.position.addScaledVector(_w, move.speed*dt);
-    let yaw = Math.atan2(_w.x,_w.z), d = yaw-move.facing;
-    while (d>Math.PI) d-=Math.PI*2; while (d<-Math.PI) d+=Math.PI*2;
-    move.facing += d * Math.min(1, TURN*dt); rig.rotation.y = move.facing;
+    const yaw = Math.atan2(_w.x,_w.z);
+    let d = yaw-move.facing; while(d>Math.PI)d-=Math.PI*2; while(d<-Math.PI)d+=Math.PI*2;
+    move.facing += d*Math.min(1,TURN*dt); yawPivot.rotation.y = move.facing;
   }
-  const rr = Math.hypot(rig.position.x, rig.position.z); if (rr>42){ rig.position.x*=42/rr; rig.position.z*=42/rr; }
-
-  // bow flow
-  updateBow(dt, !!keys.KeyF);
-
-  // animation
-  if (M) {
-    const moving = move.speed > 0.05;
-    if (M.mode === 'clips') {
-      M.mixer.update(dt);
-      const wantRun = moving && running;
-      M.aWalk.setEffectiveWeight(THREE.MathUtils.lerp(M.aWalk.getEffectiveWeight(), moving&&!wantRun?1:0, Math.min(1,12*dt)));
-      M.aRun.setEffectiveWeight (THREE.MathUtils.lerp(M.aRun.getEffectiveWeight(),  moving&&wantRun?1:0, Math.min(1,12*dt)));
-    } else if (M.mode === 'sliced') {
-      M.knightEntity.moving  = moving;
-      M.knightEntity.running = moving && running;
-      animateGLBKnight(M.inner, M.knightEntity, dt);    // reads M.inner.userData.parts
-    } else if (M.mode === 'procedural') {
-      if (moving) animateRiggedWalk(M.inner, dt, 0.45*move.speed);
-      else        resetRiggedPose(M.inner);
-    }
-    // face: blink loop + expression follows the bow state (drawing → focused)
-    if (M.faceMat) {
-      M.blinkT -= dt;
-      let want = 'neutral';
-      if (M.bowState === 'DRAW' || M.bowState === 'AIM') want = 'angry';   // focused/squint stand-in
-      else if (M.bowState === 'RELEASE') want = 'surprised';
-      if (M.talking) { M.talkT += dt; want = (Math.floor(M.talkT*8)%2) ? 'talkA' : 'talkO'; }
-      if (M.blinkT <= 0) { want = 'blink'; if (M.blinkT < -0.12) M.blinkT = 2 + Math.random()*3; }
-      if (want !== M.expr) { faceCellUV(M.faceMat, want); M.expr = want; }
-    }
-    // projectiles
-    for (const p of M.projectiles) {
-      p.life -= dt;
-      p.mesh.position.addScaledVector(p.vel, dt);
-      p.vel.y -= 9.8*dt*0.4;          // mild arc
-      p.mesh.lookAt(p.mesh.position.clone().add(p.vel)); p.mesh.rotateY(Math.PI/2);
-      if (p.mesh.position.y < 0.02) p.life = Math.min(p.life, 0.4);
-    }
-    M.projectiles = M.projectiles.filter(p=>{ if(p.life<=0){ scene.remove(p.mesh); return false; } return true; });
+  rig.position.y = 0;
+  const rr = Math.hypot(rig.position.x,rig.position.z); if(rr>27){ rig.position.x*=27/rr; rig.position.z*=27/rr; }
+  if (mixer) {
+    mixer.update(dt);
+    const moving = move.speed>0.05 || $('cbWalk').checked;
+    const wantRun = moving && running;
+    const k = Math.min(1,12*dt);
+    actWalk.setEffectiveWeight(THREE.MathUtils.lerp(actWalk.getEffectiveWeight(), moving&&!wantRun?1:0, k));
+    actRun .setEffectiveWeight(THREE.MathUtils.lerp(actRun.getEffectiveWeight(),  moving&&wantRun?1:0, k));
   }
-
-  // follow camera
+  updateBow(dt);
+  updateProjectiles(dt);
   _co.copy(camera.position).sub(controls.target);
-  _tg.set(rig.position.x, 1.0, rig.position.z);
-  controls.target.lerp(_tg, Math.min(1,10*dt));
+  _tg.set(rig.position.x,0.85,rig.position.z);
+  controls.target.lerp(_tg, Math.min(1,8*dt));
   camera.position.copy(controls.target).add(_co);
-  keyL.position.set(rig.position.x+5, 8, rig.position.z+4);
-  keyL.target.position.set(rig.position.x, 0, rig.position.z);
-
-  const locText = move.speed>0.05 ? (running?'run ':'walk')+'  '+move.speed.toFixed(1)+' m/s' : 'idle';
-  const bowText = M ? `\nbow: ${M.bowState}${M.bowState==='DRAW'?` (${(Math.min(1,M.bowT/DRAW_TIME)*100|0)}%)`:''}  ·  arrow nocked: ${!!M.arrow}  ·  projectiles: ${M.projectiles.length}` : '';
-  hud.textContent = locText + bowText;
-
-  controls.update();
-  renderer.render(scene, camera);
-  requestAnimationFrame(loop);
+  key.position.set(rig.position.x+4,7,rig.position.z+5); key.target.position.set(rig.position.x,0,rig.position.z);
+  const moving = move.speed>0.05;
+  hud.textContent = ($('cbWalk').checked?'walk (in place)':moving?(move.speed>=RUN-0.1?'run ':'walk')+'  '+move.speed.toFixed(1)+' m/s':'idle')
+    + '   bow: ' + bow.state + (projectiles.length?' · arrows in flight: '+projectiles.length:'')
+    + '\nclips: ' + (hud.dataset.clips||'?') + '  ·  bones: ' + (hud.dataset.bones||'?')
+    + '\nequipped: ' + Object.keys(props).filter(k=>props[k]).join(', ');
+  controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop);
 }
 loop();
 </script>
