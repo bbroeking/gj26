@@ -4,7 +4,9 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
+import { clone as skeletonClone } from 'three/addons/utils/SkeletonUtils.js';
 import { CONFIG } from '../data/config.js';
+import { paintifyEldra, paintifyAuto, addInvertedHullOutline, addUnifiedSilhouetteOutline } from './painted_materials.js';
 
 // ---------- TOON SHADER ----------
 // Smooth-gradient cel shader. Was a 4-step nearest-filter LUT (hard bands,
@@ -433,6 +435,29 @@ export function loadWitheringGLB(url = 'models/npc_withering.glb') {
 export function loadEldraGLB(url = 'models/npc_eldra_v3.glb') {
   return _loadOnce('npcEldra', 'npcEldraPromise', url);
 }
+/** Painted-texture variant of Eldra. Loads npc_eldra_v4.glb (the simpler
+ *  geometry tuned for painted+outline rendering) and bakes lit/base/shadow
+ *  into vertex colors. See src/scene/painted_materials.js. A/B against
+ *  loadEldraGLB which still uses v3 in toon mode. */
+export function loadEldraGLBPainted(url = 'models/npc_eldra_v4.glb') {
+  if (_glb.npcEldraPainted) return Promise.resolve(_glb.npcEldraPainted);
+  if (_glb.npcEldraPaintedPromise) return _glb.npcEldraPaintedPromise;
+  const loader = new GLTFLoader();
+  _glb.npcEldraPaintedPromise = loader.loadAsync(url).then(g => {
+    _glb.npcEldraPainted = g.scene;
+    g.scene.traverse(o => {
+      if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; }
+    });
+    paintifyEldra(g.scene);
+    addUnifiedSilhouetteOutline(g.scene);
+    return g.scene;
+  }).catch(err => {
+    console.warn(`${url} (painted) failed to load:`, err);
+    _glb.npcEldraPaintedPromise = null;
+    return null;
+  });
+  return _glb.npcEldraPaintedPromise;
+}
 export function loadCricketGLB(url = 'models/npc_cricket.glb') {
   return _loadOnce('npcCricket', 'npcCricketPromise', url);
 }
@@ -442,9 +467,78 @@ export function loadPellGLB(url = 'models/npc_pell.glb') {
 export function loadOnywynGLB(url = 'models/npc_onywyn.glb') {
   return _loadOnce('npcOnywyn', 'npcOnywynPromise', url);
 }
+/** Mosscloak Ranger — AI-generated (Meshy) hero NPC. Loads the sliced
+ *  6-piece biped GLB, runs paintifyAuto to derive lit/base/shadow vertex
+ *  colors from each material, and wraps it in a unified-silhouette outline.
+ *  The mesh ships at 1.9m tall; _buildNpcGroup will normalize to HUMAN_HEIGHT. */
+export function loadMosscloakRangerGLB(url = 'models/npc_mosscloak_ranger_ai_v1.glb') {
+  if (_glb.npcMosscloakRanger) return Promise.resolve(_glb.npcMosscloakRanger);
+  if (_glb.npcMosscloakRangerPromise) return _glb.npcMosscloakRangerPromise;
+  const loader = new GLTFLoader();
+  _glb.npcMosscloakRangerPromise = loader.loadAsync(url).then(g => {
+    _glb.npcMosscloakRanger = g.scene;
+    g.scene.traverse(o => {
+      if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; }
+    });
+    paintifyAuto(g.scene);
+    addUnifiedSilhouetteOutline(g.scene);
+    return g.scene;
+  }).catch(err => {
+    console.warn(`${url} failed to load:`, err);
+    _glb.npcMosscloakRangerPromise = null;
+    return null;
+  });
+  return _glb.npcMosscloakRangerPromise;
+}
 // build*Mesh functions are defined further down with their per-character
 // animation config (cadence, lean, locked-arm). Keeping a single source
 // of truth — the duplicate stubs that used to live here are gone.
+
+/** Rigged-test character — Meshy auto-rig output (29 bones, SkinnedMesh).
+ *  Bypasses the slice-and-empty pipeline entirely. No paintify, no outline
+ *  shell — both would break the skinned binding by swapping materials or
+ *  by cloning the geometry without re-binding to the skeleton. Animation
+ *  driven by anim/rigged_walk.js, which rotates named bones on top of
+ *  their bind-pose quaternion. */
+export function loadRiggedTestGLB(url = 'models/npc_rigged_test_v1.glb') {
+  if (_glb.npcRiggedTest) return Promise.resolve(_glb.npcRiggedTest);
+  if (_glb.npcRiggedTestPromise) return _glb.npcRiggedTestPromise;
+  const loader = new GLTFLoader();
+  _glb.npcRiggedTestPromise = loader.loadAsync(url).then(g => {
+    _glb.npcRiggedTest = g.scene;
+    g.scene.traverse(o => {
+      if (o.isMesh || o.isSkinnedMesh) {
+        o.castShadow = true;
+        o.receiveShadow = false;
+        o.frustumCulled = false;   // SkinnedMesh bbox isn't updated by bone motion
+      }
+    });
+    return g.scene;
+  }).catch(err => {
+    console.warn(`${url} failed to load:`, err);
+    _glb.npcRiggedTestPromise = null;
+    return null;
+  });
+  return _glb.npcRiggedTestPromise;
+}
+
+export function buildRiggedTestMesh() {
+  const src = _glb.npcRiggedTest;
+  if (!src) return null;
+  // SkeletonUtils.clone re-binds the SkinnedMesh to a freshly cloned
+  // skeleton so each spawn animates independently. Plain Object3D.clone
+  // would share the skeleton across instances.
+  const inst = skeletonClone(src);
+  const g = new THREE.Group();
+  _scaleGLBToHeight(inst, HUMAN_HEIGHT * 1.2);
+  // Meshy outputs face = +Z (glTF forward). Our engine convention faces
+  // characters along -Z, so rotate the model 180° to align.
+  inst.rotation.y = Math.PI;
+  g.add(inst);
+  g.userData.skinnedRoot = inst;
+  return g;
+}
+
 
 // ----- Quest item GLBs -----
 // Each maps to an item id in src/data/items.js. groundLoot.js consults
@@ -738,9 +832,11 @@ function _buildNpcGroup(glbKey, _legacyScale = 0.55, opts = {}) {
 // their age/gait. Keeps held-item arms from looking like they're swinging
 // through the prop.
 export function buildEldraMesh()    { return _buildNpcGroup('npcEldra',    0.55, { lockArm: 'R', cadenceMul: 0.7, leanMul: 1.6 }); }
+export function buildEldraMeshPainted() { return _buildNpcGroup('npcEldraPainted', 0.55, { lockArm: 'R', cadenceMul: 0.7, leanMul: 1.6 }); }
 export function buildCricketMesh()  { return _buildNpcGroup('npcCricket',  0.55, { lockArm: 'R', cadenceMul: 1.2 }); }
 export function buildPellMesh()     { return _buildNpcGroup('npcPell',     0.55, { lockArm: 'L', cadenceMul: 0.85, leanMul: 1.2 }); }
 export function buildOnywynMesh()   { return _buildNpcGroup('npcOnywyn',   0.55, { lockArm: 'R', cadenceMul: 0.7,  leanMul: 1.8 }); }
+export function buildMosscloakRangerMesh() { return _buildNpcGroup('npcMosscloakRanger', 0.55, { lockArm: 'L', cadenceMul: 1.0 }); }
 export function buildHodMesh()      { return _buildNpcGroup('npcHod',      0.55, { lockArm: 'R' }); }
 export function buildMaudMesh()     { return _buildNpcGroup('npcMaud',     0.55, { lockArm: 'R', cadenceMul: 0.9, leanMul: 1.2 }); }
 export function buildQuillMesh()    { return _buildNpcGroup('npcQuill',    0.55, { lockArm: 'both' }); }

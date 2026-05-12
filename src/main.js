@@ -20,7 +20,8 @@ import { animateQuadruped } from './anim/quadruped.js';
 import { animateBird } from './anim/bird.js';
 import { World } from './scene/world.js';
 import { terrainHeightAt } from './scene/terrain.js';
-import { buildCookMesh, buildFireMesh, buildClickMarker, getWaterMaterial, loadCowGLB, loadKnightBase, loadEquipment, loadAllArchetypes, buildArchetypeMesh, loadGoblinGLB, loadBrambleImpGLB, loadHedgewightGLB, loadChartmakerStoneGLB, loadBurrowBoarGLB, loadWolfAlphaGLB, loadCookGLB, loadOakGLB, loadCastleGLB, loadForgeGLB, loadCottageGLB, loadWellGLB, loadBankGLB, loadSignpostGLB, loadChickenGLB, loadHareGLB, loadBoarGLB, loadHedgemotherGLB, loadHodGLB, loadMaudGLB, loadQuillGLB, loadWitheringGLB, loadApprenticesHammerGLB, loadHealingDraughtGLB, loadFalconsWhistleGLB, loadBrambleResinGLB, loadWhickerharesFootGLB, loadThornCrownGLB, loadPantryStewGLB, loadHodsAnvilTokenGLB, loadWitheredBrambleGLB, loadPracticeDummyGLB, loadMemorialLanternGLB, loadDryingRackGLB, loadFalconerPerchGLB, loadSkitterlingGLB, loadMarshRatGLB, loadIronGobGLB, loadTuskerSowGLB, loadBrambleArcherGLB, loadBrambleChargerGLB, loadEldraGLB, loadCricketGLB, loadPellGLB, loadOnywynGLB, buildEldraMesh, buildCricketMesh, buildPellMesh, buildOnywynMesh, loadTier3ItemGLBs, buildItemGLBMesh, buildChartmakerStoneMesh, buildHodMesh, buildQuillMesh, buildWitheringMesh, buildWitheredBrambleMesh, buildPracticeDummyMesh, buildMemorialLanternMesh, buildDryingRackMesh, buildFalconerPerchMesh, buildFalconMesh, toonifyMaterials } from './scene/characters.js';
+import { buildCookMesh, buildFireMesh, buildClickMarker, getWaterMaterial, loadCowGLB, loadKnightBase, loadEquipment, loadAllArchetypes, buildArchetypeMesh, loadGoblinGLB, loadBrambleImpGLB, loadHedgewightGLB, loadChartmakerStoneGLB, loadBurrowBoarGLB, loadWolfAlphaGLB, loadCookGLB, loadOakGLB, loadCastleGLB, loadForgeGLB, loadCottageGLB, loadWellGLB, loadBankGLB, loadSignpostGLB, loadChickenGLB, loadHareGLB, loadBoarGLB, loadHedgemotherGLB, loadHodGLB, loadMaudGLB, loadQuillGLB, loadWitheringGLB, loadApprenticesHammerGLB, loadHealingDraughtGLB, loadFalconsWhistleGLB, loadBrambleResinGLB, loadWhickerharesFootGLB, loadThornCrownGLB, loadPantryStewGLB, loadHodsAnvilTokenGLB, loadWitheredBrambleGLB, loadPracticeDummyGLB, loadMemorialLanternGLB, loadDryingRackGLB, loadFalconerPerchGLB, loadSkitterlingGLB, loadMarshRatGLB, loadIronGobGLB, loadTuskerSowGLB, loadBrambleArcherGLB, loadBrambleChargerGLB, loadEldraGLB, loadEldraGLBPainted, loadCricketGLB, loadPellGLB, loadOnywynGLB, loadMosscloakRangerGLB, loadRiggedTestGLB, buildEldraMesh, buildEldraMeshPainted, buildCricketMesh, buildPellMesh, buildOnywynMesh, buildMosscloakRangerMesh, buildRiggedTestMesh, loadTier3ItemGLBs, buildItemGLBMesh, buildChartmakerStoneMesh, buildHodMesh, buildQuillMesh, buildWitheringMesh, buildWitheredBrambleMesh, buildPracticeDummyMesh, buildMemorialLanternMesh, buildDryingRackMesh, buildFalconerPerchMesh, buildFalconMesh, toonifyMaterials } from './scene/characters.js?v=20260510-rigged';
+import { animateRiggedWalk } from './anim/rigged_walk.js?v=20260510-rigged';
 import { animateGLBKnight, triggerAttack } from './anim/knight.js';
 import { animateGoblin } from './anim/goblin.js';
 import { makeSmoke, updateSmoke } from './scene/smoke.js';
@@ -348,9 +349,12 @@ await Promise.all([
   loadBrambleArcherGLB(),
   loadBrambleChargerGLB(),
   loadEldraGLB(),
+  loadEldraGLBPainted(),
   loadCricketGLB(),
   loadPellGLB(),
   loadOnywynGLB(),
+  loadMosscloakRangerGLB(),
+  loadRiggedTestGLB(),
   loadTier3ItemGLBs(),
 ]);
 
@@ -2265,6 +2269,12 @@ const NEW_NPCS = [
     speaker: 'Eldra the Lampwright',
     lines: ['Old hands, old wicks. The lanterns find their light if you tend them, dear.',
             'Folks pass through here all hours, but the dark — well, the dark stays unless we coax it.'] },
+  // A/B prototype: painted-texture-flat (Wind Waker) variant of Eldra,
+  // spawned 1.6 tiles east of the toon Eldra so we can stand between them
+  // and compare against docs/concept-art/npc-eldra-lampwright.png.
+  { kind: 'npc_eldra_painted', build: buildEldraMeshPainted, dx: -0.9, dz: -1.5, rotY: -Math.PI / 4,
+    speaker: 'Eldra (painted A/B)',
+    lines: ['(A painted-texture-flat A/B variant — same model, baked vertex shading.)'] },
   { kind: 'npc_cricket', build: buildCricketMesh, dx:  2.5, dz: -1.5, rotY:  Math.PI / 6,
     speaker: 'Cricket the Letter-Carrier',
     lines: ['Got a letter for someone? I run from valley head to coopers\' gate, three rounds a day.',
@@ -2277,6 +2287,21 @@ const NEW_NPCS = [
     speaker: 'Mother Onywyn the Herb-Witch',
     lines: ['Hush, hush. The raven knows you\'re here. (She gestures with foxglove.)',
             'I trade bitter draughts and bittermint. Bring me the right herbs and we\'ll talk of the sleep that comes after the bramble-binding.'] },
+  // AI-generated test character: full pipeline validation (Meshy → cleaned →
+  // sliced 6-piece biped → painted + outline). Spawned a few tiles north of
+  // the road so it has room to walk in the open meadow.
+  { kind: 'npc_mosscloak_ranger', build: buildMosscloakRangerMesh,
+    dx:  3.0, dz: -3.5, rotY: -Math.PI / 4,
+    speaker: 'Mosscloak Ranger',
+    lines: ['The bramble holds its breath where the deer cross. Step softly here.',
+            'I trail the boar herds south past the old wagon road. They\'re fewer this season.'] },
+  // Pipeline-B test: Meshy auto-rig output (proper 29-bone SkinnedMesh)
+  // animated by anim/rigged_walk.js. Placed next to the sliced Ranger so the
+  // skinned rig and the slice-and-empty rig are visible side-by-side.
+  { kind: 'npc_rigged_test', build: buildRiggedTestMesh,
+    dx:  5.0, dz: -3.5, rotY: 0,
+    speaker: 'Test Pilgrim',
+    lines: ['(A test soul, fresh from the rigger.)'] },
 ];
 
 for (const npc of NEW_NPCS) {
@@ -2318,6 +2343,22 @@ if (eldraNpc?.mesh) {
   // / e._phase / e._t and rotates the group children — it doesn't care
   // whether the entity is the real player or a stub.
   _validationEldra = { mesh: eldraNpc.mesh, fakeEntity: { moving: true, running: false } };
+}
+// Same trick for the Mosscloak Ranger — proves the AI-mesh pipeline
+// (Meshy → sliced 6-piece biped) plugs straight into the existing
+// procedural animator with zero engine changes.
+let _validationRanger = null;
+const rangerNpc = NEW_NPCS.find(n => n.kind === 'npc_mosscloak_ranger');
+if (rangerNpc?.mesh) {
+  _validationRanger = { mesh: rangerNpc.mesh, fakeEntity: { moving: true, running: false } };
+}
+// Pipeline-B: animate the Meshy-auto-rigged biped via its real skeleton.
+// Stores the SkinnedMesh root so animateRiggedWalk can find bones; falls
+// back to the group itself if buildRiggedTestMesh didn't tag userData.
+let _validationRiggedRoot = null;
+const riggedNpc = NEW_NPCS.find(n => n.kind === 'npc_rigged_test');
+if (riggedNpc?.mesh) {
+  _validationRiggedRoot = riggedNpc.mesh.userData.skinnedRoot || riggedNpc.mesh;
 }
 
 // ============================================================
@@ -7224,6 +7265,8 @@ function loop() {
   // Drive Eldra's idle-walk so she paces in place even when the player
   // is far away — keeps the village feeling alive.
   if (_validationEldra) animateGLBKnight(_validationEldra.mesh, _validationEldra.fakeEntity, dt);
+  if (_validationRanger) animateGLBKnight(_validationRanger.mesh, _validationRanger.fakeEntity, dt);
+  if (_validationRiggedRoot) animateRiggedWalk(_validationRiggedRoot, dt);
 
   updateOccluders(dt);
   // Plinth idle — slow ring spin + sine bob on the floating orb.

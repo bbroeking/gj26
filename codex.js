@@ -14,6 +14,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { ITEMS } from './src/data/items.js';
 import { NPC_DEFS } from './src/data/npcs.js';
 import { ABILITIES } from './src/game/abilities.js';
@@ -29,6 +30,7 @@ import { ANIMATIONS } from './src/data/animations.js';
 import { animateGLBKnight } from './src/anim/knight.js';
 import { animateQuadruped } from './src/anim/quadruped.js';
 import { phongifyMaterials } from './src/scene/characters.js';
+import { paintifyAuto } from './src/scene/painted_materials.js';
 
 // ---------------------------------------------------------------------------
 // Tab switching
@@ -903,6 +905,28 @@ document.getElementById('filter-abilities').addEventListener('input', renderAbil
 // characters / enemies / village / equipment / props. Click a name to load.
 // ---------------------------------------------------------------------------
 const MODEL_GROUPS = [
+  { label: 'NPC v4 — painted-render-tuned', files: [
+    'npc_eldra_v4.glb',
+    'npc_hod_v3.glb',
+    'npc_cricket_v3.glb',
+    'bramble_imp_v4.glb',
+    'burrow_boar_v3.glb',
+    'npc_mother_onywyn_v1.glb',
+    'npc_maud_pennycress_v1.glb',
+    'bramble_charger_v1.glb',
+  ]},
+  { label: 'AI-generated (Meshy) — test bench', files: [
+    'npc_mosscloak_ranger_ai_v1.glb',
+  ]},
+  { label: 'Beard exploration — A/B/C/D variants', files: [
+    'npc_eldra_v4.glb',                  // A: current polka-dot ruffles
+    'npc_eldra_v4_B_clean.glb',          // B: single ellipsoid, no ruffles
+    'npc_eldra_v4_C_strands.glb',        // C: tapered cones flowing down
+    'npc_eldra_v4_D_displaced.glb',      // D: subdivided + per-vert noise
+  ]},
+  { label: 'NPC v3 — concept-matched rebuilds', files: [
+    'npc_eldra_v3.glb',
+  ]},
   { label: 'Walk lab — rig comparison', files: [
     '__walk_lab__',
     '_validation_soldier.glb',
@@ -1058,13 +1082,15 @@ function ensureViewerStarted() {
   // toggles — shading is now a 3-way radio (toon / flat-phong / raw PBR).
   // Each radio reloads the active model so the swap shows immediately.
   const onShadingPicked = () => {
-    if (document.getElementById('opt-flat-phong').checked) shadingMode = 'phong';
-    else if (document.getElementById('opt-pbr').checked)   shadingMode = 'pbr';
-    else                                                   shadingMode = 'toon';
+    if (document.getElementById('opt-flat-phong').checked)    shadingMode = 'phong';
+    else if (document.getElementById('opt-painted').checked)  shadingMode = 'painted';
+    else if (document.getElementById('opt-pbr').checked)      shadingMode = 'pbr';
+    else                                                      shadingMode = 'toon';
     if (currentModel) reapplyShading(currentModel);
   };
   document.getElementById('opt-toon').addEventListener('change', onShadingPicked);
   document.getElementById('opt-flat-phong').addEventListener('change', onShadingPicked);
+  document.getElementById('opt-painted').addEventListener('change', onShadingPicked);
   document.getElementById('opt-pbr').addEventListener('change', onShadingPicked);
   document.getElementById('opt-spin').addEventListener('change', (ev) => {
     autoRotate = ev.target.checked;
@@ -1120,34 +1146,114 @@ function expandedOutlineGeometry(srcGeom, offset) {
   return out;
 }
 
+// Mesh-name suffixes that opt out of the outline pass (surface-variation
+// bumps + sketched line accents that should read as texture, not separate
+// parts). _ruffle = fluff bumps, _detail = hard accents, _line = sketched
+// strokes.
+const OUTLINE_SKIP_PATTERN = /(?:_ruffle|_detail|_line)\b|_ruffle_|_detail_|_line_/i;
+
 function addOutlineToModel(root) {
+  // Per-mesh outlines (one ink line per primitive) re-fragment the
+  // silhouette and undermine the painted-flat read. Instead: merge every
+  // non-detail mesh's geometry into one and render that as a single
+  // expanded backface mesh — produces a single ink line tracing the
+  // character's outer silhouette regardless of part count. SkinnedMesh
+  // outlines fall back to per-mesh because merging breaks bone weights.
   const matSolid = new THREE.MeshBasicMaterial({
     color: OUTLINE_COLOR, side: THREE.BackSide,
   });
-  const cloneList = [];
+
+  // Detect skinned meshes — they need per-mesh outlines (skeleton rebind
+  // doesn't survive geometry merge).
+  let hasSkinned = false;
+  root.traverse(o => { if (o.isSkinnedMesh) hasSkinned = true; });
+
+  if (hasSkinned) {
+    // Per-mesh fallback path. Same as the original implementation.
+    const cloneList = [];
+    root.traverse(o => {
+      if (!o.isMesh) return;
+      if (o.userData._isOutline) return;
+      if (OUTLINE_SKIP_PATTERN.test(o.name)) return;
+      cloneList.push(o);
+    });
+    for (const o of cloneList) {
+      const expanded = expandedOutlineGeometry(o.geometry, OUTLINE_OFFSET);
+      let outline;
+      if (o.isSkinnedMesh && o.skeleton) {
+        outline = new THREE.SkinnedMesh(expanded, matSolid);
+        outline.bind(o.skeleton, o.bindMatrix);
+      } else {
+        outline = new THREE.Mesh(expanded, matSolid);
+      }
+      outline.userData._isOutline = true;
+      outline.name = (o.name || 'mesh') + '_outline';
+      outline.scale.copy(o.scale);
+      outline.position.copy(o.position);
+      outline.rotation.copy(o.rotation);
+      outline.castShadow = false;
+      outline.receiveShadow = false;
+      o.parent.add(outline);
+    }
+    return;
+  }
+
+  // Unified-silhouette path — three steps in order:
+  //   1. Merge raw (un-expanded) geometries into one buffer.
+  //   2. Weld coincident vertices so verts shared between parts collapse
+  //      into a single vert. Without this, each part keeps its own hull
+  //      and we get N silhouettes instead of one.
+  //   3. Recompute normals on the welded merged mesh — junction verts get
+  //      averaged normals from all neighboring parts. Then push verts
+  //      outward along those normals. Junctions push as a unit, producing
+  //      one continuous outer trace instead of N stacked shells.
+  root.updateMatrixWorld(true);
+  const rootInv = new THREE.Matrix4().copy(root.matrixWorld).invert();
+  const localToRoot = new THREE.Matrix4();
+
+  const rawGeos = [];
   root.traverse(o => {
     if (!o.isMesh) return;
     if (o.userData._isOutline) return;
-    cloneList.push(o);
-  });
-  for (const o of cloneList) {
-    const expanded = expandedOutlineGeometry(o.geometry, OUTLINE_OFFSET);
-    let outline;
-    if (o.isSkinnedMesh && o.skeleton) {
-      outline = new THREE.SkinnedMesh(expanded, matSolid);
-      outline.bind(o.skeleton, o.bindMatrix);
-    } else {
-      outline = new THREE.Mesh(expanded, matSolid);
+    if (OUTLINE_SKIP_PATTERN.test(o.name)) return;
+    if (!o.geometry?.attributes?.position) return;
+
+    let g = o.geometry.clone();
+    for (const k of Object.keys(g.attributes)) {
+      if (k !== 'position') g.deleteAttribute(k);
     }
-    outline.userData._isOutline = true;
-    outline.name = (o.name || 'mesh') + '_outline';
-    outline.scale.copy(o.scale);
-    outline.position.copy(o.position);
-    outline.rotation.copy(o.rotation);
-    outline.castShadow = false;
-    outline.receiveShadow = false;
-    o.parent.add(outline);
+    if (g.index) g = g.toNonIndexed();
+    localToRoot.copy(o.matrixWorld).premultiply(rootInv);
+    g.applyMatrix4(localToRoot);
+    rawGeos.push(g);
+  });
+
+  if (rawGeos.length === 0) return;
+  let merged = BufferGeometryUtils.mergeGeometries(rawGeos, false);
+  if (!merged) return;
+
+  // Weld verts within 1mm — joins parts that meet at the same point.
+  // Threshold has to be larger than 0 (default) so primitives whose
+  // boundaries are merely close (not bit-identical) get welded.
+  merged = BufferGeometryUtils.mergeVertices(merged, 0.001);
+  merged.computeVertexNormals();
+
+  const pos = merged.attributes.position.array;
+  const norm = merged.attributes.normal.array;
+  const count = merged.attributes.position.count;
+  for (let i = 0; i < count; i++) {
+    pos[i*3]   += norm[i*3]   * OUTLINE_OFFSET;
+    pos[i*3+1] += norm[i*3+1] * OUTLINE_OFFSET;
+    pos[i*3+2] += norm[i*3+2] * OUTLINE_OFFSET;
   }
+  merged.attributes.position.needsUpdate = true;
+
+  const outline = new THREE.Mesh(merged, matSolid);
+  outline.userData._isOutline = true;
+  outline.name = 'unified_outline';
+  outline.castShadow = false;
+  outline.receiveShadow = false;
+  root.add(outline);
 }
 function removeOutlineFromModel(root) {
   const toRemove = [];
@@ -1463,6 +1569,8 @@ function applyShading(root) {
       shininess: 60,
       rim: { color: 0xffeebb, intensity: 0.55, power: 2.6 },
     });
+  } else if (shadingMode === 'painted') {
+    paintifyAuto(root);
   } else if (shadingMode === 'toon') {
     toonifyForViewer(root);
   }

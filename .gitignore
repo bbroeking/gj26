@@ -19,3 +19,7 @@ docs/research/eldra/runs/
 *.log
 *.tmp
 node_modules/
+
+# Python bytecode
+__pycache__/
+*.pyc
