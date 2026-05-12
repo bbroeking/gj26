@@ -43,13 +43,14 @@ const BODY_URL  = 'models/ranger_anim_v1.glb';   // Meshy export: skinned mesh +
 const PROP_URLS = { cloak:'models/prop_cloak_v1.glb', quiver:'models/prop_quiver_v1.glb',
                     bow:'models/prop_bow_v1.glb', arrow:'models/prop_arrow_v1.glb' };
 // longest-axis target size (m) for each prop next to a ~1.7 m body
-const PROP_SIZE = { cloak:0.8, quiver:0.40, bow:0.9, arrow:0.7 };
-// Which bone each prop hangs off, + the wrapper's local offset in METRES
-// (the code converts to the bone's frame using the bone's world scale). r = euler XYZ.
+const PROP_SIZE = { cloak:0.85, quiver:0.42, bow:0.95, arrow:0.7 };
+// Which bone each prop hangs off, + the wrapper's local offset in METRES.
+// Spine/Spine01 frames: local +Y = up, local +Z = behind the character,
+// local +X = the character's left. So props go to +Z to sit on the back.
 const ATTACH = {
-  cloak:    { bone:'Spine',    pos:[0, 0.08, -0.06], rot:[0.15, 0, 0] },          // hangs from the shoulders down the back
-  quiver:   { bone:'Spine01',  pos:[0.06, 0.10, -0.12], rot:[0.4, 0, -0.25] },    // on the back, poking over the shoulder
-  bowStow:  { bone:'Spine01',  pos:[-0.02, 0.0, -0.12], rot:[0, Math.PI/6, Math.PI/2.6] },  // slung diagonally on the back
+  cloak:    { bone:'Spine',    pos:[0, 0.04, 0.10], rot:[0.10, 0, 0] },           // drapes down the back
+  quiver:   { bone:'Spine01',  pos:[0.07, 0.06, 0.10], rot:[-0.35, 0, 0.25] },    // diagonal on the back, mouth over the L shoulder
+  bowStow:  { bone:'Spine01',  pos:[0, 0.0, 0.11], rot:[0, 0, Math.PI/3] },       // slung diagonally on the back
   bowHand:  { bone:'LeftHand', pos:[0, 0, 0], rot:[0, 0, 0] },                     // gripped when drawn
   arrowHand:{ bone:'RightHand',pos:[0, 0, 0], rot:[0, 0, 0] },                     // nocked
 };
