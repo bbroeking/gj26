@@ -21,7 +21,7 @@
 <div id="help">
   <b>Rig test — walk + equip</b><br>
   <span class="k">W</span><span class="k">A</span><span class="k">S</span><span class="k">D</span>/<span class="k">↑</span><span class="k">←</span><span class="k">↓</span><span class="k">→</span> — walk · <span class="k">Shift</span> — run · mouse-drag — orbit · scroll — zoom<br>
-  <span class="k">X</span> — draw &amp; fire the bow<br>
+  <span class="k">X</span> — draw &amp; fire the bow &nbsp;·&nbsp; <span class="k">P</span> — placement mode &nbsp;·&nbsp; in placement: <span class="k">Tab</span> next prop · <span class="k">R</span> move/rotate<br>
   <div style="margin-top:6px">
     <label><input type="checkbox" id="cbWalk"> always walk (in place)</label>
     <label><input type="checkbox" id="cbCloak" checked> cloak</label>
@@ -35,6 +35,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { sfx } from './src/core/sfx.js';
 addEventListener('keydown',   () => sfx.resume(), { once:true });
 addEventListener('pointerdown', () => sfx.resume(), { once:true });
@@ -117,6 +118,8 @@ function equip(propWrap, attachKey) {
   model.updateWorldMatrix(true, true);
   bone.getWorldScale(_bs);
   const inv = 1 / (_bs.x || 1);                        // bone's world scale → bone-local-units per metre
+  propWrap.userData.invScale = inv;                    // remembered so the readout can convert position back to metres
+  propWrap.userData.attachKey = attachKey;
   propWrap.scale.setScalar(inv);                       // so the prop renders at world-1×
   propWrap.position.set(a.pos[0]*inv, a.pos[1]*inv, a.pos[2]*inv);   // metres → bone-local
   propWrap.rotation.set(...a.rot);
@@ -137,6 +140,57 @@ window.retune = () => {
   console.log('retuned — ATTACH:', JSON.stringify(ATTACH));
 };
 ['cbCloak','cbQuiver','cbBow'].forEach(id => $(id).addEventListener('change', attachOrDetach));
+
+// ── placement mode: drag a prop with a 3D gizmo, read back the ATTACH numbers ──
+// P toggles it. Tab cycles which prop is selected. R toggles the gizmo between
+// move and rotate. Drag the handles → the HUD prints the ATTACH entry to copy.
+const PLACE_KEYS = ['cloak','quiver','bowStow','bowHand'];   // bowStow/bowHand both edit props.bow (re-parented)
+const placement = { on:false, selIdx:0, tc:null, markers:[] };
+function ensureGizmo() {
+  if (placement.tc) return placement.tc;
+  const tc = new TransformControls(camera, renderer.domElement);
+  tc.setSize(0.85);
+  tc.addEventListener('dragging-changed', e => { controls.enabled = !e.value; });
+  scene.add(tc);
+  placement.tc = tc;
+  // bright bone markers (drawn on top) so you can see where the attach bones are
+  const geo = new THREE.SphereGeometry(0.035, 10, 8);
+  const cols = { Spine:0xff5577, Spine01:0x55bbff, Spine02:0xffbb33, LeftHand:0x55ff88, RightHand:0xff7733, Head:0xbb88ff };
+  for (const [bn, col] of Object.entries(cols)) {
+    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: col, depthTest: false }));
+    m.renderOrder = 999; m.visible = false; scene.add(m);
+    placement.markers.push({ mesh: m, bone: bn });
+  }
+  return tc;
+}
+function placeSelect(idx) {
+  placement.selIdx = ((idx % PLACE_KEYS.length) + PLACE_KEYS.length) % PLACE_KEYS.length;
+  const key = PLACE_KEYS[placement.selIdx];
+  let p = null;
+  if (key === 'cloak')        p = props.cloak;
+  else if (key === 'quiver')  p = props.quiver;
+  else if (key === 'bowStow') { p = props.bow; if (p) equip(p, 'bowStow'); }
+  else if (key === 'bowHand') { p = props.bow; if (p) equip(p, 'bowHand'); }
+  if (p && placement.tc) placement.tc.attach(p); else placement.tc?.detach();
+}
+function togglePlacement() {
+  ensureGizmo();
+  placement.on = !placement.on;
+  for (const mk of placement.markers) mk.mesh.visible = placement.on;
+  if (placement.on) { controls.enabled = true; placeSelect(placement.selIdx); }
+  else { placement.tc.detach(); }
+}
+function placementReadout() {
+  if (!placement.on) return '';
+  const key = PLACE_KEYS[placement.selIdx];
+  const p = (key === 'cloak') ? props.cloak : (key === 'quiver') ? props.quiver : props.bow;
+  if (!p) return `\n[placement] ${key}: prop not equipped`;
+  const inv = p.userData.invScale || 1;
+  const pos = [p.position.x/inv, p.position.y/inv, p.position.z/inv].map(v => +v.toFixed(3));
+  const rot = [p.rotation.x, p.rotation.y, p.rotation.z].map(v => +v.toFixed(3));
+  const boneName = (ATTACH[key] && ATTACH[key].bone) || p.parent?.name || '?';
+  return `\n[placement: ${key}]  Tab=next · R=${placement.tc.mode}\n  ${key}: { bone:'${boneName}', pos:[${pos.join(', ')}], rot:[${rot.join(', ')}] }`;
+}
 
 // load props first (so attach sees them), then the body
 Promise.all([
@@ -177,12 +231,14 @@ Promise.all([
 
 // ── input ──
 const keys = {};
-const TRACK = new Set(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight','KeyX']);
+const TRACK = new Set(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight','KeyX','KeyP','Tab','KeyR']);
 addEventListener('keydown', e=>{
-  if(TRACK.has(e.code)){
-    if (e.code==='KeyX' && !keys.KeyX) bow.fireQueued = true;   // edge-triggered
-    keys[e.code]=true; e.preventDefault();
-  }
+  if(!TRACK.has(e.code)) return;
+  if (e.code==='KeyX' && !keys.KeyX) bow.fireQueued = true;            // edge-triggered
+  if (e.code==='KeyP' && !keys.KeyP) togglePlacement();
+  if (placement.on && e.code==='Tab' && !keys.Tab) placeSelect(placement.selIdx + 1);
+  if (placement.on && e.code==='KeyR' && !keys.KeyR && placement.tc) placement.tc.setMode(placement.tc.mode === 'translate' ? 'rotate' : 'translate');
+  keys[e.code]=true; e.preventDefault();
 });
 addEventListener('keyup',   e=>{ if(TRACK.has(e.code)){ keys[e.code]=false; e.preventDefault(); } });
 addEventListener('blur', ()=>{ for(const k in keys) keys[k]=false; });
@@ -255,34 +311,37 @@ function loop() {
   move.speed += (move.speed<target?1:-1)*ACCEL*dt;
   move.speed = Math.max(0, Math.min(RUN, move.speed));
   if (Math.abs(move.speed-target)<ACCEL*dt) move.speed = target;
-  if (move.speed>0.02 && wishing) {
+  if (!placement.on && move.speed>0.02 && wishing) {     // freeze movement while placing
     rig.position.addScaledVector(_w, move.speed*dt);
     const yaw = Math.atan2(_w.x,_w.z);
     let d = yaw-move.facing; while(d>Math.PI)d-=Math.PI*2; while(d<-Math.PI)d+=Math.PI*2;
     move.facing += d*Math.min(1,TURN*dt); yawPivot.rotation.y = move.facing;
   }
+  if (placement.on) move.speed = 0;
   rig.position.y = 0;
   const rr = Math.hypot(rig.position.x,rig.position.z); if(rr>27){ rig.position.x*=27/rr; rig.position.z*=27/rr; }
   if (mixer) {
     mixer.update(dt);
-    const moving = move.speed>0.05 || $('cbWalk').checked;
+    const moving = !placement.on && (move.speed>0.05 || $('cbWalk').checked);
     const wantRun = moving && running;
     const k = Math.min(1,12*dt);
     actWalk.setEffectiveWeight(THREE.MathUtils.lerp(actWalk.getEffectiveWeight(), moving&&!wantRun?1:0, k));
     actRun .setEffectiveWeight(THREE.MathUtils.lerp(actRun.getEffectiveWeight(),  moving&&wantRun?1:0, k));
   }
-  updateBow(dt);
-  updateProjectiles(dt);
+  if (!placement.on) { updateBow(dt); updateProjectiles(dt); }
+  // bone markers follow their bones each frame (bones move with the walk)
+  if (placement.on) for (const mk of placement.markers) { const b = bones[mk.bone]; if (b) b.getWorldPosition(mk.mesh.position); }
   _co.copy(camera.position).sub(controls.target);
   _tg.set(rig.position.x,0.85,rig.position.z);
   controls.target.lerp(_tg, Math.min(1,8*dt));
   camera.position.copy(controls.target).add(_co);
   key.position.set(rig.position.x+4,7,rig.position.z+5); key.target.position.set(rig.position.x,0,rig.position.z);
   const moving = move.speed>0.05;
-  hud.textContent = ($('cbWalk').checked?'walk (in place)':moving?(move.speed>=RUN-0.1?'run ':'walk')+'  '+move.speed.toFixed(1)+' m/s':'idle')
-    + '   bow: ' + bow.state + (projectiles.length?' · arrows in flight: '+projectiles.length:'')
+  hud.textContent = (placement.on ? 'PLACEMENT MODE — drag the gizmo' : $('cbWalk').checked?'walk (in place)':moving?(move.speed>=RUN-0.1?'run ':'walk')+'  '+move.speed.toFixed(1)+' m/s':'idle')
+    + (placement.on ? '' : '   bow: ' + bow.state + (projectiles.length?' · arrows in flight: '+projectiles.length:''))
     + '\nclips: ' + (hud.dataset.clips||'?') + '  ·  bones: ' + (hud.dataset.bones||'?')
-    + '\nequipped: ' + Object.keys(props).filter(k=>props[k]).join(', ');
+    + '\nequipped: ' + Object.keys(props).filter(k=>props[k]).join(', ')
+    + placementReadout();
   controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop);
 }
 loop();
