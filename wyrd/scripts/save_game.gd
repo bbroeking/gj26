@@ -19,6 +19,7 @@ static func save(game: Node) -> bool:
 		"gold": game.gold,
 		"summit_cleared": game.summit_cleared,
 		"muted": game.muted,
+		"loadout": game.loadout,
 		"seen_hints": game.seen_hints,
 		"tutorial_step": game.tutorial_step,
 		"player_hp": game.player_hp,
@@ -66,6 +67,9 @@ static func load_into(game: Node) -> bool:
 	game.player_hp = int(data.get("player_hp", -1))
 	game.gold = int(data.get("gold", 0))
 	game.muted = bool(data.get("muted", false))
+	var lo: Array = data.get("loadout", [])
+	if lo.size() == 3:
+		game.loadout = lo
 	game.summit_cleared = bool(data.get("summit_cleared", false))
 	game.seen_hints = data.get("seen_hints", {})
 	# Inventory — re-place each item so the grid cells rebuild.

@@ -74,6 +74,16 @@ func _ready() -> void:
 	_recipe_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	col.add_child(_recipe_box)
 
+	if station_id == "cookfire":
+		# B5 — the town-side kit-swap lives at the Cottage Hearth too.
+		var lb := Button.new()
+		WyrdUi.style_kit_button(lb)
+		lb.text = "Change Loadout (skills)"
+		lb.custom_minimum_size = Vector2(0, 36)
+		lb.pressed.connect(func():
+			var lp: CanvasLayer = load("res://scripts/ui/loadout_panel.gd").new()
+			get_tree().current_scene.add_child(lp))
+		col.add_child(lb)
 	var s2 := Label.new()
 	s2.text = "Satchel"
 	WyrdUi.style_section(s2)

@@ -200,14 +200,8 @@ func _ready() -> void:
 	if game != null:
 		game.restore_player(self)  # Wyrd — carry hp across the scene change
 		hp = mini(hp, hp_max)      # (the HUD hookup below reads the restored value)
-	# Spec 32b — instantiate the player's current skill loadout. Future
-	# class-paths (spec 34) replace this with a class-specific factory.
-	skills = [
-		BasicShotScript.new(),
-		PowerShotScript.new(),
-		MultiShotScript.new(),
-		BrambleSnareScript.new(),
-	]
+	# B5 — slot 1 is always the Bow; slots 2-4 come from Game.loadout.
+	rebuild_skills()
 
 	_maybe_swap_chibi()
 	_mesh = get_node_or_null("Mesh")
@@ -972,6 +966,33 @@ func apply_shrine_buff(stat: String, value) -> void:
 	print("[shrine] +%s %s applied" % [str(value), stat])
 
 # HUD buttons call these (the keybinds route here too).
+# B5 — the skill factory. Rebuilds `skills` from Game.loadout; the skill
+# bar rebinds so labels/icons/costs follow.
+const SKILL_FACTORY := {
+	"PowerShot": preload("res://scripts/skills/power_shot.gd"),
+	"MultiShot": preload("res://scripts/skills/multi_shot.gd"),
+	"BrambleSnare": preload("res://scripts/skills/bramble_snare.gd"),
+	"PiercingBolt": preload("res://scripts/skills/piercing_bolt.gd"),
+	"RainOfThorns": preload("res://scripts/skills/rain_of_thorns.gd"),
+}
+
+func rebuild_skills() -> void:
+	var game := get_tree().root.get_node_or_null("Game")
+	var picks: Array = ["PowerShot", "MultiShot", "BrambleSnare"]
+	if game != null and (game.loadout as Array).size() == 3:
+		picks = game.loadout
+	skills = [BasicShotScript.new()]
+	for sk in picks:
+		var script = SKILL_FACTORY.get(String(sk))
+		if script != null:
+			skills.append(script.new())
+	_skill_cooldowns.clear()
+	for layer in (get_tree().current_scene.get_children() \
+			if get_tree().current_scene != null else []):
+		if layer is CanvasLayer and layer.has_method("bind_to_player") \
+				and layer.get("SKILL_ICON") != null:
+			layer.bind_to_player(self)
+
 func toggle_inventory() -> void:
 	if _inv_root != null:
 		_inv_root.toggle()

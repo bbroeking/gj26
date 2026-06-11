@@ -157,14 +157,17 @@ const BASE_WEIGHTS := {
 const INKS := {
 	"hedge_ink": {
 		"name": "Hedge Ink", "icon": "●",
+		"desc": "Pulls the roll toward green affixes — blooms, groves, patches.",
 		"bias": {"bramble_bloom": 2.0, "herbal_patch": 2.0, "wood_grove": 2.0},
 	},
 	"stoneground_ink": {
 		"name": "Stoneground Ink", "icon": "◆",
+		"desc": "Heavy and gritty — pulls hard toward the mineral seams.",
 		"bias": {"mineral_vein": 2.5},
 	},
 	"refined_ink": {
 		"name": "Refined Ink", "icon": "✦",
+		"desc": "Steadies the hand — +10% toward each affix's good twin.",
 		"bias": {"_stability": 0.10},
 	},
 }

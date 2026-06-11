@@ -48,8 +48,11 @@ Specs 38–41 + notes.
    pot, guided-tutorial highlights) replaced the menu panel; 151 checks
    green. Open: design-page side-by-side + fresh-save manual tutorial run
    (notes file).
-2. **B5 loadouts** — 2-3 new skills + pick-4 at the hearth (first
-   build-crafting moment; unblocked by ADR 0004).
+2. ~~B5 loadouts~~ **SHIPPED 2026-06-12**: PiercingBolt (pierce-3 line
+   shot) + RainOfThorns (delayed thorn AoE w/ bleed); slot 1 fixed Bow,
+   slots 2-4 picked in the Loadout panel (dungeon Hearth rest + Cottage
+   Hearth button); persisted in the save; 160 checks green. Also this
+   pass: bench tooltips everywhere + click-to-place.
 3. **A6 node tiers + tool tiers** — copper→bogiron→palechalk; richer veins
    only in charts.
 4. **B6 remaining 9 affixes** — rolling, ≥2 per session.

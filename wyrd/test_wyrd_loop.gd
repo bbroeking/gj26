@@ -33,6 +33,7 @@ func _init() -> void:
 	_test_enemy_kinds()
 	_test_crafting_perks()
 	_test_tools_and_mute()
+	_test_loadout()
 	_test_save_roundtrip()
 	print("--- %d passed, %d failed ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
@@ -127,6 +128,31 @@ func _test_tools_and_mute() -> void:
 	_check("tools excluded from drop pool", not saw_tool)
 	game.free()
 
+# B5 — loadout: pool validation + persistence + skill instantiation.
+func _test_loadout() -> void:
+	print("[loadout]")
+	var game = load("res://scripts/game.gd").new()
+	game._ready()
+	_check("default loadout is the classic trio",
+		game.loadout == ["PowerShot", "MultiShot", "BrambleSnare"])
+	_check("rejects wrong count", not game.set_loadout(["PowerShot"]))
+	_check("rejects unknown skill",
+		not game.set_loadout(["PowerShot", "MultiShot", "FrostNova"]))
+	_check("rejects duplicates",
+		not game.set_loadout(["PowerShot", "PowerShot", "MultiShot"]))
+	_check("accepts a new kit",
+		game.set_loadout(["PiercingBolt", "RainOfThorns", "BrambleSnare"]))
+	_check("loadout stored", game.loadout ==
+		["PiercingBolt", "RainOfThorns", "BrambleSnare"])
+	# New skill classes instantiate with sane numbers.
+	var pb = load("res://scripts/skills/piercing_bolt.gd").new()
+	_check("piercing bolt: pierce 3, costs focus",
+		int(pb.pierce) == 3 and float(pb.cost) > 0.0)
+	var rt = load("res://scripts/skills/rain_of_thorns.gd").new()
+	_check("rain of thorns: cd + cost set",
+		float(rt.base_cd) > 0.0 and float(rt.cost) > 0.0)
+	game.free()
+
 func _test_save_roundtrip() -> void:
 	print("[save/load]")
 	var game = load("res://scripts/game.gd").new()
@@ -141,6 +167,7 @@ func _test_save_roundtrip() -> void:
 	game.gold = 57
 	game.summit_cleared = true
 	game.muted = true   # spec 38 — the mute preference rides the save
+	game.loadout = ["PiercingBolt", "MultiShot", "RainOfThorns"]
 	var ItemsData = load("res://data/items.gd")
 	var item: Dictionary = ItemsData.make_item("shortbow", "magic")
 	var fit: Dictionary = game.inventory.find_first_fit(item)
@@ -164,6 +191,8 @@ func _test_save_roundtrip() -> void:
 		and String(game2.inventory.items[0].kind_id) == "shortbow")
 	var helm = game2.equipment.get_slot("helmet")
 	_check("equipment restored w/ Color", helm != null and helm.icon_color is Color)
+	_check("loadout restored", game2.loadout ==
+		["PiercingBolt", "MultiShot", "RainOfThorns"])
 	SaveGame.clear()
 	_check("save file cleaned up", not SaveGame.has_save())
 	game.free()

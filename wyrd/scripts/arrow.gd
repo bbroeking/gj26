@@ -172,13 +172,23 @@ func _build_visual() -> void:
 	add_child(p)
 	p.emitting = true
 
+# B5 — Piercing Bolt: arrows with pierce_left keep flying through targets
+# (each pierce decrements; hits the same enemy once via _pierced).
+var pierce_left := 0
+var _pierced: Array = []
+
 func _on_area_entered(area: Area3D) -> void:
 	if _spent:
 		return
 	if area != null and area.has_meta("combatant"):
 		var c = area.get_meta("combatant")
-		if c != null and is_instance_valid(c) and not c.dead:
-			_spent = true
+		if c != null and is_instance_valid(c) and not c.dead \
+				and not _pierced.has(c):
+			if pierce_left > 0:
+				pierce_left -= 1
+				_pierced.append(c)
+			else:
+				_spent = true
 			var fwd := -global_transform.basis.z
 			c.take_damage(damage, fwd, crit_chance, crit_mult)
 			# Spec 32b — on-hit effects are data on the arrow. Each Skill
@@ -217,7 +227,8 @@ func _on_area_entered(area: Area3D) -> void:
 						if e != null:
 							e.apply(nearby)
 			_explode(global_position)
-			queue_free()
+			if _spent:
+				queue_free()
 
 func _physics_process(delta: float) -> void:
 	if _spent:

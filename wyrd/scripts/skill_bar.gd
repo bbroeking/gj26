@@ -19,6 +19,8 @@ const SKILL_LABEL := {
 	"PowerShot":    "Pow",
 	"MultiShot":    "Mlt",
 	"BrambleSnare": "Snr",
+	"PiercingBolt": "Prc",
+	"RainOfThorns": "Thn",
 }
 # Painted skill icons (ink pass, 2026-06-10) + hover tooltips — combat is
 # explained where the buttons live, not in a manual.
@@ -33,6 +35,8 @@ const SKILL_DESC := {
 	"PowerShot":    "A heavy, slower arrow that hits much harder.",
 	"MultiShot":    "A fan of three arrows — crowds and retinues.",
 	"BrambleSnare": "Roots enemies in a bramble patch. Elites marked Briarbound shrug it off.",
+	"PiercingBolt": "A heavy bolt that punches through up to 3 enemies in a line.",
+	"RainOfThorns": "Marks a zone; thorns fall after a breath — damage and bleed.",
 }
 
 var _player: Node = null

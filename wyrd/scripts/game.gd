@@ -76,6 +76,10 @@ var charts: Array = []                # crafted chart dicts (the chart case)
 var gold := 0                         # Hod's the faucet AND the sink
 var summit_cleared := false           # the final chart, charted
 var muted := false                    # spec 38 — master audio mute (persisted)
+# B5 — the picked skills for hotbar slots 2-4 (slot 1 is always the Bow).
+const SKILL_POOL := ["PowerShot", "MultiShot", "BrambleSnare",
+	"PiercingBolt", "RainOfThorns"]
+var loadout: Array = ["PowerShot", "MultiShot", "BrambleSnare"]
 var seen_hints: Dictionary = {}       # one-time skill tutorials already shown
 var inventory: Inventory = null       # Tetris gear grid — shared across scenes
 var equipment = null                  # Equipment — shared across scenes
@@ -181,6 +185,24 @@ func _ready() -> void:
 		in_dungeon = true
 		tutorial_step = TUTORIAL_OBJECTIVES.size() - 1
 		get_tree().change_scene_to_file.call_deferred(DUNGEON_SCENE)
+
+# B5 — swap the loadout (validated against the pool; exactly 3, no dupes).
+func set_loadout(picks: Array) -> bool:
+	if picks.size() != 3:
+		return false
+	var seen := {}
+	for sk in picks:
+		if not SKILL_POOL.has(String(sk)) or seen.has(sk):
+			return false
+		seen[sk] = true
+	loadout = picks.duplicate()
+	save_now()
+	if is_inside_tree():
+		var player := get_tree().get_first_node_in_group("player")
+		if player != null and player.has_method("rebuild_skills"):
+			player.rebuild_skills()
+		notify("Loadout set: %s." % ", ".join(picks))
+	return true
 
 # Spec 38 — master mute. One bus flip silences the SFX pool and the music
 # channel together; the state rides the save like any other preference.

@@ -16,6 +16,7 @@ var on_hit_effects: Array = []       # Array[SkillEffect]
 var recoil_amount: float = -0.4       # negative → back-lean on the mesh
 var bow_pop_mult: float = 1.22
 var sfx_key: String = "fire"
+var pierce: int = 0                  # B5 — arrows pass through N extra targets
 
 # Default fire: aim, snap mesh rotation, spawn N arrows in a cone, apply
 # recoil + SFX + bow-pop. Damage is `derived_stats.damage * damage_mult`
@@ -66,6 +67,7 @@ func _spawn_arrow(player: Node, origin: Vector3, dir: Vector3, dmg: int,
 	arrow.crit_mult = float(player.derived_stats.crit_mult_bonus)
 	arrow.skill_type = skill_type
 	arrow.effects = on_hit_effects
+	arrow.pierce_left = pierce
 	arrow.focal = focal
 	player.get_parent().add_child(arrow)
 	arrow.global_position = origin

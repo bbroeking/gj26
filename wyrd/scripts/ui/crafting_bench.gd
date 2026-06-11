@@ -220,6 +220,10 @@ class BenchView extends Control:
 	var _result_rect := Rect2()
 	var _craft_rect := Rect2()
 	var _stamp_t := 0.0
+	var _tip := ""                  # hover tooltip text ("" = none)
+	var _tip_at := Vector2.ZERO
+	var _press_at := Vector2.ZERO   # click-to-place vs drag discrimination
+	var _odds_rows: Array = []      # {rect, affix_id} for odds tooltips
 
 	const EDGE := Color(0.26, 0.19, 0.13)
 	const WELL := Color(0.80, 0.72, 0.58)
@@ -244,8 +248,8 @@ class BenchView extends Control:
 	func _gui_input(event: InputEvent) -> void:
 		if event is InputEventMouseMotion:
 			bench._cursor = event.position
-			if not bench._held.is_empty():
-				queue_redraw()
+			_update_tip(event.position)
+			queue_redraw()
 		elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
 				_press(event.position)
@@ -253,6 +257,7 @@ class BenchView extends Control:
 				_release(event.position)
 
 	func _press(p: Vector2) -> void:
+		_press_at = p
 		# Pick from the tray.
 		for row in _tray_rows:
 			if (row.rect as Rect2).has_point(p) and bool(row.ok):
@@ -284,6 +289,26 @@ class BenchView extends Control:
 		var kind := String(bench._held.kind)
 		var id := String(bench._held.id)
 		bench._held = {}
+		# Click-to-place: a release near the press point is a click, and a
+		# click on a tray row sends the thing where it obviously goes.
+		if p.distance_to(_press_at) < 6.0:
+			match kind:
+				"base":
+					if bench._allowed_drop(kind, "base"):
+						bench.place_base(id)
+				"ink":
+					if bench._allowed_drop(kind, "ink"):
+						if not bench.socket_ink(id) \
+								and bench._allowed_drop(kind, "pot"):
+							bench.pot_add(id)
+				"mat":
+					if bench._allowed_drop(kind, "pot"):
+						bench.pot_add(id)
+				"trophy":
+					if bench._allowed_drop(kind, "trophy"):
+						bench.socket_trophy(id)
+			queue_redraw()
+			return
 		if _base_rect.has_point(p) and kind == "base" \
 				and bench._allowed_drop(kind, "base"):
 			bench.place_base(id)
@@ -305,6 +330,60 @@ class BenchView extends Control:
 			bench.pot_add(id)
 		queue_redraw()
 
+	# What the cursor is over, as a tooltip string ("" = nothing).
+	func _update_tip(p: Vector2) -> void:
+		_tip = ""
+		_tip_at = p
+		for row in _tray_rows:
+			if (row.rect as Rect2).has_point(p):
+				_tip = _tip_for(String(row.kind), String(row.id))
+				return
+		for row in _odds_rows:
+			if (row.rect as Rect2).has_point(p):
+				var aff: Dictionary = ChartsData.AFFIXES[row.id]
+				_tip = "%s — %s\nBad twin (%s): %s" % [String(aff.name),
+					String(aff.good_desc), String(aff.bad_name),
+					String(aff.bad_desc)]
+				return
+		if _base_rect.has_point(p):
+			_tip = _tip_for("base", bench.base_id) if bench.base_id != "" \
+				else "Drag or click a chart base from the tray."
+			return
+		for i in _ink_rects.size():
+			if (_ink_rects[i] as Rect2).has_point(p):
+				_tip = _tip_for("ink", String(bench.inks[i])) \
+					if i < bench.inks.size() \
+					else "An ink socket — inks tilt the affix odds."
+				return
+		if _trophy_rect != Rect2() and _trophy_rect.has_point(p):
+			_tip = _tip_for("trophy", bench.trophy) if bench.trophy != "" \
+				else "A trophy here inks its boss den into the chart — certain."
+			return
+		if _pot_rect.has_point(p):
+			_tip = "The mixing pot. 3 herbs → hedge ink · 2 ore → stoneground\n2 hedge ink + 1 ore → refined. Click to empty."
+			return
+		if _craft_rect.has_point(p) or (_result_rect.has_point(p)
+				and bench.base_id != ""):
+			_tip = "Craft the chart — spends the cost, the chart goes to your case."
+
+	func _tip_for(kind: String, id: String) -> String:
+		match kind:
+			"base":
+				var t: Dictionary = ChartsData.TEMPLATES.get(id, {})
+				if t.is_empty():
+					return ""
+				return "%s — Tier %d · %d affix · %d ink slots\n%s" % [
+					String(t.name), int(t.tier), int(t.affix_slots),
+					int(t.ink_slots), String(t.get("desc", ""))]
+			"ink":
+				var ink: Dictionary = ChartsData.INKS.get(id, {})
+				return "%s\n%s" % [String(ink.get("name", id)),
+					String(ink.get("desc", ""))]
+			"mat", "trophy":
+				return "%s\n%s" % [GatherDefs.material_name(id),
+					String(GatherDefs.MATERIALS.get(id, {}).get("desc", ""))]
+		return ""
+
 	# ---- drawing ----
 	func _draw() -> void:
 		var hdr: Font = WyrdUi.font_header()
@@ -315,10 +394,12 @@ class BenchView extends Control:
 			HORIZONTAL_ALIGNMENT_LEFT, 400, 24, WyrdUi.TERRACOTTA)
 		draw_string(font, Vector2(size.x - 180, 56), "Esc — close",
 			HORIZONTAL_ALIGNMENT_RIGHT, 130, 12, DIM)
+		_odds_rows.clear()
 		_draw_tray(hdr, font)
 		_draw_bench(hdr, font)
 		_draw_result(hdr, font)
-		# Drag ghost.
+		_draw_tip(font)
+		# Drag ghost (drawn over the tooltip).
 		if not bench._held.is_empty():
 			var r := Rect2(bench._cursor - Vector2(46, 14), Vector2(92, 28))
 			draw_rect(r, Color(PLATE, 0.85))
@@ -508,6 +589,8 @@ class BenchView extends Control:
 						String(ChartsData.AFFIXES[id].name),
 						roundi(weights[id]), stab],
 					HORIZONTAL_ALIGNMENT_LEFT, 220, 13, TXT)
+				_odds_rows.append({"rect": Rect2(Vector2(rx, y - 14), Vector2(220, 18)),
+					"id": String(id)})
 				y += 19.0
 			if bench.trophy != "":
 				var den: Dictionary = ChartsData.AFFIXES[
@@ -539,3 +622,24 @@ class BenchView extends Control:
 		draw_string(hdr, _craft_rect.position + Vector2(0, 27), "Craft",
 			HORIZONTAL_ALIGNMENT_CENTER, _craft_rect.size.x, 17,
 			WyrdUi.INK if can else DIM)
+
+	func _draw_tip(font: Font) -> void:
+		if _tip == "" or not bench._held.is_empty():
+			return
+		var lines := _tip.split("\n")
+		var w := 0.0
+		for ln in lines:
+			w = maxf(w, font.get_string_size(ln, HORIZONTAL_ALIGNMENT_LEFT,
+				-1, 13).x)
+		var box := Rect2(_tip_at + Vector2(16, 12),
+			Vector2(w + 20.0, 12.0 + 19.0 * lines.size()))
+		# Keep it on the panel.
+		box.position.x = minf(box.position.x, size.x - box.size.x - 8.0)
+		box.position.y = minf(box.position.y, size.y - box.size.y - 8.0)
+		draw_rect(box, Color(0.97, 0.93, 0.80, 0.97))
+		draw_rect(box, EDGE, false, 2.0)
+		var ty := box.position.y + 17.0
+		for ln in lines:
+			draw_string(font, Vector2(box.position.x + 10.0, ty), ln,
+				HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 20.0, 13, TXT)
+			ty += 19.0

@@ -54,6 +54,9 @@ func interact(player: Node) -> Dictionary:
 	var sfx := get_node_or_null("/root/Sfx")
 	if sfx != null:
 		sfx.play("hearth_rest")
+	# B5 — resting is the kit-swap moment (FATE checkpoint convention).
+	var lp: CanvasLayer = load("res://scripts/ui/loadout_panel.gd").new()
+	get_tree().current_scene.add_child(lp)
 	if cp != null and cp.has_method("read"):
 		return cp.read()
 	return {}
