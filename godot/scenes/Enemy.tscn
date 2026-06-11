@@ -1,7 +1,0 @@
-[gd_scene format=3 uid="uid://b07enemy001"]
-
-; Spec 07 — generic GLB-instance container. The loader currently
-; instantiates GLBs directly; this scene exists as a future home for
-; per-enemy logic (collision shape, hit-react, animation player).
-
-[node name="Enemy" type="Node3D"]

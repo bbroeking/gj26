@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://b29hearth01"]
-
-[ext_resource type="Script" path="res://scripts/hearth.gd" id="Script_hearth"]
-
-[node name="Hearth" type="Area3D"]
-script = ExtResource("Script_hearth")

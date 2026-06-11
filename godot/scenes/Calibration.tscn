@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://b16calib001"]
-
-[ext_resource type="Script" path="res://scripts/calibration.gd" id="Script_calib"]
-
-[node name="Calibration" type="Node3D"]
-script = ExtResource("Script_calib")
