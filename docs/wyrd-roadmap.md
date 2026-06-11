@@ -59,16 +59,19 @@ Specs 38–41 + notes.
    copper chain (ore→bar→Copper Ring); Cinderbloom tools at E7 (−45%
    channel, palechalk-made). Note: stoneground ink now effectively gates
    at Earthcraft 3 — intended ("coveted"), watch the early-game feel.
-4. **B6 remaining 9 affixes** — rolling, ≥2 per session.
+4. **B6 affixes** — rolling: 3 of 9 shipped 2026-06-12 (Sprinting
+   Things/Mired Boots · Gilded Hollow/Picked Clean · Bursting/Volatile);
+   6 remain (quiver, fog_of_hedge, frenzied + 3 TBD).
 5. **B7 combat XP as a trade** — ADR first (dilution question).
 6. **A7-full smithing / A8-full alchemy (Quill)** — port the full recipe
    tables.
 
 ## Standing followups
 
-- **Animation backlog** (`docs/wyrd-animation-backlog.md`, 2026-06-12):
-  P1 = gather swings + tool-in-hand, quaff pose, bench socket/pot/craft
-  flourishes, waystone chart-socketing.
+- **Animation backlog** (`docs/wyrd-animation-backlog.md`): P1 mostly
+  shipped 2026-06-12 — gather swing loop + tool-in-hand + node strike
+  pulses, quaff tip-back, bench socket pops + pot mix bloom. Still owed:
+  craft scroll-and-seal, waystone chart-socketing, P2/P3 sets.
 
 - Save-file safety: `_test_save_roundtrip` writes/deletes the REAL save.
 - Boss-fight feel playtests still owed (Boar charge, Wolf lunge):

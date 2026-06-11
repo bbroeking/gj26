@@ -35,6 +35,7 @@ func _init() -> void:
 	_test_tools_and_mute()
 	_test_loadout()
 	_test_ore_tiers()
+	_test_b6_affixes()
 	_test_save_roundtrip()
 	print("--- %d passed, %d failed ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
@@ -214,6 +215,26 @@ func _test_ore_tiers() -> void:
 	_check("tier-2 carries palechalk (seed 4242)", saw_deep)
 	game.free()
 
+# B6 — sprinter / gilded / bursting.
+func _test_b6_affixes() -> void:
+	print("[b6 affixes]")
+	for aid in ["sprinter", "gilded", "bursting"]:
+		_check("%s defined + weighted" % aid,
+			ChartsData.AFFIXES.has(aid) and ChartsData.BASE_WEIGHTS.has(aid))
+	# High-carto weights now include the new three.
+	var w := ChartsData.compute_weights(2, [], 20)
+	_check("new affixes roll at high carto", w.has("sprinter")
+		and w.has("gilded") and w.has("bursting"), str(w.keys()))
+	# Gilded scatters exactly two extra chests (not gather nodes).
+	var lay := DungeonGenScript.generate(909, {"grid": 36, "room_min": 7,
+		"room_max": 11, "boss_kind": "", "tier": 2,
+		"affixes": [{"id": "gilded", "good": true}]})
+	var chests := 0
+	for d in lay.decor:
+		if String(d.get("kind", "")) == "chest" and not bool(d.get("gather", true)):
+			chests += 1
+	_check("gilded adds 2 chests", chests >= 2, str(chests))
+
 func _test_save_roundtrip() -> void:
 	print("[save/load]")
 	var game = load("res://scripts/game.gd").new()
@@ -268,7 +289,7 @@ func _test_charts_data() -> void:
 	var w9 := ChartsData.compute_weights(1, [], 9)
 	# req ≤ 9: mineral_vein 1, bramble_bloom 4, tyrannical 5, wood_grove 7,
 	# festival_pace 7. Boss dens never roll at random (trophy slot only).
-	_check("carto-9 unlocks 5 random affixes", w9.size() == 5, str(w9.keys()))
+	_check("carto-9 unlocks 7 random affixes", w9.size() == 7, str(w9.keys()))
 	# Ink bias multiplies and renormalizes.
 	var wb := ChartsData.compute_weights(1, ["hedge_ink"], 9)
 	_check("hedge ink raises bramble_bloom share",

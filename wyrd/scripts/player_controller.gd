@@ -747,6 +747,69 @@ func _try_skill(slot: int) -> void:
 # The Meshy rig has no authored socket — the bow rides the RightHand bone
 # via _update_bow(); it's parented to the player (normal scale) so it
 # dodges the skeleton's internal scaling.
+# ---- A6/anim-P1: the gather pose ----------------------------------------
+# During a channel the bow hides, the equipped tool (if any) rides in front
+# of the body toward the node, and the mesh swings on a loop. GatherNode
+# drives begin/end.
+var _gather_tool: Node3D = null
+var _gather_tween: Tween = null
+
+const TOOL_MODELS := {
+	"bogiron_pickaxe": "res://models/weapon_bogiron_pickaxe.glb",
+	"bogiron_axe": "res://models/weapon_bogiron_axe.glb",
+	"cinderbloom_pickaxe": "res://models/weapon_cinderbloom_pickaxe.glb",
+	"cinderbloom_axe": "res://models/weapon_cinderbloom_axe.glb",
+}
+
+func begin_gather(kind: String, node_pos: Vector3) -> void:
+	if _mesh != null:
+		var to := node_pos - global_position
+		if to.length() > 0.01:
+			_mesh.rotation.y = atan2(to.x, to.z)
+	if _bow != null:
+		_bow.visible = false
+	# The equipped tool appears in hand (mining/chopping only).
+	var slot: String = {"ore_rock": "pickaxe", "log_pile": "axe"}.get(kind, "")
+	if slot != "" and equipment != null:
+		var tool = equipment.get_slot(String(slot))
+		if tool != null:
+			var path := String(TOOL_MODELS.get(String(tool.get("kind_id", "")), ""))
+			if path != "" and ResourceLoader.exists(path):
+				_gather_tool = (load(path) as PackedScene).instantiate()
+				add_child(_gather_tool)
+				GlbFit.normalize_height(_gather_tool, 0.7)
+				var yaw: float = _mesh.rotation.y if _mesh != null else 0.0
+				var fwd := Vector3(sin(yaw), 0.0, cos(yaw))
+				_gather_tool.position = Vector3(0, 0.55, 0) + fwd * 0.35 \
+					+ Vector3(fwd.z, 0.0, -fwd.x) * 0.18
+				_gather_tool.rotation.y = yaw
+	# The swing: a forward lean loop (forage kneels lower, slower).
+	if _mesh != null:
+		_gather_tween = create_tween().set_loops()
+		var depth := 0.32 if kind != "forage_node" else 0.2
+		var beat := 0.5 if kind != "forage_node" else 0.7
+		_gather_tween.tween_property(_mesh, "rotation:x", depth, beat * 0.4) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		_gather_tween.tween_property(_mesh, "rotation:x", 0.0, beat * 0.6) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		if _gather_tool != null:
+			_gather_tween.parallel().tween_property(_gather_tool, "rotation:x",
+				-1.1, beat * 0.4).set_trans(Tween.TRANS_QUAD)
+			_gather_tween.parallel().tween_property(_gather_tool, "rotation:x",
+				0.0, beat * 0.6)
+
+func end_gather() -> void:
+	if _gather_tween != null:
+		_gather_tween.kill()
+		_gather_tween = null
+	if _mesh != null:
+		_mesh.rotation.x = 0.0
+	if _gather_tool != null:
+		_gather_tool.queue_free()
+		_gather_tool = null
+	if _bow != null:
+		_bow.visible = true
+
 func _attach_bow() -> void:
 	_bow = BOW_SCENE.instantiate()
 	add_child(_bow)
@@ -836,8 +899,8 @@ func _derive_stats() -> void:
 		"crit_chance":         clampf(0.20 + float(sums.crit_chance), 0.0, 1.0),
 		"crit_mult_bonus":     float(sums.crit_mult),
 		"fire_cooldown":       FIRE_COOLDOWN / (1.0 + float(sums.fire_rate)),
-		"run_speed":           RUN_SPEED * (1.0 + float(sums.move_speed)),
-		"walk_speed":          WALK_SPEED * (1.0 + float(sums.move_speed)),
+		"run_speed":           RUN_SPEED * (1.0 + float(sums.move_speed)) * _chart_speed_mult(),
+		"walk_speed":          WALK_SPEED * (1.0 + float(sums.move_speed)) * _chart_speed_mult(),
 		# Spec 30 — capped CDR for skill 2-4 cooldowns. Skill 1 (BasicShot)
 		# is still scaled by `fire_rate` via `fire_cooldown` above.
 		"cooldown_reduction": clampf(float(sums.cooldown_reduction), 0.0, CDR_CAP),
@@ -847,6 +910,13 @@ func _derive_stats() -> void:
 	hp = mini(hp, hp_max)
 	if _hud != null:
 		_hud.set_hp(hp, hp_max)
+
+# B6 — Mired Boots (sprinter's bad twin): -10% player speed in-chart.
+func _chart_speed_mult() -> float:
+	var game := get_tree().root.get_node_or_null("Game")
+	if game != null and bool(game.in_dungeon) and game.affix_bad("sprinter"):
+		return 0.9
+	return 1.0
 
 static func _add_stat(sums: Dictionary, stat: String, value) -> void:
 	if sums.has(stat):
@@ -1019,6 +1089,13 @@ func _quaff() -> void:
 	var sfx := get_node_or_null("/root/Sfx")
 	if sfx != null:
 		sfx.play("quaff")
+	# Anim-P1: the drink — head tips back, settles.
+	if _mesh != null:
+		var tw := create_tween()
+		tw.tween_property(_mesh, "rotation:x", -0.35, 0.15) \
+			.set_trans(Tween.TRANS_QUAD)
+		tw.tween_interval(0.25)
+		tw.tween_property(_mesh, "rotation:x", 0.0, 0.2)
 	hp = mini(hp + amount, hp_max)
 	if _hud != null:
 		_hud.set_hp(hp, hp_max)

@@ -181,6 +181,8 @@ func interact(player: Node) -> void:
 	var sfx0 := get_node_or_null("/root/Sfx")
 	if sfx0 != null:
 		sfx0.play({"ore_rock": "mine", "log_pile": "chop"}.get(kind, "forage"))
+	if player.has_method("begin_gather"):
+		player.begin_gather(kind, global_position)
 	_channel_player = player as Node3D
 	_channel_start_pos = _channel_player.global_position
 	_channel_start_hp = int(player.get("hp")) if player.get("hp") != null else 0
@@ -206,7 +208,17 @@ func _process(delta: float) -> void:
 				hp_now, _channel_start_hp])
 		_cancel_channel()
 		return
+	var prev_beat := int(_channel_t / 0.5)
 	_channel_t += delta
+	if int(_channel_t / 0.5) != prev_beat and _body != null:
+		# Anim-P1 — the node visibly takes the hit each swing.
+		var tw := create_tween()
+		tw.tween_property(_body, "scale", Vector3.ONE * 0.92, 0.06)
+		tw.tween_property(_body, "scale", Vector3.ONE, 0.12) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		var sfx_t := get_node_or_null("/root/Sfx")
+		if sfx_t != null:
+			sfx_t.play({"ore_rock": "mine", "log_pile": "chop"}.get(kind, "forage"), 0.12)
 	_set_bar(_channel_t / _channel_len)
 	if _channel_t >= _channel_len:
 		var done := pl
@@ -219,6 +231,8 @@ func _cancel_channel() -> void:
 
 func _end_channel() -> void:
 	_channeling = false
+	if _channel_player != null and _channel_player.has_method("end_gather"):
+		_channel_player.end_gather()
 	_channel_player = null
 	set_process(false)
 	if _bar_root != null:

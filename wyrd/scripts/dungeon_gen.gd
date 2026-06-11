@@ -279,7 +279,10 @@ static func _generate_one(rng: RandomNumberGenerator, cfg: Dictionary = {}) -> D
 # Mirrors the shipped three.js consumer (src/scene/dungeon.js:253-303):
 # the good twin scatters nodes on random non-entry/non-boss room floor
 # tiles; the bad twin simply places nothing.
+# B6 — gilded (good twin) hides two extra chests; reuses the gather
+# scatter machinery with chest decor instead of nodes.
 const GATHER_BY_AFFIX := {
+	"gilded": {"kind": "chest", "item": "", "count": [2, 2]},
 	"mineral_vein":  {"kind": "ore_rock",    "item": "bogiron_ore", "count": [3, 5]},
 	"bramble_bloom": {"kind": "forage_node", "item": "wild_herb",   "count": [4, 6]},
 	# herbal_patch is the Lv-14 upgrade over bramble_bloom: same herb, richer
@@ -323,7 +326,8 @@ static func _scatter_gather_nodes(rooms: Array, grid: Array, entry: Dictionary,
 			if occupied:
 				continue
 			var entry_d := {"kind": String(spec.kind), "item": String(spec.item),
-				"gather": true, "x": x, "y": y, "orient": "center"}
+				"gather": String(spec.kind) != "chest",
+				"x": x, "y": y, "orient": "center"}
 			# A6 — Mineral Vein nodes roll an ore tier; deeper charts carry
 			# the richer veins (palechalk never spawns in town or tier 1).
 			if affix_id == "mineral_vein":

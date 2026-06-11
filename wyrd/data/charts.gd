@@ -100,6 +100,24 @@ const AFFIXES := {
 		"bad_desc": "Each enemy rolls its own size and vigor. Chaotic.",
 		"kind": "modifier", "req_carto": 5, "base_stab": 52,
 	},
+	"sprinter": {
+		"name": "Sprinting Things", "bad_name": "Mired Boots",
+		"good_desc": "Everything inside moves a quarter faster — and pays +40 chart xp like any good twin.",
+		"bad_desc": "The mud finds YOUR boots — you move 10% slower in this chart.",
+		"kind": "modifier", "req_carto": 6, "base_stab": 52,
+	},
+	"gilded": {
+		"name": "Gilded Hollow", "bad_name": "Picked Clean",
+		"good_desc": "Two extra treasure chests hide in the rooms.",
+		"bad_desc": "Someone got here first — no extra chests.",
+		"kind": "bias", "req_carto": 9, "base_stab": 55,
+	},
+	"bursting": {
+		"name": "Bursting", "bad_name": "Volatile",
+		"good_desc": "Slain enemies burst, scorching their nearby kin.",
+		"bad_desc": "The bursts don't care who's standing close — including you.",
+		"kind": "modifier", "req_carto": 12, "base_stab": 50,
+	},
 	"festival_pace": {
 		"name": "Festival Pace", "bad_name": "Lockstep",
 		"good_desc": "+50% enemy density inside. The hollow is thick with them.",
@@ -149,6 +167,9 @@ const BASE_WEIGHTS := {
 	"herbal_patch": 8,
 	"tyrannical": 8,
 	"festival_pace": 7,
+	"sprinter": 7,
+	"gilded": 6,
+	"bursting": 6,
 }
 
 # ---- inks ----

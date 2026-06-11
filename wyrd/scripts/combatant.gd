@@ -57,6 +57,10 @@ var depth := 0
 # _attack_speed_mult default to 1.0 (no-op for non-elites; Swift bumps).
 # _cc_immune_until is a Time.get_ticks_msec() / 1000.0 timestamp gating
 # Briarbound's root/snared immunity.
+# B6 — bursting chart affix: this corpse pops on death (2m, 6 dmg to
+# kin; Volatile also hits the player).
+var burst_on_death := false
+var burst_hits_player := false
 var is_elite: bool = false
 var modifier: String = ""
 var _move_mult: float = 1.0
@@ -647,6 +651,10 @@ func _die() -> void:
 	# queue_free so AoeQuery sees us as a valid position source.
 	if is_elite and modifier != "":
 		_elite_on_death()
+	# B6 — Bursting: the corpse pops, scorching kin (and the player when
+	# the chart rolled Volatile).
+	if burst_on_death:
+		_death_burst()
 	var sfx := get_node_or_null("/root/Sfx")
 	if sfx != null:
 		sfx.play("death")
@@ -838,3 +846,44 @@ func _trigger_burn_pulse() -> void:
 	if global_position.distance_to(_player.global_position) <= 2.5:
 		if _player.has_method("apply_status"):
 			_player.apply_status("burn", 3.0, 1, 1.0, 0.5)
+
+# B6 — the bursting affix's corpse pop: 6 damage to enemies within 2m
+# (skipping other corpses); Volatile also catches the player. A short
+# ember ring sells the radius.
+func _death_burst() -> void:
+	const BURST_RADIUS := 2.0
+	const BURST_DMG := 6
+	for other in AoeQuery.query_circle(get_tree(), global_position, BURST_RADIUS):
+		if other == self or other == null or not is_instance_valid(other):
+			continue
+		if bool(other.get("dead")):
+			continue
+		var dir: Vector3 = other.global_position - global_position
+		dir.y = 0.0
+		other.take_damage(BURST_DMG, dir.normalized())
+	if burst_hits_player:
+		var player := get_tree().get_first_node_in_group("player")
+		if player != null and player.has_method("take_damage") \
+				and player.global_position.distance_to(global_position) <= BURST_RADIUS:
+			var pdir: Vector3 = player.global_position - global_position
+			pdir.y = 0.0
+			player.take_damage(BURST_DMG, pdir.normalized())
+	# The visual: an expanding ember ring at the corpse.
+	var mi := MeshInstance3D.new()
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.3
+	torus.outer_radius = 0.42
+	mi.mesh = torus
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(1.0, 0.55, 0.2, 0.8)
+	mat.emission_enabled = true
+	mat.emission = Color(1.0, 0.5, 0.15)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mi.material_override = mat
+	mi.position = global_position + Vector3(0, 0.2, 0)
+	get_parent().add_child(mi)
+	var tw := mi.create_tween()
+	tw.tween_property(mi, "scale", Vector3.ONE * (BURST_RADIUS / 0.42), 0.25) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(mat, "albedo_color:a", 0.0, 0.25)
+	tw.tween_callback(mi.queue_free)

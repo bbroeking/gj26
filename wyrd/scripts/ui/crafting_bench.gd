@@ -78,6 +78,7 @@ func place_base(template_id: String) -> bool:
 	base_id = template_id
 	inks.clear()
 	trophy = ""
+	_view.pop("base")
 	_view.queue_redraw()
 	return true
 
@@ -98,6 +99,7 @@ func socket_ink(ink_id: String, slot: int = -1) -> bool:
 		inks.append(ink_id)
 	else:
 		inks.insert(slot, ink_id)
+	_view.pop("ink%d" % (inks.size() - 1))
 	_view.queue_redraw()
 	return true
 
@@ -114,6 +116,7 @@ func socket_trophy(trophy_id: String) -> bool:
 	if _remaining(trophy_id) <= 0:
 		return false
 	trophy = trophy_id
+	_view.pop("trophy")
 	_view.queue_redraw()
 	return true
 
@@ -127,6 +130,7 @@ func pot_add(mat_id: String) -> bool:
 		if _dict_eq(pot, inputs):
 			if _game != null and _game.mix_ink(ink_id):
 				pot.clear()
+				_view.pop("pot")
 			break
 	_view.queue_redraw()
 	return true
@@ -220,6 +224,7 @@ class BenchView extends Control:
 	var _result_rect := Rect2()
 	var _craft_rect := Rect2()
 	var _stamp_t := 0.0
+	var _pops: Dictionary = {}      # rect-key -> remaining pop time
 	var _tip := ""                  # hover tooltip text ("" = none)
 	var _tip_at := Vector2.ZERO
 	var _press_at := Vector2.ZERO   # click-to-place vs drag discrimination
@@ -238,11 +243,29 @@ class BenchView extends Control:
 		_stamp_t = 0.25
 		set_process(true)
 
+	func pop(key: String) -> void:
+		_pops[key] = 0.16
+		set_process(true)
+
+	func _pop_scale(key: String) -> float:
+		var t: float = float(_pops.get(key, 0.0))
+		if t <= 0.0:
+			return 1.0
+		# 1.0 -> 1.12 -> 1.0 over the pop window.
+		return 1.0 + 0.12 * sin((1.0 - t / 0.16) * PI)
+
 	func _process(delta: float) -> void:
+		var busy := _stamp_t > 0.0
 		if _stamp_t > 0.0:
 			_stamp_t -= delta
-			queue_redraw()
-		else:
+		for k in _pops.keys():
+			_pops[k] = float(_pops[k]) - delta
+			if float(_pops[k]) <= 0.0:
+				_pops.erase(k)
+			else:
+				busy = true
+		queue_redraw()
+		if not busy:
 			set_process(false)
 
 	func _gui_input(event: InputEvent) -> void:
@@ -480,7 +503,9 @@ class BenchView extends Control:
 			HORIZONTAL_ALIGNMENT_LEFT, 200, 14, WyrdUi.INK)
 		# Base socket.
 		_base_rect = Rect2(Vector2(bx + 40, 116), Vector2(180, 96))
-		_socket_well(_base_rect, bench.base_id != "")
+		var bs := _pop_scale("base")
+		_socket_well(Rect2(_base_rect.get_center() - _base_rect.size * bs * 0.5,
+			_base_rect.size * bs), bench.base_id != "")
 		_highlight(_base_rect, target == "base")
 		if bench.base_id == "":
 			draw_string(font, _base_rect.position + Vector2(0, 52),
@@ -502,9 +527,10 @@ class BenchView extends Control:
 			_ink_rects.append(r)
 			var c := r.get_center()
 			var filled: bool = i < bench.inks.size()
-			draw_circle(c, 26, WELL)
-			draw_circle(c, 22, PLATE if filled else Color(0.72, 0.64, 0.50))
-			draw_arc(c, 26, 0, TAU, 40, EDGE, 2.0, true)
+			var ps := _pop_scale("ink%d" % i)
+			draw_circle(c, 26 * ps, WELL)
+			draw_circle(c, 22 * ps, PLATE if filled else Color(0.72, 0.64, 0.50))
+			draw_arc(c, 26 * ps, 0, TAU, 40, EDGE, 2.0, true)
 			_highlight(r, target == "ink" and i == bench.inks.size())
 			if filled:
 				draw_string(font, r.position + Vector2(0, 34),
@@ -534,9 +560,15 @@ class BenchView extends Control:
 			_trophy_rect = Rect2()
 		# Mixing pot.
 		_pot_rect = Rect2(Vector2(bx + 60, 360), Vector2(140, 84))
-		draw_circle(_pot_rect.get_center(), 38, Color(0.45, 0.34, 0.24))
-		draw_circle(_pot_rect.get_center(), 38, Color(0.95, 0.6, 0.3, 0.12))
-		draw_arc(_pot_rect.get_center(), 38, 0, TAU, 48, EDGE, 2.5, true)
+		var pps := _pop_scale("pot")
+		draw_circle(_pot_rect.get_center(), 38 * pps, Color(0.45, 0.34, 0.24))
+		draw_circle(_pot_rect.get_center(), 38 * pps, Color(0.95, 0.6, 0.3, 0.12))
+		draw_arc(_pot_rect.get_center(), 38 * pps, 0, TAU, 48, EDGE, 2.5, true)
+		if _pops.has("pot"):
+			# Mix flash — a sage ring blooming off the pot.
+			var bloom: float = 1.0 - float(_pops.pot) / 0.16
+			draw_arc(_pot_rect.get_center(), 38 + bloom * 26.0, 0, TAU, 48,
+				Color(0.55, 0.68, 0.38, 1.0 - bloom), 3.0, true)
 		_highlight(Rect2(_pot_rect.get_center() - Vector2(40, 40),
 			Vector2(80, 80)), target == "pot")
 		var px := _pot_rect.get_center() - Vector2(0, 6)

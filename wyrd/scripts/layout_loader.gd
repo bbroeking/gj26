@@ -141,6 +141,9 @@ var _entry_pos := Vector3.ZERO          # respawn target for the kill-plane
 # festival_pace good: ×1.5 room density. Lockstep (bad twin): ×0.75.
 var _hp_mult := 1.0
 var _hp_jitter := false
+var _speed_mult := 1.0
+var _burst_on_death := false
+var _burst_hits_player := false
 var _density_mult := 1.0
 
 func _ready() -> void:
@@ -226,6 +229,15 @@ func _read_chart_modifiers() -> void:
 		_density_mult = 1.5
 	if game.affix_bad("festival_pace"):
 		_density_mult = 0.75
+	# B6 — Sprinting Things: every enemy moves a quarter faster. The bad
+	# twin slows the PLAYER instead (applied on the player at spawn).
+	if game.affix_good("sprinter"):
+		_speed_mult = 1.25
+	# B6 — Bursting: corpses pop. Good scorches kin; Volatile (bad) also
+	# scorches the player.
+	if game.affix_good("bursting") or game.affix_bad("bursting"):
+		_burst_on_death = true
+		_burst_hits_player = game.affix_bad("bursting")
 	var cfg: Dictionary = game.run_cfg()
 	# Template base density (snug's gentle cellar) stacks with the affix.
 	_density_mult *= float(cfg.get("enemy_density", 1.0))
@@ -830,8 +842,11 @@ func _spawn_enemy(ei: int, tx: int, ty: int, role: String = "combat",
 	var body := _spawn_character(inst, tx, ty, 0.4, 1.4, hp)
 	# B3 — per-kind feel: how hard it hits, how fast it closes, how often.
 	body.damage = int(def.get("damage", 5))
-	body.move_speed = float(def.get("speed", 1.8))
+	body.move_speed = float(def.get("speed", 1.8)) * _speed_mult
 	body.attack_cooldown = float(def.get("atk_cd", 1.5))
+	# B6 — bursting corpses.
+	body.burst_on_death = _burst_on_death
+	body.burst_hits_player = _burst_hits_player
 	# Spec 27b — drop context (room role + BFS depth) drives the loot roll.
 	body.role = role
 	body.depth = depth
