@@ -20,8 +20,9 @@ const STATIONS := {
 		"prompt": "Smith at Hod's Anvil",
 		"trade": "earth",
 		"verb": "Smith",
-		"recipes": ["bogiron_bar", "pickaxe_smith", "axe_smith",
-			"longbow_smith", "bogiron_ring"],
+		"recipes": ["copper_bar", "bogiron_bar", "pickaxe_smith", "axe_smith",
+			"longbow_smith", "bogiron_ring", "cinder_pickaxe_smith",
+			"cinder_axe_smith"],
 	},
 }
 
@@ -38,6 +39,12 @@ const RECIPES := {
 		"inputs": {"wild_herb": 4, "logs": 2},
 		"yields_material": "deep_draught", "yields_n": 1,
 		"desc": "Restores 80 vigor. Quaff with Q.",
+	},
+	"copper_bar": {
+		"name": "Copper Bar", "req_lv": 1, "xp": 8,
+		"inputs": {"copper_ore": 2},
+		"yields_material": "copper_bar", "yields_n": 1,
+		"desc": "The first bar every smith pours.",
 	},
 	"bogiron_bar": {
 		"name": "Bogiron Bar", "req_lv": 1, "xp": 12,
@@ -64,10 +71,23 @@ const RECIPES := {
 		"desc": "Bogiron-backed yew. Hits harder than the shortbow.",
 	},
 	"bogiron_ring": {
-		"name": "Bogiron Ring", "req_lv": 8, "xp": 40,
-		"inputs": {"bogiron_bar": 2},
+		"name": "Copper Ring", "req_lv": 8, "xp": 40,
+		"inputs": {"copper_bar": 2},
 		"yields_item": {"kind": "copper_ring", "rarity": "magic"},
 		"desc": "A cold band with a keen edge to it. Rolls a magic affix.",
+	},
+	# A6 — tier-2 tools, gated with the palechalk they're made from.
+	"cinder_pickaxe_smith": {
+		"name": "Cinderbloom Pickaxe", "req_lv": 7, "xp": 30,
+		"inputs": {"palechalk": 2, "bogiron_bar": 1, "logs": 1},
+		"yields_item": {"kind": "cinderbloom_pickaxe", "rarity": "normal"},
+		"desc": "Palechalk-edged. Mining at nearly half time.",
+	},
+	"cinder_axe_smith": {
+		"name": "Cinderbloom Axe", "req_lv": 7, "xp": 30,
+		"inputs": {"palechalk": 2, "bogiron_bar": 1, "logs": 1},
+		"yields_item": {"kind": "cinderbloom_axe", "rarity": "normal"},
+		"desc": "Palechalk-edged. Chopping at nearly half time.",
 	},
 }
 

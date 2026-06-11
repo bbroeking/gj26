@@ -36,8 +36,8 @@ const KINDS := {
 		"size": Vector2i(1, 1), "base_stat": "crit_chance", "base_value": 0.04,
 		"icon_color": Color(0.85, 0.55, 0.30),
 	},
-	# Spec 38 — trade tools. Own equip slots (category = slot), never in the
-	# combat-stat sums (gather_speed is read by GatherNode, not _derive_stats).
+	# Spec 38/A6 — trade tools. Own equip slots (category = slot), never in
+	# the combat-stat sums (gather_speed is read by GatherNode).
 	"bogiron_pickaxe": {
 		"name": "Bogiron Pickaxe", "category": "pickaxe",
 		"size": Vector2i(1, 3), "base_stat": "gather_speed", "base_value": 0.30,
@@ -47,6 +47,16 @@ const KINDS := {
 		"name": "Bogiron Axe", "category": "axe",
 		"size": Vector2i(1, 3), "base_stat": "gather_speed", "base_value": 0.30,
 		"icon_color": Color(0.52, 0.38, 0.26),
+	},
+	"cinderbloom_pickaxe": {
+		"name": "Cinderbloom Pickaxe", "category": "pickaxe",
+		"size": Vector2i(1, 3), "base_stat": "gather_speed", "base_value": 0.45,
+		"icon_color": Color(0.82, 0.74, 0.62),
+	},
+	"cinderbloom_axe": {
+		"name": "Cinderbloom Axe", "category": "axe",
+		"size": Vector2i(1, 3), "base_stat": "gather_speed", "base_value": 0.45,
+		"icon_color": Color(0.80, 0.70, 0.58),
 	},
 }
 

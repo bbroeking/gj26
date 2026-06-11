@@ -53,14 +53,22 @@ Specs 38–41 + notes.
    slots 2-4 picked in the Loadout panel (dungeon Hearth rest + Cottage
    Hearth button); persisted in the save; 160 checks green. Also this
    pass: bench tooltips everywhere + click-to-place.
-3. **A6 node tiers + tool tiers** — copper→bogiron→palechalk; richer veins
-   only in charts.
+3. ~~A6 node tiers + tool tiers~~ **SHIPPED 2026-06-12**: copper (E1) →
+   bogiron (E3) → palechalk (E7, charts tier-2+ only); locked veins stand
+   visible naming their level; town heap = 2 copper + 1 locked bogiron;
+   copper chain (ore→bar→Copper Ring); Cinderbloom tools at E7 (−45%
+   channel, palechalk-made). Note: stoneground ink now effectively gates
+   at Earthcraft 3 — intended ("coveted"), watch the early-game feel.
 4. **B6 remaining 9 affixes** — rolling, ≥2 per session.
 5. **B7 combat XP as a trade** — ADR first (dilution question).
 6. **A7-full smithing / A8-full alchemy (Quill)** — port the full recipe
    tables.
 
 ## Standing followups
+
+- **Animation backlog** (`docs/wyrd-animation-backlog.md`, 2026-06-12):
+  P1 = gather swings + tool-in-hand, quaff pose, bench socket/pot/craft
+  flourishes, waystone chart-socketing.
 
 - Save-file safety: `_test_save_roundtrip` writes/deletes the REAL save.
 - Boss-fight feel playtests still owed (Boar charge, Wolf lunge):

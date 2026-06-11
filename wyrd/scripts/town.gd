@@ -242,12 +242,15 @@ func _place_herb_patches() -> void:
 		node.setup("forage_node", "wild_herb", true)   # town patches regrow
 		node.position = pos
 		add_child(node)
-	# Hod's spoil heap — slow-regrowing bogiron behind the forge.
-	for pos in ORE_ROCKS:
+	# Hod's spoil heap — A6 tiers: two copper starters and one bogiron
+	# vein that stands locked until Earthcraft 3 (visible, coveted).
+	var heap_tiers := ["copper", "copper", "bogiron"]
+	for i in ORE_ROCKS.size():
 		var rock: Node3D = GatherNodeScript.new()
-		rock.setup("ore_rock", "bogiron_ore", true)
+		rock.setup("ore_rock", "copper_ore", true)
+		rock.setup_ore_tier(heap_tiers[mini(i, heap_tiers.size() - 1)])
 		rock.respawn_sec = 40.0        # ore is slower than herbs by design
-		rock.position = pos
+		rock.position = ORE_ROCKS[i]
 		add_child(rock)
 	# The woodpile by the cottage.
 	for pos in LOG_PILES:

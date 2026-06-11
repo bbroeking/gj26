@@ -10,8 +10,14 @@ extends RefCounted
 const MATERIALS := {
 	"wild_herb":     {"name": "Wild Herb",     "icon": "❀", "group": "verdant",
 		"desc": "Hedge-row green. Three crush down into a pot of hedge ink."},
+	"copper_ore":    {"name": "Copper Ore",    "icon": "▲", "group": "earthen",
+		"desc": "Soft entry-tier ore. Two lumps smelt to a copper bar."},
 	"bogiron_ore":   {"name": "Bogiron Ore",   "icon": "▲", "group": "earthen",
-		"desc": "Rust-heavy lumps. Charts with a Mineral Vein bring it up."},
+		"desc": "Rust-heavy lumps. Needs Earthcraft 3 to win from the vein."},
+	"palechalk":     {"name": "Palechalk",     "icon": "▲", "group": "earthen",
+		"desc": "Bone-white and dense — only the deeper charts carry it. Cinderbloom tools start here."},
+	"copper_bar":    {"name": "Copper Bar",    "icon": "▬", "group": "earthen",
+		"desc": "Two copper lumps smelted clean. Rings start here."},
 	"logs":          {"name": "Logs",          "icon": "▤", "group": "verdant",
 		"desc": "Split and stacked. Wood Grove charts grow them thick."},
 	"thorn_essence": {"name": "Thorn Essence", "icon": "✶", "group": "echo",
@@ -63,6 +69,21 @@ const NODE_KINDS := {
 		"color": Color(0.48, 0.34, 0.22), "shape": "pile",
 		"log": "You split a %s from the pile.",
 	},
+}
+
+# A6 — ore vein tiers: higher Earthcraft opens richer veins. A locked
+# vein is visible and names its level (coveted, not hidden). Channel/xp
+# override the ore_rock kind defaults; tools and perks still multiply.
+const ORE_TIERS := {
+	"copper": {"item": "copper_ore", "req_lv": 1, "xp": 6,
+		"channel_sec": 1.2, "name": "Copper Vein",
+		"color": Color(0.72, 0.45, 0.25)},
+	"bogiron": {"item": "bogiron_ore", "req_lv": 3, "xp": 12,
+		"channel_sec": 1.6, "name": "Bogiron Vein",
+		"color": Color(0.55, 0.42, 0.30)},
+	"palechalk": {"item": "palechalk", "req_lv": 7, "xp": 20,
+		"channel_sec": 2.0, "name": "Palechalk Vein",
+		"color": Color(0.84, 0.81, 0.72)},
 }
 
 static func material_name(id: String) -> String:

@@ -257,7 +257,7 @@ static func _generate_one(rng: RandomNumberGenerator, cfg: Dictionary = {}) -> D
 	# Wyrd — good bias twins scatter gather nodes (ore / forage / logs)
 	# through the dungeon. Bad twins are pure omission.
 	_scatter_gather_nodes(rooms, grid, entry, exit, decor, rng,
-		cfg.get("affixes", []), boss_idx)
+		cfg.get("affixes", []), boss_idx, int(cfg.get("tier", 1)))
 
 	return {
 		"grid": grid,
@@ -290,11 +290,12 @@ const GATHER_BY_AFFIX := {
 
 static func _scatter_gather_nodes(rooms: Array, grid: Array, entry: Dictionary,
 		exit: Dictionary, decor: Array, rng: RandomNumberGenerator,
-		affixes: Array, boss_idx: int) -> void:
+		affixes: Array, boss_idx: int, chart_tier: int = 1) -> void:
 	for a in affixes:
 		if not bool(a.get("good", false)):
 			continue
-		var spec: Dictionary = GATHER_BY_AFFIX.get(String(a.get("id", "")), {})
+		var affix_id := String(a.get("id", ""))
+		var spec: Dictionary = GATHER_BY_AFFIX.get(affix_id, {})
 		if spec.is_empty():
 			continue
 		var n: int = rng.randi_range(int(spec.count[0]), int(spec.count[1]))
@@ -321,8 +322,18 @@ static func _scatter_gather_nodes(rooms: Array, grid: Array, entry: Dictionary,
 					break
 			if occupied:
 				continue
-			decor.append({"kind": String(spec.kind), "item": String(spec.item),
-				"gather": true, "x": x, "y": y, "orient": "center"})
+			var entry_d := {"kind": String(spec.kind), "item": String(spec.item),
+				"gather": true, "x": x, "y": y, "orient": "center"}
+			# A6 — Mineral Vein nodes roll an ore tier; deeper charts carry
+			# the richer veins (palechalk never spawns in town or tier 1).
+			if affix_id == "mineral_vein":
+				var tier_id := "copper"
+				if chart_tier >= 2:
+					tier_id = "bogiron" if rng.randf() < 0.5 else "palechalk"
+				else:
+					tier_id = "copper" if rng.randf() < 0.55 else "bogiron"
+				entry_d["ore_tier"] = tier_id
+			decor.append(entry_d)
 			placed += 1
 
 # ---- Delaunay: unique edge set from triangle triples ----

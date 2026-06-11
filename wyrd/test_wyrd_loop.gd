@@ -34,6 +34,7 @@ func _init() -> void:
 	_test_crafting_perks()
 	_test_tools_and_mute()
 	_test_loadout()
+	_test_ore_tiers()
 	_test_save_roundtrip()
 	print("--- %d passed, %d failed ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
@@ -151,6 +152,66 @@ func _test_loadout() -> void:
 	var rt = load("res://scripts/skills/rain_of_thorns.gd").new()
 	_check("rain of thorns: cd + cost set",
 		float(rt.base_cd) > 0.0 and float(rt.cost) > 0.0)
+	game.free()
+
+# A6 — ore tiers: data sanity, level gating, chart-tier vein mixes.
+func _test_ore_tiers() -> void:
+	print("[ore tiers]")
+	var tiers: Dictionary = GatherDefs.ORE_TIERS
+	_check("three tiers, reqs ascend",
+		int(tiers.copper.req_lv) < int(tiers.bogiron.req_lv)
+		and int(tiers.bogiron.req_lv) < int(tiers.palechalk.req_lv))
+	for tid in tiers:
+		_check("%s item is a real material" % tid,
+			GatherDefs.MATERIALS.has(String(tiers[tid].item)))
+	var GatherNode = load("res://scripts/gather_node.gd")
+	var game = load("res://scripts/game.gd").new()
+	game._ready()
+	var node = GatherNode.new()
+	node.setup("ore_rock", "copper_ore", false)
+	node.setup_ore_tier("palechalk")
+	_check("palechalk locked at earth 1", node.locked(game))
+	game.trades.earth.lv = 7
+	_check("palechalk opens at earth 7", not node.locked(game))
+	_check("tier channel overrides kind default",
+		absf(GatherNode.channel_seconds("ore_rock", game, 2.0) - 2.0) < 0.01)
+	# Cinderbloom tool stacks with the tier channel.
+	var ItemsData = load("res://data/items.gd")
+	var pick: Dictionary = ItemsData.make_item("cinderbloom_pickaxe", "normal")
+	game.equipment.equip(pick)
+	var t: float = GatherNode.channel_seconds("ore_rock", game, 2.0)
+	_check("cinderbloom pickaxe cuts 45%", absf(t - 1.1) < 0.02, str(t))
+	# Copper chain: ore -> bar -> ring.
+	game.equipment.unequip("pickaxe")
+	game.add_material("copper_ore", 2)
+	_check("smelt copper bar", game.craft("forge", "copper_bar"))
+	game.add_material("copper_bar", 1)
+	game.trades.earth.lv = 8
+	_check("ring takes copper bars now", game.craft("forge", "bogiron_ring"))
+	# Chart-tier vein mixes (deterministic seeds).
+	var t1 := DungeonGenScript.generate(4242, {"grid": 36, "room_min": 7,
+		"room_max": 11, "boss_kind": "", "tier": 1,
+		"affixes": [{"id": "mineral_vein", "good": true}]})
+	var t2 := DungeonGenScript.generate(4242, {"grid": 36, "room_min": 7,
+		"room_max": 11, "boss_kind": "", "tier": 2,
+		"affixes": [{"id": "mineral_vein", "good": true}]})
+	var ok1 := true
+	for d in t1.decor:
+		if bool(d.get("gather", false)) and String(d.kind) == "ore_rock":
+			if not String(d.get("ore_tier", "")) in ["copper", "bogiron"]:
+				ok1 = false
+	_check("tier-1 charts: copper/bogiron only", ok1)
+	var saw_deep := false
+	var ok2 := true
+	for d in t2.decor:
+		if bool(d.get("gather", false)) and String(d.kind) == "ore_rock":
+			var ot := String(d.get("ore_tier", ""))
+			if not ot in ["bogiron", "palechalk"]:
+				ok2 = false
+			if ot == "palechalk":
+				saw_deep = true
+	_check("tier-2 charts: bogiron/palechalk only", ok2)
+	_check("tier-2 carries palechalk (seed 4242)", saw_deep)
 	game.free()
 
 func _test_save_roundtrip() -> void:
@@ -379,7 +440,7 @@ func _test_gather_decor() -> void:
 	# Gather decor carries the item id for the satchel.
 	for d in layout.decor:
 		if bool(d.get("gather", false)) and String(d.kind) == "ore_rock":
-			_check("ore node item id", String(d.get("item", "")) == "bogiron_ore")
+			_check("ore node item carried", String(d.get("item", "")) != "")
 			break
 
 func _test_determinism() -> void:

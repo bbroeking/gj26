@@ -13,6 +13,11 @@ var kind := "forage_node"     # ore_rock | forage_node | log_pile
 var item_id := "wild_herb"    # material granted
 var respawns := false         # town patches regrow; dungeon nodes don't
 var respawn_sec := 20.0
+# A6 — ore tier ("" = untiered). Sets item/xp/channel/req from ORE_TIERS.
+var ore_tier := ""
+var req_lv := 0
+var _tier_xp := 0
+var _tier_channel := -1.0
 
 var _depleted := false
 var _body: Node3D
@@ -35,12 +40,33 @@ func setup(p_kind: String, p_item: String, p_respawns: bool = false) -> void:
 	item_id = p_item
 	respawns = p_respawns
 
+# A6 — make this an ore vein of the given tier.
+func setup_ore_tier(tier_id: String) -> void:
+	var t: Dictionary = GatherDefs.ORE_TIERS.get(tier_id, {})
+	if t.is_empty():
+		return
+	ore_tier = tier_id
+	kind = "ore_rock"
+	item_id = String(t.item)
+	req_lv = int(t.req_lv)
+	_tier_xp = int(t.xp)
+	_tier_channel = float(t.channel_sec)
+
+# A6 — is this vein still above the player's Earthcraft?
+func locked(game) -> bool:
+	return req_lv > 0 and game != null and game.trade_lv("earth") < req_lv
+
 # ---- Interactable hooks ----
 func get_prompt_text() -> String:
 	var verb := String(GatherDefs.NODE_KINDS.get(kind, {}).get("verb", "Gather"))
+	if locked(get_tree().root.get_node_or_null("Game")):
+		return "%s — needs Earthcraft %d" % [GatherDefs.material_name(item_id),
+			req_lv]
 	return "[E] %s %s" % [verb, GatherDefs.material_name(item_id)]
 
 func get_prompt_color() -> Color:
+	if locked(get_tree().root.get_node_or_null("Game")):
+		return Color(0.75, 0.68, 0.58)   # stone gray — coveted, not ready
 	return Color(0.78, 0.92, 0.62)       # fresh green
 
 func get_prompt_position() -> Vector3:
@@ -69,6 +95,8 @@ func _ready_interactable() -> void:
 			GlbFit.unmetal(inst)
 			inst.position = Vector3(0.0, 0.02, 0.0)
 			_body.add_child(inst)
+			if ore_tier != "" and ore_tier != "bogiron":
+				_tint_tier(inst)
 			return
 	_build_primitive()
 
@@ -123,12 +151,27 @@ func _add_mesh(mesh: Mesh, color: Color, pos: Vector3) -> MeshInstance3D:
 	_body.add_child(mi)
 	return mi
 
+# A6 — copper/palechalk veins tint the shared ore prop so tiers read at
+# a glance (bogiron keeps the GLB's native rust).
+func _tint_tier(root: Node) -> void:
+	var col: Color = GatherDefs.ORE_TIERS.get(ore_tier, {}).get("color",
+		Color.WHITE)
+	var m := StandardMaterial3D.new()
+	m.albedo_color = col
+	m.roughness = 0.85
+	for child in root.find_children("*", "MeshInstance3D", true, false):
+		(child as MeshInstance3D).material_override = m
+
 # ---- the harvest (channelled) ----
 func interact(player: Node) -> void:
 	if _depleted or _channeling or player == null:
 		return
 	var game := get_tree().root.get_node_or_null("Game")
-	_channel_len = channel_seconds(kind, game)
+	if locked(game):
+		if game != null:
+			game.notify("This vein needs Earthcraft %d." % req_lv)
+		return
+	_channel_len = channel_seconds(kind, game, _tier_channel)
 	if OS.get_environment("WYRD_FAST_CHANNEL") != "":
 		_channel_len = 0.05
 	if OS.get_environment("WYRD_DEBUG_GATHER") != "":
@@ -192,7 +235,8 @@ func _harvest(player: Node) -> void:
 	if game != null:
 		got += int(game.gather_bonus(kind))   # A9 perks
 		game.add_material(item_id, got)
-		game.award_xp(String(def.get("trade", "wilds")), int(def.get("xp", 8)))
+		game.award_xp(String(def.get("trade", "wilds")),
+			_tier_xp if _tier_xp > 0 else int(def.get("xp", 8)))
 		game.first_time_hint(kind)   # one-time skill tutorial, saved
 	var sfx := get_node_or_null("/root/Sfx")
 	if sfx != null:
@@ -203,9 +247,9 @@ func _harvest(player: Node) -> void:
 # Channel length for one harvest of `kind` — the single source of truth.
 # Spec 38: an equipped trade tool (pickaxe → mining, axe → chopping) cuts
 # the channel by its gather_speed; the Earthcraft 10 perk stacks on top.
-static func channel_seconds(kind: String, game) -> float:
+static func channel_seconds(kind: String, game, base := -1.0) -> float:
 	var def: Dictionary = GatherDefs.NODE_KINDS.get(kind, {})
-	var t := float(def.get("channel_sec", 1.0))
+	var t := float(def.get("channel_sec", 1.0)) if base <= 0.0 else base
 	if game == null:
 		return t
 	var tool_slot: String = {"ore_rock": "pickaxe", "log_pile": "axe"}.get(kind, "")

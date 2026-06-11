@@ -442,6 +442,8 @@ func _build_decor(layout: Dictionary) -> void:
 		if bool(d.get("gather", false)):
 			var gn: Node3D = GatherNodeScript.new()
 			gn.setup(String(d.kind), String(d.get("item", "wild_herb")))
+			if d.has("ore_tier"):
+				gn.setup_ore_tier(String(d.ore_tier))
 			gn.position = Vector3(int(d.x) + 0.5, 0.0, int(d.y) + 0.5)
 			add_child(gn)
 			continue
