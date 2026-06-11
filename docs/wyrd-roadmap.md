@@ -43,10 +43,11 @@ Specs 38–41 + notes.
 
 ## Next, in order
 
-1. **Chart crafting rebuild — spec 42** (`docs/specs/42-chart-crafting-ui.md`):
-   Minecraft-style placement crafting for charts (drag template/inks/trophy
-   into sockets, live result preview) + the tutorial/onboarding rework that
-   teaches it. Replaces the menu-style Inscribing Table panel.
+1. ~~Chart crafting rebuild — spec 42~~ **SHIPPED 2026-06-12**: the
+   Crafting Bench (placement sockets, live odds preview, on-bench mixing
+   pot, guided-tutorial highlights) replaced the menu panel; 151 checks
+   green. Open: design-page side-by-side + fresh-save manual tutorial run
+   (notes file).
 2. **B5 loadouts** — 2-3 new skills + pick-4 at the hearth (first
    build-crafting moment; unblocked by ADR 0004).
 3. **A6 node tiers + tool tiers** — copper→bogiron→palechalk; richer veins

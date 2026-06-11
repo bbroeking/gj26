@@ -180,6 +180,34 @@ func _run() -> void:
 	game.add_chart(chart2)
 	_check("tutorial 6→7 (done)", int(game.tutorial_step) == 7)
 
+	# Spec 42 — the crafting bench drives the same logic layer through its
+	# placement API (tutorial is done at step 7, so add_chart won't advance).
+	var BenchScript = load("res://scripts/ui/crafting_bench.gd")
+	var bench: CanvasLayer = BenchScript.new()
+	back.add_child(bench)
+	await process_frame
+	game.add_material("wild_herb", 3)
+	_check("bench pot mixes hedge ink", bench.pot_add("wild_herb")
+		and bench.pot_add("wild_herb") and bench.pot_add("wild_herb")
+		and game.material_count("hedge_ink") >= 1
+		and (bench.pot as Dictionary).is_empty())
+	game.add_material("hedge_ink", 2)
+	_check("bench rejects locked base", not bench.place_base("summit"))
+	_check("bench places tier_1", bench.place_base("tier_1"))
+	_check("bench reveals 2 ink sockets", bench.ink_slots() == 2)
+	_check("bench sockets an ink", bench.socket_ink("hedge_ink"))
+	var charts_before: int = (game.charts as Array).size()
+	var ink_before: int = game.material_count("hedge_ink")
+	_check("bench crafts the chart", bench.craft())
+	_check("chart landed in the case",
+		(game.charts as Array).size() == charts_before + 1)
+	_check("bench spent base cost + socketed ink",
+		game.material_count("hedge_ink") == ink_before - 3)
+	_check("bench cleared after craft", bench.base_id == "")
+	bench.close()
+	await process_frame
+	_check("bench unpaused on close", not paused)
+
 	# Input-map hygiene across two player instances: one event per key.
 	var ev_count := InputMap.action_get_events("interact").size()
 	_check("no duplicate interact bindings", ev_count == 1, str(ev_count))

@@ -7,7 +7,7 @@ extends Interactable
 
 const STONE_GLB := preload("res://models/chartmaker_stone_v2.glb")
 const COMPASS_GLB := preload("res://models/cartographer_compass.glb")
-const InscribingPanelScript = preload("res://scripts/ui/inscribing_panel.gd")
+const CraftingBenchScript = preload("res://scripts/ui/crafting_bench.gd")
 
 func get_prompt_text() -> String:
 	return "[E] Use the Inscribing Table"
@@ -37,5 +37,10 @@ func _ready_interactable() -> void:
 	add_child(glow)
 
 func interact(_player: Node) -> void:
-	var panel := InscribingPanelScript.new()
+	# Spec 42 — the bench replaces the menu panel. Post-tutorial visitors
+	# get the one-time hint; during the tutorial Mara is the guide.
+	var game := get_tree().root.get_node_or_null("Game")
+	if game != null and int(game.tutorial_step) >= 7:
+		game.first_time_hint("bench")
+	var panel := CraftingBenchScript.new()
 	get_tree().current_scene.add_child(panel)

@@ -105,6 +105,10 @@ const SKILL_HINTS := {
 		"The hearth takes herbs and a log and gives back a draught — drink it with Q when the hollows bite.",
 		"Cooking feeds Wildcraft same as foraging does. A full bottle has saved more wayfinders than any sword.",
 	]],
+	"bench": ["Mara Linnet, the Wayfinder", [
+		"The bench works by hand: set a chart base in the big socket, pour inks into the rounds, and the finished chart waits on the right.",
+		"The pot takes raw makings — three herbs become hedge ink. Trophies fit the diamond socket, and they promise a den.",
+	]],
 	"forge": ["Old Hod Tenter", [
 		"Two lumps of bogiron smelt down to a bar. Bars become gear — that's the whole trade, and it's a good one.",
 		"Earthcraft levels open the deeper recipes. Bring me ore or bring me patience.",

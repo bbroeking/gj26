@@ -119,7 +119,8 @@ func _ready() -> void:
 					["New boots. Good — the yard could use a pair."])
 				add_child(dlg)
 			else:
-				var panel: CanvasLayer = load("res://scripts/ui/inscribing_panel.gd").new()
+				# "table"/"bench"/anything else — the crafting bench (spec 42).
+				var panel: CanvasLayer = load("res://scripts/ui/crafting_bench.gd").new()
 				add_child(panel))
 
 func _debug_screenshot() -> void:

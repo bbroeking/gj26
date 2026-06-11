@@ -53,9 +53,9 @@ func _pages_for(step: int) -> Array:
 		1:
 			return ["Three wild herbs — the shimmer-green patches around the yard. Crouch, pluck, done."]
 		2:
-			return ["Herbs go to ink at my table there. Three herbs to the pot. The table does the grinding; you do the pouring."]
+			return ["Herbs go to ink at my bench there. Drag three wild herbs into the pot — it glows gold so you can't miss it — and the pot does the rest."]
 		3:
-			return ["Now inscribe a Snug. It's the smallest chart there is — a pocket cellar, no surprises. Every wayfinder's first."]
+			return ["Now craft a Snug. Set the Snug base on the bench — the big glowing socket — then take the finished chart from the result side. Smallest chart there is; every wayfinder's first."]
 		4:
 			return ["Socket it at the Waystone and step through. The chart is spent on the crossing — that's the cost of the craft.",
 				"Mind the things that live in the ink. F looses an arrow; Space rolls you out of trouble."]
@@ -64,7 +64,7 @@ func _pages_for(step: int) -> Array:
 		6:
 			return [
 				"Back, and in one piece. Feel that — the craft settles in with every crossing. That's the Wayfinder's craft.",
-				"Try a Tier 1 next. It carries one affix slot — the roll can come up good or it can twin bad. Inks tilt the odds. That dance is the whole craft.",
+				"Try a Tier 1 next. Set its base, then pour an ink into the round socket — watch the odds shift on the result side before you commit. That dance is the whole craft.",
 			]
 		_:
 			return [

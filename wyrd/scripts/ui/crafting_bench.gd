@@ -1,0 +1,537 @@
+extends CanvasLayer
+
+# Spec 42 — the Crafting Bench: Minecraft-style placement crafting for
+# charts. Drag a chart base + inks + trophy from the satchel tray into
+# bench sockets; the result slot previews the chart and its odds live;
+# clicking Craft (or the result) spends materials and inscribes. The ink
+# mixing pot lives on the bench too (drag herbs/ore/ink into the pot).
+#
+# The LOGIC LAYER IS UNCHANGED from the old inscribing panel — same
+# ChartsData/Game calls in the same order (spec 42 contract). Public
+# methods (place_base / socket_ink / socket_trophy / pot_add / craft)
+# exist so tests drive the flow without pixel drags.
+
+const ChartsData = preload("res://data/charts.gd")
+const GatherDefs = preload("res://data/gather.gd")
+
+var _game: Node
+var _panel: Panel
+var _view: Control
+
+# ---- bench state ----
+var base_id := ""                 # placed template ("" = empty socket)
+var inks: Array = []              # socketed ink ids, ordered
+var trophy := ""                  # socketed trophy material id
+var pot: Dictionary = {}          # mixing pot claims: material id -> count
+
+var _held: Dictionary = {}        # {"kind": base|ink|mat|trophy, "id": ...}
+var _cursor := Vector2.ZERO
+var _pulse := 0.0                 # tutorial highlight phase
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	layer = 90
+	_game = get_tree().root.get_node_or_null("Game")
+	var bg := ColorRect.new()
+	bg.color = Color(0.0, 0.0, 0.0, 0.55)
+	bg.anchor_right = 1.0
+	bg.anchor_bottom = 1.0
+	bg.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(bg)
+	_panel = Panel.new()
+	WyrdUi.style_panel(_panel)
+	_panel.anchor_left = 0.5
+	_panel.anchor_top = 0.5
+	_panel.anchor_right = 0.5
+	_panel.anchor_bottom = 0.5
+	_panel.offset_left = -470
+	_panel.offset_top = -280
+	_panel.offset_right = 470
+	_panel.offset_bottom = 280
+	add_child(_panel)
+	_view = BenchView.new()
+	_view.bench = self
+	_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_panel.add_child(_view)
+	get_tree().paused = true
+
+func _process(delta: float) -> void:
+	# The tutorial highlight pulses; only redraw while one is active.
+	if _tutorial_target() != "":
+		_pulse += delta * 4.0
+		_view.queue_redraw()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		close()
+
+func close() -> void:
+	get_tree().paused = false
+	queue_free()
+
+# ---- the public crafting API (UI handlers + tests both use these) ----
+
+func place_base(template_id: String) -> bool:
+	var t: Dictionary = ChartsData.TEMPLATES.get(template_id, {})
+	if t.is_empty() or _carto_lv() < int(t.req_carto):
+		return false
+	base_id = template_id
+	inks.clear()
+	trophy = ""
+	_view.queue_redraw()
+	return true
+
+func clear_base() -> void:
+	base_id = ""
+	inks.clear()
+	trophy = ""
+	_view.queue_redraw()
+
+func socket_ink(ink_id: String, slot: int = -1) -> bool:
+	if base_id == "" or not ChartsData.INKS.has(ink_id):
+		return false
+	if inks.size() >= ink_slots():
+		return false
+	if _remaining(ink_id) <= 0:
+		return false
+	if slot < 0 or slot >= inks.size():
+		inks.append(ink_id)
+	else:
+		inks.insert(slot, ink_id)
+	_view.queue_redraw()
+	return true
+
+func remove_ink(slot: int) -> void:
+	if slot >= 0 and slot < inks.size():
+		inks.remove_at(slot)
+		_view.queue_redraw()
+
+func socket_trophy(trophy_id: String) -> bool:
+	if base_id == "" or affix_slots() <= 0:
+		return false
+	if not ChartsData.TROPHY_TO_AFFIX.has(trophy_id):
+		return false
+	if _remaining(trophy_id) <= 0:
+		return false
+	trophy = trophy_id
+	_view.queue_redraw()
+	return true
+
+# Drop a material into the mixing pot; auto-mixes when a recipe matches.
+func pot_add(mat_id: String) -> bool:
+	if _remaining(mat_id) <= 0:
+		return false
+	pot[mat_id] = int(pot.get(mat_id, 0)) + 1
+	for ink_id in GatherDefs.INK_RECIPE_ORDER:
+		var inputs: Dictionary = GatherDefs.INK_RECIPES[ink_id].inputs
+		if _dict_eq(pot, inputs):
+			if _game != null and _game.mix_ink(ink_id):
+				pot.clear()
+			break
+	_view.queue_redraw()
+	return true
+
+func pot_clear() -> void:
+	pot.clear()
+	_view.queue_redraw()
+
+# The craft: same calls in the same order as the old panel.
+func craft() -> bool:
+	if base_id == "" or _game == null:
+		return false
+	var cost: Dictionary = ChartsData.craft_cost(base_id, inks, trophy)
+	if not _game.can_afford(cost):
+		return false
+	if not _game.spend_materials(cost):
+		return false
+	var chart: Dictionary = ChartsData.inscribe(base_id, inks, _carto_lv(), trophy)
+	if chart.is_empty():
+		return false
+	_game.add_chart(chart)
+	_game.notify("Inscribed: %s." % String(chart.get("name", "a chart")))
+	inks.clear()
+	trophy = ""
+	base_id = ""
+	_view.stamp()
+	_view.queue_redraw()
+	return true
+
+# ---- helpers ----
+
+func _carto_lv() -> int:
+	return 1 if _game == null else _game.trade_lv("carto")
+
+func template() -> Dictionary:
+	return ChartsData.TEMPLATES.get(base_id, {})
+
+func ink_slots() -> int:
+	return int(template().get("ink_slots", 0))
+
+func affix_slots() -> int:
+	return int(template().get("affix_slots", 0))
+
+# Have-count minus everything the bench has already claimed (sockets, pot,
+# and the placed base's own base_cost) — the honest remaining number.
+func _remaining(id: String) -> int:
+	var have: int = 0 if _game == null else _game.material_count(id)
+	var claimed: int = inks.count(id) + int(pot.get(id, 0))
+	if trophy == id:
+		claimed += 1
+	claimed += int((template().get("base_cost", {}) as Dictionary).get(id, 0))
+	return have - claimed
+
+static func _dict_eq(a: Dictionary, b: Dictionary) -> bool:
+	if a.size() != b.size():
+		return false
+	for k in b:
+		if int(a.get(k, -1)) != int(b[k]):
+			return false
+	return true
+
+# Tutorial guidance: which bench element pulses right now.
+func _tutorial_target() -> String:
+	var step: int = 0 if _game == null else int(_game.tutorial_step)
+	match step:
+		2: return "pot"
+		3: return "base" if base_id == "" else "result"
+		6: return "ink" if (base_id != "" and inks.is_empty()) else \
+			("base" if base_id == "" else "result")
+	return ""
+
+# Tutorial soft-lock: during guided steps only the taught drop lands.
+func _allowed_drop(kind: String, target: String) -> bool:
+	var step: int = 0 if _game == null else int(_game.tutorial_step)
+	if step == 2:
+		return target == "pot"
+	if step == 3:
+		return target == "base"
+	return true
+
+# =====================================================================
+# The view: one Control that draws everything and owns the hit-testing
+# (the inventory_panel pattern — rects computed per draw, stored for hits).
+class BenchView extends Control:
+	var bench
+	var _tray_rows: Array = []      # {rect, kind, id, ok}
+	var _ink_rects: Array = []      # circles as Rect2
+	var _base_rect := Rect2()
+	var _trophy_rect := Rect2()
+	var _pot_rect := Rect2()
+	var _result_rect := Rect2()
+	var _craft_rect := Rect2()
+	var _stamp_t := 0.0
+
+	const EDGE := Color(0.26, 0.19, 0.13)
+	const WELL := Color(0.80, 0.72, 0.58)
+	const PLATE := Color(0.93, 0.88, 0.74)
+	const TXT := Color(0.20, 0.15, 0.11)
+	const DIM := Color(0.42, 0.35, 0.28)
+
+	func _ready() -> void:
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
+	func stamp() -> void:
+		_stamp_t = 0.25
+		set_process(true)
+
+	func _process(delta: float) -> void:
+		if _stamp_t > 0.0:
+			_stamp_t -= delta
+			queue_redraw()
+		else:
+			set_process(false)
+
+	func _gui_input(event: InputEvent) -> void:
+		if event is InputEventMouseMotion:
+			bench._cursor = event.position
+			if not bench._held.is_empty():
+				queue_redraw()
+		elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				_press(event.position)
+			else:
+				_release(event.position)
+
+	func _press(p: Vector2) -> void:
+		# Pick from the tray.
+		for row in _tray_rows:
+			if (row.rect as Rect2).has_point(p) and bool(row.ok):
+				bench._held = {"kind": row.kind, "id": row.id}
+				queue_redraw()
+				return
+		# Click socketed things to return them.
+		for i in _ink_rects.size():
+			if (_ink_rects[i] as Rect2).has_point(p) and i < bench.inks.size():
+				bench.remove_ink(i)
+				return
+		if _trophy_rect.has_point(p) and bench.trophy != "":
+			bench.trophy = ""
+			queue_redraw()
+			return
+		if _base_rect.has_point(p) and bench.base_id != "":
+			bench.clear_base()
+			return
+		if _pot_rect.has_point(p) and not bench.pot.is_empty():
+			bench.pot_clear()
+			return
+		if (_craft_rect.has_point(p) or _result_rect.has_point(p)) \
+				and bench.base_id != "":
+			bench.craft()
+
+	func _release(p: Vector2) -> void:
+		if bench._held.is_empty():
+			return
+		var kind := String(bench._held.kind)
+		var id := String(bench._held.id)
+		bench._held = {}
+		if _base_rect.has_point(p) and kind == "base" \
+				and bench._allowed_drop(kind, "base"):
+			bench.place_base(id)
+		elif kind == "ink" and bench._allowed_drop(kind, "ink"):
+			var dropped := false
+			for i in _ink_rects.size():
+				if (_ink_rects[i] as Rect2).has_point(p):
+					bench.socket_ink(id)
+					dropped = true
+					break
+			if not dropped and _pot_rect.has_point(p) \
+					and bench._allowed_drop(kind, "pot"):
+				bench.pot_add(id)
+		elif _trophy_rect.has_point(p) and kind == "trophy" \
+				and bench._allowed_drop(kind, "trophy"):
+			bench.socket_trophy(id)
+		elif _pot_rect.has_point(p) and kind == "mat" \
+				and bench._allowed_drop(kind, "pot"):
+			bench.pot_add(id)
+		queue_redraw()
+
+	# ---- drawing ----
+	func _draw() -> void:
+		var hdr: Font = WyrdUi.font_header()
+		var font: Font = get_theme_default_font()
+		if hdr == null:
+			hdr = font
+		draw_string(hdr, Vector2(54, 56), "The Inscribing Table",
+			HORIZONTAL_ALIGNMENT_LEFT, 400, 24, WyrdUi.TERRACOTTA)
+		draw_string(font, Vector2(size.x - 180, 56), "Esc — close",
+			HORIZONTAL_ALIGNMENT_RIGHT, 130, 12, DIM)
+		_draw_tray(hdr, font)
+		_draw_bench(hdr, font)
+		_draw_result(hdr, font)
+		# Drag ghost.
+		if not bench._held.is_empty():
+			var r := Rect2(bench._cursor - Vector2(46, 14), Vector2(92, 28))
+			draw_rect(r, Color(PLATE, 0.85))
+			draw_rect(r, EDGE, false, 2.0)
+			draw_string(font, r.position + Vector2(0, 19),
+				_short_name(String(bench._held.id)),
+				HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 12, TXT)
+
+	func _short_name(id: String) -> String:
+		if ChartsData.TEMPLATES.has(id):
+			return String(ChartsData.TEMPLATES[id].name)
+		return GatherDefs.material_name(id)
+
+	func _tray_section(hdr: Font, x: float, y: float, label: String) -> float:
+		draw_string(hdr, Vector2(x, y), label,
+			HORIZONTAL_ALIGNMENT_LEFT, 200, 13, WyrdUi.INK)
+		return y + 6.0
+
+	func _tray_row(font: Font, x: float, y: float, kind: String, id: String,
+			label: String, ok: bool) -> float:
+		var r := Rect2(Vector2(x, y), Vector2(212, 26))
+		draw_rect(r, PLATE if ok else Color(0.85, 0.79, 0.66))
+		draw_rect(r, EDGE if ok else Color(EDGE, 0.4), false, 1.5)
+		draw_string(font, r.position + Vector2(8, 18), label,
+			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 16, 12,
+			TXT if ok else DIM)
+		_tray_rows.append({"rect": r, "kind": kind, "id": id, "ok": ok})
+		return y + 30.0
+
+	func _draw_tray(hdr: Font, font: Font) -> void:
+		_tray_rows.clear()
+		var x := 54.0
+		var y := 92.0
+		y = _tray_section(hdr, x, y, "Bases") + 12.0
+		for tid in ChartsData.TEMPLATE_ORDER:
+			var t: Dictionary = ChartsData.TEMPLATES[tid]
+			var unlocked: bool = bench._carto_lv() >= int(t.req_carto)
+			var label := "%s · T%d" % [String(t.name), int(t.tier)] if unlocked \
+				else "%s — Wayfinder %d" % [String(t.name), int(t.req_carto)]
+			y = _tray_row(font, x, y, "base", tid, label, unlocked)
+		y = _tray_section(hdr, x, y + 4.0, "Inks") + 12.0
+		for ink_id in ChartsData.INKS:
+			var n: int = bench._remaining(String(ink_id))
+			y = _tray_row(font, x, y, "ink", String(ink_id), "%s ×%d" % [
+				GatherDefs.material_name(String(ink_id)), maxi(0, n)], n > 0)
+		y = _tray_section(hdr, x, y + 4.0, "Materials") + 12.0
+		for mid in ["wild_herb", "bogiron_ore"]:
+			var n2: int = bench._remaining(mid)
+			y = _tray_row(font, x, y, "mat", mid, "%s ×%d" % [
+				GatherDefs.material_name(mid), maxi(0, n2)], n2 > 0)
+		# Trophies — only rows the player owns.
+		var shown := false
+		for trophy_id in ChartsData.TROPHY_TO_AFFIX:
+			var n3: int = bench._remaining(String(trophy_id))
+			if n3 <= 0 and bench.trophy != String(trophy_id):
+				continue
+			if not shown:
+				y = _tray_section(hdr, x, y + 4.0, "Trophies") + 12.0
+				shown = true
+			y = _tray_row(font, x, y, "trophy", String(trophy_id), "%s ×%d" % [
+				GatherDefs.material_name(String(trophy_id)), maxi(0, n3)], n3 > 0)
+
+	func _socket_well(r: Rect2, filled: bool) -> void:
+		draw_rect(r, WELL)
+		draw_rect(r.grow(-3), Color(0.72, 0.64, 0.50) if not filled else PLATE)
+		draw_rect(r, EDGE, false, 2.0)
+
+	func _highlight(r: Rect2, active: bool) -> void:
+		if not active:
+			return
+		var a := 0.45 + 0.35 * sin(bench._pulse)
+		draw_rect(r.grow(5), Color(WyrdUi.GOLD, a), false, 3.5)
+
+	func _draw_bench(hdr: Font, font: Font) -> void:
+		var target: String = bench._tutorial_target()
+		var bx := 320.0
+		draw_string(hdr, Vector2(bx, 92), "Bench",
+			HORIZONTAL_ALIGNMENT_LEFT, 200, 14, WyrdUi.INK)
+		# Base socket.
+		_base_rect = Rect2(Vector2(bx + 40, 116), Vector2(180, 96))
+		_socket_well(_base_rect, bench.base_id != "")
+		_highlight(_base_rect, target == "base")
+		if bench.base_id == "":
+			draw_string(font, _base_rect.position + Vector2(0, 52),
+				"chart base", HORIZONTAL_ALIGNMENT_CENTER,
+				_base_rect.size.x, 13, DIM)
+		else:
+			var t: Dictionary = bench.template()
+			draw_string(hdr, _base_rect.position + Vector2(0, 44),
+				String(t.name), HORIZONTAL_ALIGNMENT_CENTER,
+				_base_rect.size.x, 17, TXT)
+			draw_string(font, _base_rect.position + Vector2(0, 68),
+				"Tier %d · click to clear" % int(t.tier),
+				HORIZONTAL_ALIGNMENT_CENTER, _base_rect.size.x, 11, DIM)
+		# Ink sockets (revealed by the base).
+		_ink_rects.clear()
+		var slots: int = bench.ink_slots()
+		for i in slots:
+			var r := Rect2(Vector2(bx + 40 + float(i) * 64.0, 236), Vector2(52, 52))
+			_ink_rects.append(r)
+			_socket_well(r, i < bench.inks.size())
+			_highlight(r, target == "ink" and i == bench.inks.size())
+			if i < bench.inks.size():
+				draw_string(font, r.position + Vector2(0, 32),
+					GatherDefs.material_icon(String(bench.inks[i])),
+					HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 18, TXT)
+		if bench.base_id != "" and slots == 0:
+			draw_string(font, Vector2(bx + 40, 268),
+				"This chart takes no ink.", HORIZONTAL_ALIGNMENT_LEFT,
+				240, 12, DIM)
+		# Trophy socket (diamond) — only when affixes can roll.
+		if bench.affix_slots() > 0:
+			_trophy_rect = Rect2(Vector2(bx + 250, 236), Vector2(52, 52))
+			var c := _trophy_rect.get_center()
+			var pts := PackedVector2Array([c + Vector2(0, -30), c + Vector2(30, 0),
+				c + Vector2(0, 30), c + Vector2(-30, 0)])
+			draw_colored_polygon(pts, WELL if bench.trophy == "" else PLATE)
+			draw_polyline(pts + PackedVector2Array([pts[0]]), EDGE, 2.0, true)
+			if bench.trophy != "":
+				draw_string(font, _trophy_rect.position + Vector2(0, 32),
+					GatherDefs.material_icon(bench.trophy),
+					HORIZONTAL_ALIGNMENT_CENTER, _trophy_rect.size.x, 16, TXT)
+			else:
+				draw_string(font, Vector2(_trophy_rect.position.x - 14,
+					_trophy_rect.end.y + 16), "trophy",
+					HORIZONTAL_ALIGNMENT_CENTER, 80, 11, DIM)
+		else:
+			_trophy_rect = Rect2()
+		# Mixing pot.
+		_pot_rect = Rect2(Vector2(bx + 60, 360), Vector2(140, 84))
+		draw_circle(_pot_rect.get_center(), 38, Color(0.45, 0.34, 0.24))
+		draw_circle(_pot_rect.get_center(), 38, Color(0.95, 0.6, 0.3, 0.12))
+		draw_arc(_pot_rect.get_center(), 38, 0, TAU, 48, EDGE, 2.5, true)
+		_highlight(Rect2(_pot_rect.get_center() - Vector2(40, 40),
+			Vector2(80, 80)), target == "pot")
+		var px := _pot_rect.get_center() - Vector2(0, 6)
+		var pot_label := ""
+		for id in bench.pot:
+			pot_label += "%s×%d " % [GatherDefs.material_icon(String(id)),
+				int(bench.pot[id])]
+		draw_string(font, Vector2(_pot_rect.position.x, px.y), pot_label.strip_edges(),
+			HORIZONTAL_ALIGNMENT_CENTER, _pot_rect.size.x, 14,
+			Color(0.97, 0.93, 0.82))
+		draw_string(font, Vector2(_pot_rect.position.x - 40, _pot_rect.end.y + 18),
+			"the pot — 3 herbs → hedge ink", HORIZONTAL_ALIGNMENT_CENTER,
+			220, 11, DIM)
+
+	func _draw_result(hdr: Font, font: Font) -> void:
+		var rx := 660.0
+		draw_string(hdr, Vector2(rx, 92), "Result",
+			HORIZONTAL_ALIGNMENT_LEFT, 200, 14, WyrdUi.INK)
+		_result_rect = Rect2(Vector2(rx, 116), Vector2(216, 110))
+		_socket_well(_result_rect, bench.base_id != "")
+		_highlight(_result_rect, bench._tutorial_target() == "result")
+		if _stamp_t > 0.0:
+			draw_rect(_result_rect.grow(8.0 * _stamp_t * 4.0),
+				Color(WyrdUi.GOLD, _stamp_t * 2.0), false, 3.0)
+		var y := 250.0
+		if bench.base_id == "":
+			draw_string(font, _result_rect.position + Vector2(0, 60),
+				"place a base", HORIZONTAL_ALIGNMENT_CENTER,
+				_result_rect.size.x, 13, DIM)
+			return
+		var t: Dictionary = bench.template()
+		draw_string(hdr, _result_rect.position + Vector2(0, 46),
+			String(t.name), HORIZONTAL_ALIGNMENT_CENTER,
+			_result_rect.size.x, 18, TXT)
+		draw_string(font, _result_rect.position + Vector2(0, 72),
+			String(t.get("desc", "")), HORIZONTAL_ALIGNMENT_CENTER,
+			_result_rect.size.x, 11, DIM)
+		# Odds (same math as before: weights + stability).
+		if bench.affix_slots() > 0:
+			var weights: Dictionary = ChartsData.compute_weights(int(t.tier), bench.inks,
+				bench._carto_lv())
+			var bonus: float = ChartsData.ink_stability_bonus(bench.inks)
+			var ids := weights.keys()
+			ids.sort_custom(func(a, b): return weights[a] > weights[b])
+			for id in ids:
+				var stab: int = ChartsData.effective_stability(String(id),
+					bench._carto_lv(), bonus)
+				draw_string(font, Vector2(rx, y),
+					"%s — %d%% · good %d%%" % [
+						String(ChartsData.AFFIXES[id].name),
+						roundi(weights[id]), stab],
+					HORIZONTAL_ALIGNMENT_LEFT, 220, 13, TXT)
+				y += 19.0
+			if bench.trophy != "":
+				var den: Dictionary = ChartsData.AFFIXES[
+					ChartsData.TROPHY_TO_AFFIX[bench.trophy]]
+				draw_string(font, Vector2(rx, y),
+					"★ Guaranteed: %s" % String(den.name),
+					HORIZONTAL_ALIGNMENT_LEFT, 220, 13, WyrdUi.GOLD.darkened(0.15))
+				y += 19.0
+		else:
+			draw_string(font, Vector2(rx, y), "A clean run — no affixes.",
+				HORIZONTAL_ALIGNMENT_LEFT, 220, 13, DIM)
+			y += 19.0
+		# Cost + craft button.
+		var cost: Dictionary = ChartsData.craft_cost(bench.base_id, bench.inks, bench.trophy)
+		y += 6.0
+		for id in cost:
+			var have: int = 0 if bench._game == null \
+				else bench._game.material_count(String(id))
+			var enough: bool = have >= int(cost[id])
+			draw_string(font, Vector2(rx, y), "%d× %s  (have %d)" % [
+				int(cost[id]), GatherDefs.material_name(String(id)), have],
+				HORIZONTAL_ALIGNMENT_LEFT, 220, 13,
+				TXT if enough else WyrdUi.TERRACOTTA)
+			y += 18.0
+		_craft_rect = Rect2(Vector2(rx, size.y - 92), Vector2(216, 40))
+		var can: bool = bench._game != null and bench._game.can_afford(cost)
+		draw_rect(_craft_rect, PLATE if can else Color(0.84, 0.78, 0.65))
+		draw_rect(_craft_rect, EDGE, false, 2.0)
+		draw_string(hdr, _craft_rect.position + Vector2(0, 27), "Craft",
+			HORIZONTAL_ALIGNMENT_CENTER, _craft_rect.size.x, 17,
+			WyrdUi.INK if can else DIM)
