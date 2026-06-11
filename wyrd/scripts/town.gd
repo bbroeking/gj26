@@ -120,8 +120,17 @@ func _ready() -> void:
 				add_child(dlg)
 			else:
 				# "table"/"bench"/anything else — the crafting bench (spec 42).
+				# "bench_staged" pre-fills it for visual iteration.
 				var panel: CanvasLayer = load("res://scripts/ui/crafting_bench.gd").new()
-				add_child(panel))
+				add_child(panel)
+				if OS.get_environment("WYRD_UI_SHOT") == "bench_staged" and game != null:
+					game.add_material("hedge_ink", 3)
+					game.add_material("thorn_essence", 1)
+					panel.place_base.call_deferred("tier_1")
+					panel.socket_ink.call_deferred("hedge_ink")
+					panel.socket_trophy.call_deferred("thorn_essence")
+					panel.pot_add.call_deferred("wild_herb")
+					panel.pot_add.call_deferred("wild_herb"))
 
 func _debug_screenshot() -> void:
 	var img := get_viewport().get_texture().get_image()

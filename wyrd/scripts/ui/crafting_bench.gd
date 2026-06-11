@@ -359,12 +359,12 @@ class BenchView extends Control:
 			var label := "%s · T%d" % [String(t.name), int(t.tier)] if unlocked \
 				else "%s — Wayfinder %d" % [String(t.name), int(t.req_carto)]
 			y = _tray_row(font, x, y, "base", tid, label, unlocked)
-		y = _tray_section(hdr, x, y + 4.0, "Inks") + 12.0
+		y = _tray_section(hdr, x, y + 10.0, "Inks") + 12.0
 		for ink_id in ChartsData.INKS:
 			var n: int = bench._remaining(String(ink_id))
 			y = _tray_row(font, x, y, "ink", String(ink_id), "%s ×%d" % [
 				GatherDefs.material_name(String(ink_id)), maxi(0, n)], n > 0)
-		y = _tray_section(hdr, x, y + 4.0, "Materials") + 12.0
+		y = _tray_section(hdr, x, y + 10.0, "Materials") + 12.0
 		for mid in ["wild_herb", "bogiron_ore"]:
 			var n2: int = bench._remaining(mid)
 			y = _tray_row(font, x, y, "mat", mid, "%s ×%d" % [
@@ -376,7 +376,7 @@ class BenchView extends Control:
 			if n3 <= 0 and bench.trophy != String(trophy_id):
 				continue
 			if not shown:
-				y = _tray_section(hdr, x, y + 4.0, "Trophies") + 12.0
+				y = _tray_section(hdr, x, y + 10.0, "Trophies") + 12.0
 				shown = true
 			y = _tray_row(font, x, y, "trophy", String(trophy_id), "%s ×%d" % [
 				GatherDefs.material_name(String(trophy_id)), maxi(0, n3)], n3 > 0)
@@ -419,12 +419,16 @@ class BenchView extends Control:
 		for i in slots:
 			var r := Rect2(Vector2(bx + 40 + float(i) * 64.0, 236), Vector2(52, 52))
 			_ink_rects.append(r)
-			_socket_well(r, i < bench.inks.size())
+			var c := r.get_center()
+			var filled: bool = i < bench.inks.size()
+			draw_circle(c, 26, WELL)
+			draw_circle(c, 22, PLATE if filled else Color(0.72, 0.64, 0.50))
+			draw_arc(c, 26, 0, TAU, 40, EDGE, 2.0, true)
 			_highlight(r, target == "ink" and i == bench.inks.size())
-			if i < bench.inks.size():
-				draw_string(font, r.position + Vector2(0, 32),
+			if filled:
+				draw_string(font, r.position + Vector2(0, 34),
 					GatherDefs.material_icon(String(bench.inks[i])),
-					HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 18, TXT)
+					HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 24, TXT)
 		if bench.base_id != "" and slots == 0:
 			draw_string(font, Vector2(bx + 40, 268),
 				"This chart takes no ink.", HORIZONTAL_ALIGNMENT_LEFT,
@@ -459,8 +463,8 @@ class BenchView extends Control:
 		for id in bench.pot:
 			pot_label += "%s×%d " % [GatherDefs.material_icon(String(id)),
 				int(bench.pot[id])]
-		draw_string(font, Vector2(_pot_rect.position.x, px.y), pot_label.strip_edges(),
-			HORIZONTAL_ALIGNMENT_CENTER, _pot_rect.size.x, 14,
+		draw_string(font, Vector2(_pot_rect.position.x, px.y + 2.0), pot_label.strip_edges(),
+			HORIZONTAL_ALIGNMENT_CENTER, _pot_rect.size.x, 17,
 			Color(0.97, 0.93, 0.82))
 		draw_string(font, Vector2(_pot_rect.position.x - 40, _pot_rect.end.y + 18),
 			"the pot — 3 herbs → hedge ink", HORIZONTAL_ALIGNMENT_CENTER,
@@ -483,9 +487,9 @@ class BenchView extends Control:
 				_result_rect.size.x, 13, DIM)
 			return
 		var t: Dictionary = bench.template()
-		draw_string(hdr, _result_rect.position + Vector2(0, 46),
+		draw_string(hdr, _result_rect.position + Vector2(0, 48),
 			String(t.name), HORIZONTAL_ALIGNMENT_CENTER,
-			_result_rect.size.x, 18, TXT)
+			_result_rect.size.x, 20, TXT)
 		draw_string(font, _result_rect.position + Vector2(0, 72),
 			String(t.get("desc", "")), HORIZONTAL_ALIGNMENT_CENTER,
 			_result_rect.size.x, 11, DIM)
@@ -509,8 +513,8 @@ class BenchView extends Control:
 				var den: Dictionary = ChartsData.AFFIXES[
 					ChartsData.TROPHY_TO_AFFIX[bench.trophy]]
 				draw_string(font, Vector2(rx, y),
-					"★ Guaranteed: %s" % String(den.name),
-					HORIZONTAL_ALIGNMENT_LEFT, 220, 13, WyrdUi.GOLD.darkened(0.15))
+					"★ %s — certain" % String(den.name),
+					HORIZONTAL_ALIGNMENT_LEFT, 220, 12, WyrdUi.GOLD.darkened(0.15))
 				y += 19.0
 		else:
 			draw_string(font, Vector2(rx, y), "A clean run — no affixes.",
