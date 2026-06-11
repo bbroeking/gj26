@@ -58,7 +58,7 @@ function bossSubtitle(e) {
     default:       return '';
   }
 }
-import { buildCowMesh, buildGoblinMesh, buildChickenMesh, buildHareMesh, buildBoarMesh, buildHedgewightMesh, buildBurrowBoarMesh, buildWolfAlphaMesh, buildHedgemotherMesh, buildFalconMesh, buildSkitterlingMesh, buildMarshRatMesh, buildIronGobMesh, buildTuskerSowMesh, buildBrambleArcherMesh, buildBrambleChargerMesh, buildEnemyHealthBar, buildBacksideArrow, varyInstance } from '../scene/characters.js';
+import { buildCowMesh, buildGoblinMesh, buildChickenMesh, buildHareMesh, buildBoarMesh, buildHedgewightMesh, buildBurrowBoarMesh, buildWolfAlphaMesh, buildHedgemotherMesh, buildFalconMesh, buildSkitterlingMesh, buildMarshRatMesh, buildIronGobMesh, buildTuskerSowMesh, buildBrambleArcherMesh, buildBrambleChargerMesh, buildSkeletonMesh, buildRatMesh, buildGhostMesh, buildHedgeSpriteMesh, buildEnemyHealthBar, buildBacksideArrow, varyInstance } from '../scene/characters.js?v=20260520-spec04b';
 import { rollEnemySwing, damagePlayer } from './combat.js';
 import { spawnGroundLoot } from './groundLoot.js';
 import { rollMobDrop } from '../data/lootTables.js';
@@ -655,6 +655,161 @@ export function spawnCharger(x, y, scene) {
     onDeath: (player, log) => {
       dropAt({ x, y }, scene, rollMobDrop('bramble_charger'));
       log('combat', '+ Bramble charger slain.');
+    },
+  };
+}
+
+// ---------- CRYPT ENEMIES (spec 04) ----------
+// Niji 6 crypt roster — biped skeleton, quadruped rat, static-rig ghost,
+// biped hedge-sprite. All four share the same combat shape as the older
+// enemies (hp/hpMax, attackCd, hitReactT, attackAnimT). Animators live
+// in src/anim/{skeleton,rat,ghost,hedge_sprite}.js and are dispatched in
+// main.js by `kind`.
+
+/** Crypt Skeleton — biped tier-1 staple. Bone-white body, hollow skull. */
+export function spawnSkeleton(x, y, scene) {
+  const mesh = buildSkeletonMesh() || buildGoblinMesh();
+  mesh.position.set(x + 0.5, 0, y + 0.5);
+  scene.add(mesh);
+  const hpBar = buildEnemyHealthBar();
+  scene.add(hpBar);
+  return {
+    kind: 'skeleton', displayName: 'Crypt Skeleton',
+    x, y, homeX: x, homeY: y,
+    pos: new THREE.Vector3(x + 0.5, 0, y + 0.5),
+    mesh, targetX: x, targetY: y,
+    moving: false, moveT: 0, moveDur: 0.28,
+    dir: 'down',
+    hp: 18, hpMax: 18,
+    atkLv: 5, defLv: 3, maxHit: 4,
+    alive: true, aggro: false,
+    hurtT: 0, attackCd: 0,
+    moveTimer: Math.floor(Math.random() * 60),
+    respawn: 0, aggroRadius: 5, hpBar,
+    hitReactT: 0, attackAnimT: 0, knockX: 0, knockZ: 0,
+    onDeath: (player, log) => {
+      dropAt({ x, y }, scene, rollMobDrop('skeleton'));
+      log('combat', '+ Crypt Skeleton slain.');
+    },
+  };
+}
+
+/** Crypt Warden — mid-boss of the crypt arc (spec 03/04 followup).
+ *  A scaled-up Crypt Skeleton with boss stats, slower attacks, bigger
+ *  scale. Drops a fat coin pile + guaranteed boneshards. Uses the
+ *  skeleton GLB so no new asset is needed. */
+export function spawnCryptWarden(x, y, scene) {
+  const mesh = buildSkeletonMesh() || buildGoblinMesh();
+  mesh.scale.setScalar(1.5);            // bigger silhouette than a regular skeleton
+  mesh.position.set(x + 0.5, 0, y + 0.5);
+  scene.add(mesh);
+  const hpBar = buildEnemyHealthBar();
+  scene.add(hpBar);
+  return {
+    kind: 'skeleton', displayName: 'Crypt Warden',
+    x, y, homeX: x, homeY: y,
+    pos: new THREE.Vector3(x + 0.5, 0, y + 0.5),
+    mesh, targetX: x, targetY: y,
+    moving: false, moveT: 0, moveDur: 0.42,    // slower than regular skel
+    dir: 'down',
+    hp: 140, hpMax: 140,
+    atkLv: 16, defLv: 12, maxHit: 6,
+    alive: true, aggro: false,
+    hurtT: 0, attackCd: 0,
+    moveTimer: Math.floor(Math.random() * 60),
+    respawn: 0, aggroRadius: 6, hpBar,
+    hitReactT: 0, attackAnimT: 0, knockX: 0, knockZ: 0,
+    isBoss: true,
+    onDeath: (player, log) => {
+      dropAt({ x, y }, scene, [
+        { id: 'boneshard', qty: 3 },
+        { id: 'coin',      qty: 30 },
+      ]);
+      log('quest', '★ The Crypt Warden falls. The way deeper opens.');
+    },
+  };
+}
+
+/** Crypt Rat — fast quadruped chaff. */
+export function spawnRat(x, y, scene) {
+  const mesh = buildRatMesh() || buildHareMesh();
+  mesh.position.set(x + 0.5, 0, y + 0.5);
+  scene.add(mesh);
+  const hpBar = buildEnemyHealthBar();
+  scene.add(hpBar);
+  return {
+    kind: 'rat', displayName: 'Crypt Rat',
+    x, y, homeX: x, homeY: y,
+    pos: new THREE.Vector3(x + 0.5, 0, y + 0.5),
+    mesh, targetX: x, targetY: y,
+    moving: false, moveT: 0, moveDur: 0.18,    // fast
+    dir: 'down',
+    hp: 8, hpMax: 8,
+    atkLv: 2, defLv: 1, maxHit: 2,
+    alive: true, aggro: false,
+    hurtT: 0, attackCd: 0,
+    moveTimer: Math.floor(Math.random() * 60),
+    respawn: 0, aggroRadius: 4, hpBar,
+    hitReactT: 0, attackAnimT: 0, knockX: 0, knockZ: 0,
+    onDeath: (player, log) => {
+      dropAt({ x, y }, scene, rollMobDrop('rat'));
+      log('combat', '+ Crypt Rat slain.');
+    },
+  };
+}
+
+/** Pale Wraith (Ghost) — static-rig float. Lower HP, sharper hits. */
+export function spawnGhost(x, y, scene) {
+  const mesh = buildGhostMesh() || buildGoblinMesh();
+  mesh.position.set(x + 0.5, 0.6, y + 0.5);   // float
+  scene.add(mesh);
+  const hpBar = buildEnemyHealthBar();
+  scene.add(hpBar);
+  return {
+    kind: 'ghost', displayName: 'Pale Wraith',
+    x, y, homeX: x, homeY: y,
+    pos: new THREE.Vector3(x + 0.5, 0.6, y + 0.5),
+    mesh, targetX: x, targetY: y,
+    moving: false, moveT: 0, moveDur: 0.34,    // slow drift
+    dir: 'down',
+    hp: 22, hpMax: 22,
+    atkLv: 5, defLv: 4, maxHit: 5,
+    alive: true, aggro: false,
+    hurtT: 0, attackCd: 0,
+    moveTimer: Math.floor(Math.random() * 60),
+    respawn: 0, aggroRadius: 5, hpBar,
+    hitReactT: 0, attackAnimT: 0, knockX: 0, knockZ: 0,
+    onDeath: (player, log) => {
+      dropAt({ x, y }, scene, rollMobDrop('ghost'));
+      log('combat', '+ Pale Wraith dispelled.');
+    },
+  };
+}
+
+/** Hedge-Sprite — biped tier-3 bramble imp. */
+export function spawnHedgeSprite(x, y, scene) {
+  const mesh = buildHedgeSpriteMesh() || buildGoblinMesh();
+  mesh.position.set(x + 0.5, 0, y + 0.5);
+  scene.add(mesh);
+  const hpBar = buildEnemyHealthBar();
+  scene.add(hpBar);
+  return {
+    kind: 'hedge_sprite', displayName: 'Hedge-Sprite',
+    x, y, homeX: x, homeY: y,
+    pos: new THREE.Vector3(x + 0.5, 0, y + 0.5),
+    mesh, targetX: x, targetY: y,
+    moving: false, moveT: 0, moveDur: 0.24,
+    dir: 'down',
+    hp: 32, hpMax: 32,
+    atkLv: 6, defLv: 4, maxHit: 6,
+    alive: true, aggro: false,
+    hurtT: 0, attackCd: 0,
+    moveTimer: Math.floor(Math.random() * 60),
+    respawn: 0, aggroRadius: 6, hpBar,
+    hitReactT: 0, attackAnimT: 0, knockX: 0, knockZ: 0,
+    onDeath: (player, log) => {
+      dropAt({ x, y }, scene, rollMobDrop('hedge_sprite'));
+      log('combat', '+ Hedge-Sprite slain.');
     },
   };
 }

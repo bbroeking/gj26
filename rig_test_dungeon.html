@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bramblewood — dungeon mood test</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; color: #ddd; font: 12px/1.4 system-ui; overflow: hidden; }
+  #info { position: fixed; top: 8px; left: 8px; padding: 6px 10px; background: rgba(0,0,0,0.55); border-radius: 6px; pointer-events: none; z-index: 10; }
+  #info b { color: #ffb070; }
+  canvas { display: block; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three":         "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="info">
+  <b>WASD</b> to move &middot; the floor/wall textures are the raw niji PNGs &middot;
+  the mood comes from <b>dim ambient + warm point lights + fog</b>, not the asset palette.
+</div>
+<script type="module">
+import * as THREE from 'three';
+
+const ASSETS = 'docs/concept-art/dungeons/crypt/';
+
+// ── scene ────────────────────────────────────────────────────────────────
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0610);
+scene.fog = new THREE.Fog(0x0a0610, 5, 16);            // black past ~16m
+
+const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 100);
+
+// ── lighting (this is the dungeon-maker) ─────────────────────────────────
+scene.add(new THREE.AmbientLight(0x2a1f3a, 0.20));     // tiny cool ambient
+
+// 4 corner torches at chest height, warm orange, ~6m radius
+const torchPositions = [
+  new THREE.Vector3(-3.5, 1.4, -3.5),
+  new THREE.Vector3( 3.5, 1.4, -3.5),
+  new THREE.Vector3(-3.5, 1.4,  3.5),
+  new THREE.Vector3( 3.5, 1.4,  3.5),
+];
+const torchLights = [];
+for (const p of torchPositions) {
+  const light = new THREE.PointLight(0xff8030, 2.5, 7, 2);
+  light.position.copy(p);
+  scene.add(light);
+  torchLights.push(light);
+  // little visible flame mesh so you can see where the light comes from
+  const flame = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.18, 0),
+    new THREE.MeshBasicMaterial({ color: 0xffcc44 })
+  );
+  flame.position.copy(p);
+  scene.add(flame);
+}
+
+// ── textures (raw niji PNGs as-is) ───────────────────────────────────────
+const loader = new THREE.TextureLoader();
+function tex(path, repeat = 1) {
+  const t = loader.load(path);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(repeat, repeat);
+  t.magFilter = THREE.NearestFilter;     // crisp pixels, no blur
+  return t;
+}
+
+// pick whichever variants you like — these are first-variant defaults
+const floorTex = tex(ASSETS + 'dungeon-crypt-floor-mossy-v0.webp', 8);
+const wallTex  = tex(ASSETS + 'dungeon-crypt-wall-straight-v0.webp', 1);
+
+// ── floor (one big plane, tiled texture) ─────────────────────────────────
+const ROOM = 9;                                         // 9×9 m room
+const floor = new THREE.Mesh(
+  new THREE.PlaneGeometry(ROOM, ROOM),
+  new THREE.MeshLambertMaterial({ map: floorTex })
+);
+floor.rotation.x = -Math.PI / 2;
+scene.add(floor);
+
+// ── walls (perimeter boxes) ──────────────────────────────────────────────
+const WH = 2.4, WT = 0.4;                               // wall height + thickness
+const wallMat = new THREE.MeshLambertMaterial({ map: wallTex });
+function wall(w, h, d, x, y, z) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
+  m.position.set(x, y, z);
+  scene.add(m);
+}
+wall(ROOM, WH, WT, 0,         WH/2,  ROOM/2);           // north
+wall(ROOM, WH, WT, 0,         WH/2, -ROOM/2);           // south
+wall(WT,   WH, ROOM,  ROOM/2, WH/2, 0);                 // east
+wall(WT,   WH, ROOM, -ROOM/2, WH/2, 0);                 // west
+
+// ── player (a chunky stand-in) ──────────────────────────────────────────
+const player = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.35, 0.35, 1.1, 12),
+  new THREE.MeshLambertMaterial({ color: 0xe5c190 })
+);
+player.position.set(0, 0.55, 0);
+scene.add(player);
+
+// camera trails behind + above
+function placeCamera() {
+  const back = 4.8, up = 4.0;
+  camera.position.set(player.position.x, player.position.y + up, player.position.z + back);
+  camera.lookAt(player.position.x, player.position.y + 0.6, player.position.z);
+}
+placeCamera();
+
+// ── input ───────────────────────────────────────────────────────────────
+const keys = new Set();
+addEventListener('keydown', e => keys.add(e.key.toLowerCase()));
+addEventListener('keyup',   e => keys.delete(e.key.toLowerCase()));
+addEventListener('resize',  () => {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+// ── loop: WASD + torch flicker ──────────────────────────────────────────
+const SPEED = 3.4;                                      // m/s
+const LIMIT = ROOM/2 - 0.6;
+let last = performance.now();
+function tick(now) {
+  const dt = Math.min((now - last) / 1000, 0.05);
+  last = now;
+  let vx = 0, vz = 0;
+  if (keys.has('w') || keys.has('arrowup'))    vz -= 1;
+  if (keys.has('s') || keys.has('arrowdown'))  vz += 1;
+  if (keys.has('a') || keys.has('arrowleft'))  vx -= 1;
+  if (keys.has('d') || keys.has('arrowright')) vx += 1;
+  if (vx || vz) {
+    const len = Math.hypot(vx, vz);
+    player.position.x = THREE.MathUtils.clamp(player.position.x + (vx/len) * SPEED * dt, -LIMIT, LIMIT);
+    player.position.z = THREE.MathUtils.clamp(player.position.z + (vz/len) * SPEED * dt, -LIMIT, LIMIT);
+  }
+  // subtle flicker — multiplicative noise on each torch
+  for (let i = 0; i < torchLights.length; i++) {
+    torchLights[i].intensity = 2.3 + 0.4 * Math.sin(now * 0.008 + i * 1.7) + 0.2 * Math.random();
+  }
+  placeCamera();
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

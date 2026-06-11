@@ -44,12 +44,23 @@ const MOB_DELVE = {
   5: [['ironGob', 50], ['hedgewolf', 35], ['brambleCap', 15]],
 };
 
+/** Crypt — niji 6 enemy roster (spec 04). Tier 1-2 is skeleton-heavy
+ *  with rat chaff; tier 3-4 adds ghost; tier 5 leans on hedge_sprite. */
+const MOB_CRYPT = {
+  1: [['skeleton', 65], ['rat', 35]],
+  2: [['skeleton', 50], ['rat', 30], ['ghost', 20]],
+  3: [['skeleton', 30], ['ghost', 35], ['hedge_sprite', 25], ['rat', 10]],
+  4: [['ghost', 30], ['hedge_sprite', 45], ['skeleton', 15], ['rat', 10]],
+  5: [['hedge_sprite', 55], ['ghost', 30], ['skeleton', 15]],
+};
+
 const SCOPE_MOB_TABLES = {
   briar_maze: MOB_BRIAR,
   sunken_hut: MOB_SUNKEN,
   delve:      MOB_DELVE,
   hollow:     MOB_DEFAULT,    // default mix for hollow
   snug:       MOB_DEFAULT,    // tiny "pocket cellar" charts share the default mix
+  crypt:      MOB_CRYPT,
 };
 
 /** Penultimate-room "guard" — last barrier before the chest/exit.
@@ -62,21 +73,54 @@ const GUARD_BY_TIER = {
   5: [['hedgewolf', 50], ['tuskerSow', 35], ['brambleCap', 15]],
 };
 
+/** Crypt-themed guards. Penultimate-room mini-bosses in a crypt arc
+ *  should feel like the crypt — hedge_sprite (hard) + ghost (medium) +
+ *  a stout skeleton (easy chaff). Falls back to GUARD_BY_TIER if a tier
+ *  isn't listed. */
+const GUARD_BY_SCOPE = {
+  crypt: {
+    1: [['skeleton', 100]],
+    2: [['skeleton', 70], ['ghost', 30]],
+    3: [['ghost', 55], ['skeleton', 30], ['hedge_sprite', 15]],
+    4: [['hedge_sprite', 50], ['ghost', 35], ['skeleton', 15]],
+    5: [['hedge_sprite', 65], ['ghost', 35]],
+  },
+};
+
 /** Pick a spawn-fn key by weighted roll.
+ *
+ *  Returns `null` when the scope's table exists but the tier's pool is
+ *  explicitly empty (e.g. `crypt` until spec 04 ships niji enemies).
+ *  Callers should treat `null` as "skip this spawn" — the dungeon stays
+ *  populated by whatever did roll. `'goblin'` is still the fallback for
+ *  the genuinely-unset case (no table for that scope).
+ *
  *  @param {number} tier  1..5
  *  @param {'mob'|'guard'} slot
- *  @param {string|undefined} scope  'briar_maze' | 'sunken_hut' | 'delve' | 'hollow'
+ *  @param {string|undefined} scope  'briar_maze' | 'sunken_hut' | 'delve' | 'hollow' | 'crypt'
  *  @param {() => number} [rng=Math.random]
  */
 export function pickFor(tier, slot, scope, rng = Math.random) {
   const t = Math.max(1, Math.min(5, tier | 0));
   let pool;
+  let scopeHasTable = false;
   if (slot === 'guard') {
-    pool = GUARD_BY_TIER[t];
+    // Empty-mob scopes also suppress the guard so the dungeon is fully
+    // unpopulated. (Was used by spec 02 before spec 04 filled MOB_CRYPT.)
+    const mobTable = SCOPE_MOB_TABLES[scope];
+    if (mobTable && mobTable[t] && mobTable[t].length === 0) return null;
+    // Spec 04 followup: per-scope guards override the global table when
+    // present, so the crypt's penultimate room spawns crypt-themed guards
+    // instead of forest brambleCap/ironGob.
+    const scopeGuards = GUARD_BY_SCOPE[scope];
+    pool = (scopeGuards && scopeGuards[t]) || GUARD_BY_TIER[t];
   } else {
     const table = SCOPE_MOB_TABLES[scope] || MOB_DEFAULT;
+    scopeHasTable = !!SCOPE_MOB_TABLES[scope];
     pool = table[t];
   }
+  // Scope explicitly defined an empty pool → suppress the spawn.
+  if (scopeHasTable && pool && pool.length === 0) return null;
   if (!pool || !pool.length) return 'goblin';
   const total = pool.reduce((s, [, w]) => s + w, 0);
   let r = rng() * total;

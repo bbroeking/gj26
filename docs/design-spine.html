@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Design Spine — first principles</title>
+<link rel="stylesheet" href="design-system.css">
+<style>
+  .layer { background:var(--paper); border:1px solid var(--rule); border-radius:6px; box-shadow:var(--shadow); margin:12px 0; display:grid; grid-template-columns:46px 1fr auto; gap:14px; padding:14px 18px; align-items:start; }
+  .layer .ln { font-family:var(--mono); font-size:18px; font-weight:600; color:var(--ink-faint); padding-top:2px; }
+  .layer h3 { margin:0 0 3px; font-size:17px; }
+  .layer .def { color:var(--ink-soft); font-size:14px; margin:0 0 6px; }
+  .layer .have { font-size:13px; margin:0 0 3px; } .layer .have .l { font-family:var(--mono); font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--moss); margin-right:6px; }
+  .layer .gap  { font-size:13px; margin:0; } .layer .gap .l  { font-family:var(--mono); font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--rose); margin-right:6px; }
+  .st { font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; border-radius:3px; padding:4px 9px; white-space:nowrap; font-weight:600; }
+  .st.present { color:var(--moss);  background:rgba(90,122,59,0.12); }
+  .st.partial { color:var(--gold);  background:rgba(184,134,11,0.12); }
+  .st.missing { color:var(--rose);  background:rgba(166,67,56,0.12); }
+  .layer.--present { border-left:3px solid var(--moss); }
+  .layer.--partial { border-left:3px solid var(--gold); }
+  .layer.--missing { border-left:3px solid var(--rose); }
+  .queue { counter-reset:q; }
+  .queue .q { background:var(--paper); border:1px solid var(--rule); border-left:3px solid var(--sepia); border-radius:0 4px 4px 0; padding:10px 16px; margin:8px 0; box-shadow:var(--shadow); }
+  .queue .q .n { font-family:var(--mono); color:var(--sepia); font-weight:600; margin-right:8px; }
+  .queue .q .file { font-family:var(--mono); font-size:12px; color:var(--ink-faint); }
+  .legend { display:flex; gap:16px; font-size:12px; color:var(--ink-soft); margin:6px 0 0; flex-wrap:wrap; }
+</style>
+</head>
+<body class="wide">
+
+<nav class="nav">
+  <a href="index.html">← Design Bible</a>
+  <a href="all.html">All docs</a>
+  <span class="crumb">/ Design Spine</span>
+</nav>
+
+<header class="mast">
+  <p class="eyebrow">First principles · the whole game in eleven layers</p>
+  <h1>Design Spine</h1>
+  <p class="subtitle">What a complete game design needs, ground-up — and where Bramblewood stands on each. The missing layers are the authoring queue.</p>
+</header>
+
+<div class="callout">
+  <p class="label">The premise</p>
+  <p style="margin:0">A game, from first principles, is: a <strong>fantasy</strong>, realized as a <strong>core loop</strong>, expressed through <strong>verbs &amp; systems</strong>, structured by <strong>progression &amp; economy</strong>, situated in a <strong>world</strong>, challenged by <strong>encounters</strong>, motivated by <strong>narrative</strong>, sustained by <strong>retention</strong>, taught by <strong>onboarding</strong>, and made to feel good by <strong>polish</strong>. Each layer below is one of those. gj26 is strong on philosophy, pipeline, and a few vertical systems — the gaps are the horizontal spine that ties them into a game.</p>
+  <div class="legend">
+    <span><span class="st present">present</span> authored for gj26</span>
+    <span><span class="st partial">partial</span> pieces exist, no spine</span>
+    <span><span class="st missing">missing</span> only generic playbooks / other-game refs</span>
+  </div>
+</div>
+
+<h2>The eleven layers</h2>
+
+<div class="layer --present">
+  <div class="ln">0</div>
+  <div>
+    <h3>Fantasy &amp; Pillars</h3>
+    <p class="def">Who is the player, what's the fantasy, and the 3–5 pillars every decision must serve.</p>
+    <p class="have"><span class="l">have</span><a href="view.html?doc=DESIGN_VISION.md">DESIGN_VISION</a> — locked genre call (cozy RuneScape × Harvest Moon), MVP slice, risk register.</p>
+    <p class="gap"><span class="l">sharpen</span>The pillars are implicit. Worth pulling out 3–5 explicit, quotable pillars to test every feature against.</p>
+  </div>
+  <span class="st present">present</span>
+</div>
+
+<div class="layer --present">
+  <div class="ln">1</div>
+  <div>
+    <h3>The Core Loop <em>— the keystone</em></h3>
+    <p class="def">The 30-second / per-session / per-week loops. The single most-referenced artifact in any design.</p>
+    <p class="have"><span class="l">authored</span><a href="core-loop.html">core-loop.html</a> — the three nested loops, why it's fun, how it feels, and the first vertical slice. Spine locked in <a href="view.html?doc=adr/0003-cozy-skilling-spine.md">ADR 0003</a> (cozy-skilling spine, combat = one verb).</p>
+    <p class="gap"><span class="l">revisit</span>Re-test against the gather→cook→sustain→fight slice — if the loop doesn't playtest as fun, the spine is wrong.</p>
+  </div>
+  <span class="st present">present</span>
+</div>
+
+<div class="layer --partial">
+  <div class="ln">2</div>
+  <div>
+    <h3>Verbs &amp; Systems Map</h3>
+    <p class="def">Every verb the player has, and how the systems interlock — gather → craft → fight → progress → explore.</p>
+    <p class="have"><span class="l">have</span>Systems authored individually: <a href="specs/37-skills-depth-plan.html">skills</a>, <a href="view.html?doc=cartography.md">cartography</a>, <a href="view.html?doc=design/09-active-abilities.md">abilities</a>, <a href="specs/36-locomotion-plan.html">locomotion</a>.</p>
+    <p class="gap"><span class="l">missing</span>No canonical <em>verb inventory</em> and no one-diagram <em>interlock map</em> showing how each system feeds the others. The "you can't see the whole game at once" gap.</p>
+  </div>
+  <span class="st partial">partial</span>
+</div>
+
+<div class="layer --partial">
+  <div class="ln">3</div>
+  <div>
+    <h3>Progression Spine</h3>
+    <p class="def">The intended journey — hour 1, hour 10, hour 50. What gates what; the critical path.</p>
+    <p class="have"><span class="l">have</span><a href="view.html?doc=design/07-skill-level-pacing.md">skill-level-pacing</a>, <a href="view.html?doc=design/06-equipment-progression.md">equipment-progression</a>, <a href="view.html?doc=cartography-progression.md">cartography-progression</a>.</p>
+    <p class="gap"><span class="l">missing</span>Three local curves, no unified spine. Nothing says "by hour 10 the player has X; the route from tutorial to endgame is Y."</p>
+  </div>
+  <span class="st partial">partial</span>
+</div>
+
+<div class="layer --missing">
+  <div class="ln">4</div>
+  <div>
+    <h3>Economy</h3>
+    <p class="def">Currency, sources, sinks, what you spend on, how inflation is held in check.</p>
+    <p class="have"><span class="l">have</span>The ARPG roadmap named "acorns + a wandering hedgehog vendor"; balance theory in the playbook.</p>
+    <p class="gap"><span class="l">missing</span>No source/sink ledger, no answer to "what is gold <em>for</em>." A cozy RPG lives or dies on its sink design — undefined today.</p>
+  </div>
+  <span class="st missing">missing</span>
+</div>
+
+<div class="layer --partial">
+  <div class="ln">5</div>
+  <div>
+    <h3>World &amp; Content Structure</h3>
+    <p class="def">The gameplay map — what content lives where, biomes as progression gates, the player's route.</p>
+    <p class="have"><span class="l">have</span><a href="view.html?doc=WORLD_BIBLE.md">WORLD_BIBLE</a> (lore + zones), <a href="view.html?doc=design/town-layout-plan.md">town-layout-plan</a>.</p>
+    <p class="gap"><span class="l">missing</span>Lore ≠ content structure. No map of which biome gates which tier, where each system is taught, the spatial critical path.</p>
+  </div>
+  <span class="st partial">partial</span>
+</div>
+
+<div class="layer --partial">
+  <div class="ln">6</div>
+  <div>
+    <h3>Encounters &amp; Challenge</h3>
+    <p class="def">Combat pillars, enemy archetypes, encounter design, the difficulty curve, and death / stakes.</p>
+    <p class="have"><span class="l">have</span><a href="view.html?doc=design/09-active-abilities.md">abilities</a>, <a href="view.html?doc=design/10-spell-system.md">spells</a>, <a href="view.html?doc=design/05-boss-design.md">boss design</a>, equipment ladder, combat-juice specs.</p>
+    <p class="gap"><span class="l">missing</span>No combat <em>pillars</em>, no enemy-archetype taxonomy, no difficulty curve, and no <em>death/stakes</em> design — what failure costs the player is undefined.</p>
+  </div>
+  <span class="st partial">partial</span>
+</div>
+
+<div class="layer --missing">
+  <div class="ln">7</div>
+  <div>
+    <h3>Narrative &amp; Quests</h3>
+    <p class="def">Quest types, structure, pacing, the story spine, and NPC roles in it.</p>
+    <p class="have"><span class="l">have</span>WORLD_BIBLE names + lore; <code>npcs.js</code> dialog tables; <a href="view.html?doc=quest-items-models.md">quest-items-models</a> (assets).</p>
+    <p class="gap"><span class="l">missing</span>Lore and names, but no quest <em>design</em>: what kinds of quests, how they pace the player, the narrative spine from first NPC to endgame.</p>
+  </div>
+  <span class="st missing">missing</span>
+</div>
+
+<div class="layer --missing">
+  <div class="ln">8</div>
+  <div>
+    <h3>Retention &amp; Live</h3>
+    <p class="def">Dailies, festivals, seasons — the designed reasons to return tomorrow.</p>
+    <p class="have"><span class="l">have</span>Festivals scored 16/18 in the <a href="view.html?doc=cozy-life-sim-design-playbook.md">feel framework</a>; DESIGN_VISION mentions them.</p>
+    <p class="gap"><span class="l">missing</span>No designed live layer — what festivals exist, the daily/weekly cadence, the persistent-world ticks. The "why log in" lever, undesigned.</p>
+  </div>
+  <span class="st missing">missing</span>
+</div>
+
+<div class="layer --present">
+  <div class="ln">9</div>
+  <div>
+    <h3>Onboarding</h3>
+    <p class="def">The first session and the tutorialization map — which system is taught when.</p>
+    <p class="have"><span class="l">have</span><a href="view.html?doc=ONBOARDING.md">ONBOARDING</a> — Tutorial Island flow mapping every system.</p>
+    <p class="gap"><span class="l">revisit</span>Re-sync once layers 1–8 land; new systems (skill depth, locomotion) need teaching slots.</p>
+  </div>
+  <span class="st present">present</span>
+</div>
+
+<div class="layer --partial">
+  <div class="ln">10</div>
+  <div>
+    <h3>Feel &amp; Polish</h3>
+    <p class="def">Game feel, audio &amp; music, juice — the texture under the player's hands.</p>
+    <p class="have"><span class="l">have</span><a href="view.html?doc=design/arpg-game-feel.md">arpg-game-feel</a>, combat-juice specs, the <a href="specs/36-locomotion-decisions.html">locomotion feel</a> work.</p>
+    <p class="gap"><span class="l">missing</span>No <em>audio / music</em> design at all — the single biggest untouched polish axis for a cozy game where ambient sound is half the mood.</p>
+  </div>
+  <span class="st partial">partial</span>
+</div>
+
+<h2>The authoring queue <span class="count">— dependency order</span></h2>
+<p style="color:var(--ink-soft)">Build the keystone first; each later doc references the earlier ones. Each becomes a bespoke page in the bible (and an entry on this spine flips to <span class="st present">present</span>).</p>
+
+<div class="queue">
+  <div class="q" style="border-left-color:var(--moss);opacity:0.75"><span class="n" style="color:var(--moss)">✓</span><strong>Core Loop</strong> — done. <span class="file">→ <a href="core-loop.html">core-loop.html</a></span> · <em>keystone authored, spine locked (ADR 0003)</em></div>
+  <div class="q"><span class="n">2</span><strong>Verbs &amp; Systems Map</strong> — verb inventory + one interlock diagram. <span class="file">→ systems-map.html</span></div>
+  <div class="q"><span class="n">3</span><strong>Progression Spine</strong> — the hour 1 / 10 / 50 journey + gate chart. <span class="file">→ progression.html</span></div>
+  <div class="q"><span class="n">4</span><strong>Economy</strong> — currency, source/sink ledger, what gold is for. <span class="file">→ economy.html</span></div>
+  <div class="q"><span class="n">5</span><strong>World &amp; Content Structure</strong> — biome-as-gate map + critical path. <span class="file">→ content-map.html</span></div>
+  <div class="q"><span class="n">6</span><strong>Combat Design + Death/Stakes</strong> — pillars, enemy archetypes, difficulty, failure cost. <span class="file">→ combat-design.html</span></div>
+  <div class="q"><span class="n">7</span><strong>Narrative &amp; Quest Design</strong> — quest types, pacing, story spine. <span class="file">→ quest-design.html</span></div>
+  <div class="q"><span class="n">8</span><strong>Retention &amp; Live</strong> — festivals, dailies, seasons, world ticks. <span class="file">→ live-design.html</span></div>
+  <div class="q"><span class="n">9</span><strong>Audio &amp; Music</strong> — ambient + music direction, the cozy soundscape. <span class="file">→ audio-design.html</span></div>
+</div>
+
+<footer>
+  The master design index. Each missing layer is a bespoke page to author on <code>design-system.css</code>. Status reflects the corpus as of 2026-05-28 — re-audit after each layer lands.
+</footer>
+
+</body>
+</html>

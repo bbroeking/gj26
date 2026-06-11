@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://b09camrig001"]
+
+[ext_resource type="Script" path="res://scripts/camera_rig.gd" id="Script_camrig"]
+
+[node name="CameraRig" type="Node3D"]
+script = ExtResource("Script_camrig")
+
+[node name="Camera" type="Camera3D" parent="."]
+fov = 50.0

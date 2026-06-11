@@ -17,10 +17,12 @@ import { spawnFloat, spawnSplat, updateFloaters } from './core/floaters.js';
 import { animateKnight, triggerSwing, triggerHurt } from './anim/procedural.js';
 import { animateCow } from './anim/cow.js';
 import { animateQuadruped } from './anim/quadruped.js';
+import { animateGhost } from './anim/ghost.js';
+import { animateRat } from './anim/rat.js';
 import { animateBird } from './anim/bird.js';
 import { World } from './scene/world.js';
 import { terrainHeightAt } from './scene/terrain.js';
-import { buildCookMesh, buildFireMesh, buildClickMarker, getWaterMaterial, loadCowGLB, loadKnightBase, loadEquipment, loadAllArchetypes, buildArchetypeMesh, loadGoblinGLB, loadBrambleImpGLB, loadHedgewightGLB, loadChartmakerStoneGLB, loadBurrowBoarGLB, loadWolfAlphaGLB, loadCookGLB, loadOakGLB, loadCastleGLB, loadForgeGLB, loadCottageGLB, loadWellGLB, loadBankGLB, loadSignpostGLB, loadChickenGLB, loadHareGLB, loadBoarGLB, loadHedgemotherGLB, loadHodGLB, loadMaudGLB, loadQuillGLB, loadWitheringGLB, loadApprenticesHammerGLB, loadHealingDraughtGLB, loadFalconsWhistleGLB, loadBrambleResinGLB, loadWhickerharesFootGLB, loadThornCrownGLB, loadPantryStewGLB, loadHodsAnvilTokenGLB, loadWitheredBrambleGLB, loadPracticeDummyGLB, loadMemorialLanternGLB, loadDryingRackGLB, loadFalconerPerchGLB, loadSkitterlingGLB, loadMarshRatGLB, loadIronGobGLB, loadTuskerSowGLB, loadBrambleArcherGLB, loadBrambleChargerGLB, loadEldraGLB, loadEldraGLBPainted, loadCricketGLB, loadPellGLB, loadOnywynGLB, loadMosscloakRangerGLB, loadRiggedTestGLB, buildEldraMesh, buildEldraMeshPainted, buildCricketMesh, buildPellMesh, buildOnywynMesh, buildMosscloakRangerMesh, buildRiggedTestMesh, loadTier3ItemGLBs, buildItemGLBMesh, buildChartmakerStoneMesh, buildHodMesh, buildQuillMesh, buildWitheringMesh, buildWitheredBrambleMesh, buildPracticeDummyMesh, buildMemorialLanternMesh, buildDryingRackMesh, buildFalconerPerchMesh, buildFalconMesh, toonifyMaterials } from './scene/characters.js?v=20260510-rigged';
+import { buildCookMesh, buildFireMesh, buildClickMarker, getWaterMaterial, loadCowGLB, loadKnightBase, loadEquipment, loadAllArchetypes, buildArchetypeMesh, loadGoblinGLB, loadBrambleImpGLB, loadHedgewightGLB, loadChartmakerStoneGLB, loadBurrowBoarGLB, loadWolfAlphaGLB, loadCookGLB, loadOakGLB, loadCastleGLB, loadForgeGLB, loadCottageGLB, loadWellGLB, loadBankGLB, loadSignpostGLB, loadChickenGLB, loadHareGLB, loadBoarGLB, loadHedgemotherGLB, loadHodGLB, loadMaudGLB, loadQuillGLB, loadWitheringGLB, loadApprenticesHammerGLB, loadHealingDraughtGLB, loadFalconsWhistleGLB, loadBrambleResinGLB, loadWhickerharesFootGLB, loadThornCrownGLB, loadPantryStewGLB, loadHodsAnvilTokenGLB, loadWitheredBrambleGLB, loadPracticeDummyGLB, loadMemorialLanternGLB, loadDryingRackGLB, loadFalconerPerchGLB, loadSkitterlingGLB, loadMarshRatGLB, loadIronGobGLB, loadTuskerSowGLB, loadBrambleArcherGLB, loadBrambleChargerGLB, loadSkeletonGLB, loadRatGLB, loadGhostGLB, loadHedgeSpriteGLB, loadEldraGLB, loadEldraGLBPainted, loadCricketGLB, loadPellGLB, loadOnywynGLB, loadMosscloakRangerGLB, loadRiggedTestGLB, buildEldraMesh, buildEldraMeshPainted, buildCricketMesh, buildPellMesh, buildOnywynMesh, buildMosscloakRangerMesh, buildRiggedTestMesh, loadTier3ItemGLBs, buildItemGLBMesh, buildChartmakerStoneMesh, buildHodMesh, buildQuillMesh, buildWitheringMesh, buildWitheredBrambleMesh, buildPracticeDummyMesh, buildMemorialLanternMesh, buildDryingRackMesh, buildFalconerPerchMesh, buildFalconMesh, toonifyMaterials } from './scene/characters.js?v=20260520-spec04b';
 import { animateRiggedWalk } from './anim/rigged_walk.js?v=20260510-rigged';
 import { animateGLBKnight, triggerAttack } from './anim/knight.js';
 import { animateGoblin } from './anim/goblin.js';
@@ -64,7 +66,10 @@ import { spawnStaminaShimmer, spawnHPShimmer, updateShimmers, clearShimmers } fr
 import { writeSave, readSave, applySave, tickAutosave } from './game/save.js';
 import { sfx, setMasterVolume, getMasterVolume } from './core/sfx.js';
 import { triggerHitStop, sampleHitStop } from './core/hitstop.js';
-import { spawnCow, spawnGoblin, spawnChicken, spawnHare, spawnBoar, spawnHedgeWolf, spawnBrambleCap, spawnHedgemother, spawnBurrowBoar, spawnWolfAlpha, spawnSkitterling, spawnMarshRat, spawnIronGob, spawnTuskerSow, spawnArcher, spawnCharger, spawnTargetDummy, resetWindupTokens, updateEnemy } from './game/enemies.js';
+import { initBossState, updateBoss, disposeBoss, sealBossRoom, unsealBossRoom, isSealBlocked } from './game/bosses.js';
+import { showBossHp, updateBossHp, hideBossHp } from './ui/bossHp.js';
+import { animateHedgemother } from './anim/hedgemother.js';
+import { spawnCow, spawnGoblin, spawnChicken, spawnHare, spawnBoar, spawnHedgeWolf, spawnBrambleCap, spawnHedgemother, spawnBurrowBoar, spawnWolfAlpha, spawnSkitterling, spawnMarshRat, spawnIronGob, spawnTuskerSow, spawnArcher, spawnCharger, spawnTargetDummy, spawnSkeleton, spawnRat, spawnGhost, spawnHedgeSprite, spawnCryptWarden, resetWindupTokens, updateEnemy } from './game/enemies.js?v=20260520-spec06a';
 import { attackEnemy, damagePlayer } from './game/combat.js';
 import { talkToNpc } from './game/npcs.js';
 import { questSummary, talkToCook,
@@ -348,6 +353,10 @@ await Promise.all([
   loadTuskerSowGLB(),
   loadBrambleArcherGLB(),
   loadBrambleChargerGLB(),
+  loadSkeletonGLB(),
+  loadRatGLB(),
+  loadGhostGLB(),
+  loadHedgeSpriteGLB(),
   loadEldraGLB(),
   loadEldraGLBPainted(),
   loadCricketGLB(),
@@ -491,9 +500,20 @@ function _tryOpenDoor(door) {
   import('./core/sfx.js').then(m => m.sfx.parry());
 }
 
-/** Player stepped onto a staircase tile. Look up the linked layout in the
- *  editor's library and swap floors in place. */
+/** Player stepped onto a staircase tile. For crypt arcs this routes to
+ *  the procgen descent (next floor on a fresh seed). For authored levels
+ *  it falls back to the editor library lookup. */
 function tryTakeStaircase(sc) {
+  if (sc && sc.crypt && dungeon.arcScope === 'crypt') {
+    // Gate descent on clearing the floor — alive enemies block the step.
+    const alive = dungeon.enemies.filter(e => e.alive !== false && (e.hp == null || e.hp > 0));
+    if (alive.length > 0) {
+      log('hint', `Enemies remain (${alive.length}). The staircase won't yield.`);
+      return;
+    }
+    _descendCryptFloor();
+    return;
+  }
   const targetName = sc.target;
   if (!targetName) {
     log('hint', 'A staircase, but the carving on the riser is unreadable.');
@@ -511,6 +531,113 @@ function tryTakeStaircase(sc) {
   }
   log('quest', `★ Down the staircase to ${targetName}…`);
   swapAuthoredFloor(rec.json);
+}
+
+// Dev exposure — handy for smoke-testing the descent without dragging
+// the player onto every staircase tile.
+if (typeof window !== 'undefined') {
+  window.__descendCryptFloor = () => _descendCryptFloor();
+}
+
+/** Crypt-arc descent (spec 03). Tear down the current procgen floor,
+ *  bump dungeon.depth, generate the next floor from a deterministic
+ *  derived seed, and rebuild the scene. Player teleports to the new
+ *  entry, gets a 25% partial heal (Q8), and the depth HUD updates. */
+// Spec 03 followup #8 — push a violet, low-visibility fog when the player
+// is on the final (Hedgemother) crypt floor, restore otherwise. State is
+// stashed on `dungeon._moodSnapshot` so exitDungeon can pop it cleanly.
+function _applyCryptFloorMood(layout) {
+  // Restore any prior snapshot first (covers mid-arc → final-floor swaps).
+  if (dungeon._moodSnapshot) {
+    scene.fog?.color.copy(dungeon._moodSnapshot.fogColor);
+    if (scene.fog && dungeon._moodSnapshot.fogNear !== undefined) {
+      scene.fog.near = dungeon._moodSnapshot.fogNear;
+      scene.fog.far  = dungeon._moodSnapshot.fogFar;
+    }
+    if (hemiLight && dungeon._moodSnapshot.hemiColor) hemiLight.color.copy(dungeon._moodSnapshot.hemiColor);
+    dungeon._moodSnapshot = null;
+  }
+  if (!layout?.cryptFinalFloor) return;
+  // Snapshot before mutating.
+  dungeon._moodSnapshot = {
+    fogColor: scene.fog ? scene.fog.color.clone() : new THREE.Color(0xc5d6df),
+    fogNear:  scene.fog?.near,
+    fogFar:   scene.fog?.far,
+    hemiColor: hemiLight ? hemiLight.color.clone() : null,
+  };
+  // Violet ambient, pulled-in fog.
+  if (scene.fog) {
+    scene.fog.color.setHex(0x5a3a78);
+    scene.fog.near = 12;
+    scene.fog.far  = 48;
+  }
+  if (hemiLight) hemiLight.color.setHex(0x9a7ec8);
+}
+
+function _descendCryptFloor() {
+  if (!dungeon.active || dungeon.arcScope !== 'crypt') return;
+  resetWindupTokens();
+  // Spec 05: clear any prior-floor boss state so the next floor starts clean.
+  if (dungeon.bossEnemy) disposeBoss(dungeon.bossEnemy, scene);
+  unsealBossRoom(dungeon, scene);
+  hideBossHp();
+  dungeon.bossEnemy = null;
+  dungeon.bossDefeated = false;
+  const savedHiddenWorld = dungeon.hiddenWorld;
+  // Despawn dungeon-only enemies + ground state for the floor we're leaving.
+  for (const e of dungeon.enemies) {
+    const i = enemies.indexOf(e);
+    if (i >= 0) enemies.splice(i, 1);
+    if (e.mesh)  scene.remove(e.mesh);
+    if (e.hpBar) scene.remove(e.hpBar);
+  }
+  dungeon.enemies = [];
+  clearGroundLoot(scene);
+  clearShimmers();
+  if (dungeon.group) {
+    if (dungeon.group.userData.flickerStop) dungeon.group.userData.flickerStop();
+    scene.remove(dungeon.group);
+  }
+  dungeon.group = null;
+
+  // Bump depth + derive a per-floor seed from the arc's baseSeed.
+  dungeon.depth = (dungeon.depth || 1) + 1;
+  const floorSeed = (Math.imul(dungeon.baseSeed | 0, 31) + dungeon.depth) >>> 0;
+  const layout = generateDungeonLayout(floorSeed, [], 'crypt', dungeon.depth, dungeon.floors);
+
+  const group = buildDungeonGroup(layout, dungeon.activeAffixes || []);
+  group.position.set(0, 0, 0);
+  scene.add(group);
+  dungeon.group = group;
+  dungeon.layout = layout;
+  dungeon.hiddenWorld = savedHiddenWorld;
+
+  // Teleport player to the new floor's entry.
+  player.x = layout.entry.x;
+  player.y = layout.entry.y;
+  player.pos.set(layout.entry.x + 0.5, 0, layout.entry.y + 0.5);
+  player.mesh.position.copy(player.pos);
+  player.path = [];
+  player.onPathDone = null;
+
+  // Partial heal between floors (foundation Q8 — 25% maxHP).
+  if (player.hp < player.hpMax) {
+    player.hp = Math.min(player.hpMax, player.hp + Math.ceil(player.hpMax * 0.25));
+    renderStats();
+  }
+
+  // Spawn enemies for the new floor + welcome log line.
+  _populateDungeonEnemies(layout, dungeon.tier || 1, 'crypt');
+  _updateCryptDepthHud();
+  // Spec 03 followup #8 — violet mood on Hedgemother's floor.
+  _applyCryptFloorMood(layout);
+
+  const totalFloors = dungeon.floors;
+  const bossNote = layout.bossKind === 'hedgemother'  ? ' — Hedgemother awaits.'
+                : layout.bossKind === 'crypt_warden'  ? ' — a Crypt Warden patrols the dark.'
+                : layout.bossKind === 'wolf_alpha'    ? ' — a crypt hound stalks the dark.'
+                : '';
+  log('quest', `★ Floor ${dungeon.depth} / ${totalFloors}.${bossNote}`);
 }
 
 /** Tear down the current authored floor and replace it with a new one.
@@ -2733,6 +2860,8 @@ const enemies = [
   ...world.cowSpawns.map(p => spawnCow(p.x, p.y, scene)),
   ...world.goblinSpawns.map(p => spawnGoblin(p.x, p.y, scene)),
 ];
+// Dev exposure — handy from the JS console for testing boss fights etc.
+if (typeof window !== 'undefined') window.__enemies = enemies;
 
 // Chickens around the village — three is plenty; four+ reads as a farm
 // rather than a cottage neighborhood.
@@ -4014,6 +4143,8 @@ function isBlocked(tx, ty, exclude) {
   // In a dungeon: only the dungeon's wall grid + enemy tiles block.
   if (dungeon.active && dungeon.layout) {
     if (dungeon.layout.blocked(tx, ty)) return true;
+    // Spec 05: boss-seal blocks exits from the boss room while alive.
+    if (isSealBlocked(dungeon, player.x, player.y, tx, ty)) return true;
     for (const e of enemies) if (e !== exclude && e.alive && e.x === tx && e.y === ty) return true;
     return false;
   }
@@ -4599,7 +4730,14 @@ const dungeon = {
   enemies: [],         // dungeon-only spawned enemies (also pushed to global enemies list)
   hiddenWorld: [],     // overworld scene children to restore on exit
   returnTile: null,    // where to put player when they leave
+  // ---- Crypt-arc state (spec 03) ----
+  arcScope: null,      // 'crypt' when a multi-floor arc is in progress
+  depth: 0,            // current floor in the arc (1-indexed)
+  floors: 0,           // total floors in the arc
+  baseSeed: 0,         // per-arc seed; each floor uses baseSeed * 31 + depth
 };
+// Dev exposure — handy from the JS console for diagnosing arc state.
+if (typeof window !== 'undefined') window.__dungeon = dungeon;
 
 // Quill the herbalist — at the cottage by the path. Trades raw forage for
 // gold, and (V1) lets you skill-up Foraging by drying a bundle (one
@@ -4918,7 +5056,7 @@ function openChartFromInventory(slotIdx) {
   player.inventory.remove(slot.id, 1);
   renderInv();
   const chartDef = ITEMS[slot.id].chart;
-  enterDungeon(chartDef.tier, affixes, runeEffect, chartDef.scope);
+  enterDungeon(chartDef.tier, affixes, runeEffect, chartDef.scope, null, chartDef.floors || 1);
   return true;
 }
 window.__openChart = openChartFromInventory;   // for the inv UI's right-click
@@ -4938,9 +5076,23 @@ function anchorTileForEchoScope(scope) {
   return null;
 }
 
-function enterDungeon(tier, affixes = [], runeEffect = null, scope = undefined, prebuiltLayout = null) {
+function enterDungeon(tier, affixes = [], runeEffect = null, scope = undefined, prebuiltLayout = null, floors = 1) {
   resetWindupTokens();      // clear any dangling tokens from the overworld
   const seed = Math.floor(Math.random() * 0xffffffff);
+  // Set up the arc state BEFORE procgen so generateDungeonLayout can see
+  // depth/floors and emit the right staircases/boss substitution.
+  const isCryptArc = scope === 'crypt' && floors > 1;
+  if (isCryptArc) {
+    dungeon.arcScope = 'crypt';
+    dungeon.depth = 1;
+    dungeon.floors = floors;
+    dungeon.baseSeed = seed;
+  } else {
+    dungeon.arcScope = null;
+    dungeon.depth = 0;
+    dungeon.floors = 0;
+    dungeon.baseSeed = 0;
+  }
   let layout = prebuiltLayout;
   if (!layout && typeof scope === 'string' && scope.startsWith('echo_')) {
     // Echo charts read the live world tiles around an anchor instead of
@@ -4949,7 +5101,10 @@ function enterDungeon(tier, affixes = [], runeEffect = null, scope = undefined, 
     const anchor = anchorTileForEchoScope(scope);
     if (anchor) layout = generateEchoLayout(world, scope, anchor, affixes);
   }
-  if (!layout) layout = generateDungeonLayout(seed, affixes, scope);
+  if (!layout) {
+    const floorSeed = isCryptArc ? Math.imul(seed, 31) + 1 : seed;
+    layout = generateDungeonLayout(floorSeed, affixes, scope, dungeon.depth || 1, dungeon.floors || 1);
+  }
   const group = buildDungeonGroup(layout, affixes);
   // The dungeon sits offset from the overworld so they don't collide
   // visually if a fog-render straggles. Player teleports to the entry.
@@ -4983,6 +5138,13 @@ function enterDungeon(tier, affixes = [], runeEffect = null, scope = undefined, 
   dungeon.group  = group;
   dungeon.layout = layout;
   dungeon.enemies = [];
+  // Spec 05: reset boss-fight state for the new arc. cryptCleared lives
+  // on player.flags and persists across runs (narrative); these are per-fight.
+  dungeon.bossEnemy = null;
+  dungeon.bossDefeated = false;
+  // Spec 03 followup #8: violet ambient + fog on Hedgemother's floor so
+  // arrival reads as a punctuation. Snapshot here so we can restore on exit.
+  _applyCryptFloorMood(layout);
   // Wire the trap handler — onTileEnter fires after every step (path or
   // keyboard). Spike traps are one-shot consumed; bramble persists.
   player.onTileEnter = (tx, ty) => _checkTrapAt(tx, ty);
@@ -5031,101 +5193,165 @@ function enterDungeon(tier, affixes = [], runeEffect = null, scope = undefined, 
   // src/data/dungeonSpawns.js). Boss rooms (affix-flagged) get the named
   // boss instead. Penultimate room rolls from the GUARD pool.
   // Festival Pace adds one extra mob per non-boss room.
-  const dungeonSpawnFns = {
-    goblin: spawnGoblin, hare: spawnHare, boar: spawnBoar,
-    hedgewolf: spawnHedgeWolf, brambleCap: spawnBrambleCap,
-    chicken: spawnChicken,
-    skitterling: spawnSkitterling, marshRat: spawnMarshRat,
-    ironGob: spawnIronGob, tuskerSow: spawnTuskerSow,
-    archer: spawnArcher, charger: spawnCharger,
-  };
-  function spawnByKey(key, ex, ey) {
-    const fn = dungeonSpawnFns[key] || spawnGoblin;
-    return fn(ex, ey, scene);
-  }
+  _populateDungeonEnemies(layout, tier, scope);
 
-  // Editor spawn-id → spawn factory. Used for authored layouts so a level
-  // built in editor.html spawns exactly what the author placed.
-  const AUTHORED_SPAWNS = {
-    bramble_imp:     spawnGoblin,
-    bramble_cap:     spawnBrambleCap,
-    iron_gob:        spawnIronGob,
-    skitterling:     spawnSkitterling,
-    marsh_rat:       spawnMarshRat,
-    tusker_sow:      spawnTuskerSow,
-    bramble_archer:  spawnArcher,
-    bramble_charger: spawnCharger,
-    hedgewolf:       spawnHedgeWolf,
-    wolf_alpha:      spawnWolfAlpha,
-    burrow_boar:     spawnBurrowBoar,
-    hedgemother:     spawnHedgemother,
-  };
+  // Author scaffold spawns + welcome log
+  _finalizeDungeonEntry(layout, tier, affixes);
+  _updateCryptDepthHud();
+}
+
+// Module-level spawn-fn dictionaries — referenced by enterDungeon's
+// spawn pass and by _descendCryptFloor (crypt-arc multi-floor descent
+// from spec 03).
+const _DUNGEON_SPAWN_FNS = () => ({
+  goblin: spawnGoblin, hare: spawnHare, boar: spawnBoar,
+  hedgewolf: spawnHedgeWolf, brambleCap: spawnBrambleCap,
+  chicken: spawnChicken,
+  skitterling: spawnSkitterling, marshRat: spawnMarshRat,
+  ironGob: spawnIronGob, tuskerSow: spawnTuskerSow,
+  archer: spawnArcher, charger: spawnCharger,
+  // Crypt-biome enemies (spec 04).
+  skeleton: spawnSkeleton, rat: spawnRat,
+  ghost: spawnGhost, hedge_sprite: spawnHedgeSprite,
+});
+const _AUTHORED_SPAWNS = () => ({
+  bramble_imp:     spawnGoblin,
+  bramble_cap:     spawnBrambleCap,
+  iron_gob:        spawnIronGob,
+  skitterling:     spawnSkitterling,
+  marsh_rat:       spawnMarshRat,
+  tusker_sow:      spawnTuskerSow,
+  bramble_archer:  spawnArcher,
+  bramble_charger: spawnCharger,
+  hedgewolf:       spawnHedgeWolf,
+  wolf_alpha:      spawnWolfAlpha,
+  burrow_boar:     spawnBurrowBoar,
+  hedgemother:     spawnHedgemother,
+});
+
+/**
+ * Populate the active dungeon's `enemies` + `dungeon.enemies` arrays
+ * from the given layout. Reused by both first-floor entry and
+ * crypt-arc descent. Reads module-level `dungeon` state.
+ */
+function _populateDungeonEnemies(layout, tier, scope) {
+  const dungeonSpawnFns = _DUNGEON_SPAWN_FNS();
+  const authoredSpawns = _AUTHORED_SPAWNS();
+  const spawnByKey = (key, ex, ey) => (dungeonSpawnFns[key] || spawnGoblin)(ex, ey, scene);
 
   if (layout.authored && Array.isArray(layout.authoredSpawns)) {
     for (const sp of layout.authoredSpawns) {
-      const fn = AUTHORED_SPAWNS[sp.kind] || spawnGoblin;
+      const fn = authoredSpawns[sp.kind] || spawnGoblin;
       const e = fn(sp.x, sp.y, scene);
       applyAffixesToEnemy(e);
       enemies.push(e);
       dungeon.enemies.push(e);
     }
-  } else {
-    for (let i = 1; i < layout.rooms.length; i++) {
-      const r = layout.rooms[i];
-      const ex = r.x + Math.floor(r.w / 2);
-      const ey = r.y + Math.floor(r.h / 2);
-      if (ex === layout.exit.x && ey === layout.exit.y) continue;
+    return;
+  }
+  for (let i = 1; i < layout.rooms.length; i++) {
+    const r = layout.rooms[i];
+    const ex = r.x + Math.floor(r.w / 2);
+    const ey = r.y + Math.floor(r.h / 2);
+    const isBossRoom = layout.bossRoom && r === layout.bossRoom;
+    // Skip the exit tile EXCEPT in the boss room — the boss is supposed
+    // to stand between you and the exit; that's the whole point.
+    if (!isBossRoom && ex === layout.exit.x && ey === layout.exit.y) continue;
 
-      // Stage B: per-room intent tag dispatcher. Tag wins over heuristics.
-      // Untagged rooms default to 'mob' (current behavior preserved).
-      const tag = r.tag || (layout.bossRoom && r === layout.bossRoom ? 'boss' : 'mob');
-      if (tag === 'puzzle' || tag === 'safe' || tag === 'treasure' || tag === 'shrine') {
-        // No mob in this room. Treasure rooms have the chest moved here
-        // upstream in loadScaffoldLayout; shrines drop a real pedestal
-        // prop with a glowing rune disc + faceted gemstone (rendered by
-        // dungeon.js's 'shrine_pedestal' decor case).
-        if (tag === 'shrine') {
-          (layout.decor = layout.decor || []).push({ kind: 'shrine_pedestal', x: ex, y: ey });
-        }
-        continue;
+    const tag = r.tag || (isBossRoom ? 'boss' : 'mob');
+    if (tag === 'puzzle' || tag === 'safe' || tag === 'treasure' || tag === 'shrine') {
+      if (tag === 'shrine') {
+        (layout.decor = layout.decor || []).push({ kind: 'shrine_pedestal', x: ex, y: ey });
       }
-
-      let e;
-      if (tag === 'boss') {
-        e = layout.bossKind === 'burrow_boar' ? spawnBurrowBoar(ex, ey, scene)
-          : layout.bossKind === 'wolf_alpha'  ? spawnWolfAlpha(ex, ey, scene)
-          :                                     spawnHedgemother(ex, ey, scene);
-      } else if (i === layout.rooms.length - 1) {
-        // Penultimate room — guard spawn (escalates with tier)
-        e = spawnByKey(pickDungeonSpawn(tier, 'guard', scope), ex, ey);
-      } else {
-        // Regular mob — pulled from the tier's mob pool, biased by scope
-        e = spawnByKey(pickDungeonSpawn(tier, 'mob', scope), ex, ey);
+      continue;
+    }
+    let e;
+    if (tag === 'boss') {
+      e = layout.bossKind === 'burrow_boar'  ? spawnBurrowBoar(ex, ey, scene)
+        : layout.bossKind === 'wolf_alpha'   ? spawnWolfAlpha(ex, ey, scene)
+        : layout.bossKind === 'crypt_warden' ? spawnCryptWarden(ex, ey, scene)
+        :                                      spawnHedgemother(ex, ey, scene);
+      // Spec 05: phase machine + room seal + HP overlay for Hedgemother only.
+      if (layout.bossKind === 'hedgemother' && e) {
+        initBossState(e, 'hedgemother');
+        dungeon.bossEnemy = e;
+        dungeon.bossDefeated = false;
+        sealBossRoom(dungeon, scene, layout, r);
+        showBossHp(e.displayName || 'Hedgemother');
       }
-      applyAffixesToEnemy(e);
-      enemies.push(e);
-      dungeon.enemies.push(e);
+    } else if (i === layout.rooms.length - 1) {
+      const guardKey = pickDungeonSpawn(tier, 'guard', scope);
+      if (!guardKey) continue;
+      e = spawnByKey(guardKey, ex, ey);
+    } else {
+      const mobKey = pickDungeonSpawn(tier, 'mob', scope);
+      if (!mobKey) continue;
+      e = spawnByKey(mobKey, ex, ey);
+    }
+    applyAffixesToEnemy(e);
+    enemies.push(e);
+    dungeon.enemies.push(e);
 
-      if (dungeon.festival && tag !== 'boss') {
-        // Extra mob at a slight offset so they don't pile up
-        const ox = ex + (i % 2 ? 1 : -1);
-        const oy = ey + (i % 2 ? 0 : 1);
-        if (!layout.blocked(ox, oy) && !(ox === layout.entry.x && oy === layout.entry.y)) {
-          const e2 = spawnByKey(pickDungeonSpawn(tier, 'mob', scope), ox, oy);
-          applyAffixesToEnemy(e2);
-          enemies.push(e2);
-          dungeon.enemies.push(e2);
-        }
+    if (dungeon.festival && tag !== 'boss') {
+      const ox = ex + (i % 2 ? 1 : -1);
+      const oy = ey + (i % 2 ? 0 : 1);
+      if (!layout.blocked(ox, oy) && !(ox === layout.entry.x && oy === layout.entry.y)) {
+        const mobKey2 = pickDungeonSpawn(tier, 'mob', scope);
+        if (!mobKey2) continue;
+        const e2 = spawnByKey(mobKey2, ox, oy);
+        applyAffixesToEnemy(e2);
+        enemies.push(e2);
+        dungeon.enemies.push(e2);
       }
     }
   }
+}
 
-  // Scaffold mode: author's hand-placed spawns ride on top of the procgen
-  // room loop. Lets the author force a specific encounter at a specific tile
-  // without giving up procgen filler.
+/** Update the on-screen crypt-arc depth indicator. Visible only when
+ *  the active dungeon is a crypt arc; cleared on exit. */
+function _updateCryptDepthHud() {
+  const el = document.getElementById('crypt-depth-hud');
+  if (!el) return;
+  if (dungeon.active && dungeon.arcScope === 'crypt' && dungeon.floors > 0) {
+    el.textContent = `Crypt — Floor ${dungeon.depth} / ${dungeon.floors}`;
+    el.classList.add('active');
+  } else {
+    el.classList.remove('active');
+    el.textContent = '';
+  }
+}
+
+/**
+ * Apply scope/affix/rune modifiers to a freshly spawned dungeon enemy.
+ * Reads module-level `dungeon` state. Pulled out of enterDungeon so
+ * _populateDungeonEnemies (module-level helper for crypt-arc descents)
+ * can call it too.
+ */
+function applyAffixesToEnemy(e) {
+  if (!e) return;
+  if (dungeon.tyrannical) {
+    const buff = 1.5;
+    e.hpMax = Math.floor((e.hpMax || e.hp) * buff);
+    e.hp    = e.hpMax;
+    e.tyrannical = true;
+  }
+  if (dungeon.frenzied) e.frenzied = true;
+  if (dungeon.runeEffect === 'air' && e.maxHit > 1) {
+    e.maxHit = Math.max(1, e.maxHit - 1);
+    e.runeAired = true;
+  }
+}
+
+/**
+ * Last step of enterDungeon (and the only step _descendCryptFloor calls
+ * after the layout swap): tell the player what's riding with them, plus
+ * apply scaffold-extra-spawns the editor may have stitched in.
+ */
+function _finalizeDungeonEntry(layout, tier, affixes) {
   if (Array.isArray(layout.scaffoldExtraSpawns)) {
+    const authoredSpawns = _AUTHORED_SPAWNS();
     for (const sp of layout.scaffoldExtraSpawns) {
-      const fn = AUTHORED_SPAWNS[sp.kind];
+      const fn = authoredSpawns[sp.kind];
       if (!fn) continue;
       const e = fn(sp.x, sp.y, scene);
       applyAffixesToEnemy(e);
@@ -5133,26 +5359,8 @@ function enterDungeon(tier, affixes = [], runeEffect = null, scope = undefined, 
       dungeon.enemies.push(e);
     }
   }
-
-  function applyAffixesToEnemy(e) {
-    if (!e) return;
-    if (dungeon.tyrannical) {
-      const buff = 1.5;
-      e.hpMax = Math.floor((e.hpMax || e.hp) * buff);
-      e.hp    = e.hpMax;
-      e.tyrannical = true;
-    }
-    if (dungeon.frenzied) e.frenzied = true;
-    // Rune effect: air → enemy maxHit -1 (player takes less damage)
-    if (dungeon.runeEffect === 'air' && e.maxHit > 1) {
-      e.maxHit = Math.max(1, e.maxHit - 1);
-      e.runeAired = true;
-    }
-  }
-
-  // Tell the player what affixes ride with them.
   let affixSummary = '';
-  for (const a of affixes) {
+  for (const a of affixes || []) {
     const aff = AFFIXES[a.id];
     affixSummary += ' · ' + (a.good ? (aff?.name || a.id) : (aff?.badName || a.id));
   }
@@ -5257,7 +5465,9 @@ function exitDungeon() {
     if (e.hpBar) scene.remove(e.hpBar);
   }
   dungeon.enemies = [];
-  // Tear down dungeon group
+  // Tear down dungeon group. Defensive flicker-stop in case the loop
+  // didn't auto-detach when scene.remove ran (spec 02 followup).
+  if (dungeon.group?.userData?.flickerStop) dungeon.group.userData.flickerStop();
   scene.remove(dungeon.group);
   dungeon.group = null;
   // Restore overworld visibility
@@ -5276,6 +5486,23 @@ function exitDungeon() {
   dungeon.activeAffixes = [];
   dungeon.tyrannical = dungeon.bursting = dungeon.frenzied = false;
   dungeon.brambleBloom = dungeon.fogOfHedge = dungeon.festival = false;
+  // Spec 05: clear boss-fight state so a new arc starts clean.
+  if (dungeon.bossEnemy) disposeBoss(dungeon.bossEnemy, scene);
+  unsealBossRoom(dungeon, scene);
+  hideBossHp();
+  dungeon.bossEnemy = null;
+  dungeon.bossDefeated = false;
+  // Spec 03 followup #8 — restore overworld fog/lighting if a violet
+  // boss-floor mood was applied.
+  _applyCryptFloorMood(null);
+  // Reset crypt-arc state. Per spec 03 Q3, death-during-arc forfeits the
+  // remaining floors; this same path also fires on natural arc completion
+  // (final boss kill + chest loot + exit). Re-entry needs a fresh chart.
+  dungeon.arcScope = null;
+  dungeon.depth = 0;
+  dungeon.floors = 0;
+  dungeon.baseSeed = 0;
+  _updateCryptDepthHud();
   sfx.startAmbient('village');
   log('quest', '★ You step back through the chart-line into Bramblewood.');
 }
@@ -6967,17 +7194,40 @@ function loop() {
   const _prevAlive = enemies.map(e => !!e.alive);
   for (const e of enemies) {
     updateEnemy(e, player, isBlocked, log, dt);
+    // Spec 05: Hedgemother phase machine + attack dispatch.
+    if (e === dungeon.bossEnemy && e.alive && e.bossState) {
+      updateBoss(e, {
+        scene, player, dt,
+        dungeon,
+        damagePlayer,
+        spawnHedgeSprite,
+        allEnemies: enemies,
+        log,
+      });
+      updateBossHp(e.hp, e.hpMax);
+    }
     if (e.alive) {
       // GLB cows have named child parts that we drive procedurally.
       const ud = e.mesh.userData;
       if (e.kind === 'cow' && ud?.isGLBCow) animateCow(e.mesh, e, dt);
+      else if (ud?.parts && ud.rig === 'static') {
+        // Crypt ghost (spec 04) — float + bob with no limbs to swing.
+        animateGhost(e.mesh, e, dt);
+      }
       else if (ud?.parts && (ud.rig === 'biped' || ud.isGLBGoblin)) {
         animateGoblin(e.mesh, e, dt);
       }
       else if (ud?.parts && (ud.rig === 'quad' ||
         ud.isGLBBoar || ud.isGLBHedgewolf || ud.isGLBWolfAlpha ||
         ud.isGLBBurrowBoar || ud.isGLBHedgewight || ud.isGLBHare || ud.isGLBHedgemother
-      )) animateQuadruped(e.mesh, e, dt);
+      )) {
+        // Spec 05: Hedgemother boss uses her dedicated animator (telegraph poses).
+        if (e === dungeon.bossEnemy && e.bossState) animateHedgemother(e.mesh, e, dt);
+        // Crypt rat gets tuned opts (snappier swing); other quadrupeds
+        // use the generic defaults.
+        else if (e.kind === 'rat') animateRat(e.mesh, e, dt);
+        else                       animateQuadruped(e.mesh, e, dt);
+      }
       else if (e.mesh.userData?.parts && e.mesh.userData.isGLBChicken) {
         animateBird(e.mesh, e, dt);
       }
@@ -7091,6 +7341,9 @@ function loop() {
         if (Math.random() < 0.15) spawnHPShimmer(scene, { ...pos, x: pos.x + 0.2 });
       }
 
+      // (Spec 05 victory check has been moved out of this transition pass —
+      // it now runs each frame so it survives external state mutations.)
+
       // BURSTING affix — corpse pops with a small AoE. Player takes 2 dmg
       // if within 1.5 tiles. Visible spark burst so the player learns the
       // tell and can dodge away on subsequent kills.
@@ -7138,6 +7391,29 @@ function loop() {
         e._deathFallSign = undefined;
       }
     }
+  }
+
+  // Spec 05: Hedgemother victory — fires once when the boss is no longer
+  // alive. Runs each frame (guarded by dungeon.bossDefeated) so we catch
+  // the transition regardless of when it happened (combat path, test hook,
+  // future cinematic kill, etc.).
+  if (dungeon.active && dungeon.bossEnemy &&
+      !dungeon.bossEnemy.alive &&
+      !dungeon.bossDefeated &&
+      dungeon.layout?.bossKind === 'hedgemother') {
+    const e = dungeon.bossEnemy;
+    dungeon.bossDefeated = true;
+    unsealBossRoom(dungeon, scene);
+    hideBossHp();
+    disposeBoss(e, scene);
+    const tier = 5;
+    const drops = generateDungeonLoot(tier, dungeon.layout?.affixes || [], 'crypt');
+    drops.push({ id: 'thorn_crown', qty: 1 });
+    const origin = new THREE.Vector3(e.pos.x, 0.5, e.pos.z);
+    spawnArc(scene, origin, drops);
+    player.flags = player.flags || {};
+    player.flags.cryptCleared = true;
+    log('quest', '★ The Hedgemother falls. The crypt is cleared.');
   }
 
   // animate fire flames + flicker the warm light

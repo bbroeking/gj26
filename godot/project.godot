@@ -1,0 +1,38 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="gj26 — Godot evaluation"
+config/description="Spec 07 evaluation project. Render the same crypt dungeon as the three.js game, using the same GLB models."
+run/main_scene="res://scenes/World.tscn"
+config/features=PackedStringArray("4.6", "Forward Plus")
+config/icon="res://icon.svg"
+
+[autoload]
+
+Hitstop="*res://scripts/hitstop.gd"
+Sfx="*res://scripts/sfx.gd"
+Checkpoint="*res://scripts/checkpoint.gd"
+
+[layer_names]
+
+3d_physics/layer_1="world"
+3d_physics/layer_2="player"
+3d_physics/layer_3="enemies"
+3d_physics/layer_4="hurtbox"
+
+[physics]
+
+3d/default_gravity=9.8
+
+[rendering]
+
+environment/defaults/default_clear_color=Color(0.55, 0.6, 0.65, 1)

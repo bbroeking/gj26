@@ -1,0 +1,1168 @@
+{
+"byName": {
+"0001-inventory-controller-deferred": "adr/0001-inventory-controller-deferred.md",
+"0002-dungeon-layout-typing-deferred": "adr/0002-dungeon-layout-typing-deferred.md",
+"0003-cozy-skilling-spine": "adr/0003-cozy-skilling-spine.md",
+"01-crypt-assets": "specs/01-crypt-assets.md",
+"01-crypt-assets-notes": "specs/01-crypt-assets-notes.md",
+"02-crypt-scope-wiring": "specs/02-crypt-scope-wiring.md",
+"02-crypt-scope-wiring-notes": "specs/02-crypt-scope-wiring-notes.md",
+"03-multi-floor-descent": "specs/03-multi-floor-descent.md",
+"03-multi-floor-descent-notes": "specs/03-multi-floor-descent-notes.md",
+"04-crypt-enemies": "specs/04-crypt-enemies.md",
+"04-crypt-enemies-notes": "specs/04-crypt-enemies-notes.md",
+"05-boss-design": "design/05-boss-design.md",
+"05-hedgemother-boss": "specs/05-hedgemother-boss.md",
+"05-hedgemother-boss-notes": "specs/05-hedgemother-boss-notes.md",
+"05a-hedgemother-bramble-pull": "design/05a-hedgemother-bramble-pull.md",
+"06-crypt-aftermath": "specs/06-crypt-aftermath.md",
+"06-equipment-progression": "design/06-equipment-progression.md",
+"07-godot-evaluation": "specs/07-godot-evaluation.md",
+"07-godot-evaluation-notes": "specs/07-godot-evaluation-notes.md",
+"07-skill-level-pacing": "design/07-skill-level-pacing.md",
+"08-quality-procgen": "specs/08-quality-procgen.md",
+"08-quality-procgen-notes": "specs/08-quality-procgen-notes.md",
+"09-active-abilities": "design/09-active-abilities.md",
+"09-godot-camera": "specs/09-godot-camera.md",
+"09-godot-camera-notes": "specs/09-godot-camera-notes.md",
+"10-godot-physics": "specs/10-godot-physics.md",
+"10-godot-physics-notes": "specs/10-godot-physics-notes.md",
+"10-spell-system": "design/10-spell-system.md",
+"11-godot-animation": "specs/11-godot-animation.md",
+"11-godot-animation-notes": "specs/11-godot-animation-notes.md",
+"12-knight-regeneration": "specs/12-knight-regeneration.md",
+"13-ranger-bow-arrows": "specs/13-ranger-bow-arrows.md",
+"13-ranger-bow-arrows-notes": "specs/13-ranger-bow-arrows-notes.md",
+"14-fluid-combat": "specs/14-fluid-combat.md",
+"14-fluid-combat-notes": "specs/14-fluid-combat-notes.md",
+"15-enemy-ai-player-hp": "specs/15-enemy-ai-player-hp.md",
+"15-enemy-ai-player-hp-notes": "specs/15-enemy-ai-player-hp-notes.md",
+"16-crypt-visual-sizing": "specs/16-crypt-visual-sizing.md",
+"16-crypt-visual-sizing-notes": "specs/16-crypt-visual-sizing-notes.md",
+"17-hedgemother-boss-fight": "specs/17-hedgemother-boss-fight.md",
+"17-hedgemother-boss-fight-notes": "specs/17-hedgemother-boss-fight-notes.md",
+"18-ranger-walk-animation": "specs/18-ranger-walk-animation.md",
+"18-ranger-walk-animation-notes": "specs/18-ranger-walk-animation-notes.md",
+"19-enemy-pathfinding": "specs/19-enemy-pathfinding.md",
+"19-enemy-pathfinding-notes": "specs/19-enemy-pathfinding-notes.md",
+"20-glb-textures": "specs/20-glb-textures.md",
+"20-glb-textures-notes": "specs/20-glb-textures-notes.md",
+"21-rat-rigging": "specs/21-rat-rigging.md",
+"21-rat-rigging-notes": "specs/21-rat-rigging-notes.md",
+"22-playtest-feel-tuning": "specs/22-playtest-feel-tuning.md",
+"22-playtest-feel-tuning-notes": "specs/22-playtest-feel-tuning-notes.md",
+"23-fluid-movement-sandbox": "specs/23-fluid-movement-sandbox.md",
+"23-fluid-movement-sandbox-notes": "specs/23-fluid-movement-sandbox-notes.md",
+"24-dungeon-readability-rework": "specs/24-dungeon-readability-rework.md",
+"24-dungeon-readability-rework-notes": "specs/24-dungeon-readability-rework-notes.md",
+"25-interesting-dungeons": "specs/25-interesting-dungeons.md",
+"25-interesting-dungeons-notes": "specs/25-interesting-dungeons-notes.md",
+"26-combat-juice": "specs/26-combat-juice.md",
+"26-combat-juice-notes": "specs/26-combat-juice-notes.md",
+"27-item-system": "specs/27-item-system.md",
+"27a-item-data": "specs/27a-item-data.md",
+"27a-item-data-notes": "specs/27a-item-data-notes.md",
+"27b-ground-pickup": "specs/27b-ground-pickup.md",
+"27b-ground-pickup-notes": "specs/27b-ground-pickup-notes.md",
+"27c-inventory-ui": "specs/27c-inventory-ui.md",
+"27c-inventory-ui-notes": "specs/27c-inventory-ui-notes.md",
+"27d-equipment": "specs/27d-equipment.md",
+"27d-equipment-notes": "specs/27d-equipment-notes.md",
+"27e-stats": "specs/27e-stats.md",
+"27e-stats-notes": "specs/27e-stats-notes.md",
+"27f-polish": "specs/27f-polish.md",
+"27f-polish-notes": "specs/27f-polish-notes.md",
+"28-dungeon-placement-polish": "specs/28-dungeon-placement-polish.md",
+"28-dungeon-placement-polish-notes": "specs/28-dungeon-placement-polish-notes.md",
+"29-typed-room-contracts": "specs/29-typed-room-contracts.md",
+"29-typed-room-contracts-notes": "specs/29-typed-room-contracts-notes.md",
+"30-skills-and-cooldowns": "specs/30-skills-and-cooldowns.md",
+"30-skills-and-cooldowns-notes": "specs/30-skills-and-cooldowns-notes.md",
+"30-skills-and-cooldowns-research": "specs/30-skills-and-cooldowns-research.md",
+"31-status-and-aoe": "specs/31-status-and-aoe.md",
+"31-status-and-aoe-notes": "specs/31-status-and-aoe-notes.md",
+"31-status-and-aoe-research": "specs/31-status-and-aoe-research.md",
+"32-pack-scaling": "specs/32-pack-scaling.md",
+"32-pack-scaling-notes": "specs/32-pack-scaling-notes.md",
+"32-pack-scaling-research": "specs/32-pack-scaling-research.md",
+"32a-pickup-deepening": "specs/32a-pickup-deepening.md",
+"32a-pickup-deepening-notes": "specs/32a-pickup-deepening-notes.md",
+"32b-skill-module": "specs/32b-skill-module.md",
+"32b-skill-module-notes": "specs/32b-skill-module-notes.md",
+"32c-hit-feedback": "specs/32c-hit-feedback.md",
+"32c-hit-feedback-notes": "specs/32c-hit-feedback-notes.md",
+"32d-interactable-base": "specs/32d-interactable-base.md",
+"32d-interactable-base-notes": "specs/32d-interactable-base-notes.md",
+"33a-player-status": "specs/33a-player-status.md",
+"33a-player-status-notes": "specs/33a-player-status-notes.md",
+"35-hud-upscale": "specs/35-hud-upscale.md",
+"36-bindings-research": "specs/36-bindings-research.md",
+"36-locomotion-research": "specs/36-locomotion-research.md",
+"37-skill-depth-research": "specs/37-skill-depth-research.md",
+"AI_WORKFLOW": "character-pipeline/AI_WORKFLOW.md",
+"ANIMATION_PIPELINE": "ANIMATION_PIPELINE.md",
+"ART_BIBLE": "ART_BIBLE.md",
+"ASSET_PIPELINE": "ASSET_PIPELINE.md",
+"BLENDER_PIPELINE": "BLENDER_PIPELINE.md",
+"BOSS_SPEC": "BOSS_SPEC.md",
+"CONCEPT_ART_PROMPTS": "skills/CONCEPT_ART_PROMPTS.md",
+"DESIGN_VISION": "DESIGN_VISION.md",
+"GODOT_PIPELINE": "GODOT_PIPELINE.md",
+"INDEX": "concept-art/INDEX.md",
+"MESHY_OPERATIONS": "character-pipeline/MESHY_OPERATIONS.md",
+"MODEL_DESCRIPTION_TEMPLATE": "character-pipeline/MODEL_DESCRIPTION_TEMPLATE.md",
+"MODEL_REBUILD_RECIPE": "MODEL_REBUILD_RECIPE.md",
+"ONBOARDING": "ONBOARDING.md",
+"PLAYTEST": "PLAYTEST.md",
+"PROMPTS": "concept-art/enemies/PROMPTS.md",
+"PROP_ATTACHMENT": "character-pipeline/PROP_ATTACHMENT.md",
+"README": "specs/README.md",
+"SPEC_TEMPLATE": "specs/SPEC_TEMPLATE.md",
+"UI_BIBLE": "UI_BIBLE.md",
+"UI_MOCK_WORKFLOW": "character-pipeline/UI_MOCK_WORKFLOW.md",
+"WORLD_BIBLE": "WORLD_BIBLE.md",
+"WORLD_LORE": "WORLD_LORE.md",
+"_MOC": "_MOC.md",
+"_principles": "research/eldra/_principles.md",
+"_progress": "design/_progress.md",
+"arpg-game-feel": "design/arpg-game-feel.md",
+"atk": "skills/atk.md",
+"bramble_archer": "character-pipeline/specs/bramble_archer.md",
+"bramble_charger": "character-pipeline/bramble_charger.md",
+"brother_pell": "character-pipeline/specs/brother_pell.md",
+"carto": "skills/carto.md",
+"cartography": "cartography.md",
+"cartography-depth-20": "design/cartography-depth-20.md",
+"cartography-inscribing-table-design": "cartography-inscribing-table-design.md",
+"cartography-inscribing-table-ux-prompts": "cartography-inscribing-table-ux-prompts.md",
+"cartography-keystone": "design/cartography-keystone.md",
+"cartography-keystone-design": "cartography-keystone-design.md",
+"cartography-progression": "cartography-progression.md",
+"cartography-skill-design": "cartography-skill-design.md",
+"cartography-skill-explorations": "cartography-skill-explorations.md",
+"cartography-systems": "cartography-systems.md",
+"character-creator-research": "character-creator-research.md",
+"concept-art-prompts-archetypes": "concept-art-prompts-archetypes.md",
+"concept-art-prompts-cow": "concept-art-prompts-cow.md",
+"concept-art-prompts-master": "concept-art-prompts-master.md",
+"concept-art-prompts-next": "concept-art-prompts-next.md",
+"content-evals-playbook": "content-evals-playbook.md",
+"content-generation-playbook": "content-generation-playbook.md",
+"cook": "skills/cook.md",
+"cozy-life-sim-design-playbook": "cozy-life-sim-design-playbook.md",
+"def": "skills/def.md",
+"earth": "skills/earth.md",
+"eldra": "build-plans/eldra.md",
+"eldra_iterations": "prompts/eldra_iterations.md",
+"evals-and-harnesses-research": "evals-and-harnesses-research.md",
+"falconry": "skills/falconry.md",
+"fate-2005-deep-dive": "fate-2005-deep-dive.md",
+"fate-implementation-summary": "fate-implementation-summary.md",
+"game-balance-playbook": "game-balance-playbook.md",
+"game-character-animation-playbook": "game-character-animation-playbook.md",
+"hedgemother": "character-pipeline/specs/hedgemother.md",
+"hedgewight": "character-pipeline/specs/hedgewight.md",
+"hp": "skills/hp.md",
+"hud-design": "design/hud-design.md",
+"iron_gob": "character-pipeline/specs/iron_gob.md",
+"magic": "skills/magic.md",
+"marsh_rat": "character-pipeline/specs/marsh_rat.md",
+"mmo-game-design-playbook": "mmo-game-design-playbook.md",
+"online-games-2000-2010-survey": "online-games-2000-2010-survey.md",
+"quest-items-models": "quest-items-models.md",
+"quill": "character-pipeline/specs/quill.md",
+"reference-to-ui-playbook": "reference-to-ui-playbook.md",
+"rune-magic-design": "rune-magic-design.md",
+"sir_withering": "character-pipeline/specs/sir_withering.md",
+"skills-consolidation": "design/skills-consolidation.md",
+"skitterling": "character-pipeline/specs/skitterling.md",
+"str": "skills/str.md",
+"threejs-stylized-bootstrap-playbook": "threejs-stylized-bootstrap-playbook.md",
+"town-layout-plan": "design/town-layout-plan.md",
+"tusker_sow": "character-pipeline/specs/tusker_sow.md",
+"whats-next-research": "design/whats-next-research.md",
+"wilds": "skills/wilds.md"
+},
+"collisions": {
+"PROMPTS": [
+"concept-art/dungeons/crypt/PROMPTS.md",
+"concept-art/enemies/PROMPTS.md",
+"concept-art/ranger-props/PROMPTS.md"
+],
+"bramble_charger": [
+"character-pipeline/bramble_charger.md",
+"character-pipeline/specs/bramble_charger.md"
+]
+},
+"counts": {
+"html": 8,
+"md": 185
+},
+"tree": [
+{
+"dir": ".",
+"path": "ANIMATION_PIPELINE.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "ART_BIBLE.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "ASSET_PIPELINE.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "BLENDER_PIPELINE.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "BOSS_SPEC.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "DESIGN_VISION.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "GODOT_PIPELINE.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "MODEL_REBUILD_RECIPE.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "ONBOARDING.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "PLAYTEST.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "UI_BIBLE.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "WORLD_BIBLE.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "WORLD_LORE.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "_MOC.md",
+"type": "md"
+},
+{
+"dir": "adr",
+"path": "adr/0001-inventory-controller-deferred.md",
+"type": "md"
+},
+{
+"dir": "adr",
+"path": "adr/0002-dungeon-layout-typing-deferred.md",
+"type": "md"
+},
+{
+"dir": "adr",
+"path": "adr/0003-cozy-skilling-spine.md",
+"type": "md"
+},
+{
+"dir": "build-plans",
+"path": "build-plans/eldra.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "cartography-inscribing-table-design.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "cartography-inscribing-table-ux-prompts.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "cartography-keystone-design.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "cartography-progression.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "cartography-skill-design.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "cartography-skill-explorations.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "cartography-systems.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "cartography.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "character-creator-research.md",
+"type": "md"
+},
+{
+"dir": "character-pipeline",
+"path": "character-pipeline/AI_WORKFLOW.md",
+"type": "md"
+},
+{
+"dir": "character-pipeline",
+"path": "character-pipeline/MESHY_OPERATIONS.md",
+"type": "md"
+},
+{
+"dir": "character-pipeline",
+"path": "character-pipeline/MODEL_DESCRIPTION_TEMPLATE.md",
+"type": "md"
+},
+{
+"dir": "character-pipeline",
+"path": "character-pipeline/PROP_ATTACHMENT.md",
+"type": "md"
+},
+{
+"dir": "character-pipeline",
+"path": "character-pipeline/UI_MOCK_WORKFLOW.md",
+"type": "md"
+},
+{
+"dir": "character-pipeline",
+"path": "character-pipeline/bramble_charger.md",
+"type": "md"
+},
+{
+"dir": "character-pipeline/specs",
+"path": "character-pipeline/specs/bramble_archer.md",
+"type": "md"
+},
+{
+"dir": "character-pipeline/specs",
+"path": "character-pipeline/specs/bramble_charger.md",
+"type": "md"
+},
+{
+"dir": "character-pipeline/specs",
+"path": "character-pipeline/specs/brother_pell.md",
+"type": "md"
+},
+{
+"dir": "character-pipeline/specs",
+"path": "character-pipeline/specs/hedgemother.md",
+"type": "md"
+},
+{
+"dir": "character-pipeline/specs",
+"path": "character-pipeline/specs/hedgewight.md",
+"type": "md"
+},
+{
+"dir": "character-pipeline/specs",
+"path": "character-pipeline/specs/iron_gob.md",
+"type": "md"
+},
+{
+"dir": "character-pipeline/specs",
+"path": "character-pipeline/specs/marsh_rat.md",
+"type": "md"
+},
+{
+"dir": "character-pipeline/specs",
+"path": "character-pipeline/specs/quill.md",
+"type": "md"
+},
+{
+"dir": "character-pipeline/specs",
+"path": "character-pipeline/specs/sir_withering.md",
+"type": "md"
+},
+{
+"dir": "character-pipeline/specs",
+"path": "character-pipeline/specs/skitterling.md",
+"type": "md"
+},
+{
+"dir": "character-pipeline/specs",
+"path": "character-pipeline/specs/tusker_sow.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "concept-art-prompts-archetypes.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "concept-art-prompts-cow.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "concept-art-prompts-master.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "concept-art-prompts-next.md",
+"type": "md"
+},
+{
+"dir": "concept-art",
+"path": "concept-art/INDEX.md",
+"type": "md"
+},
+{
+"dir": "concept-art/dungeons/crypt",
+"path": "concept-art/dungeons/crypt/PROMPTS.md",
+"type": "md"
+},
+{
+"dir": "concept-art/enemies",
+"path": "concept-art/enemies/PROMPTS.md",
+"type": "md"
+},
+{
+"dir": "concept-art/ranger-props",
+"path": "concept-art/ranger-props/PROMPTS.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "content-evals-playbook.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "content-generation-playbook.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "cozy-life-sim-design-playbook.md",
+"type": "md"
+},
+{
+"dir": "design",
+"path": "design/05-boss-design.md",
+"type": "md"
+},
+{
+"dir": "design",
+"path": "design/05a-hedgemother-bramble-pull.md",
+"type": "md"
+},
+{
+"dir": "design",
+"path": "design/06-equipment-progression.md",
+"type": "md"
+},
+{
+"dir": "design",
+"path": "design/07-skill-level-pacing.md",
+"type": "md"
+},
+{
+"dir": "design",
+"path": "design/09-active-abilities.md",
+"type": "md"
+},
+{
+"dir": "design",
+"path": "design/10-spell-system.md",
+"type": "md"
+},
+{
+"dir": "design",
+"path": "design/_progress.md",
+"type": "md"
+},
+{
+"dir": "design",
+"path": "design/arpg-game-feel.md",
+"type": "md"
+},
+{
+"dir": "design",
+"path": "design/cartography-depth-20.md",
+"type": "md"
+},
+{
+"dir": "design",
+"path": "design/cartography-keystone.md",
+"type": "md"
+},
+{
+"dir": "design",
+"path": "design/hud-design.md",
+"type": "md"
+},
+{
+"dir": "design",
+"path": "design/skills-consolidation.md",
+"type": "md"
+},
+{
+"dir": "design",
+"path": "design/town-layout-plan.md",
+"type": "md"
+},
+{
+"dir": "design",
+"path": "design/whats-next-research.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "evals-and-harnesses-research.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "fate-2005-deep-dive.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "fate-implementation-summary.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "game-balance-playbook.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "game-character-animation-playbook.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "mmo-game-design-playbook.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "online-games-2000-2010-survey.md",
+"type": "md"
+},
+{
+"dir": "prompts",
+"path": "prompts/eldra_iterations.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "quest-items-models.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "reference-to-ui-playbook.md",
+"type": "md"
+},
+{
+"dir": "research/eldra",
+"path": "research/eldra/_principles.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "rune-magic-design.md",
+"type": "md"
+},
+{
+"dir": "skills",
+"path": "skills/CONCEPT_ART_PROMPTS.md",
+"type": "md"
+},
+{
+"dir": "skills",
+"path": "skills/atk.md",
+"type": "md"
+},
+{
+"dir": "skills",
+"path": "skills/carto.md",
+"type": "md"
+},
+{
+"dir": "skills",
+"path": "skills/cook.md",
+"type": "md"
+},
+{
+"dir": "skills",
+"path": "skills/def.md",
+"type": "md"
+},
+{
+"dir": "skills",
+"path": "skills/earth.md",
+"type": "md"
+},
+{
+"dir": "skills",
+"path": "skills/falconry.md",
+"type": "md"
+},
+{
+"dir": "skills",
+"path": "skills/hp.md",
+"type": "md"
+},
+{
+"dir": "skills",
+"path": "skills/magic.md",
+"type": "md"
+},
+{
+"dir": "skills",
+"path": "skills/str.md",
+"type": "md"
+},
+{
+"dir": "skills",
+"path": "skills/wilds.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/01-crypt-assets-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/01-crypt-assets.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/02-crypt-scope-wiring-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/02-crypt-scope-wiring.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/03-multi-floor-descent-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/03-multi-floor-descent.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/04-crypt-enemies-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/04-crypt-enemies.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/05-hedgemother-boss-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/05-hedgemother-boss.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/06-crypt-aftermath.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/07-godot-evaluation-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/07-godot-evaluation.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/08-quality-procgen-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/08-quality-procgen.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/09-godot-camera-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/09-godot-camera.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/10-godot-physics-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/10-godot-physics.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/11-godot-animation-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/11-godot-animation.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/12-knight-regeneration.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/13-ranger-bow-arrows-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/13-ranger-bow-arrows.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/14-fluid-combat-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/14-fluid-combat.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/15-enemy-ai-player-hp-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/15-enemy-ai-player-hp.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/16-crypt-visual-sizing-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/16-crypt-visual-sizing.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/17-hedgemother-boss-fight-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/17-hedgemother-boss-fight.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/18-ranger-walk-animation-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/18-ranger-walk-animation.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/19-enemy-pathfinding-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/19-enemy-pathfinding.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/20-glb-textures-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/20-glb-textures.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/21-rat-rigging-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/21-rat-rigging.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/22-playtest-feel-tuning-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/22-playtest-feel-tuning.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/23-fluid-movement-sandbox-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/23-fluid-movement-sandbox.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/24-dungeon-readability-rework-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/24-dungeon-readability-rework.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/25-interesting-dungeons-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/25-interesting-dungeons.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/26-combat-juice-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/26-combat-juice.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/27-item-system.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/27a-item-data-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/27a-item-data.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/27b-ground-pickup-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/27b-ground-pickup.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/27c-inventory-ui-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/27c-inventory-ui.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/27d-equipment-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/27d-equipment.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/27e-stats-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/27e-stats.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/27f-polish-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/27f-polish.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/28-dungeon-placement-polish-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/28-dungeon-placement-polish.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/29-typed-room-contracts-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/29-typed-room-contracts.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/30-skills-and-cooldowns-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/30-skills-and-cooldowns-research.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/30-skills-and-cooldowns.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/31-status-and-aoe-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/31-status-and-aoe-research.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/31-status-and-aoe.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/32-pack-scaling-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/32-pack-scaling-research.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/32-pack-scaling.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/32a-pickup-deepening-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/32a-pickup-deepening.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/32b-skill-module-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/32b-skill-module.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/32c-hit-feedback-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/32c-hit-feedback.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/32d-interactable-base-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/32d-interactable-base.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/33a-player-status-notes.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/33a-player-status.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/35-hud-upscale.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/36-bindings-research.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/36-locomotion-research.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/37-skill-depth-research.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/README.md",
+"type": "md"
+},
+{
+"dir": "specs",
+"path": "specs/SPEC_TEMPLATE.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "threejs-stylized-bootstrap-playbook.md",
+"type": "md"
+},
+{
+"dir": ".",
+"path": "build-plan.html",
+"type": "html"
+},
+{
+"dir": ".",
+"path": "core-loop.html",
+"type": "html"
+},
+{
+"dir": ".",
+"path": "design-spine.html",
+"type": "html"
+},
+{
+"dir": "research/icons",
+"path": "research/icons/_audit.html",
+"type": "html"
+},
+{
+"dir": "skills",
+"path": "skills/index.html",
+"type": "html"
+},
+{
+"dir": "specs",
+"path": "specs/36-locomotion-decisions.html",
+"type": "html"
+},
+{
+"dir": "specs",
+"path": "specs/36-locomotion-plan.html",
+"type": "html"
+},
+{
+"dir": "specs",
+"path": "specs/37-skills-depth-plan.html",
+"type": "html"
+}
+]
+}

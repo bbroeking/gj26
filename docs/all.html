@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>All Documents — Design Bible</title>
+<link rel="stylesheet" href="design-system.css">
+<style>
+  .grp { margin: 22px 0; }
+  .grp h2 { font-size: 18px; }
+  .grp .dir { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
+  .doclist { list-style: none; padding: 0; margin: 8px 0 0; columns: 2; column-gap: 28px; }
+  @media (max-width: 680px) { .doclist { columns: 1; } }
+  .doclist li { margin: 0 0 4px; break-inside: avoid; font-size: 14px; }
+  .doclist a { text-decoration: none; }
+  .doclist a:hover { text-decoration: underline; }
+  .doclist .badge { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); margin-left: 4px; }
+  .summary { color: var(--ink-soft); font-style: italic; }
+</style>
+</head>
+<body class="wide">
+
+<nav class="nav">
+  <a href="index.html">← Design Bible</a>
+  <span class="crumb">/ All docs</span>
+  <span class="spacer"></span>
+  <span class="crumb" id="count"></span>
+</nav>
+
+<header class="mast">
+  <p class="eyebrow">Complete corpus</p>
+  <h1>All Documents</h1>
+  <p class="subtitle">Every doc in the design bible, grouped by folder. Markdown opens in the viewer; HTML pages open directly.</p>
+</header>
+
+<main id="out"><p class="summary">Loading the corpus…</p></main>
+
+<footer>
+  Generated from <code>manifest.json</code> — regenerate with <code>python3 docs/regen-manifest.py</code> after adding docs. Last revised 2026-05-28.
+</footer>
+
+<script>
+fetch('manifest.json')
+  .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(function (m) {
+    document.getElementById('count').textContent =
+      m.counts.md + ' md · ' + m.counts.html + ' html';
+    // group tree by dir
+    const groups = {};
+    m.tree.forEach(function (it) { (groups[it.dir] = groups[it.dir] || []).push(it); });
+    const dirs = Object.keys(groups).sort(function (a, b) {
+      if (a === '.') return -1; if (b === '.') return 1; return a.localeCompare(b);
+    });
+    const out = document.getElementById('out');
+    out.innerHTML = '';
+    dirs.forEach(function (dir) {
+      const items = groups[dir].sort(function (a, b) { return a.path.localeCompare(b.path); });
+      const sec = document.createElement('section');
+      sec.className = 'grp';
+      const title = dir === '.' ? 'Root' : dir;
+      let html = '<h2>' + title + ' <span class="dir">' + items.length + '</span></h2><ul class="doclist">';
+      items.forEach(function (it) {
+        const name = it.path.split('/').pop();
+        const href = it.type === 'html' ? it.path : 'view.html?doc=' + it.path;
+        const badge = it.type === 'html' ? '<span class="badge">page</span>' : '';
+        html += '<li><a href="' + href + '">' + name + '</a>' + badge + '</li>';
+      });
+      html += '</ul>';
+      sec.innerHTML = html;
+      out.appendChild(sec);
+    });
+  })
+  .catch(function (e) {
+    document.getElementById('out').innerHTML =
+      '<div class="err"><strong>Couldn\'t load <code>manifest.json</code></strong> (' + e.message +
+      '). Run <code>python3 docs/regen-manifest.py</code>, and make sure you\'re viewing through ' +
+      'the server (not <code>file://</code>).</div>';
+  });
+</script>
+
+</body>
+</html>

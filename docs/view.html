@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Design Bible — Viewer</title>
+<link rel="stylesheet" href="design-system.css">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html">← Design Bible</a>
+  <a href="all.html">All docs</a>
+  <span class="crumb" id="crumb"></span>
+  <span class="spacer"></span>
+  <a id="raw" href="#" target="_blank">raw .md</a>
+</nav>
+
+<main class="doc" id="doc">Loading…</main>
+
+<script>
+(function () {
+  const params = new URLSearchParams(location.search);
+  let doc = params.get('doc');
+  if (!doc) { location.replace('index.html'); return; }
+  doc = doc.replace(/\.\.\//g, '');                 // never escape docs/
+  const docDir = doc.includes('/') ? doc.slice(0, doc.lastIndexOf('/')) : '';
+  document.getElementById('crumb').textContent = '/ ' + doc;
+  document.getElementById('raw').href = doc;
+
+  let byName = {};   // basename -> path, from manifest.json
+
+  // Resolve dir + relative path, collapsing ./ and ../
+  function joinPath(dir, rel) {
+    const parts = dir ? dir.split('/') : [];
+    rel.split('/').forEach(function (seg) {
+      if (seg === '' || seg === '.') return;
+      if (seg === '..') parts.pop();
+      else parts.push(seg);
+    });
+    return parts.join('/');
+  }
+
+  // [[Target]] resolves vault-globally by basename via the manifest.
+  function resolveWiki(target) {
+    let t = target.trim().split('#')[0].replace(/\.md$/i, '');
+    if (t.includes('/')) return t + '.md';          // already a path
+    return byName[t] || (t + '.md');                // manifest, else best-effort
+  }
+
+  function stripFrontmatter(s) {
+    return s.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '');
+  }
+
+  function rewriteLinks(s) {
+    // Image embeds — unsupported v1, show a placeholder.
+    s = s.replace(/!\[\[([^\]]+)\]\]/g, function (_, t) { return '*[embedded: ' + t.trim() + ']*'; });
+    // [[Target|Alias]] and [[Target]]  → viewer links (manifest-resolved)
+    s = s.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, function (_, t, a) {
+      return '[' + a.trim() + '](view.html?doc=' + resolveWiki(t) + ')';
+    });
+    s = s.replace(/\[\[([^\]]+)\]\]/g, function (_, t) {
+      return '[' + t.trim() + '](view.html?doc=' + resolveWiki(t) + ')';
+    });
+    // Standard markdown links to .md files → route through the viewer,
+    // resolved relative to THIS doc's directory. Skip external/anchor/already-routed.
+    s = s.replace(/\]\(([^)\s]+\.md)((?:#[^)]*)?)\)/g, function (m, href) {
+      if (/^(view\.html\?|https?:|#|mailto:|\/)/i.test(href)) return m;
+      return '](view.html?doc=' + joinPath(docDir, href) + ')';
+    });
+    return s;
+  }
+
+  function showError(html) {
+    document.getElementById('doc').innerHTML = '<div class="err">' + html + '</div>';
+  }
+
+  function render(md) {
+    const text = rewriteLinks(stripFrontmatter(md));
+    document.getElementById('doc').innerHTML = marked.parse(text);
+    // Fix relative image src for nested docs (browser resolves against /docs/).
+    if (docDir) {
+      document.querySelectorAll('.doc img').forEach(function (img) {
+        const src = img.getAttribute('src') || '';
+        if (!/^(https?:|data:|\/)/i.test(src)) img.setAttribute('src', joinPath(docDir, src));
+      });
+    }
+    const h = document.querySelector('.doc h1, .doc h2');
+    document.title = (h ? h.textContent : doc) + ' — Design Bible';
+  }
+
+  function loadDoc() {
+    fetch(doc)
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+      .then(render)
+      .catch(function (e) {
+        if (location.protocol === 'file:') {
+          showError('<strong>This viewer needs a server.</strong> <code>file://</code> blocks ' +
+            '<code>fetch()</code>. From the project root run <code>python3 -m http.server 8765</code>, ' +
+            'then open <code>http://127.0.0.1:8765/docs/view.html?doc=' + doc + '</code>.');
+        } else {
+          showError('<strong>Couldn\'t load <code>' + doc + '</code></strong> (' + e.message + '). ' +
+            'Browse the full set from <a href="all.html">All docs</a> or the ' +
+            '<a href="view.html?doc=_MOC.md">Map of Content</a>.');
+        }
+      });
+  }
+
+  // Load the manifest first so wikilinks resolve; fall back gracefully if absent.
+  fetch('manifest.json')
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (m) { if (m && m.byName) byName = m.byName; })
+    .catch(function () {})
+    .finally(loadDoc);
+})();
+</script>
+
+</body>
+</html>

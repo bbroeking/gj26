@@ -15,6 +15,15 @@ models/cow_old.glb.bak
 docs/research/eldra/*.glb
 docs/research/eldra/runs/
 
+# Secrets — never commit API keys
+.env
+
+# Godot caches + export artifacts (godot/ = evaluation project, wyrd/ = the game)
+godot/.godot/
+godot/build/
+wyrd/.godot/
+wyrd/build/
+
 # Generated / temp
 *.log
 *.tmp

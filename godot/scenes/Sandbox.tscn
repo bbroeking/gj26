@@ -1,0 +1,15 @@
+[gd_scene load_steps=5 format=3 uid="uid://b23sandbox01"]
+
+[ext_resource type="Script" path="res://scripts/sandbox.gd" id="Script_sandbox"]
+[ext_resource type="PackedScene" uid="uid://b07player001" path="res://scenes/Player.tscn" id="Player_1"]
+[ext_resource type="PackedScene" path="res://scenes/CameraRig.tscn" id="CamRig_1"]
+[ext_resource type="PackedScene" path="res://scenes/PlayerHUD.tscn" id="HUD_1"]
+
+[node name="Sandbox" type="Node3D"]
+script = ExtResource("Script_sandbox")
+
+[node name="Player" parent="." instance=ExtResource("Player_1")]
+
+[node name="CameraRig" parent="." instance=ExtResource("CamRig_1")]
+
+[node name="PlayerHUD" parent="." instance=ExtResource("HUD_1")]

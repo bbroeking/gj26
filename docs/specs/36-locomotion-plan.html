@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spec 36 — Godot Locomotion Plan</title>
+<style>
+  :root {
+    --ink:       #1f1a14;
+    --ink-soft:  #4a4036;
+    --ink-faint: #7a6f60;
+    --parchment: #f4ecd8;
+    --paper:     #fbf6e8;
+    --rule:      #c8b896;
+    --sepia:     #8b5a2b;
+    --gold:      #b8860b;
+    --moss:      #5a7a3b;
+    --rose:      #a64338;
+    --shadow:    0 1px 0 rgba(31,26,20,0.04), 0 2px 8px rgba(31,26,20,0.06);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--parchment);
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  body {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 48px 32px 96px;
+  }
+  header { border-bottom: 2px solid var(--rule); padding-bottom: 20px; margin-bottom: 32px; }
+  header .eyebrow {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--sepia);
+    margin: 0 0 8px;
+  }
+  header h1 {
+    font-size: 38px;
+    line-height: 1.1;
+    margin: 0 0 6px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  header .subtitle {
+    color: var(--ink-soft);
+    font-style: italic;
+    font-size: 17px;
+    margin: 0;
+  }
+  h2 {
+    font-size: 24px;
+    margin: 48px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--rule);
+    font-weight: 600;
+  }
+  h3 { font-size: 18px; margin: 24px 0 8px; font-weight: 600; }
+  p { margin: 0 0 12px; }
+  a { color: var(--sepia); }
+  code, pre, .mono {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  code { background: var(--paper); padding: 1px 5px; border-radius: 3px; border: 1px solid var(--rule); }
+  pre {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    line-height: 1.4;
+    box-shadow: var(--shadow);
+  }
+
+  /* Callouts */
+  .callout {
+    background: var(--paper);
+    border-left: 3px solid var(--gold);
+    padding: 14px 18px;
+    margin: 16px 0;
+    border-radius: 0 4px 4px 0;
+    box-shadow: var(--shadow);
+  }
+  .callout--target { border-left-color: var(--moss); }
+  .callout--risk { border-left-color: var(--rose); }
+  .callout .label {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 6px;
+  }
+
+  /* Step cards */
+  .steps { display: grid; gap: 14px; margin-top: 16px; }
+  .step {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 16px 20px;
+    box-shadow: var(--shadow);
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 16px;
+  }
+  .step .num {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 28px;
+    color: var(--sepia);
+    line-height: 1;
+    padding-top: 4px;
+    font-weight: 600;
+  }
+  .step h3 { margin: 0 0 6px; font-size: 17px; }
+  .step .desc { color: var(--ink-soft); margin: 0 0 10px; }
+  .step .meta {
+    display: grid;
+    grid-template-columns: 88px 1fr;
+    gap: 6px 14px;
+    font-size: 14px;
+    align-items: baseline;
+  }
+  .step .meta dt {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding-top: 1px;
+  }
+  .step .meta dd { margin: 0; }
+  .step .meta code { font-size: 12px; }
+  .step.parallel { border-style: dashed; }
+  .step.parallel .num { color: var(--moss); }
+  .step.parallel .tag {
+    display: inline-block;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--moss);
+    background: rgba(90,122,59,0.10);
+    border-radius: 3px;
+    padding: 2px 6px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  /* Architecture diagram */
+  .diagram-wrap { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  @media (min-width: 760px) { .diagram-wrap { grid-template-columns: 1.2fr 1fr; } }
+  .diagram pre { margin: 0; font-size: 12px; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; }
+  th, td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--rule);
+    font-size: 14px;
+    vertical-align: top;
+  }
+  th {
+    background: var(--paper);
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 600;
+  }
+  td.num { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13px; white-space: nowrap; }
+
+  /* Pitfalls */
+  .pitfalls { display: grid; gap: 10px; margin-top: 12px; }
+  .pitfall {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--rose);
+    border-radius: 0 4px 4px 0;
+    padding: 10px 14px;
+  }
+  .pitfall .title { font-weight: 600; font-size: 14px; }
+  .pitfall .fix { color: var(--ink-soft); font-size: 14px; margin-top: 2px; }
+  .pitfall .fix::before { content: "↳ "; color: var(--moss); font-weight: 600; }
+
+  footer {
+    margin-top: 64px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    color: var(--ink-faint);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  @media print {
+    body { max-width: none; padding: 24px; }
+    .step, .callout, .pitfall, pre { box-shadow: none; }
+    h2 { page-break-after: avoid; }
+    .step, .pitfall { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Spec 36 · Godot 4 · Player Locomotion</p>
+  <h1>From capsule to fluid character</h1>
+  <p class="subtitle">An 11-step path to walk, run, roll, dash, and jump that feel right.</p>
+</header>
+
+<div class="callout callout--target">
+  <p class="label">Target feel — definition of done</p>
+  <p style="margin:0">A player drops into the crypt, holds <code>W</code>, kites a 3-pack, rolls through a sweep, dashes to cover, jumps a gap. They should feel: <strong>no foot-slide, no animation snap, no input loss, no missed jumps, no skiddy stops.</strong> That's the bar.</p>
+</div>
+
+<h2>Where we are right now</h2>
+<ul>
+  <li><strong>Player.tscn</strong> is a capsule <code>CharacterBody3D</code>. No rigged mesh attached.</li>
+  <li><strong>Movement</strong>: <code>SPEED=5.0, ACCEL=10, GRAVITY=22</code> — single-value linear lerp toward target velocity. No accel/decel split, no rotation, no states.</li>
+  <li><strong>Camera</strong>: damped follow + orbit + zoom done (spec 09). Camera-relative input projection wired.</li>
+  <li><strong>Animations available</strong>: Meshy-rigged enemy/boss GLBs ship with Idle + Walk + Run. Roll / Dash / Jump clips do not yet exist for any character.</li>
+  <li><strong>AnimationTree</strong> has never been used in this project. New territory.</li>
+</ul>
+
+<h2>The architecture</h2>
+<p>Don't put a single <code>BlendSpace1D</code> at the root and call it done. The right shape nests three things: a <strong>OneShot</strong> for action-overlays (attacks, hit-reacts) wrapping a <strong>StateMachine</strong> of locomotion + committed-action states, with the locomotion state itself containing a <strong>BlendTree</strong> with the walk↔run gradient. This is the load-bearing decision — it gives us a slot for spec 37 (attacks) without a rewrite.</p>
+
+<div class="diagram-wrap">
+  <div class="diagram">
+<pre>AnimationTree (root: StateMachine)
+└─ Output
+   └─ OneShot ("ActionOverlay")     ← attacks, hit-react, cast
+      ├─ in:    StateMachine ("Base")
+      │         ├─ Idle  ──┐
+      │         ├─ Locomotion ──┤   ← BlendTree
+      │         │              └─ BlendSpace1D
+      │         │                    Idle (0.0)
+      │         │                    Walk (0.4)
+      │         │                    Run  (1.0)
+      │         ├─ Roll   (At End → Locomotion)
+      │         ├─ Dash   (At End → Locomotion)
+      │         ├─ JumpStart → JumpAir → JumpLand → Locomotion
+      │         │
+      │         └─ (TimeScale node feeds the BlendSpace
+      │            output, scaled 0.7×–1.3× by velocity)
+      └─ shot:  Animation ("Attack01" / swapped at runtime)
+</pre>
+  </div>
+  <div>
+    <p><strong>Why OneShot first.</strong> Without it, every overlay attack we add later has to fight the state machine for the Output slot. OneShot says "play this for N frames, then get out of the way" — exactly the contract attacks need.</p>
+    <p><strong>Why StateMachine inside.</strong> Roll, Dash, and the three Jump phases are <em>discrete</em> — they don't blend. The state machine handles their committed-with-recovery shape natively.</p>
+    <p><strong>Why a BlendTree inside the Locomotion state.</strong> Walk↔run <em>does</em> blend, continuously, driven by velocity. Different node type for a different job.</p>
+  </div>
+</div>
+
+<h2>The 11 steps</h2>
+
+<div class="steps">
+
+  <article class="step">
+    <div class="num">1</div>
+    <div>
+      <h3>Drop the placeholder rig into Player.tscn</h3>
+      <p class="desc">Wire <code>models/skeleton_rigged.glb</code> as a child of the existing <code>CharacterBody3D</code>. Hide the capsule mesh, keep the capsule collider. Unblocks every step below.</p>
+      <dl class="meta">
+        <dt>Files</dt><dd><code>godot/scenes/Player.tscn</code></dd>
+        <dt>Feels-good</dt><dd>game runs, capsule moves, skeleton idle-breathes in place.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <article class="step">
+    <div class="num">2</div>
+    <div>
+      <h3>Pull walk + run clips off the Meshy rig task</h3>
+      <p class="desc">Per spec 11 notes: rigging includes free walk + run, but only Idle was downloaded. Pull the missing GLBs from the rig-task URLs and merge their AnimationPlayer tracks into the player.</p>
+      <dl class="meta">
+        <dt>Files</dt><dd>new <code>godot/models/skeleton_walk.glb</code>, <code>_run.glb</code> → merged into <code>skeleton_rigged.glb</code>'s AnimationPlayer</dd>
+        <dt>Feels-good</dt><dd>"Walk" and "Run" clips play in the editor on the rig.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <article class="step">
+    <div class="num">3</div>
+    <div>
+      <h3>Build the AnimationTree (architecture above)</h3>
+      <p class="desc">Author <code>data/player_anim_tree.tres</code>. OneShot → StateMachine → BlendTree → BlendSpace1D. Wire it into the Player scene with an <code>AnimationTree</code> node, active = true.</p>
+      <dl class="meta">
+        <dt>Numbers</dt><dd>BlendSpace1D points <code>Idle@0.0, Walk@0.4, Run@1.0</code>. Locomotion xfade <code>0.15–0.25s</code>. Action xfade <code>0.05–0.10s</code>. OneShot fade in/out <code>0.05–0.10s</code>.</dd>
+        <dt>Feels-good</dt><dd>poking the blend parameter manually in the editor smoothly transitions between idle/walk/run.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <article class="step">
+    <div class="num">4</div>
+    <div>
+      <h3>Drive the blend from velocity each frame</h3>
+      <p class="desc">In <code>player_controller.gd</code>, lerp the blend parameter from <code>velocity.length() / MAX_SPEED</code>. Lerp factor 12 — high enough to feel responsive, low enough that input release doesn't pop.</p>
+<pre>const MAX_SPEED   := 6.0
+const BLEND_LERP  := 12.0
+var _blend := 0.0
+
+func _update_locomotion_blend(delta: float) -> void:
+    var target := clamp(velocity.length() / MAX_SPEED, 0.0, 1.0)
+    _blend = lerpf(_blend, target, BLEND_LERP * delta)
+    anim_tree.set("parameters/Base/Locomotion/BlendSpace1D/blend_position", _blend)</pre>
+      <dl class="meta">
+        <dt>Feels-good</dt><dd>WASD → smooth idle → walk → run gradient with no snap on press or release.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <article class="step">
+    <div class="num">5</div>
+    <div>
+      <h3>Eliminate foot-slide with an AnimationNodeTimeScale</h3>
+      <p class="desc">The blend alone doesn't fix slide — Walk plays at fixed cadence regardless of real speed. Insert a <code>TimeScale</code> node downstream of the BlendSpace, scale it by <code>velocity.length() / WALK_REF_SPEED</code>, clamp to <code>0.7×–1.3×</code> so the cycle doesn't go cartoonish at sprint.</p>
+      <dl class="meta">
+        <dt>Numbers</dt><dd>Calibrate <code>WALK_REF_SPEED</code> by eye in the editor. Usually within 10% of the value Meshy authored.</dd>
+        <dt>Why not root motion</dt><dd>Meshy rigs often have non-1.0 scale → root motion returns garbage. Pitfall #4.</dd>
+        <dt>Feels-good</dt><dd>no foot-slide at any speed, sprint included.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <article class="step">
+    <div class="num">6</div>
+    <div>
+      <h3>Yaw the mesh toward movement direction</h3>
+      <p class="desc">Currently the body moves but doesn't turn — only the camera does. Rotate the <em>mesh</em> (not the CharacterBody) toward <code>velocity</code> via <code>lerp_angle</code>. Gate on a minimum speed so idle doesn't drift.</p>
+<pre>const ROT_SPEED := 10.0
+
+if velocity.length() > 0.5:
+    var target_yaw = atan2(velocity.x, velocity.z)
+    mesh.rotation.y = lerp_angle(mesh.rotation.y, target_yaw, ROT_SPEED * delta)</pre>
+      <dl class="meta">
+        <dt>Feels-good</dt><dd>holding W → tapping A makes the character arc into the turn, not strafe.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <article class="step">
+    <div class="num">7</div>
+    <div>
+      <h3>Split ACCEL / DECEL / TURN_DECEL</h3>
+      <p class="desc">Current single <code>ACCEL=10</code> handles speeding up and slowing down identically. Split into three so stops feel deliberate and direction-reversals feel snappy.</p>
+      <dl class="meta">
+        <dt>Numbers</dt><dd><code>ACCEL=20</code> (start), <code>DECEL=18</code> (stop), <code>TURN_DECEL=30</code> (reverse). Sprint via <code>RUN_SPEED=6.0</code> on Shift, <code>WALK_SPEED=3.0</code> baseline.</dd>
+        <dt>Feels-good</dt><dd>stopping mid-run feels deliberate, not skiddy. Reversing W→S is instant, not delayed.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <article class="step">
+    <div class="num">8</div>
+    <div>
+      <h3>Roll — i-frame evade (PoE 2 numbers)</h3>
+      <p class="desc">New state <code>Roll</code>. On input, <code>travel("Roll")</code>, capture roll direction, apply fixed burst, start duration timer. Direction is locked once committed.</p>
+      <dl class="meta">
+        <dt>Duration</dt><dd><code>0.55s</code></dd>
+        <dt>Burst</dt><dd><code>9.0 m/s</code> (~1.5× run)</dd>
+        <dt>i-frames</dt><dd>first 50% (<code>0.0–0.275s</code>); last half is vulnerable</dd>
+        <dt>Cooldown</dt><dd><code>0.0s</code> (no cooldown — PoE 2 pattern)</dd>
+        <dt>Motion</dt><dd>code-driven velocity, not root motion</dd>
+        <dt>Feels-good</dt><dd>roll through a swing, take no damage; can't roll-spam to invuln because the animation lock + recovery half costs you uptime.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <article class="step">
+    <div class="num">9</div>
+    <div>
+      <h3>Dash — reposition burst (D3 Steed Charge numbers)</h3>
+      <p class="desc">Separate state, separate animation, separate purpose. Dash is for closing or escaping distance — not evading damage. Override velocity every frame while <code>dash_timer &gt; 0</code>.</p>
+      <dl class="meta">
+        <dt>Duration</dt><dd><code>0.20–0.30s</code> (shorter than roll; reflex-tier)</dd>
+        <dt>Burst</dt><dd><code>14–18 m/s</code> (~3× run)</dd>
+        <dt>i-frames</dt><dd>none (this is for repositioning, not survival)</dd>
+        <dt>Cooldown</dt><dd><code>1.0s</code></dd>
+        <dt>Feels-good</dt><dd>cover the room in 0.25s; can't spam-dash; reads as a discrete commitment.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <article class="step">
+    <div class="num">10</div>
+    <div>
+      <h3>Jump — impulse + coyote + buffer</h3>
+      <p class="desc">Three states stacked: <code>JumpStart → JumpAir → JumpLand</code>. Vertical impulse on press, gravity takes over, landing recovery on floor-contact. Coyote and buffer windows are non-negotiable — without them, jumps feel "missed" even with correct input.</p>
+      <dl class="meta">
+        <dt>Impulse</dt><dd><code>8.0 m/s</code> up</dd>
+        <dt>Gravity</dt><dd><code>22.0 m/s²</code> (snappier than real 9.8)</dd>
+        <dt>Air control</dt><dd><code>0.3</code> (30% of ground accel applied horizontally)</dd>
+        <dt>Coyote</dt><dd><code>0.10s</code> after walking off edge</dd>
+        <dt>Buffer</dt><dd><code>0.10s</code> before landing (queue jump press)</dd>
+        <dt>Floor snap</dt><dd>disable while <code>velocity.y &gt; 0</code> (pitfall #7)</dd>
+        <dt>Feels-good</dt><dd>jumping off a ledge at the last moment still works; pressing jump just before landing chains to the next jump.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <article class="step">
+    <div class="num">11</div>
+    <div>
+      <h3>Playtest pass — record, watch, tune</h3>
+      <p class="desc">20-minute play session. Record the screen. Watch back at 0.5×. Mark every moment where movement reads "off." For each: identify the tunable (<code>ACCEL</code>, <code>ROT_SPEED</code>, <code>WALK_REF_SPEED</code>, roll duration, dash burst, jump gravity), adjust, replay. Two or three iteration loops is normal.</p>
+      <dl class="meta">
+        <dt>Output</dt><dd>final numbers committed to <code>godot/data/locomotion_tune.gd</code> (single source of truth).</dd>
+        <dt>Feels-good</dt><dd>you watch the playback and don't flinch.</dd>
+      </dl>
+    </div>
+  </article>
+
+</div>
+
+<h2>Default numbers at a glance</h2>
+
+<table>
+  <thead>
+    <tr><th>Tunable</th><th>Value</th><th>Source</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>WALK_SPEED</td><td class="num">3.0 m/s</td><td>GDQuest demo</td></tr>
+    <tr><td>RUN_SPEED</td><td class="num">6.0 m/s</td><td>GDQuest demo</td></tr>
+    <tr><td>ACCEL / DECEL / TURN_DECEL</td><td class="num">20 / 18 / 30</td><td>tuning recommendation</td></tr>
+    <tr><td>ROT_SPEED</td><td class="num">10.0 rad/s</td><td>research §3.1</td></tr>
+    <tr><td>BLEND_LERP</td><td class="num">12.0</td><td>research §2</td></tr>
+    <tr><td>TimeScale clamp</td><td class="num">0.7× – 1.3×</td><td>research §4</td></tr>
+    <tr><td>Roll duration / burst / i-frames</td><td class="num">0.55s / 9.0 m/s / 0.0–0.275s</td><td>PoE 2 dodge</td></tr>
+    <tr><td>Dash duration / burst / cooldown</td><td class="num">0.25s / 16 m/s / 1.0s</td><td>D3 Steed Charge</td></tr>
+    <tr><td>Jump impulse / gravity / air control</td><td class="num">8.0 / 22.0 / 0.3</td><td>GDQuest demo</td></tr>
+    <tr><td>Coyote / buffer</td><td class="num">0.10s / 0.10s</td><td>Celeste-style</td></tr>
+  </tbody>
+</table>
+
+<h2>Pitfalls to remember</h2>
+<p class="muted" style="color:var(--ink-faint);font-size:14px">Every one of these has bitten Godot 4 devs in the issue tracker. Save yourself the hour.</p>
+
+<div class="pitfalls">
+  <div class="pitfall">
+    <div class="title">1. <code>travel()</code> vs <code>advance_condition</code></div>
+    <div class="fix">Conditions only auto-fire direct-neighbour transitions. Use conditions for ambient locomotion, <code>travel()</code> for event triggers (roll, dash, jump).</div>
+  </div>
+  <div class="pitfall">
+    <div class="title">2. <code>travel()</code> silently fails with no valid path</div>
+    <div class="fix">If a transition isn't drawn in the editor, <code>travel()</code> returns without error. Sanity-check each state by triggering it from <code>_ready</code> during dev.</div>
+  </div>
+  <div class="pitfall">
+    <div class="title">3. Non-looping animations don't restart on re-travel</div>
+    <div class="fix">After Roll finishes, <code>travel("Roll")</code> is a no-op. Use <code>state_machine.start("Roll")</code> to force-restart.</div>
+  </div>
+  <div class="pitfall">
+    <div class="title">4. Scaled rig breaks root motion</div>
+    <div class="fix">Non-(1,1,1) scale on the Skeleton3D or its parent → <code>get_root_motion_position()</code> returns garbage. Set model scale to 1.0 in the Import dock, or bake in Blender.</div>
+  </div>
+  <div class="pitfall">
+    <div class="title">5. OneShot interruption-after-completion bug</div>
+    <div class="fix">Stacking OneShot fires can cause the first to revive after the second ends. Use a single OneShot whose embedded animation you swap at runtime, fired via <code>ONE_SHOT_REQUEST_FIRE</code>.</div>
+  </div>
+  <div class="pitfall">
+    <div class="title">6. AnimationLibrary cloning shares tracks silently</div>
+    <div class="fix">Two scenes using the same AnimationLibrary share edits. Set Local-to-Scene on the AnimationTree, or duplicate per-character.</div>
+  </div>
+  <div class="pitfall">
+    <div class="title">7. <code>floor_snap_length</code> eats jumps</div>
+    <div class="fix">A non-zero snap will yank the character back to the floor on small jump impulses. Set <code>floor_snap_length = 0</code> while <code>velocity.y &gt; 0</code>.</div>
+  </div>
+  <div class="pitfall">
+    <div class="title">8. <code>velocity = direction * speed * delta</code></div>
+    <div class="fix"><code>move_and_slide()</code> already integrates over delta. Multiplying yourself produces a controller that runs at <code>delta²</code> — unusably slow. Common typo from <code>move_and_collide</code> muscle memory.</div>
+  </div>
+</div>
+
+<h2>What this is not</h2>
+<div class="callout callout--risk">
+  <p class="label">Scope guard</p>
+  <p style="margin:0">This is the <strong>locomotion</strong> arc only. Attack animations, ability casts, hit-reacts, status-tick visuals, climbing, swimming, mounts, and emotes are explicitly out of scope. The architecture (OneShot channel) leaves room for attacks in spec 37, but no attack work happens here.</p>
+</div>
+
+<footer>
+  Companion to <code>docs/specs/36-locomotion-research.md</code>. Numbers anchored in PoE 2 dodge / D3 Steed Charge / GDQuest demo. Last revised 2026-05-27.
+</footer>
+
+</body>
+</html>

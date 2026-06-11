@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b29shrine01"]
+
+[ext_resource type="Script" path="res://scripts/shrine.gd" id="Script_shrine"]
+
+[node name="Shrine" type="Area3D"]
+script = ExtResource("Script_shrine")

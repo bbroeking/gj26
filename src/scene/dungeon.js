@@ -21,6 +21,11 @@ import { buildStoneWallTile, buildWoodFloorTile } from './characters.js';
 import { pickRandomLoreParchment } from '../data/items.js';
 import { rollChest } from '../data/lootTables.js';
 import { placeById } from '../data/echo-places.js';
+import {
+  buildCryptFloorTile, buildCryptWallTile, buildCryptDecor,
+  buildCryptChest, attachCryptFlicker, preloadCryptAssets,
+} from './cryptAssets.js';
+import { pickCryptDecorKind } from '../data/dungeonTilesCrypt.js';
 
 const ROOM_MIN = 4, ROOM_MAX = 7;
 const GRID = 22;          // dungeon side, in tiles
@@ -167,12 +172,24 @@ function nearestFloor(grid, cx, cy) {
  * boss substitution, etc.). Scope themes the visual decor (briar_maze →
  * thorn pillars, sunken_hut → puddles, delve → boulders).
  *
+ * Multi-floor crypt arcs (spec 03) thread `depth` + `floors` through. For
+ * non-final, non-boss floors a `staircases[]` entry is emitted; on the
+ * mid-boss floor (`ceil(floors/2)`) and final floor (`floors`) the layout
+ * is forced into a boss room with the matching `bossKind`. Other scopes
+ * still get the legacy single-floor behavior — `depth = floors = 1`.
+ *
  * @param {number} seed
  * @param {Array<{id:string, good:boolean, resolvedId:string}>} affixes
- * @param {string} [scope]  'briar_maze' | 'sunken_hut' | 'delve' | 'hollow'
+ * @param {string} [scope]  'briar_maze' | 'sunken_hut' | 'delve' | 'hollow' | 'crypt'
+ * @param {number} [depth]  current floor (1-indexed); only meaningful when scope === 'crypt'
+ * @param {number} [floors] total floors in the arc; ditto
  */
-export function generateDungeonLayout(seed = Date.now(), affixes = [], scope = undefined) {
+export function generateDungeonLayout(seed = Date.now(), affixes = [], scope = undefined, depth = 1, floors = 1) {
   const rng = mulberry32(seed >>> 0);
+  const isCryptArc = scope === 'crypt' && floors > 1;
+  const isMidBossFloor = isCryptArc && depth === Math.ceil(floors / 2);
+  const isFinalFloor   = isCryptArc && depth === floors;
+  const isBossFloor    = isMidBossFloor || isFinalFloor;
 
   const grid = Array.from({ length: GRID }, () => Array(GRID).fill('wall'));
   const rooms = [];
@@ -310,6 +327,9 @@ export function generateDungeonLayout(seed = Date.now(), affixes = [], scope = u
       sunken_hut: { kind: 'puddle',       count: [6, 10] },
       delve:      { kind: 'boulder',      count: [4, 7] },
       hollow:     { kind: 'mossfloor',    count: [4, 6] },
+      // Crypt rolls a *mix* of decor kinds (bones, pottery, brazier, …).
+      // `kind: null` signals the placement loop to call pickCryptDecorKind.
+      crypt:      { kind: null,           count: [10, 16] },
     };
     const theme = themeMap[scope];
     if (theme) {
@@ -323,7 +343,9 @@ export function generateDungeonLayout(seed = Date.now(), affixes = [], scope = u
         if (x === entry.x && y === entry.y) continue;
         if (x === exit.x  && y === exit.y)  continue;
         if (decor.some(d => d.x === x && d.y === y)) continue;
-        decor.push({ kind: theme.kind, x, y });
+        const kind = theme.kind || (scope === 'crypt' ? pickCryptDecorKind(rng) : null);
+        if (!kind) continue;
+        decor.push({ kind, x, y });
         placed++;
       }
     }
@@ -331,15 +353,51 @@ export function generateDungeonLayout(seed = Date.now(), affixes = [], scope = u
 
   // Reward chest sits one tile in front of the exit stair, on a floor tile
   // if available. Players see it before they take the stairs (Fate-style).
+  // Crypt arc: chest only on the FINAL floor (Hedgemother's room); other
+  // floors have no chest because the chart's reward is the arc's clear.
   let chestTile = null;
-  for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
-    const cx = exit.x + dx, cy = exit.y + dy;
-    if (cx < 0 || cy < 0 || cx >= GRID || cy >= GRID) continue;
-    if (grid[cy][cx] === 'floor' && !(cx === entry.x && cy === entry.y)) {
-      chestTile = { x: cx, y: cy }; break;
+  if (!isCryptArc || isFinalFloor) {
+    for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
+      const cx = exit.x + dx, cy = exit.y + dy;
+      if (cx < 0 || cy < 0 || cx >= GRID || cy >= GRID) continue;
+      if (grid[cy][cx] === 'floor' && !(cx === entry.x && cy === entry.y)) {
+        chestTile = { x: cx, y: cy }; break;
+      }
+    }
+    if (!chestTile) chestTile = { x: exit.x, y: exit.y };
+  }
+
+  // ---- Crypt arc: staircase + boss substitution ----
+  const staircases = [];
+  if (isCryptArc) {
+    if (isFinalFloor) {
+      // Final floor — Hedgemother. The boss-room flag gets the farthest
+      // room (already chosen for entry/exit). Boss spawn is handled by
+      // main.js reading bossKind below.
+      bossKind = 'hedgemother';
+      bossRoom = rooms.find(r =>
+        exit.x >= r.x && exit.x < r.x + r.w &&
+        exit.y >= r.y && exit.y < r.y + r.h
+      ) || rooms[rooms.length - 1];
+    } else if (isMidBossFloor) {
+      // Mid-boss — a Crypt Warden (scaled-up skeleton) replaces the
+      // earlier wolf_alpha placeholder. Spec 04/05 followup: visual fit.
+      bossKind = 'crypt_warden';
+      bossRoom = rooms.find(r =>
+        exit.x >= r.x && exit.x < r.x + r.w &&
+        exit.y >= r.y && exit.y < r.y + r.h
+      ) || rooms[rooms.length - 1];
+    } else {
+      // Non-boss, non-final crypt floor — staircase down at the exit
+      // tile. main.js's _descendCryptFloor handles the swap; the actual
+      // target seed is recomputed at descent time (baseSeed * 31 + depth).
+      staircases.push({
+        x: exit.x, y: exit.y,
+        target: `crypt_floor_${depth + 1}`,
+        crypt: true,                 // tag so the staircase handler routes to procgen path
+      });
     }
   }
-  if (!chestTile) chestTile = { x: exit.x, y: exit.y };
 
   return {
     grid,
@@ -351,8 +409,14 @@ export function generateDungeonLayout(seed = Date.now(), affixes = [], scope = u
     scope,
     chestTile,
     chestLooted: false,
-    bossRoom,        // truthy when a boss-affix is active
-    bossKind,        // 'hedgemother' | 'burrow_boar' | null
+    bossRoom,        // truthy when a boss-affix is active or a crypt boss-floor
+    bossKind,        // 'hedgemother' | 'burrow_boar' | 'wolf_alpha' | null
+    staircases,
+    // Arc-state hints — read by buildDungeonGroup to suppress the gold
+    // exit disc on non-final floors and by main.js to gate exit clicks.
+    cryptDepth: isCryptArc ? depth : undefined,
+    cryptFloors: isCryptArc ? floors : undefined,
+    cryptFinalFloor: isCryptArc ? isFinalFloor : undefined,
     blocked: (x, y) =>
       x < 0 || y < 0 || x >= GRID || y >= GRID || grid[y][x] === 'wall',
   };
@@ -544,6 +608,7 @@ export function loadScaffoldLayout(json, tier = 1, affixes = []) {
     sunken_hut: { kind: 'puddle',       count: [4, 8] },
     delve:      { kind: 'boulder',      count: [3, 6] },
     hollow:     { kind: 'mossfloor',    count: [3, 5] },
+    crypt:      { kind: null,           count: [6, 12] },
   };
   const theme = themeMap[scope];
   if (theme) {
@@ -558,7 +623,9 @@ export function loadScaffoldLayout(json, tier = 1, affixes = []) {
       if (x === entry.x && y === entry.y) continue;
       if (x === exit.x  && y === exit.y)  continue;
       if (decor.some(d => d.x === x && d.y === y)) continue;
-      decor.push({ kind: theme.kind, x, y });
+      const kind = theme.kind || (scope === 'crypt' ? pickCryptDecorKind(rng) : null);
+      if (!kind) continue;
+      decor.push({ kind, x, y });
       placed++;
     }
   }
@@ -748,21 +815,41 @@ function _detectRooms(grid, gw, gh) {
 export function buildDungeonGroup(layout, affixes = []) {
   const group = new THREE.Group();
   group.name = 'DungeonGroup';
+  const isCrypt = layout.scope === 'crypt';
+
+  // Fire crypt GLB pre-loads early so the per-tile factories below mostly
+  // hit a warm cache. No-op for non-crypt scopes.
+  if (isCrypt) preloadCryptAssets();
 
   // Floor tiles + walls — read dims from the layout so authored levels
   // (which can be any size) render at their declared dimensions.
   const gh = layout.grid.length;
   const gw = layout.grid[0]?.length || 0;
+  // Helper for the crypt wall variant picker: cardinal neighbor bit
+  // is set when that neighbor is a FLOOR tile (out-of-bounds = wall).
+  const isFloor = (xx, yy) =>
+    xx >= 0 && yy >= 0 && xx < gw && yy < gh && layout.grid[yy][xx] === 'floor';
   for (let y = 0; y < gh; y++) {
     for (let x = 0; x < gw; x++) {
       if (layout.grid[y][x] === 'floor') {
-        const f = buildWoodFloorTile();
+        const f = isCrypt ? buildCryptFloorTile() : buildWoodFloorTile();
         f.position.set(x + 0.5, 0, y + 0.5);
         group.add(f);
       } else {
-        const w = buildStoneWallTile();
-        w.position.set(x + 0.5, 0, y + 0.5);
-        group.add(w);
+        if (isCrypt) {
+          const bits =
+            (isFloor(x,     y - 1) << 0) |
+            (isFloor(x + 1, y    ) << 1) |
+            (isFloor(x,     y + 1) << 2) |
+            (isFloor(x - 1, y    ) << 3);
+          const w = buildCryptWallTile(bits);
+          w.position.set(x + 0.5, 0, y + 0.5);
+          group.add(w);
+        } else {
+          const w = buildStoneWallTile();
+          w.position.set(x + 0.5, 0, y + 0.5);
+          group.add(w);
+        }
       }
     }
   }
@@ -776,14 +863,18 @@ export function buildDungeonGroup(layout, affixes = []) {
   entryDisc.position.set(layout.entry.x + 0.5, 0.05, layout.entry.y + 0.5);
   group.add(entryDisc);
 
-  // Exit stair — gold; this is the "go back to Bramblewood" affordance
+  // Exit stair — gold; this is the "go back to Bramblewood" affordance.
+  // Crypt arc: the gold exit only appears on the final floor (Q7 forbids
+  // mid-arc voluntary return). Intermediate floors get a purple staircase
+  // disc via `layout.staircases[]` instead (rendered below).
+  const suppressExitDisc = isCrypt && layout.cryptFinalFloor === false;
   const exitDisc = new THREE.Mesh(
     new THREE.CircleGeometry(0.4, 24),
     new THREE.MeshBasicMaterial({ color: 0xd4af37, transparent: true, opacity: 0.85 })
   );
   exitDisc.rotation.x = -Math.PI / 2;
   exitDisc.position.set(layout.exit.x + 0.5, 0.05, layout.exit.y + 0.5);
-  group.add(exitDisc);
+  if (!suppressExitDisc) group.add(exitDisc);
 
   // Staircases to other authored floors — purple disc, pulses gently to read
   // as "go deeper" rather than "go home like the gold exit".
@@ -806,6 +897,7 @@ export function buildDungeonGroup(layout, affixes = []) {
     sunken_hut: { color: 0x6080a0, intensity: 0.7, range: 14 },   // cool damp blue
     delve:      { color: 0xffaa55, intensity: 1.0, range: 18 },   // warm forge amber
     hollow:     { color: 0xeed8a8, intensity: 0.85, range: 16 },  // soft cream lantern
+    crypt:      { color: 0x8a9aa8, intensity: 0.5, range: 14 },   // cool blue-violet dim
   };
   const lightCfg = SCOPE_LIGHT[layout.scope] || { color: 0xffaa55, intensity: 0.8, range: 16 };
   const torch = new THREE.PointLight(lightCfg.color, lightCfg.intensity, lightCfg.range);
@@ -821,6 +913,19 @@ export function buildDungeonGroup(layout, affixes = []) {
   // Affix + scope-driven decoration props
   for (const d of layout.decor || []) {
     let prop = null;
+    // Crypt scope: try the GLB factory first; only fall back to the
+    // legacy procedural switch for kinds it doesn't know (ore_rock,
+    // forage_node, log_pile, shrine_pedestal — those are affix-driven
+    // and shared across scopes).
+    if (isCrypt) prop = buildCryptDecor(d.kind);
+    if (prop) {
+      prop.position.x = (d.x + 0.5);
+      prop.position.z = (d.y + 0.5);
+      prop.userData.affixDecor = d;
+      d._mesh = prop;
+      group.add(prop);
+      continue;
+    }
     if (d.kind === 'ore_rock') {
       prop = new THREE.Group();
       const stone = new THREE.Mesh(
@@ -1073,36 +1178,46 @@ export function buildDungeonGroup(layout, affixes = []) {
     group.add(door);
   }
 
-  // Reward chest — wood box with a gold band, sits next to the exit
+  // Reward chest — wood box with a gold band, sits next to the exit.
+  // Crypt scope swaps in the niji GLB chest (still ringed with a gold
+  // glow so the player-eye affordance is preserved).
   if (layout.chestTile) {
-    const chest = new THREE.Group();
-    const box = new THREE.Mesh(
-      new THREE.BoxGeometry(0.45, 0.32, 0.30),
-      new THREE.MeshToonMaterial({ color: 0x6e4a2a })
-    );
-    box.position.y = 0.16;
-    chest.add(box);
-    const lid = new THREE.Mesh(
-      new THREE.BoxGeometry(0.46, 0.10, 0.31),
-      new THREE.MeshToonMaterial({ color: 0x8a6438 })
-    );
-    lid.position.y = 0.36;
-    chest.add(lid);
-    const band = new THREE.Mesh(
-      new THREE.BoxGeometry(0.50, 0.05, 0.32),
-      new THREE.MeshToonMaterial({ color: 0xb58637 })
-    );
-    band.position.y = 0.20;
-    chest.add(band);
-    // Soft gold glow above to draw the eye
-    const glow = new THREE.PointLight(0xffcc66, 1.0, 6);
-    glow.position.y = 1.2;
-    chest.add(glow);
+    let chest;
+    if (isCrypt) {
+      chest = buildCryptChest();
+    } else {
+      chest = new THREE.Group();
+      const box = new THREE.Mesh(
+        new THREE.BoxGeometry(0.45, 0.32, 0.30),
+        new THREE.MeshToonMaterial({ color: 0x6e4a2a })
+      );
+      box.position.y = 0.16;
+      chest.add(box);
+      const lid = new THREE.Mesh(
+        new THREE.BoxGeometry(0.46, 0.10, 0.31),
+        new THREE.MeshToonMaterial({ color: 0x8a6438 })
+      );
+      lid.position.y = 0.36;
+      chest.add(lid);
+      const band = new THREE.Mesh(
+        new THREE.BoxGeometry(0.50, 0.05, 0.32),
+        new THREE.MeshToonMaterial({ color: 0xb58637 })
+      );
+      band.position.y = 0.20;
+      chest.add(band);
+      const glow = new THREE.PointLight(0xffcc66, 1.0, 6);
+      glow.position.y = 1.2;
+      chest.add(glow);
+    }
     chest.position.set(layout.chestTile.x + 0.5, 0, layout.chestTile.y + 0.5);
     chest.userData.kind = 'lootChest';
     group.add(chest);
     group.userData.chest = chest;
   }
+
+  // Brazier + torch flicker — self-managed RAF that stops when the group
+  // is removed from the scene (exitDungeon detaches it).
+  if (isCrypt) attachCryptFlicker(group);
 
   group.userData.entry = layout.entry;
   group.userData.exit  = layout.exit;

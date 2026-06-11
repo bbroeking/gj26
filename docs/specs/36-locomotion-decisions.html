@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spec 36 — Locomotion Decisions</title>
+<style>
+  :root {
+    --ink:       #1f1a14;
+    --ink-soft:  #4a4036;
+    --ink-faint: #7a6f60;
+    --parchment: #f4ecd8;
+    --paper:     #fbf6e8;
+    --rule:      #c8b896;
+    --sepia:     #8b5a2b;
+    --gold:      #b8860b;
+    --moss:      #5a7a3b;
+    --rose:      #a64338;
+    --slate:     #6a6f78;
+    --shadow:    0 1px 0 rgba(31,26,20,0.04), 0 2px 8px rgba(31,26,20,0.06);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--parchment);
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  body { max-width: 960px; margin: 0 auto; padding: 48px 32px 96px; }
+  header { border-bottom: 2px solid var(--rule); padding-bottom: 20px; margin-bottom: 32px; }
+  header .eyebrow {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--sepia); margin: 0 0 8px;
+  }
+  header h1 { font-size: 38px; line-height: 1.1; margin: 0 0 6px; font-weight: 600; letter-spacing: -0.01em; }
+  header .subtitle { color: var(--ink-soft); font-style: italic; font-size: 17px; margin: 0; }
+  h2 {
+    font-size: 22px; margin: 48px 0 8px; padding-bottom: 6px;
+    border-bottom: 1px solid var(--rule); font-weight: 600;
+  }
+  h2 .count {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px; color: var(--ink-faint); margin-left: 8px; font-weight: 400;
+  }
+  h3 { font-size: 17px; margin: 0 0 6px; font-weight: 600; }
+  p { margin: 0 0 10px; }
+  a { color: var(--sepia); }
+  code, .mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13px; }
+  code { background: var(--paper); padding: 1px 5px; border-radius: 3px; border: 1px solid var(--rule); }
+
+  /* Callouts */
+  .callout {
+    background: var(--paper); border-left: 3px solid var(--gold);
+    padding: 14px 18px; margin: 12px 0; border-radius: 0 4px 4px 0;
+    box-shadow: var(--shadow);
+  }
+  .callout--reality { border-left-color: var(--rose); }
+  .callout .label {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--ink-faint); margin: 0 0 6px;
+  }
+
+  /* Settled grid */
+  .settled {
+    display: grid; gap: 8px 16px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    background: var(--paper); border: 1px solid var(--rule);
+    border-radius: 6px; padding: 16px 20px; box-shadow: var(--shadow);
+    margin-top: 12px;
+  }
+  .settled .item { display: grid; grid-template-columns: 16px 1fr; gap: 8px; font-size: 14px; align-items: baseline; }
+  .settled .check { color: var(--moss); font-weight: 700; }
+  .settled .item code { font-size: 12px; }
+
+  /* Decision cards */
+  .decisions { display: grid; gap: 14px; margin-top: 12px; }
+  .decision {
+    background: var(--paper); border: 1px solid var(--rule); border-radius: 6px;
+    padding: 16px 20px; box-shadow: var(--shadow);
+    display: grid; grid-template-columns: 52px 1fr; gap: 16px;
+  }
+  .decision .num {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 20px; line-height: 1;
+    padding-top: 4px; font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .decision.--win { border-left: 3px solid var(--moss); }
+  .decision.--win .num { color: var(--moss); }
+  .decision.--defer { border-left: 3px solid var(--slate); }
+  .decision.--defer .num { color: var(--slate); }
+  .decision.--input { border-left: 3px solid var(--gold); }
+  .decision.--input .num { color: var(--gold); }
+  .decision h3 .tag {
+    display: inline-block;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    border-radius: 3px; padding: 2px 7px;
+    margin-left: 8px; vertical-align: middle;
+  }
+  .tag.t-high { color: var(--moss); background: rgba(90,122,59,0.10); }
+  .tag.t-med { color: var(--gold); background: rgba(184,134,11,0.10); }
+  .tag.t-ask { color: var(--rose); background: rgba(166,67,56,0.10); }
+  .decision .desc { color: var(--ink-soft); margin: 4px 0 10px; }
+  .decision .rec {
+    background: var(--parchment); border: 1px solid var(--rule);
+    border-radius: 4px; padding: 8px 12px; margin: 0 0 10px;
+    font-size: 14px;
+  }
+  .decision .rec .label {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-faint); margin-right: 6px;
+  }
+  .decision .meta {
+    display: grid; grid-template-columns: 88px 1fr; gap: 4px 14px;
+    font-size: 13px; align-items: baseline; margin-top: 6px;
+  }
+  .decision .meta dt {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-faint); padding-top: 1px;
+  }
+  .decision .meta dd { margin: 0; color: var(--ink-soft); }
+  .decision .meta dd code { font-size: 12px; }
+
+  /* Footer */
+  footer {
+    margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--rule);
+    color: var(--ink-faint); font-size: 13px; font-style: italic;
+  }
+  .next {
+    background: var(--paper); border: 1px solid var(--rule); border-radius: 6px;
+    padding: 18px 22px; margin-top: 16px; box-shadow: var(--shadow);
+  }
+  .next ol { margin: 4px 0 0; padding-left: 22px; }
+  .next li { margin-bottom: 6px; }
+
+  @media print {
+    body { max-width: none; padding: 24px; }
+    .decision, .callout, .settled, .next { box-shadow: none; }
+    h2 { page-break-after: avoid; }
+    .decision { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Spec 36 · Locomotion · Open decisions</p>
+  <h1>What's still on the table</h1>
+  <p class="subtitle">A code-reading + research pass against the original 13 decisions. Most were already settled in <code>player_controller.gd</code>. Nine remain.</p>
+</header>
+
+<div class="callout callout--reality">
+  <p class="label">Reality check — what the code reading revealed</p>
+  <p style="margin:0">The plan I drafted assumed a capsule starting point. The actual <code>player_controller.gd</code> is <strong>~400 lines deep</strong>: the Ranger is already wired with bow + arrows, dash and roll are fully implemented as state-machine bursts with i-frames + cooldowns, sprint/walk works, face-direction rotation is tuned. The work isn't "build locomotion from scratch" — it's <strong>polish + four genuinely-open decisions</strong>.</p>
+</div>
+
+<h2>Settled in code already <span class="count">— 12 items, no input needed</span></h2>
+<div class="settled">
+  <div class="item"><span class="check">✓</span><div><strong>Player = Ranger</strong> (spec 13 — bow on RightHand bone, arrows live, animations: idle/walk/run)</div></div>
+  <div class="item"><span class="check">✓</span><div><strong>Movement bindings</strong>: WASD + arrows for movement</div></div>
+  <div class="item"><span class="check">✓</span><div><strong>Sprint mode</strong>: held <code>Shift</code> = walk (default is run — "always-run" pattern)</div></div>
+  <div class="item"><span class="check">✓</span><div><strong>Face direction of movement</strong>: 10 rad/s normal, 18 rad/s during burst</div></div>
+  <div class="item"><span class="check">✓</span><div><strong>Dash</strong>: <code>0.18s</code> @ <code>11.0 m/s</code>, CD <code>0.7s</code>, no i-frames</div></div>
+  <div class="item"><span class="check">✓</span><div><strong>Roll</strong>: <code>0.45s</code> @ <code>6.5 m/s</code>, CD <code>0.85s</code>, procedural tumble (rotation.x through TAU)</div></div>
+  <div class="item"><span class="check">✓</span><div><strong>Input buffer</strong>: <code>150ms</code> on fire (same window as research recommendation)</div></div>
+  <div class="item"><span class="check">✓</span><div><strong>Resource gating</strong>: cooldowns only, no stamina (D10 settled)</div></div>
+  <div class="item"><span class="check">✓</span><div><strong>Camera-relative input projection</strong>: spec 09</div></div>
+  <div class="item"><span class="check">✓</span><div><strong>4-skill hotbar</strong>: 1-4 + F for BasicShot (spec 30/32b)</div></div>
+  <div class="item"><span class="check">✓</span><div><strong>No double-jump / air-dash / encumbrance</strong>: out of scope (D12/D13)</div></div>
+  <div class="item"><span class="check">✓</span><div><strong>Status framework on the player</strong>: snare/root reduce move speed (spec 33a)</div></div>
+</div>
+
+<!-- ───────────────────────────────────────────────────── -->
+<h2>Quick wins <span class="count">— do these, no input needed</span></h2>
+<p style="color:var(--ink-soft); margin-top:6px">Four small changes the research strongly supports. All cheap, all high-confidence. I'd batch them as one short PR.</p>
+
+<div class="decisions">
+
+  <article class="decision --win">
+    <div class="num">O1</div>
+    <div>
+      <h3>Swap bindings to industry convention <span class="tag t-high">high confidence</span></h3>
+      <p class="desc">Current code: <code>SPACE = Dash</code>, <code>CTRL = Roll</code>. Every shipped ARPG with a dodge puts it on Space — PoE 2, Lost Ark, Hades, post-SOTE Elden Ring all converge on this. Anyone coming from those games will hit Space expecting the defensive verb and get the wrong one.</p>
+      <div class="rec"><span class="label">Recommend</span><strong>Swap to <code>SPACE = Roll</code>, <code>CTRL = Dash</code>.</strong> Two-line change in <code>_bind</code> calls.</div>
+      <dl class="meta">
+        <dt>Cost</dt><dd>2 lines in <code>player_controller.gd:137-138</code></dd>
+        <dt>Source</dt><dd>Bindings research §2 — every surveyed ARPG with a roll uses Space</dd>
+        <dt>Risk</dt><dd>Muscle memory for anyone who's been playtesting. Worth it.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <article class="decision --win">
+    <div class="num">O2</div>
+    <div>
+      <h3>Velocity-driven foot-slide fix <span class="tag t-high">high confidence</span></h3>
+      <p class="desc">Current: <code>_ap.speed_scale = 0.85</code> set once at <code>_ready</code>. Foot-slide is present at every speed except the one Meshy calibrated. The fix doesn't need an AnimationTree — just update <code>speed_scale</code> each frame from <code>velocity.length()</code>.</p>
+      <div class="rec"><span class="label">Recommend</span>Per-frame: <code>_ap.speed_scale = clamp(velocity.length() / WALK_REF_SPEED, 0.7, 1.3)</code>. Calibrate <code>WALK_REF_SPEED</code> by eye in the editor.</div>
+      <dl class="meta">
+        <dt>Cost</dt><dd>~5 lines added to <code>_physics_process</code></dd>
+        <dt>Source</dt><dd>Locomotion research §4</dd>
+        <dt>Visible at</dt><dd>any speed that isn't 1.0× of the reference — sprint and creep most</dd>
+      </dl>
+    </div>
+  </article>
+
+  <article class="decision --win">
+    <div class="num">O3</div>
+    <div>
+      <h3>Add recovery-cancel windows to dash and roll <span class="tag t-high">high confidence</span></h3>
+      <p class="desc">Current: zero cancel during <code>Move.DASH</code> and <code>Move.ROLL</code>. Souls, PoE 2, DMC all permit recovery cancels into other locomotion verbs; Hades is the outlier. For a "feels smooth" target, fluid is the convention.</p>
+      <div class="rec"><span class="label">Recommend</span>Define recovery as <strong>last 30% of burst time</strong>. During recovery, dash/roll inputs interrupt and start the next burst. Active frames (first 70%) remain committed.</div>
+      <dl class="meta">
+        <dt>Cost</dt><dd>~15 lines — add an <code>_in_recovery</code> derived flag, check it in <code>match _move</code></dd>
+        <dt>Source</dt><dd>Bindings research §3 + §4 (active vs recovery is the canonical pattern)</dd>
+        <dt>Side effect</dt><dd>This is the structural piece O4 (roll i-frame retune) depends on</dd>
+      </dl>
+    </div>
+  </article>
+
+  <article class="decision --win">
+    <div class="num">O4</div>
+    <div>
+      <h3>Reduce roll i-frames from 89% to 60% <span class="tag t-high">high confidence</span></h3>
+      <p class="desc">Current: <code>ROLL_IFRAMES = 0.4</code> of <code>ROLL_TIME = 0.45</code> = 89% i-frame coverage. PoE 2 is ~50%, Elden Ring light-roll is ~40%, Souls is ~30%. 89% means the roll is essentially fully invulnerable — there's no meaningful recovery window for skilled play to punish.</p>
+      <div class="rec"><span class="label">Recommend</span><code>ROLL_IFRAMES = 0.27</code> (60% of 0.45s). Lands between PoE 2 and Elden Ring; leaves a real recovery window for O3's cancel grammar.</div>
+      <dl class="meta">
+        <dt>Cost</dt><dd>1 line</dd>
+        <dt>Source</dt><dd>Bindings research §4; verified against Elden Ring + PoE 2 conventions</dd>
+        <dt>Confidence</dt><dd>tuning is taste — re-evaluate during playtest pass (step 11)</dd>
+      </dl>
+    </div>
+  </article>
+
+</div>
+
+<!-- ───────────────────────────────────────────────────── -->
+<h2>Deferrals <span class="count">— with reasoning</span></h2>
+<p style="color:var(--ink-soft); margin-top:6px">Three items I'd punt, each for a specific reason. Not "I don't know"; "the right moment isn't now."</p>
+
+<div class="decisions">
+
+  <article class="decision --defer">
+    <div class="num">O5</div>
+    <div>
+      <h3>AnimationTree migration <span class="tag t-med">defer to spec 37</span></h3>
+      <p class="desc">Current code uses plain <code>AnimationPlayer</code> with a crossfade arg. The research-recommended <code>OneShot → StateMachine → BlendTree</code> architecture is the right end-state, but its real payoff is when we add <strong>attack animations as overlay clips</strong> (spec 37). Doing the migration without attacks-as-overlays means a refactor with no visible improvement.</p>
+      <div class="rec"><span class="label">Defer to</span>Spec 37 (attack pipeline) — the migration becomes load-bearing then. Cost is the same now or later; benefit is visible only then.</div>
+      <dl class="meta">
+        <dt>Cost when done</dt><dd>~1–2 days. Author <code>data/player_anim_tree.tres</code>, rewrite <code>_play_anim</code></dd>
+      </dl>
+    </div>
+  </article>
+
+  <article class="decision --defer">
+    <div class="num">O6</div>
+    <div>
+      <h3>Locomotion blendspace (velocity-driven walk↔run) <span class="tag t-med">tied to O5</span></h3>
+      <p class="desc">Current: discrete <code>Shift</code> toggle between <code>walk_speed</code> and <code>run_speed</code>. Continuous velocity-driven blending requires <code>BlendSpace1D</code>, which requires AnimationTree (O5). Bundled.</p>
+      <div class="rec"><span class="label">Defer with</span>O5. Same blocking dependency.</div>
+      <dl class="meta">
+        <dt>Note</dt><dd>The discrete toggle isn't broken — it just isn't as smooth as a blendspace would be. Acceptable v1.</dd>
+      </dl>
+    </div>
+  </article>
+
+  <article class="decision --defer">
+    <div class="num">O7</div>
+    <div>
+      <h3>Strafe mode when bow is drawn <span class="tag t-med">defer to aim system</span></h3>
+      <p class="desc">Ranger archetypes (D3 Demon Hunter, PoE Ranger) typically strafe while aiming — body keeps facing the target, legs sidestep. We don't have an aim/draw system yet; fire is instant via F. Without a "drawing" state to attach strafe to, the decision has no anchor.</p>
+      <div class="rec"><span class="label">Defer to</span>The spec that adds <code>hold-F-to-draw, release-to-fire</code> aiming (probably spec 37 or 41).</div>
+    </div>
+  </article>
+
+</div>
+
+<!-- ───────────────────────────────────────────────────── -->
+<h2>Needs your input <span class="count">— two judgment calls</span></h2>
+<p style="color:var(--ink-soft); margin-top:6px">Where I have a recommendation but the call is yours — either because it's a taste/scope call, or because the research consensus is genuinely split.</p>
+
+<div class="decisions">
+
+  <article class="decision --input">
+    <div class="num">O8</div>
+    <div>
+      <h3>Jump — add it at all? <span class="tag t-ask">needs your input</span></h3>
+      <p class="desc">You named jump as one of the five verbs we'd implement. The codebase deliberately doesn't have one (and SPACE is taken). The shipped-game survey is informative: <strong>PoE 2, Diablo 3, Hades, Lost Ark, Last Epoch — none of them have jump.</strong> ARPGs default to <em>no jump</em>. The exceptions are Souls-family (Elden Ring) and Sekiro, where jump is woven into traversal and combat.</p>
+      <div class="rec"><span class="label">My take</span><strong>Defer.</strong> The current crypt levels are flat — there's nothing to jump over. Adding jump now buys you a verb without a use case. Reconsider when level design introduces gaps, ledges, or vertical combat.</div>
+      <dl class="meta">
+        <dt>If yes</dt><dd>~1 day: new binding (Alt? E? Shift+Space?), JumpStart/JumpAir/JumpLand states, coyote+buffer, disable <code>floor_snap_length</code> during ascent</dd>
+        <dt>If no</dt><dd>drop jump from the spec's verb list; keep walk/run/roll/dash as the four locomotion verbs</dd>
+        <dt>The fork</dt><dd>are we building a Souls-flavor ARPG (jump matters) or a Diablo-flavor ARPG (jump irrelevant)?</dd>
+      </dl>
+    </div>
+  </article>
+
+  <article class="decision --input">
+    <div class="num">O9</div>
+    <div>
+      <h3>Dedicated roll/dash animation clips, or keep the procedural look? <span class="tag t-ask">needs your input</span></h3>
+      <p class="desc">Current: dash and roll both reuse the "run" clip; roll adds a procedural <code>rotation.x</code> tumble through TAU. The procedural roll is <em>charming</em> — A Short Hike, Tunic, low-poly stylized games often use exactly this kind of "math the model into a flip" approach. The dash reusing run is less charming; it looks like a fast jog.</p>
+      <div class="rec"><span class="label">My take</span><strong>Keep procedural roll, add dedicated dash clip.</strong> The roll tumble reads as intentional style; the dash reusing run reads as placeholder. A Meshy regen for "fast forward lean" or a Blender-authored 0.2s lunge clip closes that gap.</div>
+      <dl class="meta">
+        <dt>Cost if yes</dt><dd>Meshy regen ≈ 20-30 credits + Blender stitch — half a day</dd>
+        <dt>Cost if no</dt><dd>zero — accept current look</dd>
+        <dt>Taste lens</dt><dd>do you want our locomotion to read more <em>cozy-stylized</em> (keep procedural everywhere) or more <em>ARPG-crisp</em> (dedicated clips per verb)?</dd>
+      </dl>
+    </div>
+  </article>
+
+</div>
+
+<!-- ───────────────────────────────────────────────────── -->
+<h2>Next move</h2>
+<div class="next">
+  <p style="margin:0 0 8px"><strong>If you approve the Quick Wins (O1–O4) as-is</strong>, that's a one-PR-sized batch of changes — bindings swap, foot-slide fix, recovery-cancel window, i-frame retune. ~30 lines across <code>player_controller.gd</code>. Acceptance test: bindings feel right (Space=Roll), walk→sprint has no foot-slide, dash mid-roll-recovery works, roll has a punishable tail.</p>
+  <p style="margin:0 0 8px"><strong>Then answer O8 (Jump y/n) and O9 (dedicated clips y/n)</strong> and that closes spec 36's locomotion arc.</p>
+  <ol>
+    <li>Approve / amend the Quick Wins (O1–O4).</li>
+    <li>Decide on Jump (O8) and clips (O9).</li>
+    <li>I draft <code>docs/specs/36-locomotion.md</code> with all 9 resolved decisions baked in, then invoke <code>/spec</code> to implement.</li>
+  </ol>
+</div>
+
+<footer>
+  Companions: <code>docs/specs/36-locomotion-plan.html</code> (the 11-step plan), <code>docs/specs/36-locomotion-research.md</code> (Godot architecture), <code>docs/specs/36-bindings-research.md</code> (ARPG conventions). Last revised 2026-05-27.
+</footer>
+
+</body>
+</html>

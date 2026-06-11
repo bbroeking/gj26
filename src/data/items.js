@@ -93,6 +93,14 @@ export const ITEMS = {
   thorn_essence: { name: 'Thorn Essence', icon: '🟢', stack: true,
     desc: 'A globule of green sap from a bramble-cap. Faintly hums.' },
 
+  // ---- Crypt enemy drops (spec 04) ----
+  boneshard: { name: 'Boneshard', icon: '🦴', stack: true,
+    desc: 'A splinter of brittle bone from a crypt skeleton. Useful for ink and small charms.' },
+  rat_tail: { name: 'Rat Tail', icon: '🐀', stack: true,
+    desc: 'A scaly tail from a crypt rat. The herbalist pays a copper or two for them.' },
+  wisp_essence: { name: 'Wisp Essence', icon: '🔵', stack: true,
+    desc: 'A flickering blue mote left behind by a fading wraith. Cold to the touch.' },
+
   // ---- Wild boar drops ----
   raw_tusker: { name: 'Raw Tusker', icon: '🥩', stack: true,
     desc: 'A heavy cut of wild boar. Cook it on a fire — slowly.' },
@@ -353,6 +361,19 @@ export const ITEMS = {
     name: 'Bog Orb', icon: '🔵', stack: false,
     desc: 'A water-cool orb threaded with mist. Wet rooms, old stone.',
     chart: { tier: 3, affixes: [], scope: 'sunken_hut' },
+  },
+  // Crypt Ledger — multi-floor finite arc. Player commits to N floors
+  // up front; Hedgemother waits on the final floor, a crypt-hound mid-
+  // boss on ceil(N/2). See specs/03-multi-floor-descent.md.
+  chart_crypt_short: {
+    name: 'Crypt Ledger — Pilgrim', icon: '📜', stack: false,
+    desc: 'Tier 2 · 4 floors · Crypt-hound on floor 2, Hedgemother on floor 4. No turning back.',
+    chart: { tier: 2, affixes: [], scope: 'crypt', floors: 4 },
+  },
+  chart_crypt_long: {
+    name: 'Crypt Ledger — Deep Pilgrim', icon: '📜', stack: false,
+    desc: 'Tier 3 · 10 floors · Crypt-hound on floor 5, Hedgemother on floor 10. No turning back.',
+    chart: { tier: 3, affixes: [], scope: 'crypt', floors: 10 },
   },
 
   // ---- Inkwell vessels (Wayfinding Depth #13) ----

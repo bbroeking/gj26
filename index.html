@@ -1665,6 +1665,49 @@
     display: none;
   }
   body.dev-mode #fps { display: block; }
+  /* Crypt-arc depth indicator. Sits below the title; only visible while
+     a crypt arc is in progress. */
+  #crypt-depth-hud {
+    position: absolute; top: 56px; left: 50%; transform: translateX(-50%);
+    font-family: var(--font-display, var(--font-body));
+    font-size: 18px;
+    letter-spacing: 0.06em;
+    color: #d8c0e0;
+    text-shadow: 0 2px 0 rgba(0,0,0,0.65), 0 0 8px rgba(120,90,160,0.4);
+    pointer-events: none;
+    display: none;
+    user-select: none;
+  }
+  #crypt-depth-hud.active { display: block; }
+  /* Boss HP overlay (spec 05). Sits below the depth indicator while a
+     boss is engaged. Only visible when .active is set by bossHp.js. */
+  #boss-hp {
+    position: absolute; top: 92px; left: 50%; transform: translateX(-50%);
+    width: 60%; max-width: 720px; pointer-events: none;
+    display: none; user-select: none;
+    text-align: center;
+  }
+  #boss-hp.active { display: block; }
+  #boss-hp-name {
+    font-family: var(--font-display, var(--font-body));
+    font-size: 20px; letter-spacing: 0.08em;
+    color: #f3e2c8;
+    text-shadow: 0 2px 0 rgba(0,0,0,0.7), 0 0 10px rgba(160,40,40,0.4);
+    margin-bottom: 4px;
+  }
+  #boss-hp-bar {
+    height: 12px;
+    background: rgba(20,10,12,0.78);
+    border: 2px solid rgba(40,20,20,0.95);
+    border-radius: 3px;
+    box-shadow: 0 0 0 1px rgba(220,180,140,0.18), 0 2px 6px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+  #boss-hp-fill {
+    height: 100%; width: 100%;
+    background: linear-gradient(180deg, #a83838 0%, #6e1818 100%);
+    transition: width 180ms ease-out;
+  }
   #floaters { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
   /* Cross-nav — collapsed into a hamburger button at the top-right.
      Click toggles the link strip open/closed. Clean play surface by
@@ -3801,6 +3844,15 @@
     <canvas id="three"></canvas>
     <div id="title">BRAMBLEWOOD</div>
     <div id="fps"></div>
+    <!-- Crypt-arc depth indicator (spec 03). Hidden when no crypt arc
+         is active; populated by _updateCryptDepthHud() in main.js. -->
+    <div id="crypt-depth-hud"></div>
+    <!-- Boss HP overlay (spec 05). Hidden when no boss alive; shown by
+         src/ui/bossHp.js while a boss is engaged. -->
+    <div id="boss-hp">
+      <div id="boss-hp-name">Hedgemother</div>
+      <div id="boss-hp-bar"><div id="boss-hp-fill"></div></div>
+    </div>
     <!-- Cross-nav to the side surfaces. Collapsed into a hamburger so the
          play surface stays clean. Click to reveal Codex + Editor links;
          click outside to close. Persists open-state across reloads via
@@ -4398,6 +4450,6 @@
     </div>
   </div>
 </div>
-<script type="module" src="src/main.js?v=20260510-rigged"></script>
+<script type="module" src="src/main.js?v=20260520-spec06a"></script>
 </body>
 </html>

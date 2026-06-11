@@ -356,6 +356,11 @@ const _glb = {
   hare: null, harePromise: null,
   boar: null, boarPromise: null,
   hedgemother: null, hedgemotherPromise: null,
+  // Crypt-biome enemies (spec 04).
+  skeleton: null, skeletonPromise: null,
+  rat: null, ratPromise: null,
+  ghost: null, ghostPromise: null,
+  hedgeSprite: null, hedgeSpritePromise: null,
   equipment: new Map(),         // name → loaded scene
   equipmentPromises: new Map(), // name → in-flight promise
 };
@@ -417,6 +422,21 @@ export function loadTuskerSowGLB(url = 'models/tusker_sow.glb') {
 export function loadBrambleArcherGLB(url = 'models/bramble_archer.glb') {
   return _loadOnce('brambleArcher', 'brambleArcherPromise', url);
 }
+// Crypt-biome enemies (spec 04). Each cleaned with clean_ai_mesh.py
+// using the rig hinted at in PROMPTS.md (biped / quadruped / static).
+export function loadSkeletonGLB(url = 'models/enemy_skeleton_v1.glb') {
+  return _loadOnce('skeleton', 'skeletonPromise', url);
+}
+export function loadRatGLB(url = 'models/enemy_rat_v1.glb') {
+  return _loadOnce('rat', 'ratPromise', url);
+}
+export function loadGhostGLB(url = 'models/enemy_ghost_v1.glb') {
+  return _loadOnce('ghost', 'ghostPromise', url);
+}
+export function loadHedgeSpriteGLB(url = 'models/enemy_hedge_sprite_v1.glb') {
+  return _loadOnce('hedgeSprite', 'hedgeSpritePromise', url);
+}
+
 export function loadBrambleChargerGLB(url = 'models/bramble_charger.glb') {
   return _loadOnce('brambleCharger', 'brambleChargerPromise', url);
 }
@@ -726,8 +746,9 @@ export function buildHedgemotherMesh() {
   return shadowizeAll(g);
 }
 
-const _BIPED_RIG_PARTS = ['Body','Head','Arm_L','Arm_R','Leg_L','Leg_R'];
-const _QUAD_RIG_PARTS  = ['Body','Head','Tail','Leg_FL','Leg_FR','Leg_BL','Leg_BR'];
+const _BIPED_RIG_PARTS  = ['Body','Head','Arm_L','Arm_R','Leg_L','Leg_R'];
+const _QUAD_RIG_PARTS   = ['Body','Head','Tail','Leg_FL','Leg_FR','Leg_BL','Leg_BR'];
+const _STATIC_RIG_PARTS = ['Body','Head'];                 // ghost: float+bob, no limbs
 
 function _buildEnemyFromGLB(glbKey, { scale = 0.85, rig = 'biped' } = {}) {
   const src = _glb[glbKey];
@@ -736,7 +757,11 @@ function _buildEnemyFromGLB(glbKey, { scale = 0.85, rig = 'biped' } = {}) {
   const inst = src.clone(true);
   inst.scale.setScalar(scale);
   g.add(inst);
-  const wanted = new Set(rig === 'quad' ? _QUAD_RIG_PARTS : _BIPED_RIG_PARTS);
+  const wanted = new Set(
+    rig === 'quad'   ? _QUAD_RIG_PARTS :
+    rig === 'static' ? _STATIC_RIG_PARTS :
+                       _BIPED_RIG_PARTS
+  );
   const parts = {};
   inst.traverse(o => { if (wanted.has(o.name)) parts[o.name] = o; });
   g.userData.parts = parts;
@@ -751,6 +776,12 @@ export function buildIronGobMesh()        { return _buildEnemyFromGLB('ironGob',
 export function buildTuskerSowMesh()      { return _buildEnemyFromGLB('tuskerSow',      { rig: 'quad'  }); }
 export function buildBrambleArcherMesh()  { return _buildEnemyFromGLB('brambleArcher',  { rig: 'biped' }); }
 export function buildBrambleChargerMesh() { return _buildEnemyFromGLB('brambleCharger', { rig: 'quad'  }); }
+// Crypt-biome enemies (spec 04). Ghost has the static rig (Body + Head
+// only); the animator y-bobs the whole mesh + sways the body.
+export function buildSkeletonMesh()    { return _buildEnemyFromGLB('skeleton',    { rig: 'biped'  }); }
+export function buildRatMesh()         { return _buildEnemyFromGLB('rat',         { rig: 'quad'   }); }
+export function buildGhostMesh()       { return _buildEnemyFromGLB('ghost',       { rig: 'static' }); }
+export function buildHedgeSpriteMesh() { return _buildEnemyFromGLB('hedgeSprite', { rig: 'biped'  }); }
 
 /** Chartmaker site monolith. Returns the GLB if loaded, otherwise null
  *  so the caller can keep its procedural fallback up. */

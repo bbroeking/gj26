@@ -150,6 +150,34 @@ export const ENEMY_DEFS = [
     model: 'bramble_imp.glb',
     scope: 'briar_maze' },
 
+  // ---- CRYPT adds (spec 04) ----
+  // Skeleton — biped melee. Slow-but-steady tier-1 staple. Crypt's
+  // "skeleton stand-in" until/unless it sees combat re-tuning.
+  { kind: 'skeleton',     name: 'Crypt Skeleton',   tier: 'easy',    hp: 18,  atk: 5,  def: 3,  maxHit: 4,  heightM: 1.55,
+    drops: ['boneshard', 'coin'],
+    desc: 'A rattling skeleton, animated by old chart-ink. Slow but punishing.',
+    model: 'enemy_skeleton_v1.glb',
+    scope: 'crypt' },
+  // Crypt Rat — fast quadruped, low HP. Pack chaff.
+  { kind: 'rat',          name: 'Crypt Rat',        tier: 'trivial', hp: 8,   atk: 2,  def: 1,  maxHit: 2,  heightM: 0.45,
+    drops: ['rat_tail', 'coin'],
+    desc: 'A dark-fur rat. Skitters in groups; light hits, hard to corner.',
+    model: 'enemy_rat_v1.glb',
+    scope: 'crypt' },
+  // Ghost — static-rig float. Mid-tier with a sharper hit than its HP suggests.
+  { kind: 'ghost',        name: 'Pale Wraith',      tier: 'medium',  hp: 22,  atk: 5,  def: 4,  maxHit: 5,  heightM: 1.40,
+    drops: ['wisp_essence', 'coin'],
+    desc: 'A drifting tear-drop of crypt-mist. Hits softly until it doesn’t.',
+    model: 'enemy_ghost_v1.glb',
+    scope: 'crypt' },
+  // Hedge-Sprite — small bramble biped, tier-3 mob. Heads up the late-floor
+  // mix and links the crypt visually to the briar_maze biome.
+  { kind: 'hedge_sprite', name: 'Hedge-Sprite',     tier: 'hard',    hp: 32,  atk: 6,  def: 4,  maxHit: 6,  heightM: 0.95,
+    drops: ['bramble_resin', 'thorn_essence', 'coin'],
+    desc: 'A twig-and-moss imp with red-berry eyes. Quick swipes from a thorn-arm.',
+    model: 'enemy_hedge_sprite_v1.glb',
+    scope: 'crypt' },
+
   // ---- BOSS adds ----
   { kind: 'chartmaker_echo', name: "The Chartmaker's Echo", tier: 'boss', hp: 520, atk: 28, def: 24, maxHit: 9, heightM: 1.90,
     drops: ['old_key', 'cartographers_compass', 'aurora_essence', 'coin'],

@@ -1,0 +1,54 @@
+[gd_scene load_steps=8 format=3 uid="uid://b07town0001"]
+
+[ext_resource type="Script" path="res://scripts/town.gd" id="Script_town"]
+[ext_resource type="PackedScene" uid="uid://b07player001" path="res://scenes/Player.tscn" id="Player_1"]
+[ext_resource type="PackedScene" path="res://scenes/CameraRig.tscn" id="CamRig_1"]
+[ext_resource type="PackedScene" path="res://scenes/PlayerHUD.tscn" id="HUD_1"]
+
+[sub_resource type="ProceduralSkyMaterial" id="Sky_1"]
+sky_top_color = Color(0.45, 0.62, 0.82, 1)
+sky_horizon_color = Color(0.82, 0.80, 0.68, 1)
+ground_horizon_color = Color(0.55, 0.58, 0.45, 1)
+ground_bottom_color = Color(0.28, 0.32, 0.22, 1)
+sun_angle_max = 60.0
+
+[sub_resource type="Sky" id="Sky_2"]
+sky_material = SubResource("Sky_1")
+
+[sub_resource type="Environment" id="Env_1"]
+background_mode = 2
+sky = SubResource("Sky_2")
+ambient_light_source = 3
+ambient_light_color = Color(0.72, 0.74, 0.66, 1)
+ambient_light_energy = 0.55
+tonemap_mode = 2
+glow_enabled = true
+glow_normalized = true
+glow_intensity = 0.6
+glow_bloom = 0.08
+glow_hdr_threshold = 1.0
+glow_blend_mode = 2
+ssao_enabled = true
+ssao_intensity = 2.2
+fog_enabled = true
+fog_light_color = Color(0.82, 0.84, 0.72, 1)
+fog_density = 0.006
+fog_sky_affect = 0.0
+
+[node name="Town" type="Node3D"]
+script = ExtResource("Script_town")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env_1")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.939693, -0.342020, 0, 0.171010, 0.469846, 0.866025, -0.296198, -0.813798, 0.5, 0, 12, 0)
+light_color = Color(1, 0.95, 0.82, 1)
+light_energy = 1.1
+shadow_enabled = true
+
+[node name="Player" parent="." instance=ExtResource("Player_1")]
+
+[node name="CameraRig" parent="." instance=ExtResource("CamRig_1")]
+
+[node name="PlayerHUD" parent="." instance=ExtResource("HUD_1")]

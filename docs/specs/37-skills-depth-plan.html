@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spec 37 — Skills Depth Implementation Plan</title>
+<style>
+  :root {
+    --ink:#1f1a14; --ink-soft:#4a4036; --ink-faint:#7a6f60;
+    --parchment:#f4ecd8; --paper:#fbf6e8; --rule:#c8b896;
+    --sepia:#8b5a2b; --gold:#b8860b; --moss:#5a7a3b; --rose:#a64338; --slate:#6a6f78;
+    --shadow:0 1px 0 rgba(31,26,20,0.04), 0 2px 8px rgba(31,26,20,0.06);
+  }
+  * { box-sizing:border-box; }
+  html,body {
+    margin:0; padding:0; background:var(--parchment); color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    font-size:16px; line-height:1.55;
+  }
+  body { max-width:980px; margin:0 auto; padding:48px 32px 96px; }
+  header { border-bottom:2px solid var(--rule); padding-bottom:20px; margin-bottom:28px; }
+  header .eyebrow {
+    font-family:"SF Mono",Menlo,Consolas,monospace; font-size:11px;
+    letter-spacing:0.18em; text-transform:uppercase; color:var(--sepia); margin:0 0 8px;
+  }
+  header h1 { font-size:38px; line-height:1.1; margin:0 0 6px; font-weight:600; letter-spacing:-0.01em; }
+  header .subtitle { color:var(--ink-soft); font-style:italic; font-size:17px; margin:0; }
+  h2 { font-size:22px; margin:44px 0 8px; padding-bottom:6px; border-bottom:1px solid var(--rule); font-weight:600; }
+  h2 .count { font-family:"SF Mono",Menlo,Consolas,monospace; font-size:13px; color:var(--ink-faint); margin-left:8px; font-weight:400; }
+  p { margin:0 0 10px; }
+  a { color:var(--sepia); }
+  code,.mono { font-family:"SF Mono",Menlo,Consolas,monospace; font-size:13px; }
+  code { background:var(--paper); padding:1px 5px; border-radius:3px; border:1px solid var(--rule); }
+  pre { background:var(--paper); border:1px solid var(--rule); border-radius:4px; padding:14px 18px; overflow-x:auto; line-height:1.4; box-shadow:var(--shadow); font-size:12px; }
+
+  .callout { background:var(--paper); border-left:3px solid var(--gold); padding:14px 18px; margin:12px 0; border-radius:0 4px 4px 0; box-shadow:var(--shadow); }
+  .callout--model { border-left-color:var(--moss); }
+  .callout .label { font-family:"SF Mono",Menlo,Consolas,monospace; font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 6px; }
+
+  /* Goal blocks */
+  .goal { background:var(--paper); border:1px solid var(--rule); border-radius:6px; padding:0; box-shadow:var(--shadow); margin:16px 0; overflow:hidden; }
+  .goal .head { display:grid; grid-template-columns:auto 1fr auto; gap:14px; align-items:center; padding:14px 20px; border-bottom:1px solid var(--rule); background:rgba(184,134,11,0.05); }
+  .goal.--fw .head { background:rgba(90,122,59,0.07); }
+  .goal .gid { font-family:"SF Mono",Menlo,Consolas,monospace; font-size:15px; font-weight:600; color:var(--sepia); white-space:nowrap; }
+  .goal.--fw .gid { color:var(--moss); }
+  .goal .gtitle { font-size:18px; font-weight:600; }
+  .goal .gtag { font-family:"SF Mono",Menlo,Consolas,monospace; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-faint); border:1px solid var(--rule); border-radius:3px; padding:3px 8px; white-space:nowrap; }
+  .goal .body { padding:14px 20px 18px; }
+  .goal .charter { color:var(--ink-soft); font-style:italic; margin:0 0 12px; }
+  .sys { border-top:1px dashed var(--rule); padding:10px 0 2px; }
+  .sys:first-of-type { border-top:none; }
+  .sys h4 { margin:0 0 4px; font-size:15px; font-weight:600; }
+  .sys h4 .n { font-family:"SF Mono",Menlo,Consolas,monospace; color:var(--moss); font-size:13px; margin-right:6px; }
+  .sys p { font-size:14px; color:var(--ink-soft); margin:0 0 6px; }
+  .sys .meta { display:grid; grid-template-columns:74px 1fr; gap:3px 12px; font-size:13px; align-items:baseline; }
+  .sys .meta dt { font-family:"SF Mono",Menlo,Consolas,monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint); padding-top:1px; }
+  .sys .meta dd { margin:0; color:var(--ink-soft); }
+  .sys .meta dd code { font-size:12px; }
+  .accept { background:var(--parchment); border:1px solid var(--rule); border-radius:4px; padding:8px 12px; margin-top:8px; font-size:13px; }
+  .accept .label { font-family:"SF Mono",Menlo,Consolas,monospace; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--moss); margin-right:6px; }
+
+  table { width:100%; border-collapse:collapse; margin:8px 0 12px; }
+  th,td { text-align:left; padding:7px 10px; border-bottom:1px solid var(--rule); font-size:13px; vertical-align:top; }
+  th { background:var(--paper); font-family:"SF Mono",Menlo,Consolas,monospace; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-faint); font-weight:600; }
+  td.mono { font-family:"SF Mono",Menlo,Consolas,monospace; font-size:12px; }
+
+  .next { background:var(--paper); border:1px solid var(--rule); border-radius:6px; padding:18px 22px; margin-top:16px; box-shadow:var(--shadow); }
+  .next ol { margin:6px 0 0; padding-left:22px; } .next li { margin-bottom:6px; }
+  footer { margin-top:56px; padding-top:20px; border-top:1px solid var(--rule); color:var(--ink-faint); font-size:13px; font-style:italic; }
+
+  @media print { body{max-width:none;padding:24px;} .goal,.callout,.next,pre{box-shadow:none;} .goal{page-break-inside:avoid;} h2{page-break-after:avoid;} }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Spec 37 · Gathering &amp; Crafting · Implementation Plan</p>
+  <h1>Skills depth — the New World model</h1>
+  <p class="subtitle">Vertical depth + active-channel gathering, built as one framework then three skills. Four reviewable goals.</p>
+</header>
+
+<div class="callout callout--model">
+  <p class="label">The model you chose</p>
+  <p style="margin:0">Keep all 10 skills (honor the consolidation). Deliver the <strong>earned-mastery feeling</strong> through New World's <strong>vertical depth</strong>: luck-as-one-additive-number, tier-up refine rolls, tool-as-perk-container, and a <strong>hold-to-channel gather loop</strong> with an XP burst + occasional surprise. Drop everything MMO-economy (territories, trading post, the 0–250 grind, a separate Engineering skill) — collapse onto your existing 3-tier ladder.</p>
+</div>
+
+<h2>Dependency order</h2>
+<p style="color:var(--ink-soft); margin-top:6px">The framework is the engine; the three skills are content that plugs into it. Build <code>37a</code> first — the rest are parallel-able after.</p>
+<pre>            ┌─────────────────────────────────────────────┐
+            │  37a · THE FRAMEWORK (shared depth engine)  │
+            │  channel loop · luck · tools · yield ·      │
+            │  node tiers · refine roll · buff plumbing   │
+            └─────────────────────────────────────────────┘
+                   │              │              │
+          ┌────────┘     ┌────────┘     └────────┐
+          ▼              ▼                        ▼
+   ┌─────────────┐ ┌─────────────┐        ┌─────────────┐
+   │  37b WILDS  │ │  37c EARTH  │        │  37d COOK   │
+   │ thinnest →  │ │ extend the  │        │ the buff    │
+   │ biggest lift│ │ ore ladder  │        │ system      │
+   └─────────────┘ └─────────────┘        └─────────────┘</pre>
+
+<!-- ════════════════════ GOAL 37a ════════════════════ -->
+<h2>Goal 37a — The Framework <span class="count">— the shared depth engine, no skill content</span></h2>
+
+<div class="goal --fw">
+  <div class="head">
+    <span class="gid">37a</span>
+    <span class="gtitle">Gathering depth framework</span>
+    <span class="gtag">build first · blocks b/c/d</span>
+  </div>
+  <div class="body">
+    <p class="charter">Seven reusable systems every gathering skill plugs into. Zero skill-specific content lives here — only the engine. When this lands, "add a new tiered node with luck + yield" is a data edit, not a code change.</p>
+
+    <div class="sys">
+      <h4><span class="n">1</span>Active-channel gather loop</h4>
+      <p>Replace instant pick / chop / mine with hold-to-gather: press → progress bar fills over <code>channelTime</code> → completes → drop + XP burst. Moving away cancels. This is the moment-to-moment feel you picked.</p>
+      <dl class="meta">
+        <dt>Formula</dt><dd><code>channelTime = node.baseTime / tool.gatherSpeed</code> — tool tier speeds it up, node tier slows it down</dd>
+        <dt>New file</dt><dd><code>src/game/gathering.js</code> (the action engine) + wiring in <code>src/main.js</code> interact branch</dd>
+      </dl>
+      <div class="accept"><span class="label">Accept</span>Holding on a tree fills a bar (~1.5s), pops logs + an XP float; walking away mid-channel cancels with no reward.</div>
+    </div>
+
+    <div class="sys">
+      <h4><span class="n">2</span>Per-skill Luck — one additive number</h4>
+      <p>The headline lever. Luck is a single number per skill, fed additively by <strong>skill level (free baseline) + tool luck-perks + food luck-buff</strong>. Rare drops sit above a roll threshold; more luck = more rares. Skill level is the cheapest feeder, so leveling literally improves your drop table.</p>
+      <dl class="meta">
+        <dt>Formula</dt><dd><code>luck(skill) = baseLuck(lv) + Σ toolLuckPerks + foodLuckBuff</code>; pools are independent per skill (wilds-luck ≠ earth-luck)</dd>
+        <dt>New file</dt><dd><code>src/game/luck.js</code> — <code>luck()</code> + <code>rollDrops(node, luck)</code></dd>
+        <dt>Scaling</dt><dd>collapse NW's 100k-die to a readable 0–1 roll; rare thresholds tuned so a maxed skill alone gives a modest rare rate, food/tools push it higher</dd>
+      </dl>
+      <div class="accept"><span class="label">Accept</span>At Wilds 1 a rare forageable never drops; at Wilds 35 it drops occasionally; with a luck-food active, noticeably more often.</div>
+    </div>
+
+    <div class="sys">
+      <h4><span class="n">3</span>Tools as perk containers</h4>
+      <p>Tools gain a tier (1–3) and slot perks across three axes: <strong>speed / luck / yield</strong>. Higher tier = faster channel + more perk slots. Tool-crafting folds into <strong>Earth</strong> (no separate Engineering skill — explicit research "drop").</p>
+      <dl class="meta">
+        <dt>Data</dt><dd>extend <code>src/data/items.js</code> tool entries: <code>{ tier, gatherSpeed, perks:[{axis,value}] }</code></dd>
+        <dt>Axes</dt><dd><code>speed</code> → channel time · <code>luck</code> → feeds system 2 · <code>yield</code> → feeds system 5</dd>
+      </dl>
+      <div class="accept"><span class="label">Accept</span>A tier-2 pickaxe visibly gathers faster than tier-1; equipping one with a luck perk raises earth-luck.</div>
+    </div>
+
+    <div class="sys">
+      <h4><span class="n">4</span>Node tiers + biome clustering</h4>
+      <p>Nodes gain a <code>tier</code>, skill-gated for access and soft-gated by tool speed (a low tool is so slow it's effectively a wall). Nodes cluster by biome — <em>where you are</em> determines <em>what you gather</em>; the map becomes the tech tree. Collapse NW's 8 tiers onto your existing <strong>3-tier ladder</strong>.</p>
+      <dl class="meta">
+        <dt>Data</dt><dd>extend spawn defs in <code>src/scene/world.js</code> (<code>forageSpawns</code>, <code>trees</code>, <code>oreNodes</code>) with <code>tier</code> + gate</dd>
+        <dt>Gates</dt><dd>tier 1 / 2 / 3 ≈ skill <code>1 / 15 / 30</code> (mirrors the Brindle/Bogiron/Cinderbloom ladder already in Earth)</dd>
+      </dl>
+      <div class="accept"><span class="label">Accept</span>A tier-3 node shows "needs Wilds 30 (you have M)" on hover and resists a tier-1 tool's channel.</div>
+    </div>
+
+    <div class="sys">
+      <h4><span class="n">5</span>Yield + bonus-resource roll</h4>
+      <p>The "2 instead of 1" surprise. Two layers: a flat yield-perk bump (tool), and a bonus-resource roll off the <em>same</em> luck pool as system 2 — a high roll pops an extra unit or a tier-up material on top of the base drop.</p>
+      <dl class="meta">
+        <dt>Where</dt><dd>drop-resolution in <code>gathering.js</code> — yield perk adds count; luck roll adds the surprise</dd>
+      </dl>
+      <div class="accept"><span class="label">Accept</span>High-level + high-luck gathers visibly produce doubles sometimes, with a distinct "+1!" float.</div>
+    </div>
+
+    <div class="sys">
+      <h4><span class="n">6</span>Refining tier-up roll</h4>
+      <p>Turns refining (smelt / smith / cook) from a deterministic button-press into a slot machine. On each refine, roll for bonus output and a chance the output rolls <em>up a tier</em>.</p>
+      <dl class="meta">
+        <dt>Formula</dt><dd>NW's <code>Skill÷10 → 20% @ lv200</code>, rescaled to our 99-cap: <code>bonusChance = min(0.25, lv × 0.0025)</code> → ~25% at 99</dd>
+        <dt>Where</dt><dd>smelt/smith/cook recipe resolution in <code>src/main.js</code></dd>
+      </dl>
+      <div class="accept"><span class="label">Accept</span>Smelting at Earth 50 occasionally yields a bonus bar; rarely, a higher-tier bar's worth.</div>
+    </div>
+
+    <div class="sys">
+      <h4><span class="n">7</span>Timed-buff plumbing</h4>
+      <p>Generic timed buffs on the player — <strong>recovery</strong> (HoT), <strong>attribute</strong> (+stat for a duration), <strong>trade-skill</strong> (gathering-luck). Cook (37d) produces the foods; the framework owns the plumbing because attribute buffs touch combat stats and luck-food feeds system 2.</p>
+      <dl class="meta">
+        <dt>New file</dt><dd><code>src/game/buffs.js</code> — apply / tick / expire + a HUD indicator</dd>
+      </dl>
+      <div class="accept"><span class="label">Accept</span>Applying a test luck-buff raises wilds-luck for its duration, shows a HUD timer, then expires cleanly.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════ GOAL 37b ════════════════════ -->
+<h2>Goal 37b — Wilds <span class="count">— thinnest skill, biggest lift</span></h2>
+<div class="goal">
+  <div class="head"><span class="gid">37b</span><span class="gtitle">Wilds: forage · fish · woodcut</span><span class="gtag">after 37a</span></div>
+  <div class="body">
+    <p class="charter">Wilds is currently instant-pick with flat XP. Give it the full framework: tiered nodes across all three verbs, the gather/track split, and luck-rolled rare forageables.</p>
+    <table>
+      <thead><tr><th>Verb</th><th>Tier 1 (Wilds 1)</th><th>Tier 2 (Wilds 15)</th><th>Tier 3 (Wilds 30)</th><th>Rare (luck roll)</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">Forage</td><td>Whitleberry</td><td>Wishrose, Mossvine</td><td>Coalrose</td><td>Foxfire Glow (night)</td></tr>
+        <tr><td class="mono">Fish</td><td>Sardine</td><td>mid pond fish</td><td>Briarcoast fish</td><td>named catch</td></tr>
+        <tr><td class="mono">Woodcut</td><td>Young log</td><td>mature log</td><td>Hard Ash</td><td>burl / heartwood</td></tr>
+      </tbody>
+    </table>
+    <div class="sys">
+      <h4><span class="n">+</span>Gather/track split (the cheap evocative unlock)</h4>
+      <p>You can harvest a tier before you can reliably <em>find</em> it. Rare nodes (Foxfire) don't show on any sense until a higher "track" milestone — so the grind between gather-level and track-level is rewarded by <em>discovery</em>, not just XP. Reuses your existing milestone slots (12/25/35).</p>
+      <div class="accept"><span class="label">Accept</span>Channel-gather a tier-2 herb; a rare pops occasionally via luck; the track unlock reveals rare nodes you previously had to stumble onto.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ GOAL 37c ════════════════════ -->
+<h2>Goal 37c — Earth <span class="count">— extend the existing ladder</span></h2>
+<div class="goal">
+  <div class="head"><span class="gid">37c</span><span class="gtitle">Earth: mine · smelt · smith</span><span class="gtag">after 37a</span></div>
+  <div class="body">
+    <p class="charter">Earth is already your most New-World-shaped skill — the <code>ore → bar → item</code> refine chain with Brindle/Bogiron/Cinderbloom gates. Don't rebuild it; layer the framework on top.</p>
+    <div class="sys">
+      <h4><span class="n">+</span>What gets added</h4>
+      <dl class="meta">
+        <dt>Mining luck</dt><dd>rare ore / gem drops off system 2, gated by Earth level</dd>
+        <dt>Refine roll</dt><dd>smelting rolls bonus bars; rarely a higher-tier bar (system 6)</dd>
+        <dt>Tool perks</dt><dd>pickaxe gains speed/luck/yield perks (system 3)</dd>
+        <dt>Tool crafting</dt><dd>smith makes the tiered gather tools for <em>all</em> skills — Earth is the tool source</dd>
+      </dl>
+      <div class="accept"><span class="label">Accept</span>Mining at Earth 30 occasionally drops a rare gem; smelting rolls bonus bars; the smith can craft a tier-2 sickle that Wilds then uses.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ GOAL 37d ════════════════════ -->
+<h2>Goal 37d — Cook <span class="count">— the buff system, biggest opportunity</span></h2>
+<div class="goal">
+  <div class="head"><span class="gid">37d</span><span class="gtitle">Cook: recipes → timed buffs</span><span class="gtag">after 37a · best with 37b</span></div>
+  <div class="body">
+    <p class="charter">Cook currently only heals. New World's cooking is the connective tissue that makes gathering <em>purposeful</em>: gather → cook a buff food → buff improves combat or your next gather run → repeat. This is the loop that ties the whole skill arc together.</p>
+    <div class="sys">
+      <h4><span class="n">+</span>Recipe shape &amp; the three food categories</h4>
+      <p>Recipe = one <strong>tier-locked primary</strong> (a tier-3 dish needs a tier-3 primary, no substituting down) + a <strong>flexible secondary</strong> (any item in category). Keep burn-chance as the low-level mechanic; add the system-6 yield roll at higher levels.</p>
+      <table>
+        <thead><tr><th>Category</th><th>Effect</th><th>Ties to</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">Recovery</td><td>heal-over-time (extends current instant heal)</td><td>HP / combat survival</td></tr>
+          <tr><td class="mono">Attribute</td><td>+Str / +Def / etc. for a duration</td><td>combat (via buff plumbing, system 7)</td></tr>
+          <tr><td class="mono">Trade-skill</td><td><strong>gathering-luck food</strong> — the single biggest luck buff</td><td>feeds system 2 → closes the loop</td></tr>
+        </tbody>
+      </table>
+      <div class="accept"><span class="label">Accept</span>Cook a gathering-luck food, eat it, watch wilds-luck rise on the HUD for its duration → the next forage run drops measurably more rares.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ FEEL ════════════════════ -->
+<h2>Feel check <span class="count">— scored against the nine feelings</span></h2>
+<p style="color:var(--ink-soft); margin-top:6px">The target was <strong>earned mastery</strong>. The arc also lights up slow-time and discovery — and notably doesn't suppress anything.</p>
+<table>
+  <thead><tr><th>Feeling</th><th>Score</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td>Earned mastery</td><td class="mono">2 ✦</td><td>luck-per-skill + tier gates make the level number visibly change your drops — the target</td></tr>
+    <tr><td>Slow time</td><td class="mono">2</td><td>the channel loop + node respawn + travel-between-clusters give gathering its own pace</td></tr>
+    <tr><td>Discovery</td><td class="mono">2</td><td>gather/track split rewards the grind with <em>finding</em> rare nodes, not just XP</td></tr>
+    <tr><td>Wonder</td><td class="mono">1</td><td>biome-clustered nodes nudge exploration, but no new world content here</td></tr>
+    <tr><td>Quirky charm</td><td class="mono">1</td><td>neutral — the named rares (Foxfire Glow) carry flavor; depends on copy</td></tr>
+    <tr><td>Belonging / Hangout / FOMO / Identity</td><td class="mono">1</td><td>neutral — single-player systems, no suppression</td></tr>
+  </tbody>
+</table>
+
+<!-- ════════════════════ REVIEW FLOW ════════════════════ -->
+<h2>Review flow</h2>
+<div class="next">
+  <p style="margin:0 0 8px">Each goal is a self-contained reviewable unit. The handoff for each:</p>
+  <ol>
+    <li>You approve / amend a goal here.</li>
+    <li>I write its spec — <code>docs/specs/37a-framework.md</code>, then <code>37b</code> / <code>37c</code> / <code>37d</code> — capturing the resolved scope, grounded in <code>37-skill-depth-research.md</code>.</li>
+    <li>You review the spec.</li>
+    <li><code>/spec</code> implements it; an implementation <code>-notes.md</code> records decisions, deviations, and surprises.</li>
+  </ol>
+  <p style="margin:8px 0 0"><strong>Recommended start:</strong> approve <code>37a</code> (the framework) — it's the foundation the three skills plug into, and nothing else can land cleanly until the channel loop + luck + buff plumbing exist. The three skills can then go in any order (Wilds is the biggest visible payoff; Earth is the smallest lift).</p>
+</div>
+
+<footer>
+  Grounded in <code>docs/specs/37-skill-depth-research.md</code> (New World mechanics) and the current skill code (<code>src/game/skills.js</code>, <code>docs/skills/{wilds,earth,cook}.md</code>). Feel scoring via the <code>evoke-online-game-feel</code> framework. Last revised 2026-05-28.
+</footer>
+
+</body>
+</html>
