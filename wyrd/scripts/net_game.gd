@@ -164,18 +164,40 @@ func _run_start(chart: Dictionary) -> void:
 	var game := get_node("/root/Game")
 	game.net_enter(chart)
 
-# Any peer at an exit/abandon stone asks the host; the host ends the run
-# for the whole party (v1 — the "all at the stone" vote is Phase C).
+# Any peer at an exit/abandon stone asks the host. Phase C — stepping
+# through the EXIT gives the rest of the party a 5-second grace (grab
+# that last pickup); tearing the chart (abandon) is immediate.
+const EXIT_GRACE_SEC := 5.0
+var _ending := false
+
 func request_end(abandoned: bool) -> void:
 	if is_host():
-		_run_end.rpc(abandoned)
+		_host_end(abandoned, multiplayer.get_unique_id())
 	else:
 		_end_req.rpc_id(1, abandoned)
 
 @rpc("any_peer", "reliable")
 func _end_req(abandoned: bool) -> void:
 	if multiplayer.is_server():
+		_host_end(abandoned, multiplayer.get_remote_sender_id())
+
+func _host_end(abandoned: bool, who: int) -> void:
+	if _ending:
+		return
+	if abandoned or players.size() <= 1:
 		_run_end.rpc(abandoned)
+		return
+	_ending = true
+	_end_notice.rpc(peer_name(who))
+	get_tree().create_timer(EXIT_GRACE_SEC).timeout.connect(func():
+		_ending = false
+		_run_end.rpc(false))
+
+@rpc("authority", "call_local", "reliable")
+func _end_notice(who_name: String) -> void:
+	var game := get_node("/root/Game")
+	game.notify("%s steps through the waystone — the run ends shortly."
+		% who_name)
 
 @rpc("authority", "call_local", "reliable")
 func _run_end(abandoned: bool) -> void:

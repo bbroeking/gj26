@@ -66,7 +66,7 @@ const FIRE_COOLDOWN := 0.28         # spec 26 — snappier cadence
 const ARROW_SPAWN_FWD := 0.3
 const INPUT_BUFFER_SEC := 0.15
 const BOW_SCALE := 0.5
-const BOW_ROT_DEG := Vector3(0.0, 0.0, 0.0)   # bow orientation fine-tune
+const BOW_ROT_DEG := Vector3(90.0, 0.0, 0.0)  # upright in the grip
 
 # ---- survival (spec 15) ----
 const PLAYER_HP := 30
@@ -85,6 +85,11 @@ var _mesh: Node3D
 var _ap: AnimationPlayer
 var _skel: Skeleton3D
 var _bow: Node3D
+# Spec 46-C — the bow's hand socket + tunables (local, in socket space).
+var _bow_socket: BoneAttachment3D = null
+var _bow_base_pos := Vector3(0.0, 0.05, 0.0)
+var _bow_draw_dir := Vector3(0.0, 0.0, 1.0)
+const BOW_SOCKET_ROT := Vector3(90.0, 0.0, 0.0)
 var _hand_idx := -1
 var _hud: Node
 var _is_chibi := false
@@ -574,36 +579,42 @@ func _play_anim(state: String) -> void:
 	if clip != "" and _ap.current_animation != clip:
 		_ap.play(clip, 0.15)
 
-# Ride the bow on the RightHand bone (world-space, so it dodges the Meshy
-# skeleton's internal scale). The chibi instead sockets it to the body —
-# her arms are stubs, and a bone-riding bow jittered around her hood. The
-# recoil lean doubles as a draw factor so firing reads as a real motion:
-# the bow thrusts toward the aim and settles back.
+# Spec 46-C — the bow is ANCHORED now: a BoneAttachment3D on the bow hand
+# (BoneAttachment updates after the AnimationPlayer applies the pose, so
+# the old "jittered around her hood" problem is gone — that jitter came
+# from reading bone poses in _physics_process, one frame early). The
+# recoil/draw motion rides as a local offset inside the socket.
 func _update_bow() -> void:
 	if _bow == null:
 		return
-	if _is_chibi:
-		if _mesh == null:
-			return
+	if _bow_socket != null and _mesh != null:
 		var yaw: float = _mesh.rotation.y
 		var fwd := Vector3(sin(yaw), 0.0, cos(yaw))
 		var right := Vector3(fwd.z, 0.0, -fwd.x)
 		var draw := clampf(absf(_fire_recoil) / 0.2, 0.0, 1.0)
-		var target := global_position + Vector3(0.0, 0.60, 0.0) \
-			+ right * 0.24 + fwd * (0.14 + 0.24 * draw)
-		_bow.global_position = _bow.global_position.lerp(target, 0.55)
+		# Anchored at the hand; eased just clear of the hood's silhouette.
+		_bow.global_position = _bow_socket.global_position \
+			+ right * 0.12 + Vector3(0.0, 0.06, 0.0) \
+			+ fwd * (0.05 + 0.12 * draw)
 		var look := Basis.looking_at(fwd, Vector3.UP) * Basis.from_euler(
 			Vector3(deg_to_rad(BOW_ROT_DEG.x), deg_to_rad(BOW_ROT_DEG.y),
 				deg_to_rad(BOW_ROT_DEG.z)))
 		_bow.global_rotation = look.get_euler()
 		return
-	if _skel == null or _hand_idx < 0:
+	# Fallback (no skeleton/hand found): the old body-offset ride.
+	if _mesh == null:
 		return
-	var hand := _skel.global_transform * _skel.get_bone_global_pose(_hand_idx)
-	_bow.global_position = hand.origin
-	var rot := Basis(hand.basis.get_rotation_quaternion()) * Basis.from_euler(
-		Vector3(deg_to_rad(BOW_ROT_DEG.x), deg_to_rad(BOW_ROT_DEG.y), deg_to_rad(BOW_ROT_DEG.z)))
-	_bow.global_rotation = rot.get_euler()
+	var yaw: float = _mesh.rotation.y
+	var fwd := Vector3(sin(yaw), 0.0, cos(yaw))
+	var right := Vector3(fwd.z, 0.0, -fwd.x)
+	var draw2 := clampf(absf(_fire_recoil) / 0.2, 0.0, 1.0)
+	var target := global_position + Vector3(0.0, 0.60, 0.0) \
+		+ right * 0.24 + fwd * (0.14 + 0.24 * draw2)
+	_bow.global_position = _bow.global_position.lerp(target, 0.55)
+	var look := Basis.looking_at(fwd, Vector3.UP) * Basis.from_euler(
+		Vector3(deg_to_rad(BOW_ROT_DEG.x), deg_to_rad(BOW_ROT_DEG.y),
+			deg_to_rad(BOW_ROT_DEG.z)))
+	_bow.global_rotation = look.get_euler()
 
 func _input_dir() -> Vector3:
 	var iz := 0.0
@@ -891,21 +902,38 @@ func end_gather() -> void:
 
 func _attach_bow() -> void:
 	_bow = BOW_SCENE.instantiate()
-	add_child(_bow)
-	_bow.scale = Vector3.ONE * _bow_scale
 	_tint(_bow, Color(0.40, 0.28, 0.18))
+	# Spec 46-C — anchor at the bow hand via BoneAttachment3D (archers hold
+	# the bow in the LEFT hand; the right draws). Falls back to the old
+	# body-offset ride when no skeleton/hand exists.
+	var hand_idx := -1
 	if _skel != null:
-		_hand_idx = _skel.find_bone("RightHand")
-		if _hand_idx < 0:
-			# Meshy rigs name bones differently — fuzzy-find the right hand.
+		for bone_name in ["LeftHand", "RightHand"]:
+			hand_idx = _skel.find_bone(bone_name)
+			if hand_idx >= 0:
+				break
+		if hand_idx < 0:
 			for i in _skel.get_bone_count():
 				var bn := _skel.get_bone_name(i).to_lower()
-				if bn.contains("hand") and (bn.contains("right")
-						or bn.ends_with("_r") or bn.ends_with(".r")):
-					_hand_idx = i
+				if bn.contains("hand"):
+					hand_idx = i
 					break
-		if _hand_idx < 0:
-			push_warning("player: right-hand bone not found — bow won't track")
+	if _skel != null and hand_idx >= 0:
+		# Hybrid anchor: the BoneAttachment supplies the exact hand POINT
+		# (post-animation, no jitter); the bow itself stays top_level so
+		# its orientation/scale live in world space — no bone-basis or
+		# rig-scale fights.
+		_bow_socket = BoneAttachment3D.new()
+		_bow_socket.name = "BowSocket"
+		_skel.add_child(_bow_socket)
+		_bow_socket.bone_name = _skel.get_bone_name(hand_idx)
+		_bow_socket.add_child(_bow)
+		_bow.top_level = true
+		_bow.scale = Vector3.ONE * _bow_scale
+	else:
+		add_child(_bow)
+		_bow.scale = Vector3.ONE * _bow_scale
+		push_warning("player: no hand bone — bow rides the body offset")
 
 func _tint(root: Node, color: Color) -> void:
 	var m := StandardMaterial3D.new()
@@ -1216,7 +1244,11 @@ func _net_take_damage(amount: int, from_dir: Vector3) -> void:
 # this puppet with the caster's aim + stats (trust-the-party model, v1).
 @rpc("any_peer", "reliable")
 func _net_cast(slot: int, aim: Vector3, stats: Dictionary) -> void:
-	if not multiplayer.is_server() or not _is_remote:
+	# Phase C — every machine replays the cast through the caster's body
+	# here: REAL on the host (its enemies are truth), cosmetic on guests
+	# (puppet foes take no damage). The caster never receives (no
+	# call_local) — their local fire already played.
+	if not _is_remote:
 		return
 	if slot < 1 or slot > skills.size():
 		return
@@ -1233,9 +1265,11 @@ var net_aim := Vector3.ZERO
 # host replays it for real on this player's host-side body.
 func _net_forward_cast(slot: int) -> void:
 	var net := get_node_or_null("/root/NetGame")
-	if net == null or not bool(net.active) or multiplayer.is_server():
+	if net == null or not bool(net.active):
 		return
-	_net_cast.rpc_id(1, slot, aim_dir(), derived_stats)
+	# Broadcast (host included as a sender): guests draw each other's and
+	# the host's arrows; the host's copy of a guest cast is the real one.
+	_net_cast.rpc(slot, aim_dir(), derived_stats)
 
 # B5-wave2 — Heartwood Ward: a timed absorb pool soaked in take_damage.
 var _ward_hp := 0

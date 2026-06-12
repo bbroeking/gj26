@@ -238,6 +238,8 @@ func net_apply_state(pos: Vector3, p_hp: int) -> void:
 	net_target_hp = p_hp
 	if p_hp < hp:
 		HitFeedback.play_hit(self, "normal", Vector3.ZERO)
+		# Phase C — guests see the numbers their (and others') hits land.
+		_spawn_damage_number(hp - p_hp, "normal")
 	hp = p_hp
 	if hp <= 0 and not dead:
 		_die()
