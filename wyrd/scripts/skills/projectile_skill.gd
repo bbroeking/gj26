@@ -75,6 +75,10 @@ func _spawn_arrow(player: Node, origin: Vector3, dir: Vector3, dmg: int,
 	arrow.execute_mult = execute_mult
 	arrow.execute_below = execute_below
 	arrow.focal = focal
+	# Phase B — kill attribution: the arrow remembers whose bow it left.
+	arrow.owner_peer = player.get_multiplayer_authority() \
+		if player.is_inside_tree() and player.multiplayer.has_multiplayer_peer() \
+		else 0
 	player.get_parent().add_child(arrow)
 	arrow.global_position = origin
 	arrow.look_at(origin + dir, Vector3.UP)

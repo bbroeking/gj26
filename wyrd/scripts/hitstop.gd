@@ -8,7 +8,14 @@ var _active := false
 var _token := 0
 
 # Freeze the game for `seconds` (real time, regardless of time_scale).
+# Spec 46 Phase B — in a co-op session this must NOT touch time_scale:
+# the host's frozen clock would stall the simulation for every peer.
+# In-session hits keep the other 5 feedback channels; offline keeps the
+# full freeze feel.
 func freeze(seconds: float) -> void:
+	var net := get_node_or_null("/root/NetGame")
+	if net != null and bool(net.active):
+		return
 	_token += 1
 	var my := _token
 	_active = true

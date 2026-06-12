@@ -88,6 +88,17 @@ func _ready() -> void:
 		NetGame.join(addr, port)
 		NetGame.roster_changed.connect(func():
 			NetGame.setup_scene(self), CONNECT_ONE_SHOT)
+	# Dev: WYRD_NET_RUN=<sec> — a hosting boot sockets a Tier 1 chart after
+	# N seconds (the two-process dungeon co-op smoke test).
+	if OS.get_environment("WYRD_NET_RUN") != "" and net_env == "host":
+		var delay := float(OS.get_environment("WYRD_NET_RUN"))
+		get_tree().create_timer(delay).timeout.connect(func():
+			var game := get_tree().root.get_node_or_null("Game")
+			if game == null:
+				return
+			var chart: Dictionary = load("res://data/charts.gd") \
+				.inscribe("tier_1", [], 9)
+			game.enter_dungeon(chart, null))
 	# Dev: WYRD_SHOT=1 godot ... → save /tmp/wyrd_town.png after the scene
 	# settles (layout_loader's DEBUG_SHOT pattern).
 	if OS.get_environment("WYRD_SHOT") != "":

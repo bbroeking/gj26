@@ -167,6 +167,12 @@ func take_damage(amount: int, from_dir: Vector3,
 		crit_chance: float = -1.0, crit_mult_bonus: float = -1.0) -> void:
 	if dead:
 		return
+	# Phase B — puppets carry no truth: a guest's local arrow striking a
+	# mirror body is cosmetic; the host's replay deals the real damage and
+	# the hp lands back via snapshot.
+	if net_puppet:
+		HitFeedback.play_hit(self, "normal", from_dir)
+		return
 	# Crit roll (spec 26/27e) — the attacker can override crit chance + the
 	# bonus added on top of the base crit/super-crit multipliers. -1 = use
 	# this combatant's defaults (backward-compatible — old call sites unchanged).
@@ -207,8 +213,43 @@ func take_damage(amount: int, from_dir: Vector3,
 	if hp <= 0:
 		_die()
 
+# Phase B — co-op helpers. A puppet is a guest-side mirror of a host
+# enemy: identical (seed-built) body, no AI/physics of its own — it lerps
+# to the host's snapshots and dies when they say so.
+var net_puppet := false
+var net_target_pos := Vector3.ZERO
+var net_target_hp := -1
+var last_hit_peer := 0   # who landed the latest hit (kill attribution)
+
+func _nearest_player() -> Node3D:
+	var best: Node3D = null
+	var best_d := INF
+	for p in get_tree().get_nodes_in_group("player"):
+		if not p is Node3D or bool((p as Node).get("dead")):
+			continue
+		var d := global_position.distance_squared_to((p as Node3D).global_position)
+		if d < best_d:
+			best_d = d
+			best = p
+	return best
+
+func net_apply_state(pos: Vector3, p_hp: int) -> void:
+	net_target_pos = pos
+	net_target_hp = p_hp
+	if p_hp < hp:
+		HitFeedback.play_hit(self, "normal", Vector3.ZERO)
+	hp = p_hp
+	if hp <= 0 and not dead:
+		_die()
+
 func _physics_process(delta: float) -> void:
 	if dead:
+		return
+	if net_puppet:
+		# Mirror body: chase the host's snapshot, nothing else.
+		if net_target_pos != Vector3.ZERO:
+			global_position = global_position.lerp(net_target_pos,
+				minf(1.0, delta * 8.0))
 		return
 	# Spec 31 — status framework tick (replaces the spec 30 root-only branch).
 	_tick_statuses(delta)
@@ -223,11 +264,12 @@ func _physics_process(delta: float) -> void:
 
 # ---- AI state machine (spec 15) ----
 func _tick_ai(delta: float) -> void:
+	# Phase B — chase the NEAREST living player (co-op: never cache one
+	# body forever; offline: the loop returns the only player).
+	_player = _nearest_player()
 	if _player == null:
-		_player = get_tree().get_first_node_in_group("player")
-		if _player == null:
-			velocity = Vector3.ZERO
-			return
+		velocity = Vector3.ZERO
+		return
 	# Spec 30/31 — rooted enemies don't chase or attack. Knockback still
 	# applies (it's added after this tick) so the player can shoot them around.
 	if has_status("root"):
@@ -667,13 +709,21 @@ func _die() -> void:
 	# B7/ADR 0005 — the kill feeds Huntcraft, scaled to the slain thing's
 	# vigor (elites and bosses are worth their weight).
 	var game := get_tree().root.get_node_or_null("Game")
-	if game != null:
-		game.award_xp("hunt", maxi(2, int(hp_max / 3.0)))
-		# Spec 45-hunt — Even Breath: a clean kill steadies the hunter.
-		if game.perk_active("hunt", "even_breath"):
-			var pl := get_tree().get_first_node_in_group("player")
-			if pl != null and pl.has_method("add_focus"):
-				pl.add_focus(6.0)
+	var netd := get_node_or_null("/root/NetGame")
+	var in_session: bool = netd != null and bool(netd.active)
+	if game != null and not net_puppet:
+		# Phase B — the kill pays its KILLER: in co-op the host credits the
+		# peer whose arrow landed last; offline (and host kills) stay local.
+		if in_session and last_hit_peer != 0 \
+				and last_hit_peer != multiplayer.get_unique_id():
+			netd.kill_credit(last_hit_peer, hp_max)
+		else:
+			game.award_xp("hunt", maxi(2, int(hp_max / 3.0)))
+			# Spec 45-hunt — Even Breath: a clean kill steadies the hunter.
+			if game.perk_active("hunt", "even_breath"):
+				var pl := get_tree().get_first_node_in_group("player")
+				if pl != null and pl.has_method("add_focus"):
+					pl.add_focus(6.0)
 	var sfx := get_node_or_null("/root/Sfx")
 	if sfx != null:
 		sfx.play("death")
@@ -691,8 +741,19 @@ func _die() -> void:
 # Roll the drop pile + drop each item as an ItemPickup beside the corpse.
 # Parented to our parent so the pickups outlive our queue_free.
 func _spawn_drops() -> void:
+	if net_puppet:
+		return   # the host's drop events carry per-player rolls instead
 	var pile: Array = Drops.roll_drop(role, depth)
 	if pile.is_empty():
+		return
+	# Phase B — co-op loot is instanced per player: the host broadcasts
+	# kind+rarity and every peer rolls its own affixes locally (the
+	# claudecraft tap-rights model, made cozier).
+	var netd := get_node_or_null("/root/NetGame")
+	if netd != null and bool(netd.active) and multiplayer.is_server():
+		for it in pile:
+			netd.drop_event(String(it.get("kind_id", "")),
+				String(it.get("rarity", "normal")), global_position)
 		return
 	var host := get_parent()
 	if host == null:

@@ -65,6 +65,7 @@ var effects: Array = []
 # fraction is already under execute_below. Defaults are a no-op.
 var execute_mult: float = 1.0
 var execute_below: float = 0.0
+var owner_peer: int = 0   # Phase B — whose bow this left (kill credit)
 # Spec-34 cookbook (MultiShot focal hierarchy): the center arrow of a fan
 # is "focal" (full brightness); the outer arrows are non-focal (~75%
 # saturation, dimmer head emission, smaller trail particles) so the eye
@@ -194,6 +195,8 @@ func _on_area_entered(area: Area3D) -> void:
 			else:
 				_spent = true
 			var fwd := -global_transform.basis.z
+			if owner_peer != 0:
+				c.set("last_hit_peer", owner_peer)
 			var dealt: int = damage
 			if execute_mult > 1.0 and float(c.get("hp_max")) > 0.0 \
 					and float(c.get("hp")) / float(c.get("hp_max")) < execute_below:

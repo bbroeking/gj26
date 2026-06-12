@@ -663,9 +663,16 @@ func add_chart(chart: Dictionary) -> void:
 
 # Socket a chart at the Waystone: consume it, snapshot the player, swap scenes.
 func enter_dungeon(chart: Dictionary, player: Node) -> void:
-	# Spec 46 Phase A — co-op stays in town until Phase B syncs the hollows.
+	# Spec 46 Phase B — in co-op the HOST sockets for the party; the chart
+	# leaves the host's case and everyone crosses on the same seed.
 	if net_active():
-		notify("The hollows can't hold a party yet — delving together comes soon.")
+		var net := get_node("/root/NetGame")
+		if not bool(net.is_host()):
+			notify("Only the fire-keeper sockets a chart — ask your host.")
+			return
+		charts.erase(chart)
+		charts_changed.emit()
+		net.start_run(chart)
 		return
 	_defer_toasts = true       # the dungeon HUD will drain these in _ready
 	charts.erase(chart)
@@ -684,6 +691,22 @@ func enter_dungeon(chart: Dictionary, player: Node) -> void:
 	get_tree().change_scene_to_file.call_deferred(DUNGEON_SCENE)
 
 # Step back through the far waystone. Completion XP per the shipped formula.
+# Spec 46 Phase B — every peer enters the same chart locally: same seed,
+# same geometry, same (seeded) foes. The host's chart was already spent.
+func net_enter(chart: Dictionary) -> void:
+	_defer_toasts = true
+	active_chart = chart
+	in_dungeon = true
+	var p := local_player()
+	if p != null:
+		_snapshot_player(p)
+	if tutorial_step == 4:
+		advance_tutorial()
+	var cp := get_node_or_null("/root/Checkpoint")
+	if cp != null and cp.has_method("clear"):
+		cp.clear()
+	get_tree().change_scene_to_file.call_deferred(DUNGEON_SCENE)
+
 # Spec 45-gaps — `abandoned` skips the completion reward: the entry-side
 # return stone carries you home but the chart pays nothing torn.
 func return_to_town(player: Node, abandoned: bool = false) -> void:

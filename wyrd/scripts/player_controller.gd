@@ -540,6 +540,7 @@ func _physics_process(delta: float) -> void:
 			# module. Buffer is preserved so the snappy F-spam feel works.
 			face_aim(aim_dir())        # Wyrd — square up before the arrow leaves
 			skills[0].fire(self)
+			_net_forward_cast(1)
 			_skill_cooldowns[1] = skills[0].effective_cd(self)
 			_combat_t = COMBAT_TIMER
 			_fire_buffer = 0.0
@@ -645,6 +646,12 @@ func _anim_state(dir: Vector3) -> String:
 
 # ---- combat / survival ----
 func take_damage(amount: int, from_dir: Vector3) -> void:
+	# Phase B — hits landing on someone else's body here are forwarded to
+	# their machine; the owner applies the real rules (ward/grit/iframes).
+	if _is_remote:
+		if multiplayer.is_server():
+			_net_take_damage.rpc_id(get_multiplayer_authority(), amount, from_dir)
+		return
 	if dead or _iframe_t > 0.0:
 		return
 	# Spec 45-wilds — Stonebreak Tonic: bites land softer while it holds.
@@ -729,6 +736,9 @@ const AIM_ASSIST_CONE := 28.0        # degrees off the raw aim that still snaps
 const AIM_ASSIST_BLEND := 0.7        # 0 = ignore enemy, 1 = hard lock
 
 func aim_dir() -> Vector3:
+	# Phase B — a host-side replay of a guest's cast aims where they aimed.
+	if net_aim != Vector3.ZERO:
+		return net_aim.normalized()
 	var dir := _input_dir()
 	if dir.length() < 0.1:
 		if _mesh != null:
@@ -810,6 +820,7 @@ func _try_skill(slot: int) -> void:
 	_combat_t = COMBAT_TIMER
 	face_aim(aim_dir())          # Wyrd — square up before the skill fires
 	skill.fire(self)
+	_net_forward_cast(slot)
 
 # ---- setup helpers ----
 # The Meshy rig has no authored socket — the bow rides the RightHand bone
@@ -1164,14 +1175,22 @@ func _net_send_tick(delta: float) -> void:
 	_net_accum = 0.0
 	var yaw: float = _mesh.rotation.y if _mesh != null else 0.0
 	_net_state.rpc(global_position, yaw,
-		Vector2(velocity.x, velocity.z).length() > 0.5)
+		Vector2(velocity.x, velocity.z).length() > 0.5, dead)
 
 @rpc("authority", "unreliable_ordered")
-func _net_state(pos: Vector3, yaw: float, moving: bool) -> void:
+func _net_state(pos: Vector3, yaw: float, moving: bool,
+		p_dead: bool = false) -> void:
 	_net_has_target = true
 	_net_target_pos = pos
 	_net_target_yaw = yaw
 	_net_moving = moving
+	# Phase B — enemies skip dead puppets; the died edge feeds party-wipe
+	# checks on every machine.
+	if p_dead and not dead:
+		dead = true
+		died.emit()
+	elif not p_dead:
+		dead = false
 
 func _net_remote_tick(delta: float) -> void:
 	if not _net_has_target:
@@ -1180,6 +1199,43 @@ func _net_remote_tick(delta: float) -> void:
 	global_position = global_position.lerp(_net_target_pos, t)
 	if _mesh != null:
 		_mesh.rotation.y = lerp_angle(_mesh.rotation.y, _net_target_yaw, t)
+	# Phase B — puppets walk instead of gliding (the flag already rides
+	# the state RPC).
+	_play_anim("run" if _net_moving else "idle")
+	if _ap != null:
+		_ap.speed_scale = 1.0 if _net_moving else 0.85
+
+# Phase B — a remote-authority body hit on the HOST forwards the damage
+# to its owner, who applies the real rules (ward, grit, iframes) locally.
+@rpc("any_peer", "reliable")
+func _net_take_damage(amount: int, from_dir: Vector3) -> void:
+	if is_multiplayer_authority():
+		take_damage(amount, from_dir)
+
+# Phase B — guests cast through the host: the host replays the skill from
+# this puppet with the caster's aim + stats (trust-the-party model, v1).
+@rpc("any_peer", "reliable")
+func _net_cast(slot: int, aim: Vector3, stats: Dictionary) -> void:
+	if not multiplayer.is_server() or not _is_remote:
+		return
+	if slot < 1 or slot > skills.size():
+		return
+	net_aim = aim
+	derived_stats = stats
+	var sk = skills[slot - 1]
+	sk.fire(self)
+	net_aim = Vector3.ZERO
+
+# Set while the host replays a guest cast — aim_dir() honors it.
+var net_aim := Vector3.ZERO
+
+# A guest's local cast is cosmetic (puppet enemies take no damage); the
+# host replays it for real on this player's host-side body.
+func _net_forward_cast(slot: int) -> void:
+	var net := get_node_or_null("/root/NetGame")
+	if net == null or not bool(net.active) or multiplayer.is_server():
+		return
+	_net_cast.rpc_id(1, slot, aim_dir(), derived_stats)
 
 # B5-wave2 — Heartwood Ward: a timed absorb pool soaked in take_damage.
 var _ward_hp := 0

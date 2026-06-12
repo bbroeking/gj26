@@ -134,6 +134,8 @@ const BOSS_KINDS := {
 var _floor_mat: StandardMaterial3D
 var _wall_mat: StandardMaterial3D
 var _rng := RandomNumberGenerator.new()
+var _net_foe_idx := 0          # Phase B — deterministic enemy naming
+var net_spawn := Vector3.ZERO  # Phase B — co-op entry spawn for NetGame
 var _entry_pos := Vector3.ZERO          # respawn target for the kill-plane
 
 # Wyrd — chart modifier affixes, cached from Game at build time.
@@ -155,7 +157,18 @@ func _ready() -> void:
 	var sfx0 := get_node_or_null("/root/Sfx")
 	if sfx0 != null and sfx0.has_method("stop_music"):
 		sfx0.stop_music()
-	_rng.randomize()
+	# Phase B — in a chart run the spawn RNG seeds from the chart, so every
+	# co-op peer builds IDENTICAL enemies (same tiles, kinds, elites, jitter)
+	# and the host only has to sync state, never spawns. Dev boots without a
+	# chart keep the old fully-random flavor.
+	var game0 := get_tree().root.get_node_or_null("Game")
+	var chart_seed := -1
+	if game0 != null and not (game0.active_chart as Dictionary).is_empty():
+		chart_seed = int(game0.active_chart.get("seed", -1))
+	if chart_seed >= 0:
+		_rng.seed = (chart_seed ^ 0x5DEECE66) & 0x7FFFFFFFFFFFFFFF
+	else:
+		_rng.randomize()
 
 	_floor_mat = StandardMaterial3D.new()
 	_floor_mat.albedo_color = Color(0.55, 0.50, 0.45)
@@ -200,7 +213,15 @@ func _ready() -> void:
 		_build_empty_throne(layout)
 	var enemy_n := _build_enemies(layout)
 	_build_exit_waystone(layout)
-	_position_player(layout.entry)
+	# Phase B — co-op: one body per peer at the entry; offline keeps the
+	# baked player.
+	var netr := get_node_or_null("/root/NetGame")
+	if netr != null and bool(netr.active):
+		net_spawn = Vector3(int(layout.entry.x) + 0.5, 0.0,
+			int(layout.entry.y) + 0.5)
+		netr.setup_scene(self)
+	else:
+		_position_player(layout.entry)
 
 	# Dev: when DEBUG_SHOT (or WYRD_SHOT=1 in the env), self-capture a
 	# viewport screenshot once the scene settles — lets the camera framing
@@ -641,16 +662,27 @@ func _build_boss(boss_room, grid: Array, boss_kind: String = "hedgemother") -> v
 		bossbar.prime(boss_hp)
 
 	# Wyrd — dying to her must not seal the run forever (the exit waystone
-	# only rises on her death). Player death drops the gates and resets the
-	# encounter so the respawned player can re-approach — or walk away.
-	var player: Node = get_tree().get_first_node_in_group("player")
-	if player != null and player.has_signal("died"):
-		player.died.connect(func():
-			_drop_gates()
-			if is_instance_valid(boss) and boss.has_method("reset_fight"):
-				boss.reset_fight()
-			if bossbar != null and is_instance_valid(bossbar):
-				bossbar.hide_boss())
+	# only rises on her death). Offline, any death resets the encounter; in
+	# co-op only a full party wipe does (spec 46 Phase B). Deferred wiring —
+	# in a session the per-peer bodies spawn after this builder runs.
+	_wire_party_reset.call_deferred(boss, bossbar)
+
+func _wire_party_reset(boss: Node, bossbar: Node) -> void:
+	for p in get_tree().get_nodes_in_group("player"):
+		if (p as Node).has_signal("died"):
+			(p as Node).died.connect(_party_reset_check.bind(boss, bossbar))
+
+func _party_reset_check(boss: Node, bossbar: Node) -> void:
+	var net := get_node_or_null("/root/NetGame")
+	if net != null and bool(net.active):
+		for p in get_tree().get_nodes_in_group("player"):
+			if not bool((p as Node).get("dead")):
+				return   # someone still stands — the fight goes on
+	_drop_gates()
+	if is_instance_valid(boss) and boss.has_method("reset_fight"):
+		boss.reset_fight()
+	if bossbar != null and is_instance_valid(bossbar):
+		bossbar.hide_boss()
 
 # Gate blocks at every "floor" tile on the boss-room perimeter — the
 # openings. Built lowered/inert; raised when the boss aggros.
@@ -892,6 +924,14 @@ func _tint(root: Node, color: Color) -> void:
 # `char_script` lets the boss spawn as a Boss (spec 17). Returns the body.
 func _spawn_character(inst: Node3D, tx: int, ty: int, radius: float, height: float, hp: int, char_script := CombatantScript) -> CharacterBody3D:
 	var body: CharacterBody3D = char_script.new()
+	# Phase B — deterministic names: builds are seed-identical per peer, so
+	# "NetFoe<N>" is the same body everywhere; the host's state snapshots
+	# address puppets by this name.
+	_net_foe_idx += 1
+	body.name = "NetFoe%d" % _net_foe_idx
+	var netb := get_node_or_null("/root/NetGame")
+	if netb != null and bool(netb.active) and not multiplayer.is_server():
+		body.set("net_puppet", true)
 	body.position = Vector3(tx + 0.5, 0.0, ty + 0.5)
 	body.collision_layer = LAYER_ENEMIES
 	# Collide with world (walls/floor) + the player; enemy↔enemy passes through.

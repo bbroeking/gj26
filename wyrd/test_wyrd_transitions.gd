@@ -146,7 +146,9 @@ func _run() -> void:
 	# Beat 6 — find the exit waystone and step through.
 	var waystone: Node = null
 	for n in _walk(world):
-		if n is ExitWaystone:
+		# Spec 45-gaps added the entry-side abandon stone — the run-banking
+		# beat needs the real EXIT (abandoning pays nothing).
+		if n is ExitWaystone and not bool(n.get("abandoning")):
 			waystone = n
 	_check("exit waystone in dungeon", waystone != null)
 	var xp_before := int(game.trades.carto.xp)
@@ -257,14 +259,32 @@ func _run() -> void:
 	_check("in-session modal does NOT pause the tree",
 		not paused and game.modal_count == 1)
 	game.modal_closed()
-	game.enter_dungeon({}, null)   # gated: must refuse while in session
-	_check("co-op blocks the hollows for now", not game.in_dungeon)
-	net.leave()
-	_check("leave ends the session", not net.active)
+	# Phase B — the host sockets for the party: the run starts through the
+	# replicated path (call_local executes it host-side too).
+	var party_chart: Dictionary = ChartsData.inscribe("snug", [], 1)
+	game.enter_dungeon(party_chart, null)
+	_check("host socket starts the party run", bool(game.in_dungeon)
+		and not (game.active_chart as Dictionary).is_empty())
 
 	# Input-map hygiene across two player instances: one event per key.
 	var ev_count := InputMap.action_get_events("interact").size()
 	_check("no duplicate interact bindings", ev_count == 1, str(ev_count))
+
+	# Let the deferred party crossing land, then verify the hollow built
+	# with per-peer spawning (host-only session: one NetPlayer body).
+	await process_frame
+	await process_frame
+	await process_frame
+	_check("party crossed to the hollow",
+		current_scene != null and String(current_scene.name) == "World")
+	var net_bodies := 0
+	for p in get_nodes_in_group("player"):
+		if String((p as Node).name).begins_with("NetPlayer"):
+			net_bodies += 1
+	_check("one NetPlayer body for the lone host", net_bodies == 1,
+		str(net_bodies))
+	net.leave()
+	_check("leave ends the session", not net.active)
 
 	print("--- %d passed, %d failed ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)

@@ -55,5 +55,9 @@ func interact(player: Node) -> void:
 	if sfx != null:
 		sfx.play("waystone")
 	var game := get_tree().root.get_node_or_null("Game")
-	if game != null:
-		game.return_to_town(player)
+	var net := get_node_or_null("/root/NetGame")
+	if net != null and bool(net.active):
+		# Phase B — the stone ends the run for the whole party (host-routed).
+		net.request_end(abandoning)
+	elif game != null:
+		game.return_to_town(player, abandoning)

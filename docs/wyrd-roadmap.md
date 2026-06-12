@@ -132,9 +132,17 @@ Specs 38–41 + notes.
     modals stopped pausing the tree in-session (offline unchanged),
     camera/HUD bind the local body, dungeons gated until Phase B.
     Two-process headless loopback smoke test green; `WYRD_NET=host` /
-    `join:<ip>` dev hooks. **Phase B next**: dungeon co-op (synced
-    enemies, host-validated casts, party run flow) — pre-work: local
-    hitstop, puppet walk anim, reconnect grace.
+    `join:<ip>` dev hooks. ~~Phase B~~ **SHIPPED 2026-06-12**: dungeon
+    co-op — host sockets for the party, everyone crosses on the same
+    seed; enemies build seed-identically per peer (deterministic
+    `NetFoe` names) and mirror the host via 10 Hz snapshots; guest casts
+    replay on the host with the caster's aim/stats; damage to guests
+    forwards to their machine; kill credit + Even Breath to the killer;
+    per-player loot rolls; party-wipe boss resets; exit/abandon ends
+    the run for all. Local-only hitstop, puppet walk anim. Two-process
+    dungeon smoke green (`WYRD_NET_RUN=<sec>` hook). **Phase C polish
+    queue**: guests seeing each other's arrows, damage numbers via
+    events, boss telegraphs on guests, reconnect grace, exit vote.
 14. **Queue — next candidates:** buff HUD chip, discovery feel pass,
     skill-icon paint-over once `sheet-icons` lands, fresh-save tutorial
     + boss-feel playtests (user-side), UI mock picks (round 2, your
