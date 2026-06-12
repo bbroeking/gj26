@@ -97,11 +97,13 @@ func _run() -> void:
 			break
 	# B5-wave2 — Hunter's Mark: a marked thing takes +30% (crits disabled
 	# so the arithmetic is deterministic).
+	# (A 2-damage probe so even the squishiest prey survives the check —
+	# the kill assertions below need it alive.)
 	prey.crit_enabled = false
 	var hp0: int = int(prey.hp)
 	prey.apply_status("marked", 8.0, 0)
-	prey.take_damage(10, Vector3.FORWARD, 0.0, 0.0)
-	_check("marked prey takes +30%", hp0 - int(prey.hp) == 13,
+	prey.take_damage(2, Vector3.FORWARD, 0.0, 0.0)
+	_check("marked prey takes +30%", hp0 - int(prey.hp) == 3,
 		str(hp0 - int(prey.hp)))
 	# B5-wave2 — Heartwood Ward: the bark soaks before vigor.
 	var player2: Node = get_first_node_in_group("player")
@@ -123,7 +125,14 @@ func _run() -> void:
 
 	var hunt_before: int = int(game.trades.hunt.xp)
 	var prey_vigor: int = int(prey.hp_max)
+	# Spec 45-hunt — Even Breath: at the cap, every kill returns 6 Focus.
+	game.trades.hunt.lv = 17
+	if player2 != null:
+		player2.focus = 10.0
 	prey.take_damage(999, Vector3.FORWARD)
+	if player2 != null:
+		_check("even breath refunds 6 focus on the kill",
+			absf(float(player2.focus) - 16.0) < 0.01, str(player2.focus))
 	var gained: int = int(game.trades.hunt.xp) - hunt_before
 	_check("kill feeds Huntcraft", gained >= 2, str(gained))
 	_check("hunt xp scales to vigor", gained == maxi(2, int(prey_vigor / 3.0)),

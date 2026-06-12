@@ -75,8 +75,9 @@ func _run() -> void:
 			"forage_node": herbs += 1
 			"ore_rock": ores += 1
 			"log_pile": piles += 1
-	_check("town gather stations 6/3/3",
-		herbs == 6 and ores == 3 and piles == 3,
+	# Spec 45 — 6 wild patches + the locked bittergrass patch by the still.
+	_check("town gather stations 7/3/3",
+		herbs == 7 and ores == 3 and piles == 3,
 		"%d/%d/%d" % [herbs, ores, piles])
 	# A7/A8 — the cookfire, the anvil, and Quill's still stand in town.
 	var stations: Array = []
@@ -225,6 +226,19 @@ func _run() -> void:
 	_check("bench spent base cost + socketed ink",
 		game.material_count("hedge_ink") == ink_before - 3)
 	_check("bench cleared after craft", bench.base_id == "")
+	# Spec 45-carto — the den's req is a real gate now, and the level-17
+	# capstone opens an extra ink socket.
+	game.add_material("thorn_essence", 1)
+	_check("bench re-places tier_1", bench.place_base("tier_1"))
+	_check("den refuses below Wayfinder 8",
+		not bench.socket_trophy("thorn_essence"))
+	game.trades.carto.lv = 8
+	_check("den opens at Wayfinder 8", bench.socket_trophy("thorn_essence"))
+	_check("two ink slots below the capstone", bench.ink_slots() == 2)
+	game.trades.carto.lv = 17
+	_check("master wayfinder adds an ink slot", bench.ink_slots() == 3)
+	game.trades.carto.lv = 2
+	bench.clear_base()
 	bench.close()
 	await process_frame
 	_check("bench unpaused on close", not paused)

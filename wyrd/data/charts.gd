@@ -245,6 +245,22 @@ const INKS := {
 		"desc": "Pale and quiet — wellsprings, echoes, and quarry marks lean closer.",
 		"bias": {"wellspring": 1.8, "echoing": 1.8, "marked_quarry": 1.8},
 	},
+	# Spec 45 — every rollable affix now has at least one ink that courts it.
+	"mothglow_ink": {
+		"name": "Mothglow Ink", "icon": "☽",
+		"desc": "Pale and night-sweet — the fog leans friendly and the bowstring stays dry.",
+		"bias": {"fog_of_hedge": 2.2, "quiver": 1.8},
+	},
+	"foxglove_ink": {
+		"name": "Foxglove Ink", "icon": "❖",
+		"desc": "Blue-black and fierce — pulls the roll toward the mean affixes. Mean pays.",
+		"bias": {"tyrannical": 2.0, "frenzied": 1.8, "bursting": 1.8},
+	},
+	"gildleaf_ink": {
+		"name": "Gildleaf Ink", "icon": "✧",
+		"desc": "Ground starlight — chests come gilded and the halls fill festival-thick.",
+		"bias": {"gilded": 2.2, "festival_pace": 1.8},
+	},
 }
 
 # ---- the bias-roll engine ----
@@ -285,10 +301,14 @@ static func ink_stability_bonus(ink_ids: Array) -> float:
 		bonus += float(ink.get("bias", {}).get("_stability", 0.0))
 	return minf(0.5, bonus)
 
-static func effective_stability(affix_id: String, carto_lv: int, ink_bonus: float) -> int:
+# Spec 45-carto — perk_bonus carries Sure Lines (+0.05 toward the good
+# twin); the 95 cap holds whatever stacks.
+static func effective_stability(affix_id: String, carto_lv: int,
+		ink_bonus: float, perk_bonus: float = 0.0) -> int:
 	var aff: Dictionary = AFFIXES.get(affix_id, {})
 	var base := float(aff.get("base_stab", 50))
-	return mini(95, roundi(base + carto_lv * 0.6 + ink_bonus * 100.0))
+	return mini(95, roundi(base + carto_lv * 0.6
+		+ (ink_bonus + perk_bonus) * 100.0))
 
 # Roll N distinct affixes from a weight table.
 static func roll_affix_ids(weights: Dictionary, count: int, rng: RandomNumberGenerator) -> Array:
@@ -321,7 +341,7 @@ static func _weighted_pick(weights: Dictionary, rng: RandomNumberGenerator) -> S
 # A slotted trophy GUARANTEES its boss-den affix in one slot (the gamble
 # that remains is the stability roll — the den can still come up empty).
 static func inscribe(template_id: String, ink_ids: Array, carto_lv: int,
-		trophy_id: String = "") -> Dictionary:
+		trophy_id: String = "", perk_bonus: float = 0.0) -> Dictionary:
 	var t: Dictionary = TEMPLATES.get(template_id, {})
 	if t.is_empty():
 		return {}
@@ -337,7 +357,8 @@ static func inscribe(template_id: String, ink_ids: Array, carto_lv: int,
 		picks.append_array(roll_affix_ids(weights, slots - picks.size(), rng))
 		var stab_bonus := ink_stability_bonus(ink_ids)
 		for affix_id in picks:
-			var stab := effective_stability(affix_id, carto_lv, stab_bonus)
+			var stab := effective_stability(affix_id, carto_lv, stab_bonus,
+				perk_bonus)
 			var good := rng.randf() * 100.0 < stab
 			resolved.append({
 				"id": affix_id,
@@ -356,10 +377,14 @@ static func inscribe(template_id: String, ink_ids: Array, carto_lv: int,
 # Total cost for a craft: template base cost + one of each slotted ink +
 # the slotted trophy. A template with no affix slots has nothing for ink
 # (or a trophy) to bias — never charge for them, whatever the caller passed.
+# Spec 45-carto — hedge_discount carries Thrifty Quill (−1 hedge ink base
+# cost, never below one pot).
 static func craft_cost(template_id: String, ink_ids: Array,
-		trophy_id: String = "") -> Dictionary:
+		trophy_id: String = "", hedge_discount: int = 0) -> Dictionary:
 	var t: Dictionary = TEMPLATES.get(template_id, {})
 	var cost: Dictionary = (t.get("base_cost", {}) as Dictionary).duplicate()
+	if hedge_discount > 0 and cost.has("hedge_ink"):
+		cost["hedge_ink"] = maxi(1, int(cost["hedge_ink"]) - hedge_discount)
 	if int(t.get("affix_slots", 0)) <= 0:
 		return cost
 	for ink_id in ink_ids:

@@ -40,6 +40,7 @@ func _init() -> void:
 	_test_economy_gate()
 	_test_alchemy()
 	_test_discovery()
+	_test_ladders()
 	_test_save_roundtrip()
 	print("--- %d passed, %d failed ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
@@ -234,12 +235,12 @@ func _test_ore_tiers() -> void:
 	for d in t2.decor:
 		if bool(d.get("gather", false)) and String(d.kind) == "ore_rock":
 			var ot := String(d.get("ore_tier", ""))
-			if not ot in ["bogiron", "palechalk"]:
+			if not ot in ["bogiron", "palechalk", "starsilver", "hedgesteel"]:
 				ok2 = false
-			if ot == "palechalk":
+			if ot in ["palechalk", "starsilver", "hedgesteel"]:
 				saw_deep = true
-	_check("tier-2 charts: bogiron/palechalk only", ok2)
-	_check("tier-2 carries palechalk (seed 4242)", saw_deep)
+	_check("tier-2 charts: bogiron and deeper only", ok2)
+	_check("tier-2 carries a deep ore (seed 4242)", saw_deep)
 	game.free()
 
 # B6 — both waves: wave 1 (sprinter/gilded/bursting) + wave 2 (quiver/
@@ -370,9 +371,9 @@ func _test_economy_gate() -> void:
 func _test_alchemy() -> void:
 	print("[alchemy]")
 	var st: Dictionary = CraftingData.station("still")
-	_check("still station exists (Wildcraft, 2 brews)",
+	_check("still station exists (Wildcraft, 5 brews)",
 		String(st.get("trade", "")) == "wilds"
-		and (st.get("recipes", []) as Array).size() == 2, str(st))
+		and (st.get("recipes", []) as Array).size() == 5, str(st))
 	_check("still has a first-use hint",
 		(load("res://scripts/game.gd").SKILL_HINTS as Dictionary).has("still"))
 	var game = load("res://scripts/game.gd").new()
@@ -493,6 +494,102 @@ func _test_discovery() -> void:
 	_check("an ink bottle lands iff not a smudge",
 		(inks1 - inks0) == (0 if outcome == "smudge" else 1),
 		"%s: %d new" % [outcome, inks1 - inks0])
+	game.free()
+
+# Spec 45 — the trade ladders to the level-17 cap (ADR 0006).
+func _test_ladders() -> void:
+	print("[trade ladders]")
+	var game = load("res://scripts/game.gd").new()
+	game._ready()
+	# The cap: xp accrues but levels stop at 17.
+	_check("level cap is 17", int(game.LEVEL_CAP) == 17)
+	game.trades.earth.lv = 16
+	game.trades.earth.xp = game.xp_for_level(16)
+	game.award_xp("earth", 100000)
+	_check("award clamps at the cap", game.trade_lv("earth") == 17,
+		str(game.trade_lv("earth")))
+	# Herb ladder: six tiers, reqs ascend 1/3/7/10/13/16, real materials.
+	var ht: Dictionary = GatherDefs.HERB_TIERS
+	_check("six herb tiers", ht.size() == 6)
+	var reqs: Array = []
+	for tid in ["wild", "bittergrass", "crowsfoot", "mothmint", "foxglove",
+			"stonebreak"]:
+		_check("%s herb is a real material" % tid,
+			ht.has(tid) and GatherDefs.MATERIALS.has(String(ht[tid].item)))
+		reqs.append(int(ht[tid].req_lv))
+	_check("herb reqs run 1/3/7/10/13/16", reqs == [1, 3, 7, 10, 13, 16],
+		str(reqs))
+	# Ore ladder grew to five.
+	_check("five ore tiers", (GatherDefs.ORE_TIERS as Dictionary).size() == 5
+		and int(GatherDefs.ORE_TIERS.starsilver.req_lv) == 11
+		and int(GatherDefs.ORE_TIERS.hedgesteel.req_lv) == 15)
+	# Herb-tier node gating mirrors ore (Wildcraft gates it).
+	var GatherNode = load("res://scripts/gather_node.gd")
+	var node = GatherNode.new()
+	node.setup("forage_node", "mothmint", false)
+	node.setup_herb_tier("mothmint")
+	_check("mothmint locked at wilds 1", node.locked(game))
+	game.trades.wilds.lv = 10
+	_check("mothmint opens at wilds 10", not node.locked(game))
+	# Every trade has a built-out perk ladder.
+	_check("perk counts: carto 6 / earth 4 / wilds 4 / hunt 5",
+		(game.PERKS.carto as Array).size() == 6
+		and (game.PERKS.earth as Array).size() == 4
+		and (game.PERKS.wilds as Array).size() == 4
+		and (game.PERKS.hunt as Array).size() == 5)
+	# The heal ladder quaffs smallest-first: 35/55/80/140/220.
+	game.add_material("hale_draught", 1)
+	game.add_material("bitter_draught", 1)
+	_check("bitter quaffs before hale", game.quaff_draught() == 55)
+	_check("then the hale bottle", game.quaff_draught() == 140)
+	# New brews carry their stats.
+	_check("deep brews defined", String(CraftingData.BUFF_DRAUGHTS
+		.crowsfoot_cordial.stat) == "move_speed"
+		and String(CraftingData.BUFF_DRAUGHTS.mothmint_mend.stat) == "vigor_regen"
+		and String(CraftingData.BUFF_DRAUGHTS.stonebreak_tonic.stat) == "grit")
+	# Eight discoverable inks; gildleaf biases the last uncovered affixes.
+	_check("eight ink recipes",
+		(GatherDefs.INK_RECIPE_ORDER as Array).size() == 8)
+	var wg := ChartsData.compute_weights(2, ["gildleaf_ink"], 20)
+	var w0g := ChartsData.compute_weights(2, [], 20)
+	_check("gildleaf raises gilded share",
+		float(wg.get("gilded", 0.0)) > float(w0g.get("gilded", 0.0)))
+	# Carto perk math: Sure Lines +5 stability, Thrifty Quill −1 hedge.
+	_check("sure lines leans 5 points",
+		ChartsData.effective_stability("mineral_vein", 1, 0.0, 0.05)
+		== ChartsData.effective_stability("mineral_vein", 1, 0.0) + 5)
+	_check("thrifty quill trims the base hedge cost",
+		int(ChartsData.craft_cost("tier_1", [], "", 1).get("hedge_ink", 0))
+		== int(ChartsData.craft_cost("tier_1", []).get("hedge_ink", 0)) - 1)
+	_check("the trim floors at one pot",
+		int(ChartsData.craft_cost("snug", [], "", 1).get("hedge_ink", 99)) >= 1)
+	# Light Hands: forage channels a quarter faster at wilds 13.
+	game.trades.wilds.lv = 13
+	_check("light hands cuts the forage channel",
+		absf(GatherNode.channel_seconds("forage_node", game) - 0.75) < 0.01)
+	# Tier-2 charts grow tier-2..4 herbs (deterministic seed).
+	var lay := DungeonGenScript.generate(4242, {"grid": 36, "room_min": 7,
+		"room_max": 11, "boss_kind": "", "tier": 2,
+		"affixes": [{"id": "bramble_bloom", "good": true,
+			"resolvedId": "bramble_bloom"}]})
+	var herbs_ok := true
+	var saw_herb := false
+	for d in lay.decor:
+		if bool(d.get("gather", false)) and String(d.kind) == "forage_node":
+			saw_herb = true
+			if not String(d.get("herb_tier", "")) in \
+					["bittergrass", "crowsfoot", "mothmint"]:
+				herbs_ok = false
+	_check("tier-2 blooms grow herb tiers 2-4", saw_herb and herbs_ok)
+	# The Summit carries two fixed hedgesteel veins (tier-3, no affixes).
+	var summit_lay := DungeonGenScript.generate(7, {"grid": 44, "room_min": 7,
+		"room_max": 12, "boss_kind": "hedgemother_queen", "tier": 3,
+		"affixes": []})
+	var hs := 0
+	for d in summit_lay.decor:
+		if String(d.get("ore_tier", "")) == "hedgesteel":
+			hs += 1
+	_check("summit holds 2 fixed hedgesteel veins", hs == 2, str(hs))
 	game.free()
 
 func _test_save_roundtrip() -> void:

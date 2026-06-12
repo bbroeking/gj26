@@ -669,6 +669,11 @@ func _die() -> void:
 	var game := get_tree().root.get_node_or_null("Game")
 	if game != null:
 		game.award_xp("hunt", maxi(2, int(hp_max / 3.0)))
+		# Spec 45-hunt — Even Breath: a clean kill steadies the hunter.
+		if game.perk_active("hunt", "even_breath"):
+			var pl := get_tree().get_first_node_in_group("player")
+			if pl != null and pl.has_method("add_focus"):
+				pl.add_focus(6.0)
 	var sfx := get_node_or_null("/root/Sfx")
 	if sfx != null:
 		sfx.play("death")

@@ -239,12 +239,16 @@ static func xp_for_level(n: int) -> int:
 func trade_lv(key: String) -> int:
 	return int(trades.get(key, {}).get("lv", 1))
 
+# ADR 0006 — the demo level cap; xp accrues past it but levels stop.
+const LEVEL_CAP := 17
+
 func award_xp(key: String, amount: int) -> void:
 	if amount <= 0 or not trades.has(key):
 		return
 	trades[key].xp += amount
 	xp_gained.emit(key, amount)
-	while trades[key].xp >= xp_for_level(int(trades[key].lv) + 1):
+	while int(trades[key].lv) < LEVEL_CAP \
+			and trades[key].xp >= xp_for_level(int(trades[key].lv) + 1):
 		trades[key].lv += 1
 		leveled_up.emit(key, int(trades[key].lv))
 		notify("%s rises to %d" % [TRADE_NAMES.get(key, key), int(trades[key].lv)])
@@ -340,8 +344,29 @@ func craft(station_id: String, recipe_id: String) -> bool:
 		notify("Forged: %s." % String(made_item.get("name", rec.name)))
 	else:
 		spend_materials(rec.inputs)
-		add_material(String(rec.yields_material), int(rec.get("yields_n", 1)))
+		var n_out := int(rec.get("yields_n", 1))
+		# Spec 45-wilds — Second Pour: a wilds material craft sometimes
+		# pours a second bottle.
+		if trade == "wilds" and perk_active("wilds", "second_pour") \
+				and randf() < 0.25:
+			n_out += 1
+			notify("Second pour! The pot had more to give.")
+		add_material(String(rec.yields_material), n_out)
 		notify("Made %s." % GatherDefs.material_name(String(rec.yields_material)))
+	# Spec 45-earth — Smith's Thrift: 1 in 4 forge crafts hand back one RAW
+	# input (never a bar — a bar refund would crack the economy gate on the
+	# all-buyable recipes).
+	if station_id == "forge" and perk_active("earth", "smiths_thrift") \
+			and randf() < 0.25:
+		var raws: Array = []
+		for mid in rec.inputs:
+			if not String(mid).ends_with("_bar"):
+				raws.append(String(mid))
+		if not raws.is_empty():
+			var back := String(raws.pick_random())
+			add_material(back, 1)
+			notify("Smith's thrift — a %s comes back to the pile." %
+				GatherDefs.material_name(back))
 	var sfx := get_node_or_null("/root/Sfx")
 	if sfx != null:
 		sfx.play("craft_cook" if station_id == "cookfire" else "craft_smith")
@@ -351,23 +376,55 @@ func craft(station_id: String, recipe_id: String) -> bool:
 
 # ---- per-trade level perks (A9) ----
 const PERKS := {
+	# Spec 45-carto — the chart/bench game's first perk ladder.
+	"carto": [
+		{"id": "marginalia", "lv": 2, "name": "Mara's Marginalia",
+			"desc": "Mara's notes crowd the codex margins — every riddle, plain to read"},
+		{"id": "practiced_measures", "lv": 3, "name": "Practiced Measures",
+			"desc": "Click a known mix in the codex and the pot sets out its makings"},
+		{"id": "curious_fingers", "lv": 5, "name": "Curious Fingers",
+			"desc": "A failed mix smudges less — curiosity keeps more of what it touches"},
+		{"id": "sure_lines", "lv": 10, "name": "Sure Lines",
+			"desc": "Your nib doesn't waver — every affix leans 5 points toward its good twin"},
+		{"id": "thrifty_quill", "lv": 14, "name": "Thrifty Quill",
+			"desc": "Each chart asks one less pot of hedge ink. Waste not"},
+		{"id": "master_wayfinder", "lv": 17, "name": "Master Wayfinder",
+			"desc": "Every chart that takes ink holds one more pot — the page listens closer"},
+	],
 	"earth": [
 		{"id": "double_ore", "lv": 5, "name": "Sturdy Swings",
 			"desc": "25% chance a vein gives a second lump"},
 		{"id": "quick_mining", "lv": 10, "name": "Miner's Rhythm",
 			"desc": "Mining takes a third less time"},
+		# Spec 45-earth.
+		{"id": "rich_seams", "lv": 13, "name": "Rich Seams",
+			"desc": "Starsilver and deeper veins always give a second lump"},
+		{"id": "smiths_thrift", "lv": 17, "name": "Smith's Thrift",
+			"desc": "1 in 4 forge crafts hand back one raw input — never a bar"},
 	],
 	"wilds": [
 		{"id": "keen_eye", "lv": 5, "name": "Keen Eye",
 			"desc": "+1 herb on every forage"},
 		{"id": "clean_splits", "lv": 10, "name": "Clean Splits",
 			"desc": "+1 log on every chop"},
+		# Spec 45-wilds.
+		{"id": "light_hands", "lv": 13, "name": "Light Hands",
+			"desc": "Foraging and chopping take a quarter less time"},
+		{"id": "second_pour", "lv": 17, "name": "Second Pour",
+			"desc": "25% chance a hearth or still recipe pours a second bottle"},
 	],
 	"hunt": [
 		{"id": "steady_hands", "lv": 5, "name": "Steady Hands",
 			"desc": "+5% crit chance"},
 		{"id": "hunters_stride", "lv": 10, "name": "Hunter's Stride",
 			"desc": "+5% move speed"},
+		# Spec 45-hunt.
+		{"id": "quick_nock", "lv": 12, "name": "Quick Nock",
+			"desc": "Skills come back a tenth sooner"},
+		{"id": "heavy_draw", "lv": 14, "name": "Heavy Draw",
+			"desc": "Your telling hits land a quarter harder"},
+		{"id": "even_breath", "lv": 17, "name": "Even Breath",
+			"desc": "A clean kill steadies you — every kill returns 6 Focus"},
 	],
 }
 
@@ -509,12 +566,15 @@ func try_pot_mix(pot: Dictionary) -> Dictionary:
 	if not cost.is_empty() and not spend_materials(cost):
 		return {}
 	award_xp("carto", 5)   # each smudge teaches
+	# Spec 45-carto — Curious Fingers: misses smudge less (40/45/15).
+	var smudge_at := 0.4 if perk_active("carto", "curious_fingers") else 0.6
+	var wild_at := 0.85 if perk_active("carto", "curious_fingers") else 0.9
 	var roll := randf()
-	if roll < 0.6:
+	if roll < smudge_at:
 		notify("The mix curdles to a grey smudge. Still — now you know.")
 		save_now()
 		return {"outcome": "smudge"}
-	if roll < 0.9:
+	if roll < wild_at:
 		var wild := String(["hedge_ink", "stoneground_ink"].pick_random())
 		add_material(wild, 1)
 		notify("A wild ink settles out — looks like %s." %

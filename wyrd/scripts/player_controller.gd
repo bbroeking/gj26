@@ -354,6 +354,18 @@ func _physics_process(delta: float) -> void:
 		_ward_t -= delta
 		if _ward_t <= 0.0:
 			_ward_hp = 0
+	# Spec 45-wilds — Mothmint Mend: scratches close as you walk.
+	var game_r := get_tree().root.get_node_or_null("Game")
+	if game_r != null and hp < hp_max and not dead:
+		var vr: float = float(game_r.buff_value("vigor_regen"))
+		if vr > 0.0:
+			_regen_accum += vr * delta
+			if _regen_accum >= 1.0:
+				var whole := int(_regen_accum)
+				_regen_accum -= float(whole)
+				hp = mini(hp + whole, hp_max)
+				if _hud != null:
+					_hud.set_hp(hp, hp_max)
 	# Focus regen — slower while in combat (encourages a spend rhythm).
 	var regen_rate: float = FOCUS_REGEN_IN if _combat_t > 0.0 else FOCUS_REGEN_OUT
 	focus = clampf(focus + regen_rate * _chart_focus_mult()
@@ -601,6 +613,12 @@ func _anim_state(dir: Vector3) -> String:
 func take_damage(amount: int, from_dir: Vector3) -> void:
 	if dead or _iframe_t > 0.0:
 		return
+	# Spec 45-wilds — Stonebreak Tonic: bites land softer while it holds.
+	var game_g := get_tree().root.get_node_or_null("Game")
+	if game_g != null:
+		var grit: float = clampf(float(game_g.buff_value("grit")), 0.0, 0.8)
+		if grit > 0.0:
+			amount = int(round(float(amount) * (1.0 - grit)))
 	# B5-wave2 — Heartwood Ward soaks before vigor is touched. A fully
 	# soaked hit still grants iframes (the blow landed on the bark).
 	if _ward_hp > 0 and amount > 0:
@@ -916,6 +934,13 @@ func _derive_stats() -> void:
 			_add_stat(sums, "crit_chance", 0.05)
 		if game_h.perk_active("hunt", "hunters_stride"):
 			_add_stat(sums, "move_speed", 0.05)
+		# Spec 45-hunt — the deep perks ride the same shape.
+		if game_h.perk_active("hunt", "quick_nock"):
+			_add_stat(sums, "cooldown_reduction", 0.10)
+		if game_h.perk_active("hunt", "heavy_draw"):
+			_add_stat(sums, "crit_mult", 0.25)
+		# Spec 45-wilds — Crowsfoot Cordial's stride rides the buff engine.
+		_add_stat(sums, "move_speed", float(game_h.buff_value("move_speed")))
 	derived_stats = {
 		"hp_max":              PLAYER_HP + int(sums.hp),
 		"damage":              6 + int(sums.damage),
@@ -1085,6 +1110,14 @@ func _try_interact() -> void:
 # B5-wave2 — Heartwood Ward: a timed absorb pool soaked in take_damage.
 var _ward_hp := 0
 var _ward_t := 0.0
+# Spec 45-wilds — Mothmint Mend's fractional heal carry.
+var _regen_accum := 0.0
+
+# Spec 45-hunt — Even Breath's kill refund lands here (combatant._die).
+func add_focus(amount: float) -> void:
+	focus = clampf(focus + amount, 0.0, focus_max)
+	if _hud != null and _hud.has_method("set_focus"):
+		_hud.set_focus(focus, focus_max)
 
 func apply_ward(amount: int, duration: float) -> void:
 	_ward_hp = amount

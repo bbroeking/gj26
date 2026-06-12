@@ -58,6 +58,27 @@ const KINDS := {
 		"size": Vector2i(1, 3), "base_stat": "gather_speed", "base_value": 0.45,
 		"icon_color": Color(0.80, 0.70, 0.58),
 	},
+	# Spec 45-earth — the deep ladder's kinds.
+	"starsilver_pickaxe": {
+		"name": "Starsilver Pickaxe", "category": "pickaxe",
+		"size": Vector2i(1, 3), "base_stat": "gather_speed", "base_value": 0.55,
+		"icon_color": Color(0.74, 0.79, 0.90),
+	},
+	"starsilver_axe": {
+		"name": "Starsilver Axe", "category": "axe",
+		"size": Vector2i(1, 3), "base_stat": "gather_speed", "base_value": 0.55,
+		"icon_color": Color(0.70, 0.76, 0.88),
+	},
+	"starsilver_band": {
+		"name": "Starsilver Band", "category": "ring",
+		"size": Vector2i(1, 1), "base_stat": "crit_mult", "base_value": 0.15,
+		"icon_color": Color(0.78, 0.82, 0.92),
+	},
+	"warbow": {
+		"name": "Hedgesteel Warbow", "category": "weapon",
+		"size": Vector2i(2, 4), "base_stat": "damage", "base_value": 11,
+		"icon_color": Color(0.36, 0.46, 0.40),
+	},
 }
 
 # Predefined uniques (a unique drop of these kinds replaces the kind name +

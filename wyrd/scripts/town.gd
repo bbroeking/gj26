@@ -256,6 +256,13 @@ func _place_herb_patches() -> void:
 		node.setup("forage_node", "wild_herb", true)   # town patches regrow
 		node.position = pos
 		add_child(node)
+	# Spec 45-wilds — one bittergrass patch by Quill's still, locked until
+	# Wildcraft 3 (visible and coveted, like Hod's bogiron).
+	var bitter: Node3D = GatherNodeScript.new()
+	bitter.setup("forage_node", "bittergrass", true)
+	bitter.setup_herb_tier("bittergrass")
+	bitter.position = STILL_POS + Vector3(-1.6, 0.0, 1.2)
+	add_child(bitter)
 	# Hod's spoil heap — A6 tiers: two copper starters and one bogiron
 	# vein that stands locked until Earthcraft 3 (visible, coveted).
 	var heap_tiers := ["copper", "copper", "bogiron"]

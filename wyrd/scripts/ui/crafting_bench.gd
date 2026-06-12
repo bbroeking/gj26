@@ -45,9 +45,9 @@ func _ready() -> void:
 	_panel.anchor_right = 0.5
 	_panel.anchor_bottom = 0.5
 	_panel.offset_left = -470
-	_panel.offset_top = -310
+	_panel.offset_top = -330
 	_panel.offset_right = 470
-	_panel.offset_bottom = 310
+	_panel.offset_bottom = 330
 	add_child(_panel)
 	_view = BenchView.new()
 	_view.bench = self
@@ -113,6 +113,15 @@ func socket_trophy(trophy_id: String) -> bool:
 		return false
 	if not ChartsData.TROPHY_TO_AFFIX.has(trophy_id):
 		return false
+	# Spec 45-carto — the den's req_carto is a real gate now (it was dead
+	# data: possession was the only check).
+	var den: Dictionary = ChartsData.AFFIXES.get(
+		String(ChartsData.TROPHY_TO_AFFIX[trophy_id]), {})
+	if _carto_lv() < int(den.get("req_carto", 1)):
+		if _game != null:
+			_game.notify("This den asks for Wayfinder %d." %
+				int(den.get("req_carto", 1)))
+		return false
 	if _remaining(trophy_id) <= 0:
 		return false
 	trophy = trophy_id
@@ -166,16 +175,27 @@ func pot_clear() -> void:
 	pot.clear()
 	_view.queue_redraw()
 
-# The craft: same calls in the same order as the old panel.
+# The craft: same calls in the same order as the old panel. Spec 45 —
+# Thrifty Quill discounts the hedge base cost; Sure Lines leans the rolls.
+func _hedge_discount() -> int:
+	return 1 if _game != null \
+		and bool(_game.perk_active("carto", "thrifty_quill")) else 0
+
+func _stab_perk_bonus() -> float:
+	return 0.05 if _game != null \
+		and bool(_game.perk_active("carto", "sure_lines")) else 0.0
+
 func craft() -> bool:
 	if base_id == "" or _game == null:
 		return false
-	var cost: Dictionary = ChartsData.craft_cost(base_id, inks, trophy)
+	var cost: Dictionary = ChartsData.craft_cost(base_id, inks, trophy,
+		_hedge_discount())
 	if not _game.can_afford(cost):
 		return false
 	if not _game.spend_materials(cost):
 		return false
-	var chart: Dictionary = ChartsData.inscribe(base_id, inks, _carto_lv(), trophy)
+	var chart: Dictionary = ChartsData.inscribe(base_id, inks, _carto_lv(),
+		trophy, _stab_perk_bonus())
 	if chart.is_empty():
 		return false
 	_game.add_chart(chart)
@@ -196,7 +216,13 @@ func template() -> Dictionary:
 	return ChartsData.TEMPLATES.get(base_id, {})
 
 func ink_slots() -> int:
-	return int(template().get("ink_slots", 0))
+	var n := int(template().get("ink_slots", 0))
+	# Spec 45-carto — Master Wayfinder: every chart that takes ink holds
+	# one more pot. Slotless charts (snug/summit) stay at zero.
+	if n > 0 and _game != null \
+			and bool(_game.perk_active("carto", "master_wayfinder")):
+		n += 1
+	return n
 
 func affix_slots() -> int:
 	return int(template().get("affix_slots", 0))
@@ -258,6 +284,7 @@ class BenchView extends Control:
 	var _tip_at := Vector2.ZERO
 	var _press_at := Vector2.ZERO   # click-to-place vs drag discrimination
 	var _odds_rows: Array = []      # {rect, affix_id} for odds tooltips
+	var _codex_rects: Array = []    # spec 45 — {rect, id} for known recipes
 
 	const EDGE := Color(0.26, 0.19, 0.13)
 	const WELL := Color(0.80, 0.72, 0.58)
@@ -271,6 +298,9 @@ class BenchView extends Control:
 		"refined_ink": Color(0.93, 0.88, 0.62),
 		"ash_ink": Color(0.30, 0.28, 0.26),
 		"chalkwash_ink": Color(0.88, 0.86, 0.80),
+		"mothglow_ink": Color(0.80, 0.84, 0.90),
+		"foxglove_ink": Color(0.28, 0.30, 0.52),
+		"gildleaf_ink": Color(0.90, 0.78, 0.42),
 	}
 	const COPPER := Color(0.66, 0.40, 0.24)
 	const COPPER_LIT := Color(0.85, 0.56, 0.34)
@@ -348,6 +378,18 @@ class BenchView extends Control:
 				and not bench.pot.is_empty():
 			bench.pot_try()
 			return
+		# Spec 45-carto — Practiced Measures: click a known codex row and
+		# the pot sets out its makings (you still need the ingredients).
+		if bench._game != null \
+				and bool(bench._game.perk_active("carto", "practiced_measures")):
+			for row in _codex_rects:
+				if (row.rect as Rect2).has_point(p):
+					var inputs: Dictionary = GatherDefs.INK_RECIPES[row.id].inputs
+					if bench._game.can_afford(inputs):
+						bench.pot = inputs.duplicate()
+						pop("pot")
+						queue_redraw()
+					return
 		if _pot_rect.has_point(p) and not bench.pot.is_empty():
 			bench.pot_clear()
 			return
@@ -546,7 +588,9 @@ class BenchView extends Control:
 			y = _tray_row(font, x, y, "ink", String(ink_id), "%s ×%d" % [
 				GatherDefs.material_name(String(ink_id)), n], true)
 		y = _tray_section(hdr, x, y + 10.0, "Materials") + 12.0
-		for mid in ["wild_herb", "bogiron_ore", "logs", "palechalk"]:
+		for mid in ["wild_herb", "bittergrass", "crowsfoot", "mothmint",
+				"foxglove_blue", "stonebreak", "bogiron_ore", "logs",
+				"palechalk", "starsilver_ore", "hedgesteel_ore"]:
 			var n2: int = bench._remaining(mid)
 			if n2 <= 0:
 				continue
@@ -696,11 +740,17 @@ class BenchView extends Control:
 		draw_string(hdr, Vector2(bx, cy), "Codex", HORIZONTAL_ALIGNMENT_LEFT,
 			200, 13, WyrdUi.INK)
 		cy += 16.0
+		_codex_rects.clear()
 		for rid in GatherDefs.INK_RECIPE_ORDER:
 			var rec: Dictionary = GatherDefs.INK_RECIPES[rid]
 			var line := "◌ ???"
 			var col := DIM
 			var known := false
+			# Spec 45-carto — Mara's Marginalia: every riddle, plain to read.
+			var riddle_open: bool = bench._game != null \
+				and (bool((bench._game.seen_hints as Dictionary)
+					.get(String(rec.get("hint_key", "")), false))
+				or bool(bench._game.perk_active("carto", "marginalia")))
 			if bench._game != null \
 					and bool(bench._game.ink_discovered(String(rid))):
 				known = true
@@ -711,8 +761,7 @@ class BenchView extends Control:
 				line = "%s — %s" % [GatherDefs.material_name(String(rid)),
 					" + ".join(parts)]
 				col = TXT
-			elif bench._game != null and bool((bench._game.seen_hints as Dictionary)
-					.get(String(rec.get("hint_key", "")), false)):
+			elif riddle_open:
 				line = "◌ ??? — %s" % String(rec.get("riddle", ""))
 			if known:
 				# Spec 44 — a tiny bottle in the ink's color marks the find.
@@ -720,6 +769,9 @@ class BenchView extends Control:
 					INK_TINT.get(String(rid), Color(0.4, 0.4, 0.4)))
 				draw_string(font, Vector2(bx + 16.0, cy + 11.0), line,
 					HORIZONTAL_ALIGNMENT_LEFT, 314, 11, col)
+				# Spec 45-carto — Practiced Measures: a known row is a button.
+				_codex_rects.append({"rect": Rect2(Vector2(bx, cy),
+					Vector2(330.0, 15.0)), "id": String(rid)})
 			else:
 				draw_string(font, Vector2(bx, cy + 11.0), line,
 					HORIZONTAL_ALIGNMENT_LEFT, 330, 11, col)
@@ -758,7 +810,7 @@ class BenchView extends Control:
 			ids.sort_custom(func(a, b): return weights[a] > weights[b])
 			for id in ids:
 				var stab: int = ChartsData.effective_stability(String(id),
-					bench._carto_lv(), bonus)
+					bench._carto_lv(), bonus, bench._stab_perk_bonus())
 				draw_string(font, Vector2(rx, y),
 					"%s — %d%% · good %d%%" % [
 						String(ChartsData.AFFIXES[id].name),
@@ -779,7 +831,8 @@ class BenchView extends Control:
 				HORIZONTAL_ALIGNMENT_LEFT, 220, 13, DIM)
 			y += 19.0
 		# Cost + craft button.
-		var cost: Dictionary = ChartsData.craft_cost(bench.base_id, bench.inks, bench.trophy)
+		var cost: Dictionary = ChartsData.craft_cost(bench.base_id,
+			bench.inks, bench.trophy, bench._hedge_discount())
 		y += 6.0
 		for id in cost:
 			var have: int = 0 if bench._game == null \

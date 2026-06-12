@@ -15,6 +15,7 @@ var respawns := false         # town patches regrow; dungeon nodes don't
 var respawn_sec := 20.0
 # A6 — ore tier ("" = untiered). Sets item/xp/channel/req from ORE_TIERS.
 var ore_tier := ""
+var herb_tier := ""    # spec 45 — the forage mirror of ore_tier
 var req_lv := 0
 var _tier_xp := 0
 var _tier_channel := -1.0
@@ -52,16 +53,35 @@ func setup_ore_tier(tier_id: String) -> void:
 	_tier_xp = int(t.xp)
 	_tier_channel = float(t.channel_sec)
 
-# A6 — is this vein still above the player's Earthcraft?
+# Spec 45-wilds — make this a forage patch of the given herb tier
+# (the herb mirror of setup_ore_tier; gated by Wildcraft).
+func setup_herb_tier(tier_id: String) -> void:
+	var t: Dictionary = GatherDefs.HERB_TIERS.get(tier_id, {})
+	if t.is_empty():
+		return
+	herb_tier = tier_id
+	kind = "forage_node"
+	item_id = String(t.item)
+	req_lv = int(t.req_lv)
+	_tier_xp = int(t.xp)
+	_tier_channel = float(t.channel_sec)
+
+# A6/45 — is this node still above the player's trade level? Ore gates
+# on Earthcraft, forage on Wildcraft.
 func locked(game) -> bool:
-	return req_lv > 0 and game != null and game.trade_lv("earth") < req_lv
+	return req_lv > 0 and game != null \
+		and game.trade_lv(_gate_trade()) < req_lv
+
+func _gate_trade() -> String:
+	return "wilds" if herb_tier != "" else "earth"
 
 # ---- Interactable hooks ----
 func get_prompt_text() -> String:
 	var verb := String(GatherDefs.NODE_KINDS.get(kind, {}).get("verb", "Gather"))
 	if locked(get_tree().root.get_node_or_null("Game")):
-		return "%s — needs Earthcraft %d" % [GatherDefs.material_name(item_id),
-			req_lv]
+		var trade_name := "Wildcraft" if herb_tier != "" else "Earthcraft"
+		return "%s — needs %s %d" % [GatherDefs.material_name(item_id),
+			trade_name, req_lv]
 	return "[E] %s %s" % [verb, GatherDefs.material_name(item_id)]
 
 func get_prompt_color() -> Color:
@@ -96,6 +116,8 @@ func _ready_interactable() -> void:
 			inst.position = Vector3(0.0, 0.02, 0.0)
 			_body.add_child(inst)
 			if ore_tier != "" and ore_tier != "bogiron":
+				_tint_tier(inst)
+			elif herb_tier != "" and herb_tier != "wild":
 				_tint_tier(inst)
 			return
 	_build_primitive()
@@ -154,8 +176,9 @@ func _add_mesh(mesh: Mesh, color: Color, pos: Vector3) -> MeshInstance3D:
 # A6 — copper/palechalk veins tint the shared ore prop so tiers read at
 # a glance (bogiron keeps the GLB's native rust).
 func _tint_tier(root: Node) -> void:
-	var col: Color = GatherDefs.ORE_TIERS.get(ore_tier, {}).get("color",
-		Color.WHITE)
+	var col: Color = GatherDefs.HERB_TIERS.get(herb_tier, {}).get("color",
+		Color.WHITE) if herb_tier != "" \
+		else GatherDefs.ORE_TIERS.get(ore_tier, {}).get("color", Color.WHITE)
 	var m := StandardMaterial3D.new()
 	m.albedo_color = col
 	m.roughness = 0.85
@@ -248,6 +271,10 @@ func _harvest(player: Node) -> void:
 	var game := get_tree().root.get_node_or_null("Game")
 	if game != null:
 		got += int(game.gather_bonus(kind))   # A9 perks
+		# Spec 45-earth — Rich Seams: deep veins always give a second lump.
+		if ore_tier in ["starsilver", "hedgesteel"] \
+				and game.perk_active("earth", "rich_seams"):
+			got += 1
 		# B6 — Wellspring: every node in the chart gives one extra.
 		if bool(game.in_dungeon) and game.affix_good("wellspring"):
 			got += 1
@@ -276,6 +303,10 @@ static func channel_seconds(kind: String, game, base := -1.0) -> float:
 			t *= 1.0 - clampf(float(tool.get("base_value", 0.0)), 0.0, 0.8)
 	if kind == "ore_rock" and game.perk_active("earth", "quick_mining"):
 		t *= 0.65
+	# Spec 45-wilds — Light Hands: forage and chop run a quarter faster.
+	if kind in ["forage_node", "log_pile"] \
+			and game.perk_active("wilds", "light_hands"):
+		t *= 0.75
 	# A8-full — Quickroot Tonic: every channel runs a quarter faster.
 	var tonic: float = float(game.buff_value("gather_speed")) \
 		if game.has_method("buff_value") else 0.0

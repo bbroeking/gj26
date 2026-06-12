@@ -4,7 +4,7 @@ THE single where-are-we doc. Detail lives in the linked plans; when this
 disagrees with code, code wins. Repo note: the three.js prototype was
 removed 2026-06-12 (recoverable from git history).
 
-## Shipped (all gates green — 270 headless checks across 3 suites)
+## Shipped (all gates green — 311 headless checks across 3 suites)
 
 **Core loop:** tutorial → forage → mix ink → inscribe chart → parameterized
 dungeon (affixes shape gather nodes / density / HP / boss dens) → exit
@@ -104,10 +104,24 @@ Specs 38–41 + notes.
     12 Midjourney prompts in `docs/wyrd-ui-reference-prompts.md`
     (8 page heroes + 4 crop-ready element sheets). Generate → drop in
     `docs/ui-refs/round2/` → measure/crop/implement (the spec-39 flow).
-11. **Queue — next candidates:** herb tiers (forage ladder + reagent
-    ecosystem for more discoverable inks), buff HUD chip, discovery feel
-    pass, skill-icon paint-over once `sheet-icons` lands, fresh-save
-    tutorial + boss-feel playtests (user-side), P2/P3 animation sets.
+11. ~~Trade ladders to the cap — specs 45-*~~ **SHIPPED 2026-06-12**
+    (ADR 0006: demo level cap 17, enforced in `award_xp`). Wildcraft: 6
+    herb tiers (W1/3/7/10/13/16, bible's locked list), heal ladder
+    35→220, 3 buff brews (move_speed / vigor_regen / grit), perks 13/17.
+    Earthcraft: Starsilver E11 + Hedgesteel E15, 10 forge recipes to the
+    E17 Warbow, perks 13/17, 2 fixed Summit hedgesteel veins. Huntcraft:
+    Quick Nock 12 / Heavy Draw 14 / **Even Breath 17** (kills return 6
+    Focus). Wayfinding: first perk ladder (6 perks 2→17 incl. Master
+    Wayfinder's +1 ink slot), den req gates now enforced. 3 new
+    discoverable inks (Mothglow, Foxglove, Gildleaf) — every rollable
+    affix now has a courting ink. Design specs + integration notes in
+    `docs/specs/45-trade-ladders-*.md`.
+12. **Queue — next candidates:** buff HUD chip (now carrying five brews,
+    the ward, and Even Breath), discovery feel pass, skill-icon
+    paint-over once `sheet-icons` lands, fresh-save tutorial + boss-feel
+    playtests (user-side), UI mock picks (round 2, your ChatGPT
+    conversations), P2/P3 animation sets, balance pass on the 140/220
+    heals vs Summit damage.
 
 ## Standing followups
 

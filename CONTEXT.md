@@ -11,11 +11,11 @@ An item lying in the world that the player can pick up. Spawned by drops (combat
 _Avoid_: GroundLoot, GroundItem, DroppedItem, WorldItem.
 
 **Skill**:
-A player-usable ability bound to a hotbar slot. Carries cost (Focus), cooldown, and a list of SkillEffects applied on hit. v1 kinds: BasicShot, PowerShot, MultiShot, BrambleSnare. Lives in `scripts/skills/`.
+A player-usable ability bound to a hotbar slot. Carries cost (Focus), cooldown, and a list of SkillEffects applied on hit. Slot 1 is always BasicShot; slots 2–4 are picked from the pool (PowerShot, MultiShot, BrambleSnare, PiercingBolt, RainOfThorns, Thornburst, HuntersMark, HeartwoodWard, MercyShot — the deeper hunting verbs gate on Huntcraft level). Lives in `scripts/skills/`.
 _Avoid_: ability, spell, attack. Never use Skill for a leveling discipline — that's a **Trade**.
 
 **Trade**:
-A leveling discipline with an XP curve and per-level unlocks: `carto` (Wayfinding), `earth` (Earthcraft), `wilds` (Wildcraft). Lives on the `Game` autoload (`Game.trades`, `trade_lv`, `award_xp`). Player-facing names come from `TRADE_NAMES`.
+A leveling discipline with an XP curve and per-level unlocks: `carto` (Wayfinding), `earth` (Earthcraft), `wilds` (Wildcraft), `hunt` (Huntcraft — fed by kills, ADR 0005). Lives on the `Game` autoload (`Game.trades`, `trade_lv`, `award_xp`). Player-facing names come from `TRADE_NAMES`. Demo scope: level cap 17 (Wayfinding's natural top — the Summit sits at 16); every Trade's unlock ladder is built out to the cap.
 _Avoid_: skill (reserved for hotbar abilities), stat, profession.
 
 **Chart**:

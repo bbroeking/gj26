@@ -2,6 +2,7 @@ class_name DungeonGen
 extends RefCounted
 
 const DungeonScoreScript = preload("res://scripts/dungeon_score.gd")
+const GatherDefs = preload("res://data/gather.gd")
 
 # Spec 08 — quality procgen.
 # Rooms-and-corridors via the "TinyKeep" pipeline:
@@ -328,17 +329,65 @@ static func _scatter_gather_nodes(rooms: Array, grid: Array, entry: Dictionary,
 			var entry_d := {"kind": String(spec.kind), "item": String(spec.item),
 				"gather": String(spec.kind) != "chest",
 				"x": x, "y": y, "orient": "center"}
-			# A6 — Mineral Vein nodes roll an ore tier; deeper charts carry
-			# the richer veins (palechalk never spawns in town or tier 1).
+			# A6/45 — gather nodes roll a tier from the data tables; deeper
+			# charts carry the richer veins and the rarer herbs.
 			if affix_id == "mineral_vein":
-				var tier_id := "copper"
-				if chart_tier >= 2:
-					tier_id = "bogiron" if rng.randf() < 0.5 else "palechalk"
-				else:
-					tier_id = "copper" if rng.randf() < 0.55 else "bogiron"
-				entry_d["ore_tier"] = tier_id
+				entry_d["ore_tier"] = _roll_tier(
+					GatherDefs.ORE_ROLLS_BY_TIER, chart_tier, rng)
+			elif affix_id == "bramble_bloom":
+				entry_d["herb_tier"] = _roll_tier(
+					GatherDefs.FORAGE_ROLLS_BY_TIER, chart_tier, rng)
+			elif affix_id == "herbal_patch":
+				entry_d["herb_tier"] = _roll_tier(
+					GatherDefs.FORAGE_ROLLS_PATCH, chart_tier, rng)
 			decor.append(entry_d)
 			placed += 1
+	# Spec 45-earth — the Summit is made of the stuff: two fixed hedgesteel
+	# veins, the only ore the slotless capstone chart carries.
+	if chart_tier >= 3:
+		var hs_placed := 0
+		var hs_tries := 0
+		while hs_placed < 2 and hs_tries < 200:
+			hs_tries += 1
+			var hri := rng.randi_range(0, rooms.size() - 1)
+			if hri == 0 or hri == boss_idx:
+				continue
+			var hr: Dictionary = rooms[hri]
+			var hx := rng.randi_range(int(hr.x), int(hr.x) + int(hr.w) - 1)
+			var hy := rng.randi_range(int(hr.y), int(hr.y) + int(hr.h) - 1)
+			if String(grid[hy][hx]) != "floor":
+				continue
+			var hs_occupied := false
+			for d in decor:
+				if int(d.x) == hx and int(d.y) == hy:
+					hs_occupied = true
+					break
+			if hs_occupied:
+				continue
+			decor.append({"kind": "ore_rock", "item": "hedgesteel_ore",
+				"gather": true, "x": hx, "y": hy, "orient": "center",
+				"ore_tier": "hedgesteel"})
+			hs_placed += 1
+
+# Spec 45 — weighted tier pick from a {chart_tier: {tier_id: weight}}
+# table; clamps the chart tier into the table's range.
+static func _roll_tier(table: Dictionary, chart_tier: int,
+		rng: RandomNumberGenerator) -> String:
+	var key := clampi(chart_tier, 1, 3)
+	while not table.has(key) and key > 1:
+		key -= 1
+	var weights: Dictionary = table.get(key, {})
+	var total := 0
+	for t in weights:
+		total += int(weights[t])
+	if total <= 0:
+		return ""
+	var roll := rng.randi_range(1, total)
+	for t in weights:
+		roll -= int(weights[t])
+		if roll <= 0:
+			return String(t)
+	return String(weights.keys()[0])
 
 # ---- Delaunay: unique edge set from triangle triples ----
 static func _delaunay_edges(centers: PackedVector2Array) -> Array:
