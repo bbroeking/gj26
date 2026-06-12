@@ -107,6 +107,22 @@ func _run() -> void:
 		str(hp0 - int(prey.hp)))
 	# B5-wave2 — Heartwood Ward: the bark soaks before vigor.
 	var player2: Node = get_first_node_in_group("player")
+	# Regression (frozen-game bug): a loadout swap cleared _skill_cooldowns
+	# without re-seeding, so the NEXT cast of any slot crashed out of
+	# bounds. Swap, then actually fire every hotbar slot.
+	if player2 != null:
+		game.trades.hunt.lv = 9
+		game.set_loadout(["PiercingBolt", "Thornburst", "MercyShot"])
+		player2.focus = 999.0
+		for s in [2, 3, 4]:
+			player2._try_skill(s)
+		_check("hotbar casts after a loadout swap (no crash)",
+			float(player2.focus) < 999.0, str(player2.focus))
+		_check("cooldown keys re-seeded for every slot",
+			(player2._skill_cooldowns as Dictionary).size() == 4,
+			str(player2._skill_cooldowns))
+		game.set_loadout(["PowerShot", "MultiShot", "BrambleSnare"])
+		player2.focus = float(player2.focus_max)
 	if player2 != null:
 		player2.apply_ward(30, 8.0)
 		var php: int = int(player2.hp)

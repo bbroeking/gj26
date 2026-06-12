@@ -501,7 +501,7 @@ func _physics_process(delta: float) -> void:
 
 	if _move == Move.NORMAL:
 		var want_fire := _fire_buffer > 0.0 or Input.is_action_pressed("fire")
-		if want_fire and _skill_cooldowns[1] <= 0.0:
+		if want_fire and float(_skill_cooldowns.get(1, 0.0)) <= 0.0:
 			# Spec 32b — F-key dispatches BasicShot (slot 1) via the Skill
 			# module. Buffer is preserved so the snappy F-spam feel works.
 			face_aim(aim_dir())        # Wyrd — square up before the arrow leaves
@@ -769,7 +769,7 @@ func _try_skill(slot: int) -> void:
 	if slot == 1:
 		_fire_buffer = INPUT_BUFFER_SEC
 		return
-	if _skill_cooldowns[slot] > 0.0:
+	if float(_skill_cooldowns.get(slot, 0.0)) > 0.0:
 		return                   # on cooldown
 	focus -= skill.cost
 	_skill_cooldowns[slot] = skill.effective_cd(self)
@@ -1160,7 +1160,11 @@ func rebuild_skills() -> void:
 		var script = SKILL_FACTORY.get(String(sk))
 		if script != null:
 			skills.append(script.new())
+	# Re-SEED, never just clear — a bare clear() left slots 1-4 unkeyed and
+	# the next cast crashed on _skill_cooldowns[slot] (the frozen-game bug).
 	_skill_cooldowns.clear()
+	for i in range(1, skills.size() + 1):
+		_skill_cooldowns[i] = 0.0
 	for layer in (get_tree().current_scene.get_children() \
 			if get_tree().current_scene != null else []):
 		if layer is CanvasLayer and layer.has_method("bind_to_player") \
