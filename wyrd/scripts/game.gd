@@ -449,6 +449,99 @@ func mix_ink(ink_id: String) -> bool:
 	save_now()
 	return true
 
+# ---- spec 43: the experiment — ink recipes are discovered, not given ----
+# Only hedge ink is known from the start (Mara teaches it). The rest are
+# found by trying combinations in the bench pot.
+
+var discovered_inks: Array = ["hedge_ink"]
+
+func ink_discovered(ink_id: String) -> bool:
+	return discovered_inks.has(ink_id)
+
+func discover_ink(ink_id: String) -> void:
+	if ink_discovered(ink_id):
+		return
+	discovered_inks.append(ink_id)
+	award_xp("carto", 50)   # finding a recipe is real wayfinding
+	notify("✦ Recipe found: %s! It's yours for good." %
+		GatherDefs.material_name(ink_id))
+	save_now()
+
+# Resolve a pot attempt (the "Try the Mix" verb). An exact recipe match
+# mixes — and teaches the recipe the first time. A miss consumes the pot
+# (one of the cheapest makings handed back), pays a little Wayfinder xp
+# for the lesson, and resolves 60/30/10 smudge / wild ink / serendipity.
+# Returns {"outcome": discovery|mix|smudge|wild|serendipity, "ink": id?}.
+func try_pot_mix(pot: Dictionary) -> Dictionary:
+	if pot.is_empty():
+		return {}
+	for ink_id in GatherDefs.INK_RECIPE_ORDER:
+		var inputs: Dictionary = GatherDefs.INK_RECIPES[ink_id].inputs
+		if not _pot_match(pot, inputs):
+			continue
+		var fresh: bool = not ink_discovered(String(ink_id))
+		if not mix_ink(String(ink_id)):
+			return {}
+		if fresh:
+			discover_ink(String(ink_id))
+			return {"outcome": "discovery", "ink": String(ink_id)}
+		return {"outcome": "mix", "ink": String(ink_id)}
+	# No recipe — the experiment goes sideways. Cozy consolation: one of
+	# the cheapest makings stays in the satchel.
+	var cost := pot.duplicate()
+	var keep := _cheapest_material(pot)
+	if keep != "":
+		cost[keep] = int(cost[keep]) - 1
+		if int(cost[keep]) <= 0:
+			cost.erase(keep)
+	if not cost.is_empty() and not spend_materials(cost):
+		return {}
+	award_xp("carto", 5)   # each smudge teaches
+	var roll := randf()
+	if roll < 0.6:
+		notify("The mix curdles to a grey smudge. Still — now you know.")
+		save_now()
+		return {"outcome": "smudge"}
+	if roll < 0.9:
+		var wild := String(["hedge_ink", "stoneground_ink"].pick_random())
+		add_material(wild, 1)
+		notify("A wild ink settles out — looks like %s." %
+			GatherDefs.material_name(wild))
+		save_now()
+		return {"outcome": "wild", "ink": wild}
+	# Serendipity — a bottle of something you haven't learned to make
+	# (the recipe stays unknown; the bottle is the tease).
+	var pool: Array = []
+	for id in GatherDefs.INK_RECIPE_ORDER:
+		if not ink_discovered(String(id)):
+			pool.append(String(id))
+	var lucky := "refined_ink" if pool.is_empty() else String(pool.pick_random())
+	add_material(lucky, 1)
+	notify("Serendipity! A pot of %s — though you couldn't say how." %
+		GatherDefs.material_name(lucky))
+	save_now()
+	return {"outcome": "serendipity", "ink": lucky}
+
+# Exact multiset equality — the pot must hold the recipe, no more, no less.
+func _pot_match(pot: Dictionary, inputs: Dictionary) -> bool:
+	if pot.size() != inputs.size():
+		return false
+	for id in inputs:
+		if int(pot.get(id, 0)) != int(inputs[id]):
+			return false
+	return true
+
+# Cheapest pot material by Hod's shelf price; unbuyables never come back.
+func _cheapest_material(pot: Dictionary) -> String:
+	var best := ""
+	var best_price := 1 << 30
+	for id in pot:
+		for w in EconomyData.WARES:
+			if String(w.id) == String(id) and int(w.price) < best_price:
+				best_price = int(w.price)
+				best = String(id)
+	return best
+
 # ---- chart case ----
 
 func add_chart(chart: Dictionary) -> void:

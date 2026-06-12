@@ -44,16 +44,46 @@ const MATERIALS := {
 		"desc": "Gritty, heavy ink. Pulls charts toward the mineral seams."},
 	"refined_ink":   {"name": "Refined Ink",   "icon": "✦", "group": "lumen",
 		"desc": "Clarified, steady. Each pot slotted firms up the good twin."},
+	"ash_ink":       {"name": "Ash Ink",       "icon": "◉", "group": "verdant",
+		"desc": "Char and leaf. Pulls charts toward groves and quick feet."},
+	"chalkwash_ink": {"name": "Chalkwash Ink", "icon": "○", "group": "lumen",
+		"desc": "Pale and quiet. The deep affixes lean closer to a chalkwashed chart."},
 }
 
-# Ink-mixing recipes available at the Inscribing Table (slice-simplified —
-# no mortar/grindstone stations yet).
+# Ink-mixing recipes available at the bench pot. Spec 43: recipes are
+# DISCOVERED by experiment (Game.discovered_inks gates the pot) — only
+# hedge ink is known from the start (Mara teaches it in the tutorial).
+# `riddle` shows in the bench codex once `hint_key`'s first-time hint has
+# been seen; before that the codex line is a bare "???".
 const INK_RECIPES := {
-	"hedge_ink":       {"inputs": {"wild_herb": 3},                 "yields": 1},
-	"stoneground_ink": {"inputs": {"bogiron_ore": 2},               "yields": 1},
-	"refined_ink":     {"inputs": {"hedge_ink": 2, "bogiron_ore": 1}, "yields": 1},
+	"hedge_ink": {
+		"inputs": {"wild_herb": 3}, "yields": 1,
+		"hint_key": "forage_node",
+		"riddle": "Mara: 'Three of the same green, crushed together.'",
+	},
+	"stoneground_ink": {
+		"inputs": {"bogiron_ore": 2}, "yields": 1,
+		"hint_key": "ore_rock",
+		"riddle": "Hod: 'Two lumps grind down heavier than ash.'",
+	},
+	"refined_ink": {
+		"inputs": {"hedge_ink": 2, "bogiron_ore": 1}, "yields": 1,
+		"hint_key": "bench",
+		"riddle": "Mara: 'Two pots of the everyday and a pinch of iron.'",
+	},
+	"ash_ink": {
+		"inputs": {"logs": 2, "wild_herb": 1}, "yields": 1,
+		"hint_key": "log_pile",
+		"riddle": "Mara: 'Char from split wood, softened with a leaf.'",
+	},
+	"chalkwash_ink": {
+		"inputs": {"palechalk": 1, "wild_herb": 2}, "yields": 1,
+		"hint_key": "still",
+		"riddle": "Quill: 'Pale chalk settles into herb-water. The deep places listen.'",
+	},
 }
-const INK_RECIPE_ORDER := ["hedge_ink", "stoneground_ink", "refined_ink"]
+const INK_RECIPE_ORDER := ["hedge_ink", "stoneground_ink", "refined_ink",
+	"ash_ink", "chalkwash_ink"]
 
 # Gather-node kinds. Mirrors the three.js dungeon decor kinds
 # (ore_rock / forage_node / log_pile) plus their verb, trade, and XP.

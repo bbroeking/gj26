@@ -20,6 +20,7 @@ static func save(game: Node) -> bool:
 		"summit_cleared": game.summit_cleared,
 		"muted": game.muted,
 		"loadout": game.loadout,
+		"discovered_inks": game.discovered_inks,
 		"seen_hints": game.seen_hints,
 		"tutorial_step": game.tutorial_step,
 		"player_hp": game.player_hp,
@@ -75,6 +76,14 @@ static func load_into(game: Node) -> bool:
 		game.loadout = lo
 	game.summit_cleared = bool(data.get("summit_cleared", false))
 	game.seen_hints = data.get("seen_hints", {})
+	# Spec 43 — saves from before recipe discovery keep every ink they
+	# could already mix (never regress a save); newer saves load as-is.
+	if data.has("discovered_inks"):
+		game.discovered_inks = []
+		for id in data.discovered_inks:
+			game.discovered_inks.append(String(id))
+	else:
+		game.discovered_inks = ["hedge_ink", "stoneground_ink", "refined_ink"]
 	# Inventory — re-place each item so the grid cells rebuild.
 	game.inventory = Inventory.new()
 	for item in data.get("inventory", []):

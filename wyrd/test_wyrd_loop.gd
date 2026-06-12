@@ -39,6 +39,7 @@ func _init() -> void:
 	_test_huntcraft()
 	_test_economy_gate()
 	_test_alchemy()
+	_test_discovery()
 	_test_save_roundtrip()
 	print("--- %d passed, %d failed ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
@@ -410,6 +411,67 @@ func _buy_cost(id: String, prices: Dictionary) -> int:
 		return ceili(float(total) / float(rec.get("yields_n", 1)))
 	return -1
 
+# Spec 43 — recipe discovery: the experiment resolver.
+func _test_discovery() -> void:
+	print("[discovery]")
+	var game = load("res://scripts/game.gd").new()
+	game._ready()
+	_check("fresh game knows only hedge ink",
+		game.discovered_inks == ["hedge_ink"], str(game.discovered_inks))
+	var meta_ok := true
+	for rid in GatherDefs.INK_RECIPE_ORDER:
+		if not (GatherDefs.INK_RECIPES[rid].has("riddle")
+				and GatherDefs.INK_RECIPES[rid].has("hint_key")):
+			meta_ok = false
+	_check("riddle + hint key on every recipe", meta_ok)
+	for iid in ["ash_ink", "chalkwash_ink"]:
+		_check("%s defined end-to-end" % iid, GatherDefs.MATERIALS.has(iid)
+			and ChartsData.INKS.has(iid) and GatherDefs.INK_RECIPES.has(iid))
+	var w := ChartsData.compute_weights(1, ["ash_ink"], 9)
+	var w0 := ChartsData.compute_weights(1, [], 9)
+	_check("ash ink raises wood_grove share",
+		float(w.get("wood_grove", 0.0)) > float(w0.get("wood_grove", 0.0)))
+	# Exact match + undiscovered → discovery: mix, learn, +50 carto.
+	game.add_material("bogiron_ore", 2)
+	var xp0: int = int(game.trades.carto.xp)
+	var r: Dictionary = game.try_pot_mix({"bogiron_ore": 2})
+	_check("try discovers stoneground",
+		String(r.get("outcome", "")) == "discovery"
+		and game.ink_discovered("stoneground_ink")
+		and game.material_count("stoneground_ink") == 1
+		and game.material_count("bogiron_ore") == 0, str(r))
+	_check("discovery pays 50 carto", int(game.trades.carto.xp) - xp0 == 50)
+	# The same recipe again is a plain mix — no second bonus.
+	game.add_material("bogiron_ore", 2)
+	xp0 = int(game.trades.carto.xp)
+	r = game.try_pot_mix({"bogiron_ore": 2})
+	_check("known recipe just mixes", String(r.get("outcome", "")) == "mix"
+		and int(game.trades.carto.xp) == xp0)
+	# A junk pot: consumed minus the cheapest consolation, +5 carto, and
+	# one of the three miss outcomes.
+	game.add_material("wild_herb", 1)
+	game.add_material("bogiron_ore", 1)
+	xp0 = int(game.trades.carto.xp)
+	var inks0 := 0
+	for id in GatherDefs.INK_RECIPE_ORDER:
+		inks0 += game.material_count(String(id))
+	r = game.try_pot_mix({"wild_herb": 1, "bogiron_ore": 1})
+	var outcome := String(r.get("outcome", ""))
+	_check("junk pot resolves to a miss",
+		outcome in ["smudge", "wild", "serendipity"], outcome)
+	_check("herb kept back, ore spent",
+		game.material_count("wild_herb") == 1
+		and game.material_count("bogiron_ore") == 0)
+	_check("the failed experiment teaches 5 carto",
+		int(game.trades.carto.xp) - xp0 == 5)
+	var inks1 := 0
+	for id in GatherDefs.INK_RECIPE_ORDER:
+		inks1 += game.material_count(String(id))
+	_check("an ink bottle lands iff not a smudge",
+		(inks1 - inks0) == (0 if outcome == "smudge" else 1),
+		"%s: %d new" % [outcome, inks1 - inks0])
+	game.free()
+
 func _test_save_roundtrip() -> void:
 	print("[save/load]")
 	var game = load("res://scripts/game.gd").new()
@@ -426,6 +488,7 @@ func _test_save_roundtrip() -> void:
 	game.muted = true   # spec 38 — the mute preference rides the save
 	game.loadout = ["PiercingBolt", "MultiShot", "RainOfThorns"]
 	game.trades.erase("hunt")   # simulate a pre-B7 save on disk
+	game.discovered_inks = ["hedge_ink", "ash_ink"]   # spec 43 rides the save
 	var ItemsData = load("res://data/items.gd")
 	var item: Dictionary = ItemsData.make_item("shortbow", "magic")
 	var fit: Dictionary = game.inventory.find_first_fit(item)
@@ -453,6 +516,24 @@ func _test_save_roundtrip() -> void:
 		["PiercingBolt", "MultiShot", "RainOfThorns"])
 	_check("pre-B7 save backfills Huntcraft",
 		(game2.trades as Dictionary).has("hunt") and game2.trade_lv("hunt") == 1)
+	_check("discovered inks restored",
+		game2.discovered_inks == ["hedge_ink", "ash_ink"])
+	# Spec 43 — a save from before discovery (no key) keeps all three
+	# original inks: doctor the file, reload, assert the backfill.
+	var fdoc := FileAccess.open(SaveGame.SAVE_PATH, FileAccess.READ)
+	var raw: Dictionary = JSON.parse_string(fdoc.get_as_text())
+	fdoc.close()
+	raw.erase("discovered_inks")
+	fdoc = FileAccess.open(SaveGame.SAVE_PATH, FileAccess.WRITE)
+	fdoc.store_string(JSON.stringify(raw))
+	fdoc.close()
+	var game3 = load("res://scripts/game.gd").new()
+	game3._ready()
+	_check("pre-43 load ok", SaveGame.load_into(game3))
+	_check("pre-43 save keeps its three inks", game3.discovered_inks ==
+		["hedge_ink", "stoneground_ink", "refined_ink"],
+		str(game3.discovered_inks))
+	game3.free()
 	SaveGame.clear()
 	_check("save file cleaned up", not SaveGame.has_save())
 	game.free()

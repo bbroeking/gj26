@@ -191,6 +191,27 @@ func _run() -> void:
 		and bench.pot_add("wild_herb") and bench.pot_add("wild_herb")
 		and game.material_count("hedge_ink") >= 1
 		and (bench.pot as Dictionary).is_empty())
+	# Spec 43 — the experiment: unknown recipes don't stir themselves.
+	game.add_material("bogiron_ore", 2)
+	_check("undiscovered match sits in the pot", bench.pot_add("bogiron_ore")
+		and bench.pot_add("bogiron_ore")
+		and not (bench.pot as Dictionary).is_empty()
+		and game.material_count("stoneground_ink") == 0)
+	var carto_xp: int = int(game.trades.carto.xp)
+	var tried: Dictionary = bench.pot_try()
+	_check("Try discovers stoneground",
+		String(tried.get("outcome", "")) == "discovery"
+		and game.material_count("stoneground_ink") == 1
+		and bool(game.ink_discovered("stoneground_ink")))
+	_check("discovery pays 50 carto xp",
+		int(game.trades.carto.xp) - carto_xp == 50,
+		str(int(game.trades.carto.xp) - carto_xp))
+	_check("pot empty after the try", (bench.pot as Dictionary).is_empty())
+	game.add_material("bogiron_ore", 2)
+	_check("discovered recipe auto-mixes now", bench.pot_add("bogiron_ore")
+		and bench.pot_add("bogiron_ore")
+		and game.material_count("stoneground_ink") == 2
+		and (bench.pot as Dictionary).is_empty())
 	game.add_material("hedge_ink", 2)
 	_check("bench rejects locked base", not bench.place_base("summit"))
 	_check("bench places tier_1", bench.place_base("tier_1"))

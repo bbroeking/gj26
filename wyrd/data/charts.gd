@@ -233,6 +233,18 @@ const INKS := {
 		"desc": "Steadies the hand — +10% toward each affix's good twin.",
 		"bias": {"_stability": 0.10},
 	},
+	# Spec 43 — discovered inks. Ash leans green-and-fast; chalkwash
+	# leans toward the deep wave-2 affixes.
+	"ash_ink": {
+		"name": "Ash Ink", "icon": "◉",
+		"desc": "Char and leaf — pulls hard toward groves and quick feet.",
+		"bias": {"wood_grove": 2.5, "sprinter": 1.8},
+	},
+	"chalkwash_ink": {
+		"name": "Chalkwash Ink", "icon": "○",
+		"desc": "Pale and quiet — wellsprings, echoes, and quarry marks lean closer.",
+		"bias": {"wellspring": 1.8, "echoing": 1.8, "marked_quarry": 1.8},
+	},
 }
 
 # ---- the bias-roll engine ----

@@ -45,9 +45,9 @@ func _ready() -> void:
 	_panel.anchor_right = 0.5
 	_panel.anchor_bottom = 0.5
 	_panel.offset_left = -470
-	_panel.offset_top = -280
+	_panel.offset_top = -310
 	_panel.offset_right = 470
-	_panel.offset_bottom = 280
+	_panel.offset_bottom = 310
 	add_child(_panel)
 	_view = BenchView.new()
 	_view.bench = self
@@ -120,7 +120,9 @@ func socket_trophy(trophy_id: String) -> bool:
 	_view.queue_redraw()
 	return true
 
-# Drop a material into the mixing pot; auto-mixes when a recipe matches.
+# Drop a material into the mixing pot. Spec 43: only DISCOVERED recipes
+# stir themselves on a match — unknown combinations wait for the
+# deliberate Try (pot_try), which is where discovery happens.
 func pot_add(mat_id: String) -> bool:
 	if _remaining(mat_id) <= 0:
 		return false
@@ -128,12 +130,37 @@ func pot_add(mat_id: String) -> bool:
 	for ink_id in GatherDefs.INK_RECIPE_ORDER:
 		var inputs: Dictionary = GatherDefs.INK_RECIPES[ink_id].inputs
 		if _dict_eq(pot, inputs):
-			if _game != null and _game.mix_ink(ink_id):
+			if _game != null and bool(_game.ink_discovered(String(ink_id))) \
+					and _game.mix_ink(ink_id):
 				pot.clear()
-				_view.pop("pot")
+				_view.bloom(Color(0.55, 0.68, 0.38))
 			break
 	_view.queue_redraw()
 	return true
+
+# Spec 43 — the experiment: attempt whatever's in the pot. Game resolves
+# (discovery / mix / smudge / wild / serendipity); the pot empties either
+# way and the bloom color tells the story.
+func pot_try() -> Dictionary:
+	if pot.is_empty() or _game == null:
+		return {}
+	var result: Dictionary = _game.try_pot_mix(pot)
+	if result.is_empty():
+		return {}
+	pot.clear()
+	match String(result.outcome):
+		"discovery":
+			_view.bloom(WyrdUi.GOLD)
+		"mix":
+			_view.bloom(Color(0.55, 0.68, 0.38))
+		"wild":
+			_view.bloom(Color(0.85, 0.65, 0.35))
+		"serendipity":
+			_view.bloom(Color(0.65, 0.50, 0.80))
+		_:
+			_view.bloom(Color(0.45, 0.42, 0.40))   # the smudge — grey puff
+	_view.queue_redraw()
+	return result
 
 func pot_clear() -> void:
 	pot.clear()
@@ -221,8 +248,10 @@ class BenchView extends Control:
 	var _base_rect := Rect2()
 	var _trophy_rect := Rect2()
 	var _pot_rect := Rect2()
+	var _try_rect := Rect2()        # spec 43 — the Try the Mix button
 	var _result_rect := Rect2()
 	var _craft_rect := Rect2()
+	var _pot_bloom := Color(0.55, 0.68, 0.38)   # spec 43 — outcome color
 	var _stamp_t := 0.0
 	var _pops: Dictionary = {}      # rect-key -> remaining pop time
 	var _tip := ""                  # hover tooltip text ("" = none)
@@ -246,6 +275,12 @@ class BenchView extends Control:
 	func pop(key: String) -> void:
 		_pops[key] = 0.16
 		set_process(true)
+
+	# Spec 43 — a pot bloom in the outcome's color (gold discovery, sage
+	# mix, grey smudge, amber wild, violet serendipity).
+	func bloom(c: Color) -> void:
+		_pot_bloom = c
+		pop("pot")
 
 	func _pop_scale(key: String) -> float:
 		var t: float = float(_pops.get(key, 0.0))
@@ -298,6 +333,10 @@ class BenchView extends Control:
 			return
 		if _base_rect.has_point(p) and bench.base_id != "":
 			bench.clear_base()
+			return
+		if _try_rect != Rect2() and _try_rect.has_point(p) \
+				and not bench.pot.is_empty():
+			bench.pot_try()
 			return
 		if _pot_rect.has_point(p) and not bench.pot.is_empty():
 			bench.pot_clear()
@@ -382,8 +421,11 @@ class BenchView extends Control:
 			_tip = _tip_for("trophy", bench.trophy) if bench.trophy != "" \
 				else "A trophy here inks its boss den into the chart — certain."
 			return
+		if _try_rect != Rect2() and _try_rect.has_point(p):
+			_tip = "Try whatever's in the pot. A true mix is learned for good;\na miss smudges — you keep a little, and learn that too."
+			return
 		if _pot_rect.has_point(p):
-			_tip = "The mixing pot. 3 herbs → hedge ink · 2 ore → stoneground\n2 hedge ink + 1 ore → refined. Click to empty."
+			_tip = "The mixing pot. Known mixes stir themselves on the match.\nUnknown ones wait for Try. Click to empty."
 			return
 		if _craft_rect.has_point(p) or (_result_rect.has_point(p)
 				and bench.base_id != ""):
@@ -463,16 +505,22 @@ class BenchView extends Control:
 			var label := "%s · T%d" % [String(t.name), int(t.tier)] if unlocked \
 				else "%s — Wayfinder %d" % [String(t.name), int(t.req_carto)]
 			y = _tray_row(font, x, y, "base", tid, label, unlocked)
+		# Spec 43: zero-count rows hide — the codex carries recipe knowledge
+		# now, and the tray must stay inside the panel with 5 inks + 4 mats.
 		y = _tray_section(hdr, x, y + 10.0, "Inks") + 12.0
 		for ink_id in ChartsData.INKS:
 			var n: int = bench._remaining(String(ink_id))
+			if n <= 0:
+				continue
 			y = _tray_row(font, x, y, "ink", String(ink_id), "%s ×%d" % [
-				GatherDefs.material_name(String(ink_id)), maxi(0, n)], n > 0)
+				GatherDefs.material_name(String(ink_id)), n], true)
 		y = _tray_section(hdr, x, y + 10.0, "Materials") + 12.0
-		for mid in ["wild_herb", "bogiron_ore"]:
+		for mid in ["wild_herb", "bogiron_ore", "logs", "palechalk"]:
 			var n2: int = bench._remaining(mid)
+			if n2 <= 0:
+				continue
 			y = _tray_row(font, x, y, "mat", mid, "%s ×%d" % [
-				GatherDefs.material_name(mid), maxi(0, n2)], n2 > 0)
+				GatherDefs.material_name(mid), n2], true)
 		# Trophies — only rows the player owns.
 		var shown := false
 		for trophy_id in ChartsData.TROPHY_TO_AFFIX:
@@ -565,10 +613,10 @@ class BenchView extends Control:
 		draw_circle(_pot_rect.get_center(), 38 * pps, Color(0.95, 0.6, 0.3, 0.12))
 		draw_arc(_pot_rect.get_center(), 38 * pps, 0, TAU, 48, EDGE, 2.5, true)
 		if _pops.has("pot"):
-			# Mix flash — a sage ring blooming off the pot.
-			var bloom: float = 1.0 - float(_pops.pot) / 0.16
-			draw_arc(_pot_rect.get_center(), 38 + bloom * 26.0, 0, TAU, 48,
-				Color(0.55, 0.68, 0.38, 1.0 - bloom), 3.0, true)
+			# Mix flash — a ring blooming off the pot in the outcome color.
+			var bloom_t: float = 1.0 - float(_pops.pot) / 0.16
+			draw_arc(_pot_rect.get_center(), 38 + bloom_t * 26.0, 0, TAU, 48,
+				Color(_pot_bloom, 1.0 - bloom_t), 3.0, true)
 		_highlight(Rect2(_pot_rect.get_center() - Vector2(40, 40),
 			Vector2(80, 80)), target == "pot")
 		var px := _pot_rect.get_center() - Vector2(0, 6)
@@ -579,9 +627,38 @@ class BenchView extends Control:
 		draw_string(font, Vector2(_pot_rect.position.x, px.y + 2.0), pot_label.strip_edges(),
 			HORIZONTAL_ALIGNMENT_CENTER, _pot_rect.size.x, 17,
 			Color(0.97, 0.93, 0.82))
-		draw_string(font, Vector2(_pot_rect.position.x - 40, _pot_rect.end.y + 18),
-			"the pot — 3 herbs → hedge ink", HORIZONTAL_ALIGNMENT_CENTER,
-			220, 11, DIM)
+		# Spec 43 — Try the Mix: the deliberate experiment, beside the pot.
+		_try_rect = Rect2(Vector2(bx + 230, 376), Vector2(112, 40))
+		var can_try: bool = not bench.pot.is_empty()
+		draw_rect(_try_rect, PLATE if can_try else Color(0.84, 0.78, 0.65))
+		draw_rect(_try_rect, EDGE, false, 2.0)
+		draw_string(hdr, _try_rect.position + Vector2(0, 26), "Try the Mix",
+			HORIZONTAL_ALIGNMENT_CENTER, _try_rect.size.x, 13,
+			WyrdUi.INK if can_try else DIM)
+		# Spec 43 — the codex: every pot recipe, in its discovery state.
+		var cy := 462.0
+		draw_string(hdr, Vector2(bx, cy), "Codex", HORIZONTAL_ALIGNMENT_LEFT,
+			200, 13, WyrdUi.INK)
+		cy += 16.0
+		for rid in GatherDefs.INK_RECIPE_ORDER:
+			var rec: Dictionary = GatherDefs.INK_RECIPES[rid]
+			var line := "◌ ???"
+			var col := DIM
+			if bench._game != null \
+					and bool(bench._game.ink_discovered(String(rid))):
+				var parts: Array = []
+				for mid in rec.inputs:
+					parts.append("%d× %s" % [int(rec.inputs[mid]),
+						GatherDefs.material_name(String(mid))])
+				line = "● %s — %s" % [GatherDefs.material_name(String(rid)),
+					" + ".join(parts)]
+				col = TXT
+			elif bench._game != null and bool((bench._game.seen_hints as Dictionary)
+					.get(String(rec.get("hint_key", "")), false)):
+				line = "◌ ??? — %s" % String(rec.get("riddle", ""))
+			draw_string(font, Vector2(bx, cy + 11.0), line,
+				HORIZONTAL_ALIGNMENT_LEFT, 330, 11, col)
+			cy += 15.0
 
 	func _draw_result(hdr: Font, font: Font) -> void:
 		var rx := 660.0

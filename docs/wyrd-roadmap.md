@@ -4,7 +4,7 @@ THE single where-are-we doc. Detail lives in the linked plans; when this
 disagrees with code, code wins. Repo note: the three.js prototype was
 removed 2026-06-12 (recoverable from git history).
 
-## Shipped (all gates green — 236 headless checks across 3 suites)
+## Shipped (all gates green — 256 headless checks across 3 suites)
 
 **Core loop:** tutorial → forage → mix ink → inscribe chart → parameterized
 dungeon (affixes shape gather nodes / density / HP / boss dens) → exit
@@ -86,10 +86,20 @@ Specs 38–41 + notes.
    saved); Q at full vigor drinks the buff shelf, heal shelf keeps
    priority while hurt; first-use still hint in her voice. Deferred:
    herb tiers to mirror A6's ore ladder (A6-style forage tiers).
-8. **Queue empty — next candidates:** herb tiers (A6-style forage
-   ladder feeding Quill's brews), buff HUD chip (active tonic + time
-   left), fresh-save tutorial + boss-feel playtests (user-side), UI
-   refinement rounds (Craft/Satchel/Charts), P2/P3 animation sets.
+8. ~~Recipe discovery ("the experiment") — spec 43~~ **SHIPPED
+   2026-06-12**: ink recipes are found, not given. Fresh saves know only
+   Hedge Ink; the pot auto-mixes discovered recipes and unknown matches
+   wait for **Try the Mix** (discovery +50 carto · miss = smudge / wild
+   ink / serendipity, consolation kept, +5 carto). Bench codex strip
+   with NPC riddles gated on seen hints; 2 new discoverable inks (Ash —
+   groves/sprinter bias · Chalkwash — the deep wave-2 trio); discovery
+   rides the save, pre-43 saves keep their three inks.
+9. **Queue — next candidates:** herb tiers (A6-style forage ladder
+   feeding Quill's brews + the reagent ecosystem for more discoverable
+   inks), buff HUD chip (active tonic + time left), discovery feel pass
+   (bigger found-a-recipe moment + fizzle SFX), fresh-save tutorial +
+   boss-feel playtests (user-side), UI refinement rounds, P2/P3
+   animation sets.
 
 ## Standing followups
 
