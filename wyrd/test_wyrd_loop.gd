@@ -578,18 +578,29 @@ func _test_ladders() -> void:
 		if bool(d.get("gather", false)) and String(d.kind) == "forage_node":
 			saw_herb = true
 			if not String(d.get("herb_tier", "")) in \
-					["bittergrass", "crowsfoot", "mothmint"]:
+					["bittergrass", "crowsfoot", "mothmint", "foxglove"]:
 				herbs_ok = false
-	_check("tier-2 blooms grow herb tiers 2-4", saw_herb and herbs_ok)
+	_check("tier-2 blooms grow herb tiers 2-5", saw_herb and herbs_ok)
 	# The Summit carries two fixed hedgesteel veins (tier-3, no affixes).
 	var summit_lay := DungeonGenScript.generate(7, {"grid": 44, "room_min": 7,
 		"room_max": 12, "boss_kind": "hedgemother_queen", "tier": 3,
 		"affixes": []})
 	var hs := 0
+	var sb := 0
 	for d in summit_lay.decor:
 		if String(d.get("ore_tier", "")) == "hedgesteel":
 			hs += 1
+		if String(d.get("herb_tier", "")) == "stonebreak":
+			sb += 1
 	_check("summit holds 2 fixed hedgesteel veins", hs == 2, str(hs))
+	_check("summit grows 2 fixed stonebreak patches", sb == 2, str(sb))
+	# The capstone gear never drops as random loot.
+	var Drops = load("res://data/drops.gd")
+	var saw_capstone := false
+	for _i in 400:
+		if String(Drops._pick_kind()) in ["warbow", "starsilver_band"]:
+			saw_capstone = true
+	_check("capstone gear excluded from the drop pool", not saw_capstone)
 	game.free()
 
 func _test_save_roundtrip() -> void:

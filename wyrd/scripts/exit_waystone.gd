@@ -5,12 +5,20 @@ extends Interactable
 # run: Game awards completion XP and routes back to Town. Replaces the old
 # "the run just ends when you quit" non-loop. Spawned by layout_loader at
 # the layout's exit tile.
+#
+# Spec 45-gaps — `abandoning = true` makes this the ENTRY-side return stone:
+# always present, pays nothing, just carries you home. Without it an inked
+# boss chart soft-locked an under-leveled player (the exit only rises when
+# the boss falls and the chart is already spent).
 
 const CAIRN_GLB := preload("res://models/waypoint_cairn.glb")
 
+var abandoning := false
 var _used := false
 
 func get_prompt_text() -> String:
+	if abandoning:
+		return "[E] Abandon the run — return home"
 	return "[E] Step through the waystone"
 
 func get_prompt_color() -> Color:

@@ -12,15 +12,18 @@ const SLOT_SIZE := 72
 const SLOT_GAP := 8
 const ROW_BOTTOM := 114           # pixels from the bottom of the viewport
 
-# Short labels for each Skill class name. Skills shipped in v1 are the four
-# below; future spec adds class-paths can extend this dict.
+# Short labels for each Skill class name — covers all nine B5 skills.
 const SKILL_LABEL := {
-	"BasicShot":    "Bow",
-	"PowerShot":    "Pow",
-	"MultiShot":    "Mlt",
-	"BrambleSnare": "Snr",
-	"PiercingBolt": "Prc",
-	"RainOfThorns": "Thn",
+	"BasicShot":     "Bow",
+	"PowerShot":     "Pow",
+	"MultiShot":     "Mlt",
+	"BrambleSnare":  "Snr",
+	"PiercingBolt":  "Prc",
+	"RainOfThorns":  "Thn",
+	"Thornburst":    "Bst",
+	"HuntersMark":   "Mrk",
+	"HeartwoodWard": "Wrd",
+	"MercyShot":     "Mcy",
 }
 # Painted skill icons (ink pass, 2026-06-10) + hover tooltips — combat is
 # explained where the buttons live, not in a manual.
@@ -30,13 +33,28 @@ const SKILL_ICON := {
 	"MultiShot":    "res://assets/ui/icons/skill_multi.png",
 	"BrambleSnare": "res://assets/ui/icons/skill_snare.png",
 }
+# Skills without a painted icon yet show a single inked glyph instead of
+# bare 3-letter text (the inventory_panel trade-glyph style). A painted
+# pass supersedes a glyph by simply adding the SKILL_ICON entry.
+const SKILL_GLYPH := {
+	"PiercingBolt":  "➸",
+	"RainOfThorns":  "❋",
+	"Thornburst":    "✺",
+	"HuntersMark":   "◎",
+	"HeartwoodWard": "❦",
+	"MercyShot":     "✜",
+}
 const SKILL_DESC := {
-	"BasicShot":    "A quick arrow. No Focus cost — your bread and butter (also on F).",
-	"PowerShot":    "A heavy, slower arrow that hits much harder.",
-	"MultiShot":    "A fan of three arrows — crowds and retinues.",
-	"BrambleSnare": "Roots enemies in a bramble patch. Elites marked Briarbound shrug it off.",
-	"PiercingBolt": "A heavy bolt that punches through up to 3 enemies in a line.",
-	"RainOfThorns": "Marks a zone; thorns fall after a breath — damage and bleed.",
+	"BasicShot":     "A quick arrow. No Focus cost — your bread and butter (also on F).",
+	"PowerShot":     "A heavy, slower arrow that hits much harder.",
+	"MultiShot":     "A fan of three arrows — crowds and retinues.",
+	"BrambleSnare":  "Roots enemies in a bramble patch. Elites marked Briarbound shrug it off.",
+	"PiercingBolt":  "A heavy bolt that punches through up to 3 enemies in a line.",
+	"RainOfThorns":  "Marks a zone; thorns fall after a breath — damage and bleed.",
+	"Thornburst":    "Thorns erupt around you, hurting and briefly snaring everything close.",
+	"HuntersMark":   "Name the quarry — it takes +30% from every hit while the mark holds.",
+	"HeartwoodWard": "Bark-skin soaks the next 30 damage before your vigor is touched.",
+	"MercyShot":     "The clean kill — strikes 3× harder once the quarry staggers below 35% vigor.",
 }
 
 var _player: Node = null
@@ -110,6 +128,29 @@ func bind_to_player(p: Node) -> void:
 			var nm := slot.get_node_or_null("SkillName")
 			if nm != null:
 				nm.visible = false   # the icon IS the name now
+		elif SKILL_GLYPH.has(skill.name):
+			# No painted icon yet — the inked glyph reads as the icon, with
+			# the short label tucked beneath it.
+			var gl := Label.new()
+			gl.name = "Glyph"
+			gl.text = String(SKILL_GLYPH[skill.name])
+			var ghdr := WyrdUi.font_header()
+			if ghdr != null:
+				gl.add_theme_font_override("font", ghdr)
+			gl.add_theme_font_size_override("font_size", 30)
+			gl.add_theme_color_override("font_color", WyrdUi.INK)
+			gl.anchor_right = 1.0
+			gl.offset_top = 4
+			gl.offset_bottom = 44
+			gl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			gl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			slot.add_child(gl)
+			slot.move_child(gl, 1)   # above bg, under sweep/labels
+			var nm := slot.get_node_or_null("SkillName")
+			if nm != null:
+				nm.add_theme_font_size_override("font_size", 13)
+				nm.offset_top = SLOT_SIZE - 28
+				nm.offset_bottom = SLOT_SIZE - 8
 		_slots.append(slot)
 		add_child(slot)
 

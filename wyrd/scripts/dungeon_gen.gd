@@ -368,6 +368,31 @@ static func _scatter_gather_nodes(rooms: Array, grid: Array, entry: Dictionary,
 				"gather": true, "x": hx, "y": hy, "orient": "center",
 				"ore_tier": "hedgesteel"})
 			hs_placed += 1
+		# Spec 45-wilds — two fixed stonebreak patches to match: the Summit
+		# grows it; almost nowhere else does.
+		var sb_placed := 0
+		var sb_tries := 0
+		while sb_placed < 2 and sb_tries < 200:
+			sb_tries += 1
+			var sri := rng.randi_range(0, rooms.size() - 1)
+			if sri == 0 or sri == boss_idx:
+				continue
+			var sr: Dictionary = rooms[sri]
+			var sx := rng.randi_range(int(sr.x), int(sr.x) + int(sr.w) - 1)
+			var sy := rng.randi_range(int(sr.y), int(sr.y) + int(sr.h) - 1)
+			if String(grid[sy][sx]) != "floor":
+				continue
+			var sb_occupied := false
+			for d in decor:
+				if int(d.x) == sx and int(d.y) == sy:
+					sb_occupied = true
+					break
+			if sb_occupied:
+				continue
+			decor.append({"kind": "forage_node", "item": "stonebreak",
+				"gather": true, "x": sx, "y": sy, "orient": "center",
+				"herb_tier": "stonebreak"})
+			sb_placed += 1
 
 # Spec 45 — weighted tier pick from a {chart_tier: {tier_id: weight}}
 # table; clamps the chart tier into the table's range.

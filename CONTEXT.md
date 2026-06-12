@@ -31,7 +31,7 @@ An Interactable resource node (ore_rock / forage_node / log_pile). One E-press h
 _Avoid_: resource, spawn, vein (that's an affix name).
 
 **Waystone**:
-The travel stones. The town Waystone sockets a chart and starts the run; the exit waystone inside a dungeon ends it (completion XP, return to town). In a boss chart the exit waystone rises only when the boss falls.
+The travel stones. The town Waystone sockets a chart and starts the run; the exit waystone inside a dungeon ends it (completion XP, return to town). In a boss chart the exit waystone rises only when the boss falls. An **abandon stone** always stands at the dungeon entry — stepping through it ends the run with no completion reward (the chart stays spent).
 _Avoid_: portal, gate (the boss arena's seals are gates).
 
 **Satchel**:

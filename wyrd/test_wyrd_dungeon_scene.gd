@@ -72,7 +72,13 @@ func _run() -> void:
 		elif n is CharacterBody3D and n.is_in_group("enemy"):
 			enemies += 1
 	_check("gather nodes spawned (3-5 ore)", gather >= 3 and gather <= 5, str(gather))
-	_check("exit waystone standing", waystones == 1, str(waystones))
+	# Spec 45-gaps — two stones now: the exit + the entry abandon stone.
+	_check("exit + abandon waystones standing", waystones == 2, str(waystones))
+	var abandons := 0
+	for n in _walk(world):
+		if n is ExitWaystone and bool(n.get("abandoning")):
+			abandons += 1
+	_check("exactly one is the abandon stone", abandons == 1, str(abandons))
 	_check("no boss without the den affix", bosses == 0, str(bosses))
 	_check("enemies populated", enemies > 0, str(enemies))
 	# B3 — spawned enemies carry per-kind stats, not the spec-15 defaults.

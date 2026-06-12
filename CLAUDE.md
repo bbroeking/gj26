@@ -35,9 +35,12 @@ cd wyrd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_wyrd_loop.gd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_wyrd_dungeon_scene.gd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_wyrd_transitions.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_skills.gd
 ```
 
-All three must stay green. Gotchas live in project memory
+All four must stay green (test_skills covers the hotbar dispatch path —
+it's the only suite that catches a dead keypress; its absence once let a
+frozen-hotbar regression ship). Gotchas live in project memory
 (`feedback_godot_headless_test_harness`): autoloads DO load in --script
 mode (reuse the real `Game`), `_ready` needs a frame, always run with
 `WYRD_NO_SAVE=1`. **Warning:** `_test_save_roundtrip` writes then deletes

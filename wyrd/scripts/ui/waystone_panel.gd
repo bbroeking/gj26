@@ -49,13 +49,22 @@ func _ready() -> void:
 	sub.position = Vector2(54, 66)
 	_panel.add_child(sub)
 
+	# A full chart case outgrows the panel — the list scrolls now,
+	# bounded above the detail block.
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.anchor_right = 1.0
+	scroll.anchor_bottom = 1.0
+	scroll.offset_left = 52
+	scroll.offset_top = 92
+	scroll.offset_right = -52
+	scroll.offset_bottom = -160
+	_panel.add_child(scroll)
 	_list_box = VBoxContainer.new()
-	_list_box.anchor_right = 1.0
-	_list_box.offset_left = 52
-	_list_box.offset_top = 92
-	_list_box.offset_right = -52
+	_list_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_list_box.add_theme_constant_override("separation", 6)
-	_panel.add_child(_list_box)
+	scroll.add_child(_list_box)
 
 	_detail = Label.new()
 	WyrdUi.style_body(_detail, 13)

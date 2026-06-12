@@ -32,3 +32,4 @@ node_modules/
 # Python bytecode
 __pycache__/
 *.pyc
+.claudecraft-ref/

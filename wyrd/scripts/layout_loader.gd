@@ -933,6 +933,16 @@ func _build_exit_waystone(layout: Dictionary) -> void:
 		ws.position = pos
 		add_child(ws)
 		_build_exit_chest(layout, exit)
+	# Spec 45-gaps — the way you came in always works: an abandon stone at
+	# the entry pays nothing but ends the run. Without it an inked boss
+	# chart soft-locked anyone who couldn't fell the boss.
+	var entry = layout.get("entry", null)
+	if entry != null:
+		var home: Node3D = ExitWaystoneScript.new()
+		home.abandoning = true
+		home.position = Vector3(int(entry.x) + 0.5 + 1.6, 0.0,
+			int(entry.y) + 0.5 + 1.6)
+		add_child(home)
 
 # A depth-scaled reward chest on a floor tile beside the exit waystone.
 func _build_exit_chest(layout: Dictionary, exit) -> void:

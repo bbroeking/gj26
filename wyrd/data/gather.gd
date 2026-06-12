@@ -218,12 +218,12 @@ const ORE_ROLLS_BY_TIER := {
 }
 const FORAGE_ROLLS_BY_TIER := {
 	1: {"wild": 60, "bittergrass": 40},
-	2: {"bittergrass": 30, "crowsfoot": 45, "mothmint": 25},
+	2: {"bittergrass": 25, "crowsfoot": 40, "mothmint": 25, "foxglove": 10},
 	3: {"mothmint": 35, "foxglove": 40, "stonebreak": 25},
 }
 const FORAGE_ROLLS_PATCH := {
 	1: {"wild": 40, "bittergrass": 60},
-	2: {"bittergrass": 20, "crowsfoot": 40, "mothmint": 40},
+	2: {"bittergrass": 15, "crowsfoot": 35, "mothmint": 35, "foxglove": 15},
 	3: {"mothmint": 25, "foxglove": 35, "stonebreak": 40},
 }
 

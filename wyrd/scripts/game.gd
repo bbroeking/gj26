@@ -110,7 +110,7 @@ const SKILL_HINTS := {
 	]],
 	"ore_rock": ["Old Hod Tenter", [
 		"Bogiron. Rust-heavy, stubborn — good. That's Earthcraft settling into your wrists.",
-		"Two lumps grind into stoneground ink, which pulls a chart toward the mineral seams. Or sell it to me at 7g if you'd rather. The hollows carry richer veins than my spoil heap.",
+		"Two lumps grind into stoneground ink, which pulls a chart toward the mineral seams. Or bring it to my forge and smelt a bar — that's where ore earns its keep. The hollows carry richer veins than my spoil heap.",
 	]],
 	"log_pile": ["Mara Linnet, the Wayfinder", [
 		"Split logs — Wildcraft counts the axe-work too.",
@@ -647,9 +647,13 @@ func enter_dungeon(chart: Dictionary, player: Node) -> void:
 	get_tree().change_scene_to_file.call_deferred(DUNGEON_SCENE)
 
 # Step back through the far waystone. Completion XP per the shipped formula.
-func return_to_town(player: Node) -> void:
+# Spec 45-gaps — `abandoned` skips the completion reward: the entry-side
+# return stone carries you home but the chart pays nothing torn.
+func return_to_town(player: Node, abandoned: bool = false) -> void:
 	_defer_toasts = true       # the town HUD will drain these in _ready
-	if not active_chart.is_empty():
+	if abandoned:
+		notify("You tear the chart and step home. The hollow keeps its prize.")
+	elif not active_chart.is_empty():
 		var xp := ChartsData.completion_xp(active_chart)
 		award_xp("carto", xp)
 		notify("Chart complete — %d Wayfinder XP." % xp)

@@ -83,9 +83,15 @@ func _ready() -> void:
 	sell_hdr.text = "Sell (he melts it down)"
 	WyrdUi.style_section(sell_hdr)
 	col1.add_child(sell_hdr)
+	# A full pack outgrows the panel — the sell list scrolls now.
+	var sell_scroll := ScrollContainer.new()
+	sell_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	sell_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	col1.add_child(sell_scroll)
 	_sell_box = VBoxContainer.new()
 	_sell_box.add_theme_constant_override("separation", 4)
-	col1.add_child(_sell_box)
+	_sell_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sell_scroll.add_child(_sell_box)
 
 	var col2 := VBoxContainer.new()
 	col2.size_flags_horizontal = Control.SIZE_EXPAND_FILL

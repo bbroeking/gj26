@@ -4,7 +4,8 @@ THE single where-are-we doc. Detail lives in the linked plans; when this
 disagrees with code, code wins. Repo note: the three.js prototype was
 removed 2026-06-12 (recoverable from git history).
 
-## Shipped (all gates green — 311 headless checks across 3 suites)
+## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
+## joined the gate after the frozen-hotbar regression)
 
 **Core loop:** tutorial → forage → mix ink → inscribe chart → parameterized
 dungeon (affixes shape gather nodes / density / HP / boss dens) → exit
@@ -116,12 +117,24 @@ Specs 38–41 + notes.
     discoverable inks (Mothglow, Foxglove, Gildleaf) — every rollable
     affix now has a courting ink. Design specs + integration notes in
     `docs/specs/45-trade-ladders-*.md`.
-12. **Queue — next candidates:** buff HUD chip (now carrying five brews,
-    the ward, and Even Breath), discovery feel pass, skill-icon
-    paint-over once `sheet-icons` lands, fresh-save tutorial + boss-feel
-    playtests (user-side), UI mock picks (round 2, your ChatGPT
-    conversations), P2/P3 animation sets, balance pass on the 140/220
-    heals vs Summit damage.
+12. ~~End-to-end gap pass~~ **SHIPPED 2026-06-12**: frozen-hotbar crash
+    fixed (cooldown keys re-seeded; test_skills revived → 4th gate
+    suite); Trades/Satchel/Charts pages scroll (drawn-UI scroll +
+    ninepatch masks); **abandon stone** at every dungeon entry (boss
+    charts can't soft-lock); foxglove/stonebreak obtainable (tier-2
+    rolls + fixed Summit patches); capstone gear out of the drop pool;
+    skill bar carries glyphs/tooltips for all 9 skills; vendor/waystone
+    lists scroll; Hod's hint stops promising ore-selling.
+13. **Multiplayer co-op — spec 46 (NEXT, decided)**: host-authoritative
+    ENet, 2-4 players, chart-run-as-party-instance. Phase A "town
+    together" first (forces the de-singletonizing; modal de-pause +
+    local hitstop are pre-work). Patterns adopted from the
+    world-of-claudecraft study (.claudecraft-ref/).
+14. **Queue — next candidates:** buff HUD chip, discovery feel pass,
+    skill-icon paint-over once `sheet-icons` lands, fresh-save tutorial
+    + boss-feel playtests (user-side), UI mock picks (round 2, your
+    ChatGPT conversations), P2/P3 animation sets, balance pass on the
+    140/220 heals vs Summit damage.
 
 ## Standing followups
 

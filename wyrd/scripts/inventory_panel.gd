@@ -167,6 +167,20 @@ func _input(event: InputEvent) -> void:
 		elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed \
 				and _tab == 0:
 			_quick_swap_at(event.position)
+		# Spec 45 followup — the list pages scroll on the wheel; eat the
+		# event so the camera rig doesn't zoom behind the open pack.
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed \
+				and _tab != 0:
+			_scroll_tab(SCROLL_STEP)
+			get_viewport().set_input_as_handled()
+		elif event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed \
+				and _tab != 0:
+			_scroll_tab(-SCROLL_STEP)
+			get_viewport().set_input_as_handled()
+	elif event is InputEventPanGesture and _tab != 0:
+		# macOS trackpads pan instead of clicking a wheel.
+		_scroll_tab((event as InputEventPanGesture).delta.y * 14.0)
+		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseMotion:
 		_cursor_screen = event.position
 		_cursor_cell = _cell_at(event.position)
@@ -339,35 +353,51 @@ func _draw() -> void:
 	var hdr_font: Font = WyrdUi.font_header()
 	if hdr_font == null:
 		hdr_font = get_theme_default_font()
+	var hint_font: Font = get_theme_default_font()
+	# Spec 45 followup — the list pages (Satchel / Charts / Trades) outgrew
+	# the fixed window, so they scroll: page content draws first, shifted up
+	# by the tab's scroll offset; parchment masks then hide whatever slid
+	# under the header / footer bands, and the title + tabs draw back on top.
+	if _tab != 0:
+		var view := _view_rect(win)
+		var scroll := _scroll_offset(_tab, view)
+		draw_set_transform(Vector2(0.0, -scroll))
+		match _tab:
+			1:
+				_draw_satchel_tab(win, hint_font, scroll, view)
+			2:
+				_draw_charts_tab(win, hint_font, scroll, view)
+			3:
+				_draw_trades_tab(win, hint_font, scroll, view)
+		draw_set_transform(Vector2.ZERO)
+		_draw_page_masks(win, view)
+		_draw_scroll_marker(win, view, hint_font)
+		# Content may have shrunk under a stored offset — settle it once.
+		var max_s: float = maxf(0.0,
+			float(_tab_content_h.get(_tab, 0.0)) - view.size.y)
+		if scroll > max_s:
+			_tab_scroll[_tab] = max_s
+			queue_redraw()
 	draw_string(hdr_font, win.position + Vector2(52, 58),
 		"Adventurer's Pack", HORIZONTAL_ALIGNMENT_LEFT, win.size.x - 104, 24,
 		WyrdUi.TERRACOTTA)
-	# Gold readout lives with the paper-doll — Gear tab only, else it
-	# stamps over the other pages' text.
-	var game := get_tree().root.get_node_or_null("Game")
-	if game != null and _tab == 0:
-		draw_string(hdr_font, doll_origin + Vector2(-6, 364),
-			"%d gold" % int(game.gold), HORIZONTAL_ALIGNMENT_CENTER,
-			172.0, 16, WyrdUi.GOLD)
 	_draw_tabs(win)
-	var hint_font: Font = get_theme_default_font()
-	match _tab:
-		0:
-			_draw_slots()
-			_draw_grid()
-			if _held_item != null:
-				_draw_held()
-			draw_string(hint_font, grid_origin + Vector2(0, ROWS * CELL + 30),
-				"I close · R rotate · right-click quick-equips",
-				HORIZONTAL_ALIGNMENT_CENTER, COLS * CELL, 13, WyrdUi.INK_MID)
-		1:
-			_draw_satchel_tab(win, hint_font)
-		2:
-			_draw_charts_tab(win, hint_font)
-		3:
-			_draw_trades_tab(win, hint_font)
-	# Hover tooltip — drawn last so it sits on top of everything.
 	if _tab == 0:
+		# Gold readout lives with the paper-doll — Gear tab only, else it
+		# stamps over the other pages' text.
+		var game := get_tree().root.get_node_or_null("Game")
+		if game != null:
+			draw_string(hdr_font, doll_origin + Vector2(-6, 364),
+				"%d gold" % int(game.gold), HORIZONTAL_ALIGNMENT_CENTER,
+				172.0, 16, WyrdUi.GOLD)
+		_draw_slots()
+		_draw_grid()
+		if _held_item != null:
+			_draw_held()
+		draw_string(hint_font, grid_origin + Vector2(0, ROWS * CELL + 30),
+			"I close · R rotate · right-click quick-equips",
+			HORIZONTAL_ALIGNMENT_CENTER, COLS * CELL, 13, WyrdUi.INK_MID)
+		# Hover tooltip — drawn last so it sits on top of everything.
 		_draw_tooltip()
 
 func _draw_grid() -> void:
@@ -566,7 +596,103 @@ func _draw_tabs(win: Rect2) -> void:
 			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16,
 			WyrdUi.INK if active else WyrdUi.INK_MID)
 
-func _draw_satchel_tab(win: Rect2, font: Font) -> void:
+# ---- Spec 45 followup: drawn-page scrolling (Satchel / Charts / Trades) ----
+# The pack window is a fixed 644×604 panel but the list pages grew past it
+# (the trades' unlock grids, a mid-game satchel). Each page scrolls: content
+# draws translated by -scroll, spans fully outside the page are skipped, and
+# parchment strips repainted from the ninepatch hide the partial rows that
+# slide under the header / footer bands.
+const SCROLL_STEP := 44.0
+var _tab_scroll: Dictionary = {}      # tab index -> scroll offset (px)
+var _tab_content_h: Dictionary = {}   # tab index -> content height (set in draw)
+
+# The scrolled-page viewport between the tab row and the footer band. The
+# bands above/below stay deeper (72px+) than the tallest single element a
+# page draws (the trade emblem cluster) so skipped spans never peek past.
+func _view_rect(win: Rect2) -> Rect2:
+	return Rect2(win.position.x + 40.0, win.position.y + 110.0,
+		win.size.x - 84.0, win.size.y - 222.0)
+
+func _scroll_offset(tab: int, view: Rect2) -> float:
+	var max_s: float = maxf(0.0,
+		float(_tab_content_h.get(tab, 0.0)) - view.size.y)
+	var s: float = clampf(float(_tab_scroll.get(tab, 0.0)), 0.0, max_s)
+	_tab_scroll[tab] = s
+	return s
+
+func _scroll_tab(delta: float) -> void:
+	if _tab == 0:
+		return
+	var view := _view_rect(_win_rect())
+	var s := _scroll_offset(_tab, view)
+	var max_s: float = maxf(0.0,
+		float(_tab_content_h.get(_tab, 0.0)) - view.size.y)
+	var next := clampf(s + delta, 0.0, max_s)
+	if next != s:
+		_tab_scroll[_tab] = next
+		queue_redraw()
+
+# True when a content-space span [y0, y1] intersects the view — anything
+# fully outside is skipped; the page masks hide partial leaks at the edges.
+func _span_visible(y0: float, y1: float, scroll: float, view: Rect2) -> bool:
+	return y1 - scroll >= view.position.y and y0 - scroll <= view.end.y
+
+# Repaint the page's own parchment over the bands above/below the view —
+# each strip maps back into the ninepatch centre so it lands pixel-identical
+# to what the stylebox drew there, warm wash included.
+func _draw_page_masks(win: Rect2, view: Rect2) -> void:
+	var l := win.position.x + 36.0
+	var w := win.size.x - 72.0
+	_draw_page_patch(win, Rect2(l, win.position.y + WyrdUi.PANEL_MARGIN_T,
+		w, view.position.y - (win.position.y + WyrdUi.PANEL_MARGIN_T)))
+	_draw_page_patch(win, Rect2(l, view.end.y,
+		w, (win.end.y - WyrdUi.PANEL_MARGIN_B) - view.end.y))
+
+func _draw_page_patch(win: Rect2, r: Rect2) -> void:
+	var tex: Texture2D = _cached_tex(WyrdUi.PANEL_TEX_PATH)
+	if tex == null:
+		draw_rect(r, Color(0.93, 0.88, 0.76, 1.0))
+	else:
+		# Same mapping the stylebox uses: window centre -> texture centre.
+		var dst := Rect2(
+			win.position + Vector2(WyrdUi.PANEL_MARGIN_L, WyrdUi.PANEL_MARGIN_T),
+			win.size - Vector2(WyrdUi.PANEL_MARGIN_L + WyrdUi.PANEL_MARGIN_R,
+				WyrdUi.PANEL_MARGIN_T + WyrdUi.PANEL_MARGIN_B))
+		var src := Rect2(
+			Vector2(WyrdUi.PANEL_MARGIN_L, WyrdUi.PANEL_MARGIN_T),
+			Vector2(float(tex.get_width()) - (WyrdUi.PANEL_MARGIN_L
+					+ WyrdUi.PANEL_MARGIN_R),
+				float(tex.get_height()) - (WyrdUi.PANEL_MARGIN_T
+					+ WyrdUi.PANEL_MARGIN_B)))
+		var px_ratio := src.size / dst.size
+		draw_texture_rect_region(tex, r,
+			Rect2(src.position + (r.position - dst.position) * px_ratio,
+				r.size * px_ratio))
+	# Re-apply the warm wash the page carries (drawn at win.grow(-26)).
+	draw_rect(r, Color(0.91, 0.85, 0.70, 0.45))
+
+# A slim sage runner along the right edge marks the place in the page, and
+# the footer carries the hint — both only when there is more to read.
+func _draw_scroll_marker(win: Rect2, view: Rect2, font: Font) -> void:
+	var content_h: float = float(_tab_content_h.get(_tab, 0.0))
+	if content_h <= view.size.y:
+		return
+	var track := Rect2(Vector2(win.end.x - 52.0, view.position.y),
+		Vector2(4.0, view.size.y))
+	draw_rect(track, Color(WyrdUi.KIT_EDGE, 0.18))
+	var th: float = maxf(34.0, track.size.y * view.size.y / content_h)
+	var max_s: float = maxf(1.0, content_h - view.size.y)
+	var s: float = float(_tab_scroll.get(_tab, 0.0))
+	var thumb := Rect2(Vector2(track.position.x - 1.5,
+		track.position.y + (track.size.y - th) * (s / max_s)),
+		Vector2(7.0, th))
+	draw_rect(thumb, WyrdUi.SAGE.darkened(0.08))
+	draw_rect(thumb, Color(WyrdUi.KIT_EDGE, 0.7), false, 1.0)
+	draw_string(font, Vector2(view.position.x, view.end.y + 34.0),
+		"scroll to read on · I close", HORIZONTAL_ALIGNMENT_CENTER,
+		view.size.x, 13, WyrdUi.INK_MID)
+
+func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> void:
 	var game := get_tree().root.get_node_or_null("Game")
 	if game == null:
 		return
@@ -577,25 +703,30 @@ func _draw_satchel_tab(win: Rect2, font: Font) -> void:
 		draw_string(font, Vector2(x, y),
 			"Empty. The yard's herb patches regrow — start there.",
 			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
+		_tab_content_h[1] = 0.0
 		return
 	for id in game.materials:
 		var def: Dictionary = GatherDefs.MATERIALS.get(String(id), {})
-		draw_string(font, Vector2(x, y),
-			"%s  %s" % [String(def.get("icon", "·")),
-				String(def.get("name", id))],
-			HORIZONTAL_ALIGNMENT_LEFT, w - 80, 18, WyrdUi.INK)
-		draw_string(font, Vector2(x + w - 70, y), "× %d" % int(game.materials[id]),
-			HORIZONTAL_ALIGNMENT_RIGHT, 70, 18, WyrdUi.TERRACOTTA)
+		if _span_visible(y - 18.0, y + 6.0, scroll, view):
+			draw_string(font, Vector2(x, y),
+				"%s  %s" % [String(def.get("icon", "·")),
+					String(def.get("name", id))],
+				HORIZONTAL_ALIGNMENT_LEFT, w - 80, 18, WyrdUi.INK)
+			draw_string(font, Vector2(x + w - 70, y), "× %d" % int(game.materials[id]),
+				HORIZONTAL_ALIGNMENT_RIGHT, 70, 18, WyrdUi.TERRACOTTA)
 		y += 27.0
 		var desc := String(def.get("desc", ""))
 		if desc != "":
-			draw_multiline_string(font, Vector2(x + 26, y), desc,
-				HORIZONTAL_ALIGNMENT_LEFT, w - 26, 15, -1, Color(0.30, 0.24, 0.19))
-			y += font.get_multiline_string_size(desc,
-				HORIZONTAL_ALIGNMENT_LEFT, w - 26, 15).y + 4.0
+			var dh: float = font.get_multiline_string_size(desc,
+				HORIZONTAL_ALIGNMENT_LEFT, w - 26, 15).y
+			if _span_visible(y - 13.0, y + dh, scroll, view):
+				draw_multiline_string(font, Vector2(x + 26, y), desc,
+					HORIZONTAL_ALIGNMENT_LEFT, w - 26, 15, -1, Color(0.30, 0.24, 0.19))
+			y += dh + 4.0
 		y += 8.0
+	_tab_content_h[1] = y - view.position.y
 
-func _draw_charts_tab(win: Rect2, font: Font) -> void:
+func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> void:
 	var game := get_tree().root.get_node_or_null("Game")
 	if game == null:
 		return
@@ -606,28 +737,32 @@ func _draw_charts_tab(win: Rect2, font: Font) -> void:
 		draw_string(font, Vector2(x, y),
 			"No charts inscribed. The Inscribing Table awaits.",
 			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
+		_tab_content_h[2] = 0.0
 		return
 	for chart in game.charts:
-		var cx := x
-		var chart_tex: Texture2D = _cached_tex("res://assets/ui/icons/chart.png")
-		if chart_tex != null:
-			draw_texture_rect(chart_tex,
-				Rect2(Vector2(x, y - 16), Vector2(22, 22)), false)
-			cx = x + 30.0
-		draw_string(font, Vector2(cx, y), ChartsData.chart_label(chart),
-			HORIZONTAL_ALIGNMENT_LEFT, w - (cx - x), 17, WyrdUi.INK)
+		if _span_visible(y - 18.0, y + 7.0, scroll, view):
+			var cx := x
+			var chart_tex: Texture2D = _cached_tex("res://assets/ui/icons/chart.png")
+			if chart_tex != null:
+				draw_texture_rect(chart_tex,
+					Rect2(Vector2(x, y - 16), Vector2(22, 22)), false)
+				cx = x + 30.0
+			draw_string(font, Vector2(cx, y), ChartsData.chart_label(chart),
+				HORIZONTAL_ALIGNMENT_LEFT, w - (cx - x), 17, WyrdUi.INK)
 		y += 24.0
 		for a in chart.get("affixes", []):
 			var aff: Dictionary = ChartsData.AFFIXES.get(String(a.get("id", "")), {})
 			if aff.is_empty():
 				continue
-			var good: bool = bool(a.get("good", false))
-			draw_string(font, Vector2(x + 26, y),
-				("✓ " + String(aff.name)) if good else ("✗ " + String(aff.bad_name)),
-				HORIZONTAL_ALIGNMENT_LEFT, w - 26, 13,
-				WyrdUi.SAGE.darkened(0.2) if good else WyrdUi.TERRACOTTA)
+			if _span_visible(y - 14.0, y + 5.0, scroll, view):
+				var good: bool = bool(a.get("good", false))
+				draw_string(font, Vector2(x + 26, y),
+					("✓ " + String(aff.name)) if good else ("✗ " + String(aff.bad_name)),
+					HORIZONTAL_ALIGNMENT_LEFT, w - 26, 13,
+					WyrdUi.SAGE.darkened(0.2) if good else WyrdUi.TERRACOTTA)
 			y += 20.0
 		y += 8.0
+	_tab_content_h[2] = y - view.position.y
 
 
 # Squiggly ink divider under headers — the UI bible's hand-drawn rule.
@@ -654,7 +789,7 @@ const TRADE_ROWS := [
 const CELL_S := 30.0
 const CELL_GAP := 7.0
 
-func _draw_trades_tab(win: Rect2, font: Font) -> void:
+func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> void:
 	var game := get_tree().root.get_node_or_null("Game")
 	if game == null:
 		return
@@ -669,37 +804,40 @@ func _draw_trades_tab(win: Rect2, font: Font) -> void:
 		var row: Dictionary = TRADE_ROWS[i]
 		var key := String(row.key)
 		var lv: int = game.trade_lv(key)
-		if i > 0:
-			draw_line(Vector2(x, y - 12.0), Vector2(x + w, y - 12.0),
-				Color(0.52, 0.42, 0.30, 0.45), 1.5)
-		# --- emblem (60px disc, double ink ring — spec 40) ---
-		var ec := Vector2(x + 26.0, y + 30.0)
-		draw_circle(ec, 26.0, (row.color as Color))
-		draw_arc(ec, 26.0, 0, TAU, 48, Color(0.25, 0.18, 0.12), 2.5, true)
-		draw_arc(ec, 21.0, 0, TAU, 48, Color(0.97, 0.93, 0.82, 0.55), 1.2, true)
-		draw_string(hdr, Vector2(ec.x - 26.0, ec.y + 8.0), String(row.glyph),
-			HORIZONTAL_ALIGNMENT_CENTER, 52.0, 22, Color(0.98, 0.95, 0.86))
-		# --- name + level (ink, per the design — terracotta is title-only) ---
 		var cx := x + 68.0
-		draw_string(hdr, Vector2(cx, y + 18.0), String(row.name),
-			HORIZONTAL_ALIGNMENT_LEFT, w - 78.0, 21, WyrdUi.INK)
-		draw_string(hdr, Vector2(cx, y + 20.0), "Lv %d" % lv,
-			HORIZONTAL_ALIGNMENT_RIGHT, w - 78.0, 16, WyrdUi.INK)
-		# --- xp bar ---
-		var xp: int = int(game.trades[key].xp)
-		var lo: int = game.xp_for_level(lv)
-		var hi: int = game.xp_for_level(lv + 1)
-		var frac := clampf(float(xp - lo) / float(max(1, hi - lo)), 0.0, 1.0)
-		var bar := Rect2(Vector2(cx, y + 26.0), Vector2(w * 0.56, 12.0))
-		draw_rect(bar, Color(0.80, 0.72, 0.58))
-		draw_rect(Rect2(bar.position + Vector2(1, 1),
-			Vector2((bar.size.x - 2.0) * frac, bar.size.y - 2.0)),
-			(row.color as Color).lightened(0.12))
-		draw_rect(bar, Color(0.42, 0.34, 0.25, 0.9), false, 1.5)
-		draw_string(font, Vector2(bar.end.x + 10.0, y + 37.0),
-			"%d / %d xp" % [xp, hi],
-			HORIZONTAL_ALIGNMENT_LEFT, 120.0, 13, Color(0.30, 0.24, 0.19))
-		# --- unlock mini grid ---
+		# The divider + emblem + name + xp-bar cluster draws as one unit; its
+		# span (y-14 .. y+58) stays within the page masks' reach when skipped.
+		if _span_visible(y - 14.0, y + 58.0, scroll, view):
+			if i > 0:
+				draw_line(Vector2(x, y - 12.0), Vector2(x + w, y - 12.0),
+					Color(0.52, 0.42, 0.30, 0.45), 1.5)
+			# --- emblem (60px disc, double ink ring — spec 40) ---
+			var ec := Vector2(x + 26.0, y + 30.0)
+			draw_circle(ec, 26.0, (row.color as Color))
+			draw_arc(ec, 26.0, 0, TAU, 48, Color(0.25, 0.18, 0.12), 2.5, true)
+			draw_arc(ec, 21.0, 0, TAU, 48, Color(0.97, 0.93, 0.82, 0.55), 1.2, true)
+			draw_string(hdr, Vector2(ec.x - 26.0, ec.y + 8.0), String(row.glyph),
+				HORIZONTAL_ALIGNMENT_CENTER, 52.0, 22, Color(0.98, 0.95, 0.86))
+			# --- name + level (ink, per the design — terracotta is title-only) ---
+			draw_string(hdr, Vector2(cx, y + 18.0), String(row.name),
+				HORIZONTAL_ALIGNMENT_LEFT, w - 78.0, 21, WyrdUi.INK)
+			draw_string(hdr, Vector2(cx, y + 20.0), "Lv %d" % lv,
+				HORIZONTAL_ALIGNMENT_RIGHT, w - 78.0, 16, WyrdUi.INK)
+			# --- xp bar ---
+			var xp: int = int(game.trades[key].xp)
+			var lo: int = game.xp_for_level(lv)
+			var hi: int = game.xp_for_level(lv + 1)
+			var frac := clampf(float(xp - lo) / float(max(1, hi - lo)), 0.0, 1.0)
+			var bar := Rect2(Vector2(cx, y + 26.0), Vector2(w * 0.56, 12.0))
+			draw_rect(bar, Color(0.80, 0.72, 0.58))
+			draw_rect(Rect2(bar.position + Vector2(1, 1),
+				Vector2((bar.size.x - 2.0) * frac, bar.size.y - 2.0)),
+				(row.color as Color).lightened(0.12))
+			draw_rect(bar, Color(0.42, 0.34, 0.25, 0.9), false, 1.5)
+			draw_string(font, Vector2(bar.end.x + 10.0, y + 37.0),
+				"%d / %d xp" % [xp, hi],
+				HORIZONTAL_ALIGNMENT_LEFT, 120.0, 13, Color(0.30, 0.24, 0.19))
+		# --- unlock mini grid (layout always advances; draws are culled) ---
 		var cells := _trade_unlock_rows(key)
 		var cyy := y + 46.0
 		var cxx := cx
@@ -710,22 +848,26 @@ func _draw_trades_tab(win: Rect2, font: Font) -> void:
 				cyy += CELL_S + CELL_GAP
 			var r := Rect2(Vector2(cxx, cyy), Vector2(CELL_S, CELL_S))
 			var ok: bool = lv >= int(cell.lv)
-			if ok:
-				draw_rect(r, Color(0.93, 0.88, 0.74))
-				draw_rect(r, WyrdUi.SAGE.darkened(0.15), false, 2.0)
-				draw_string(font, Vector2(r.position.x, r.position.y + 21.0),
-					String(cell.get("glyph", "✓")), HORIZONTAL_ALIGNMENT_CENTER,
-					CELL_S, 15, Color(0.30, 0.36, 0.20))
-			else:
-				draw_rect(r, Color(0.76, 0.70, 0.58))
-				draw_rect(r, Color(0.48, 0.40, 0.30, 0.8), false, 1.5)
-				draw_string(font, Vector2(r.position.x, r.position.y + 21.0),
-					str(int(cell.lv)), HORIZONTAL_ALIGNMENT_CENTER,
-					CELL_S, 14, Color(0.40, 0.34, 0.27))
+			if _span_visible(cyy, cyy + CELL_S, scroll, view):
+				if ok:
+					draw_rect(r, Color(0.93, 0.88, 0.74))
+					draw_rect(r, WyrdUi.SAGE.darkened(0.15), false, 2.0)
+					draw_string(font, Vector2(r.position.x, r.position.y + 21.0),
+						String(cell.get("glyph", "✓")), HORIZONTAL_ALIGNMENT_CENTER,
+						CELL_S, 15, Color(0.30, 0.36, 0.20))
+				else:
+					draw_rect(r, Color(0.76, 0.70, 0.58))
+					draw_rect(r, Color(0.48, 0.40, 0.30, 0.8), false, 1.5)
+					draw_string(font, Vector2(r.position.x, r.position.y + 21.0),
+						str(int(cell.lv)), HORIZONTAL_ALIGNMENT_CENTER,
+						CELL_S, 14, Color(0.40, 0.34, 0.27))
 			var label := "%s · lv %d%s" % [String(cell.name), int(cell.lv),
 				"  ✓" if ok else ""]
-			_unlock_cells.append({"rect": r, "label": label})
-			if r.has_point(_cursor_screen):
+			# Hit rects live in screen space: offset by the scroll, and only
+			# bite inside the view (masked cells under the bands stay inert).
+			var rs := Rect2(r.position - Vector2(0.0, scroll), r.size)
+			_unlock_cells.append({"rect": rs, "label": label})
+			if view.has_point(_cursor_screen) and rs.has_point(_cursor_screen):
 				hovered = label
 			cxx += CELL_S + CELL_GAP
 		# --- info line: hovered cell, else the next locked unlock ---
@@ -736,9 +878,11 @@ func _draw_trades_tab(win: Rect2, font: Font) -> void:
 					break
 			if hovered == "":
 				hovered = "Everything earned."
-		draw_string(font, Vector2(cx, cyy + CELL_S + 17.0), hovered,
-			HORIZONTAL_ALIGNMENT_LEFT, w - 68.0, 13, Color(0.36, 0.30, 0.24))
+		if _span_visible(cyy + CELL_S + 4.0, cyy + CELL_S + 21.0, scroll, view):
+			draw_string(font, Vector2(cx, cyy + CELL_S + 17.0), hovered,
+				HORIZONTAL_ALIGNMENT_LEFT, w - 68.0, 13, Color(0.36, 0.30, 0.24))
 		y = cyy + CELL_S + 30.0
+	_tab_content_h[3] = y - view.position.y
 
 # Recipes (from the trade's station) + perks, sorted by level — the same
 # visual language as the Wayfinder ladder.

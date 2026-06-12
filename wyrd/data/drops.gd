@@ -59,6 +59,8 @@ static func _tier_to_rarity(tier: int) -> String:
 
 static func _pick_kind() -> String:
 	# Spec 38 — trade tools are crafted at the anvil, never random loot.
+	# E17 — the capstone gear is forged at the anvil too, never random loot.
 	var ids: Array = Items.kind_ids().filter(func(id):
-		return String(Items.KINDS[id].category) not in ["pickaxe", "axe"])
+		return String(Items.KINDS[id].category) not in ["pickaxe", "axe"] \
+			and String(id) not in ["warbow", "starsilver_band"])
 	return ids[randi() % ids.size()]
