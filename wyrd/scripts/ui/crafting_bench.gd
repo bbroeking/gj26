@@ -264,6 +264,16 @@ class BenchView extends Control:
 	const PLATE := Color(0.93, 0.88, 0.74)
 	const TXT := Color(0.20, 0.15, 0.11)
 	const DIM := Color(0.42, 0.35, 0.28)
+	# Spec 44 — each ink's bottle color (drawn bottles replace text glyphs).
+	const INK_TINT := {
+		"hedge_ink": Color(0.42, 0.55, 0.30),
+		"stoneground_ink": Color(0.42, 0.42, 0.46),
+		"refined_ink": Color(0.93, 0.88, 0.62),
+		"ash_ink": Color(0.30, 0.28, 0.26),
+		"chalkwash_ink": Color(0.88, 0.86, 0.80),
+	}
+	const COPPER := Color(0.66, 0.40, 0.24)
+	const COPPER_LIT := Color(0.85, 0.56, 0.34)
 
 	func _ready() -> void:
 		mouse_filter = Control.MOUSE_FILTER_STOP
@@ -455,8 +465,12 @@ class BenchView extends Control:
 		var font: Font = get_theme_default_font()
 		if hdr == null:
 			hdr = font
+		# Spec 44 — parchment grain over the working face (vector, no tex).
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(Vector2(46, 72), size - Vector2(92, 124)))
 		draw_string(hdr, Vector2(54, 56), "The Inscribing Table",
 			HORIZONTAL_ALIGNMENT_LEFT, 400, 24, WyrdUi.TERRACOTTA)
+		WyrdUi.draw_flourish(self, Vector2(146, 66), 180.0)
 		draw_string(font, Vector2(size.x - 180, 56), "Esc — close",
 			HORIZONTAL_ALIGNMENT_RIGHT, 130, 12, DIM)
 		_odds_rows.clear()
@@ -481,15 +495,32 @@ class BenchView extends Control:
 	func _tray_section(hdr: Font, x: float, y: float, label: String) -> float:
 		draw_string(hdr, Vector2(x, y), label,
 			HORIZONTAL_ALIGNMENT_LEFT, 200, 13, WyrdUi.INK)
-		return y + 6.0
+		WyrdUi.draw_flourish(self, Vector2(x + 106.0, y + 7.0), 204.0)
+		return y + 8.0
 
 	func _tray_row(font: Font, x: float, y: float, kind: String, id: String,
 			label: String, ok: bool) -> float:
 		var r := Rect2(Vector2(x, y), Vector2(212, 26))
 		draw_rect(r, PLATE if ok else Color(0.85, 0.79, 0.66))
+		# Spec 44 — top bevel light + a painted roundel on the left.
+		draw_rect(Rect2(r.position + Vector2(1.0, 1.0),
+			Vector2(r.size.x - 2.0, 1.5)), Color(1, 1, 0.93, 0.4))
 		draw_rect(r, EDGE if ok else Color(EDGE, 0.4), false, 1.5)
-		draw_string(font, r.position + Vector2(8, 18), label,
-			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 16, 12,
+		var cc := r.position + Vector2(14.0, 13.0)
+		if kind == "ink":
+			WyrdUi.draw_ink_bottle(self, cc + Vector2(0, 2.0), 18.0,
+				INK_TINT.get(id, Color(0.4, 0.4, 0.4)))
+		elif kind == "base":
+			WyrdUi.draw_scroll(self, Rect2(cc - Vector2(9.0, 7.0),
+				Vector2(18.0, 14.0)), false)
+		else:
+			draw_circle(cc, 9.0, WELL if ok else Color(0.78, 0.72, 0.60))
+			draw_arc(cc, 9.0, 0, TAU, 20, Color(EDGE, 0.6), 1.0, true)
+			draw_string(font, Vector2(r.position.x + 6.0, r.position.y + 18.0),
+				GatherDefs.material_icon(id), HORIZONTAL_ALIGNMENT_CENTER,
+				17, 11, TXT if ok else DIM)
+		draw_string(font, r.position + Vector2(28.0, 18.0), label,
+			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 34.0, 12,
 			TXT if ok else DIM)
 		_tray_rows.append({"rect": r, "kind": kind, "id": id, "ok": ok})
 		return y + 30.0
@@ -534,9 +565,7 @@ class BenchView extends Control:
 				GatherDefs.material_name(String(trophy_id)), maxi(0, n3)], n3 > 0)
 
 	func _socket_well(r: Rect2, filled: bool) -> void:
-		draw_rect(r, WELL)
-		draw_rect(r.grow(-3), Color(0.72, 0.64, 0.50) if not filled else PLATE)
-		draw_rect(r, EDGE, false, 2.0)
+		WyrdUi.draw_well(self, r, WELL if not filled else PLATE)
 
 	func _highlight(r: Rect2, active: bool) -> void:
 		if not active:
@@ -549,6 +578,7 @@ class BenchView extends Control:
 		var bx := 320.0
 		draw_string(hdr, Vector2(bx, 92), "Bench",
 			HORIZONTAL_ALIGNMENT_LEFT, 200, 14, WyrdUi.INK)
+		WyrdUi.draw_flourish(self, Vector2(bx + 130.0, 88.0), 200.0)
 		# Base socket.
 		_base_rect = Rect2(Vector2(bx + 40, 116), Vector2(180, 96))
 		var bs := _pop_scale("base")
@@ -560,7 +590,9 @@ class BenchView extends Control:
 				"chart base", HORIZONTAL_ALIGNMENT_CENTER,
 				_base_rect.size.x, 13, DIM)
 		else:
+			# Spec 44 — the placed base reads as a rolled chart, not a label.
 			var t: Dictionary = bench.template()
+			WyrdUi.draw_scroll(self, _base_rect.grow(-8.0), false)
 			draw_string(hdr, _base_rect.position + Vector2(0, 44),
 				String(t.name), HORIZONTAL_ALIGNMENT_CENTER,
 				_base_rect.size.x, 17, TXT)
@@ -576,14 +608,14 @@ class BenchView extends Control:
 			var c := r.get_center()
 			var filled: bool = i < bench.inks.size()
 			var ps := _pop_scale("ink%d" % i)
-			draw_circle(c, 26 * ps, WELL)
-			draw_circle(c, 22 * ps, PLATE if filled else Color(0.72, 0.64, 0.50))
-			draw_arc(c, 26 * ps, 0, TAU, 40, EDGE, 2.0, true)
+			# Spec 44 — a recessed round well; a drawn bottle when filled.
+			WyrdUi.draw_round_well(self, c, 26 * ps,
+				PLATE if filled else WELL)
 			_highlight(r, target == "ink" and i == bench.inks.size())
 			if filled:
-				draw_string(font, r.position + Vector2(0, 34),
-					GatherDefs.material_icon(String(bench.inks[i])),
-					HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 24, TXT)
+				var tint: Color = INK_TINT.get(String(bench.inks[i]),
+					Color(0.4, 0.4, 0.4))
+				WyrdUi.draw_ink_bottle(self, c + Vector2(0, 4), 38.0 * ps, tint)
 		if bench.base_id != "" and slots == 0:
 			draw_string(font, Vector2(bx + 40, 268),
 				"This chart takes no ink.", HORIZONTAL_ALIGNMENT_LEFT,
@@ -595,7 +627,15 @@ class BenchView extends Control:
 			var pts := PackedVector2Array([c + Vector2(0, -30), c + Vector2(30, 0),
 				c + Vector2(0, 30), c + Vector2(-30, 0)])
 			draw_colored_polygon(pts, WELL if bench.trophy == "" else PLATE)
+			# Spec 44 — inner shadow + pinstripe; a gold ring when charged.
+			var inner := PackedVector2Array([c + Vector2(0, -24), c + Vector2(24, 0),
+				c + Vector2(0, 24), c + Vector2(-24, 0)])
+			draw_polyline(inner + PackedVector2Array([inner[0]]),
+				Color(EDGE, 0.30), 1.0, true)
+			draw_line(c + Vector2(0, -27), c + Vector2(-27, 0), Color(0, 0, 0, 0.15), 3.0)
 			draw_polyline(pts + PackedVector2Array([pts[0]]), EDGE, 2.0, true)
+			if bench.trophy != "":
+				draw_arc(c, 21.0, 0, TAU, 32, Color(WyrdUi.GOLD, 0.85), 2.0, true)
 			if bench.trophy != "":
 				draw_string(font, _trophy_rect.position + Vector2(0, 32),
 					GatherDefs.material_icon(bench.trophy),
@@ -606,12 +646,29 @@ class BenchView extends Control:
 					HORIZONTAL_ALIGNMENT_CENTER, 80, 11, DIM)
 		else:
 			_trophy_rect = Rect2()
-		# Mixing pot.
+		# Mixing pot — spec 44: a proper copper belly with lit rim, side
+		# handles, dark brew inside, and steam when something's in it.
 		_pot_rect = Rect2(Vector2(bx + 60, 360), Vector2(140, 84))
+		var pc := _pot_rect.get_center()
 		var pps := _pop_scale("pot")
-		draw_circle(_pot_rect.get_center(), 38 * pps, Color(0.45, 0.34, 0.24))
-		draw_circle(_pot_rect.get_center(), 38 * pps, Color(0.95, 0.6, 0.3, 0.12))
-		draw_arc(_pot_rect.get_center(), 38 * pps, 0, TAU, 48, EDGE, 2.5, true)
+		var pr := 38.0 * pps
+		draw_circle(pc, pr, COPPER)
+		draw_arc(pc, pr - 4.0, PI * 0.85, PI * 1.85, 26, COPPER_LIT, 5.0, true)
+		draw_circle(pc, pr * 0.66, Color(0.22, 0.16, 0.12))
+		draw_arc(pc, pr * 0.66, 0, TAU, 36, Color(0.10, 0.07, 0.05), 2.0, true)
+		for hside in [-1.0, 1.0]:
+			draw_arc(pc + Vector2(hside * (pr + 5.0), 0.0), 7.0,
+				PI * (0.5 - 0.5 * hside) - PI * 0.5,
+				PI * (0.5 - 0.5 * hside) + PI * 0.5, 12, EDGE, 3.0, true)
+		draw_arc(pc, pr, 0, TAU, 48, EDGE, 2.5, true)
+		if not bench.pot.is_empty():
+			# brew glint + two steam wisps
+			draw_arc(pc + Vector2(-6.0, -6.0), pr * 0.3, PI * 1.1, PI * 1.6,
+				10, Color(0.85, 0.80, 0.62, 0.5), 2.0, true)
+			for wx in [-10.0, 8.0]:
+				draw_arc(Vector2(pc.x + wx, pc.y - pr - 10.0), 7.0,
+					PI * 0.2, PI * 1.0, 10, Color(0.92, 0.90, 0.84, 0.4),
+					2.0, true)
 		if _pops.has("pot"):
 			# Mix flash — a ring blooming off the pot in the outcome color.
 			var bloom_t: float = 1.0 - float(_pops.pot) / 0.16
@@ -630,8 +687,7 @@ class BenchView extends Control:
 		# Spec 43 — Try the Mix: the deliberate experiment, beside the pot.
 		_try_rect = Rect2(Vector2(bx + 230, 376), Vector2(112, 40))
 		var can_try: bool = not bench.pot.is_empty()
-		draw_rect(_try_rect, PLATE if can_try else Color(0.84, 0.78, 0.65))
-		draw_rect(_try_rect, EDGE, false, 2.0)
+		WyrdUi.draw_carved_button(self, _try_rect, can_try)
 		draw_string(hdr, _try_rect.position + Vector2(0, 26), "Try the Mix",
 			HORIZONTAL_ALIGNMENT_CENTER, _try_rect.size.x, 13,
 			WyrdUi.INK if can_try else DIM)
@@ -644,26 +700,36 @@ class BenchView extends Control:
 			var rec: Dictionary = GatherDefs.INK_RECIPES[rid]
 			var line := "◌ ???"
 			var col := DIM
+			var known := false
 			if bench._game != null \
 					and bool(bench._game.ink_discovered(String(rid))):
+				known = true
 				var parts: Array = []
 				for mid in rec.inputs:
 					parts.append("%d× %s" % [int(rec.inputs[mid]),
 						GatherDefs.material_name(String(mid))])
-				line = "● %s — %s" % [GatherDefs.material_name(String(rid)),
+				line = "%s — %s" % [GatherDefs.material_name(String(rid)),
 					" + ".join(parts)]
 				col = TXT
 			elif bench._game != null and bool((bench._game.seen_hints as Dictionary)
 					.get(String(rec.get("hint_key", "")), false)):
 				line = "◌ ??? — %s" % String(rec.get("riddle", ""))
-			draw_string(font, Vector2(bx, cy + 11.0), line,
-				HORIZONTAL_ALIGNMENT_LEFT, 330, 11, col)
+			if known:
+				# Spec 44 — a tiny bottle in the ink's color marks the find.
+				WyrdUi.draw_ink_bottle(self, Vector2(bx + 6.0, cy + 7.0), 13.0,
+					INK_TINT.get(String(rid), Color(0.4, 0.4, 0.4)))
+				draw_string(font, Vector2(bx + 16.0, cy + 11.0), line,
+					HORIZONTAL_ALIGNMENT_LEFT, 314, 11, col)
+			else:
+				draw_string(font, Vector2(bx, cy + 11.0), line,
+					HORIZONTAL_ALIGNMENT_LEFT, 330, 11, col)
 			cy += 15.0
 
 	func _draw_result(hdr: Font, font: Font) -> void:
 		var rx := 660.0
 		draw_string(hdr, Vector2(rx, 92), "Result",
 			HORIZONTAL_ALIGNMENT_LEFT, 200, 14, WyrdUi.INK)
+		WyrdUi.draw_flourish(self, Vector2(rx + 130.0, 88.0), 160.0)
 		_result_rect = Rect2(Vector2(rx, 116), Vector2(216, 110))
 		_socket_well(_result_rect, bench.base_id != "")
 		_highlight(_result_rect, bench._tutorial_target() == "result")
@@ -726,11 +792,17 @@ class BenchView extends Control:
 			y += 18.0
 		_craft_rect = Rect2(Vector2(rx, size.y - 92), Vector2(216, 40))
 		var can: bool = bench._game != null and bench._game.can_afford(cost)
-		draw_rect(_craft_rect, PLATE if can else Color(0.84, 0.78, 0.65))
-		draw_rect(_craft_rect, EDGE, false, 2.0)
+		WyrdUi.draw_carved_button(self, _craft_rect, can)
 		draw_string(hdr, _craft_rect.position + Vector2(0, 27), "Craft",
 			HORIZONTAL_ALIGNMENT_CENTER, _craft_rect.size.x, 17,
 			WyrdUi.INK if can else DIM)
+		# Spec 44 — a wax seal waits beside the verb when a base is set.
+		if bench.base_id != "":
+			var sc := Vector2(_craft_rect.end.x - 18.0,
+				_craft_rect.position.y - 14.0)
+			draw_circle(sc, 9.0, Color(0.62, 0.20, 0.16))
+			draw_circle(sc, 5.5, Color(0.72, 0.28, 0.22))
+			draw_arc(sc, 9.0, 0, TAU, 22, Color(0.40, 0.12, 0.10), 1.5, true)
 
 	func _draw_tip(font: Font) -> void:
 		if _tip == "" or not bench._held.is_empty():

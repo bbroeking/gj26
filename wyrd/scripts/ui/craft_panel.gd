@@ -118,6 +118,19 @@ func _render() -> void:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
 
+		# Spec 44 — a painted icon chip in front of every recipe row.
+		var chip := Label.new()
+		chip.text = _recipe_glyph(rec)
+		chip.custom_minimum_size = Vector2(36, 36)
+		chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		chip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		chip.add_theme_font_size_override("font_size", 17)
+		chip.add_theme_color_override("font_color",
+			WyrdUi.INK if not locked else WyrdUi.INK_MID)
+		chip.add_theme_stylebox_override("normal",
+			WyrdUi.chip_stylebox(_recipe_tint(rec, locked)))
+		row.add_child(chip)
+
 		var info := VBoxContainer.new()
 		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var name_lbl := Label.new()
@@ -158,6 +171,42 @@ func _render() -> void:
 	if _game == null:
 		_satchel_lbl.text = ""
 		return
+	_render_satchel()
+
+# Spec 44 — recipe glyph + tint: materials show their satchel icon, gear
+# shows a tool/armor read, draughts a bottle.
+func _recipe_glyph(rec: Dictionary) -> String:
+	if rec.has("yields_material"):
+		return GatherDefs.material_icon(String(rec.yields_material))
+	var kind := String((rec.get("yields_item", {}) as Dictionary).get("kind", ""))
+	if kind.contains("pickaxe") or kind.contains("axe"):
+		return "⚒"
+	if kind.contains("bow"):
+		return "➳"
+	if kind.contains("ring"):
+		return "◎"
+	return "▣"
+
+func _recipe_tint(rec: Dictionary, locked: bool) -> Color:
+	if locked:
+		return Color(0.85, 0.80, 0.68)
+	if rec.has("yields_material"):
+		var mid := String(rec.yields_material)
+		var group := String((GatherDefs.MATERIALS.get(mid, {}) as Dictionary)
+			.get("group", ""))
+		match group:
+			"verdant": return Color(0.82, 0.87, 0.68)
+			"earthen": return Color(0.85, 0.80, 0.70)
+			"lumen":   return Color(0.92, 0.90, 0.78)
+		return WyrdUi.KIT_PLATE
+	var rarity := String((rec.get("yields_item", {}) as Dictionary)
+		.get("rarity", "normal"))
+	match rarity:
+		"magic": return Color(0.78, 0.83, 0.90)
+		"rare":  return Color(0.93, 0.86, 0.62)
+	return Color(0.88, 0.83, 0.72)
+
+func _render_satchel() -> void:
 	var parts: Array = []
 	for id in _game.materials:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),

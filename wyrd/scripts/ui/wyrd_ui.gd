@@ -84,7 +84,12 @@ static func chip_stylebox(bg := KIT_PLATE) -> StyleBoxFlat:
 	sb.bg_color = bg
 	sb.border_color = KIT_EDGE
 	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(3)
+	sb.set_corner_radius_all(4)
+	# Spec 44 — a soft under-shadow so chips and buttons sit ON the
+	# parchment instead of floating flat in it.
+	sb.shadow_color = Color(0, 0, 0, 0.16)
+	sb.shadow_size = 2
+	sb.shadow_offset = Vector2(0, 2)
 	sb.content_margin_left = 10.0
 	sb.content_margin_right = 10.0
 	sb.content_margin_top = 4.0
@@ -239,3 +244,114 @@ static func style_body(l: Label, size: int = 13) -> void:
 static func style_dim(l: Label, size: int = 12) -> void:
 	l.add_theme_font_size_override("font_size", size + 1)
 	l.add_theme_color_override("font_color", INK_MID)
+
+# ---- spec 44: drawn-detail primitives (the UI detail pass) ----
+# Shared by code-drawn panels (bench, pack, trades) so every recessed well,
+# carved button, and parchment face reads the same. Pure vector draws — no
+# textures touched (the _draw/load white-rect gotcha stays impossible).
+
+# A recessed rectangular well: stepped inner shadow top-left, light lip
+# bottom — the socket reads as carved INTO the bench, not painted on.
+static func draw_well(c: CanvasItem, r: Rect2, fill := KIT_WELL) -> void:
+	c.draw_rect(r, fill)
+	for i in 3:
+		var a := 0.16 - 0.05 * float(i)
+		var inset := 1.0 + float(i) * 1.5
+		c.draw_rect(Rect2(r.position + Vector2(inset, inset),
+			Vector2(r.size.x - inset * 2.0, 2.0)), Color(0, 0, 0, a))
+		c.draw_rect(Rect2(r.position + Vector2(inset, inset),
+			Vector2(2.0, r.size.y - inset * 2.0)), Color(0, 0, 0, a))
+	c.draw_rect(Rect2(r.position + Vector2(2.0, r.size.y - 3.0),
+		Vector2(r.size.x - 4.0, 2.0)), Color(1.0, 1.0, 0.92, 0.35))
+	c.draw_rect(r, KIT_EDGE, false, 2.0)
+
+# Round well — ink sockets, pot rims.
+static func draw_round_well(c: CanvasItem, center: Vector2, radius: float,
+		fill := KIT_WELL) -> void:
+	c.draw_circle(center, radius, fill)
+	c.draw_arc(center, radius - 2.5, PI * 0.78, PI * 1.95, 22,
+		Color(0, 0, 0, 0.18), 3.0, true)
+	c.draw_arc(center, radius - 2.5, -PI * 0.22, PI * 0.30, 16,
+		Color(1.0, 1.0, 0.92, 0.30), 2.0, true)
+	c.draw_arc(center, radius, 0, TAU, 40, KIT_EDGE, 2.0, true)
+
+# A carved button face: plate, light top bevel, dark bottom bevel, inner
+# pinstripe. Callers draw their own label on top.
+static func draw_carved_button(c: CanvasItem, r: Rect2, enabled := true) -> void:
+	c.draw_rect(r, KIT_PLATE if enabled else Color(0.84, 0.78, 0.65))
+	c.draw_rect(Rect2(r.position + Vector2(2.0, 2.0),
+		Vector2(r.size.x - 4.0, 2.0)), Color(1.0, 1.0, 0.93, 0.55))
+	c.draw_rect(Rect2(r.position + Vector2(2.0, r.size.y - 4.0),
+		Vector2(r.size.x - 4.0, 2.0)), Color(KIT_EDGE, 0.35))
+	c.draw_rect(r, KIT_EDGE, false, 2.0)
+	c.draw_rect(r.grow(-3.0), Color(KIT_EDGE, 0.30), false, 1.0)
+
+# Sparse parchment grain — short sepia fibre strokes, deterministic seed
+# (no Math.random drift between redraws).
+static func draw_parchment_grain(c: CanvasItem, r: Rect2, seed_v: int = 7) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_v
+	var n := int(r.size.x * r.size.y / 2600.0)
+	for _i in n:
+		var p := r.position + Vector2(rng.randf() * r.size.x,
+			rng.randf() * r.size.y)
+		var ln := 3.0 + rng.randf() * 7.0
+		c.draw_line(p, p + Vector2(ln, rng.randf_range(-1.2, 1.2)),
+			Color(0.62, 0.52, 0.38, 0.05 + rng.randf() * 0.05), 1.0)
+
+# Section flourish: ── ◆ ── centred under a header.
+static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
+	var col := Color(KIT_EDGE, 0.45)
+	c.draw_line(center - Vector2(width * 0.5, 0), center - Vector2(7, 0), col, 1.0)
+	c.draw_line(center + Vector2(7, 0), center + Vector2(width * 0.5, 0), col, 1.0)
+	var pts := PackedVector2Array([center + Vector2(0, -3.5),
+		center + Vector2(3.5, 0), center + Vector2(0, 3.5),
+		center + Vector2(-3.5, 0)])
+	c.draw_colored_polygon(pts, Color(GOLD, 0.8))
+
+# A little hand-blown ink bottle — glass body, ink fill, neck, cork, and a
+# glass highlight. Replaces the bare text glyphs in sockets and trays.
+static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
+		ink: Color) -> void:
+	var w := h * 0.62
+	var body := Rect2(center + Vector2(-w * 0.5, -h * 0.18),
+		Vector2(w, h * 0.62))
+	c.draw_rect(body, Color(0.88, 0.92, 0.90, 0.55))
+	c.draw_rect(Rect2(body.position + Vector2(1.5, body.size.y * 0.28),
+		Vector2(body.size.x - 3.0, body.size.y * 0.72 - 1.5)), ink)
+	c.draw_rect(body, KIT_EDGE, false, 1.5)
+	var neck := Rect2(center + Vector2(-w * 0.18, -h * 0.42),
+		Vector2(w * 0.36, h * 0.26))
+	c.draw_rect(neck, Color(0.88, 0.92, 0.90, 0.7))
+	c.draw_rect(neck, KIT_EDGE, false, 1.5)
+	c.draw_rect(Rect2(center + Vector2(-w * 0.24, -h * 0.54),
+		Vector2(w * 0.48, h * 0.13)), Color(0.62, 0.46, 0.30))
+	c.draw_line(body.position + Vector2(2.5, 2.0),
+		body.position + Vector2(2.5, body.size.y - 3.0),
+		Color(1, 1, 1, 0.45), 1.5)
+
+# A rolled parchment scroll with a wax seal — the chart-in-a-socket read.
+static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
+	var face := Rect2(r.position + Vector2(r.size.x * 0.08, r.size.y * 0.12),
+		Vector2(r.size.x * 0.84, r.size.y * 0.76))
+	c.draw_rect(face, Color(0.96, 0.91, 0.78))
+	# rolled ends — darker cylinders at left + right
+	var roll_w := r.size.x * 0.07
+	c.draw_rect(Rect2(face.position - Vector2(roll_w * 0.6, 2.0),
+		Vector2(roll_w, face.size.y + 4.0)), Color(0.86, 0.78, 0.62))
+	c.draw_rect(Rect2(Vector2(face.end.x - roll_w * 0.4, face.position.y - 2.0),
+		Vector2(roll_w, face.size.y + 4.0)), Color(0.86, 0.78, 0.62))
+	c.draw_rect(face, KIT_EDGE, false, 1.5)
+	# faint chart scratches
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 11
+	for _i in 4:
+		var y := face.position.y + face.size.y * (0.25 + rng.randf() * 0.5)
+		c.draw_line(Vector2(face.position.x + 6.0, y),
+			Vector2(face.position.x + 6.0 + rng.randf() * face.size.x * 0.5, y),
+			Color(KIT_EDGE, 0.25), 1.0)
+	if sealed:
+		var sc := Vector2(face.end.x - 10.0, face.end.y - 8.0)
+		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
+		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
+		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
