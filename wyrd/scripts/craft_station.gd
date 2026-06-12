@@ -33,6 +33,8 @@ func _ready_interactable() -> void:
 			_build_cookfire()
 		"forge":
 			_build_anvil()
+		"still":
+			_build_still()
 
 func interact(_player: Node) -> void:
 	var game := get_tree().root.get_node_or_null("Game")
@@ -77,6 +79,30 @@ func _build_anvil() -> void:
 	glow.light_color = Color(1.0, 0.55, 0.25)
 	glow.light_energy = 1.1
 	glow.omni_range = 3.0
+	add_child(glow)
+
+# A8-full — Quill's copper still: bench, pot belly, swan-neck, catch-flask.
+func _build_still() -> void:
+	_prim(_box_mesh(Vector3(0.95, 0.5, 0.7)), Color(0.46, 0.36, 0.26),
+		Vector3(0.0, 0.25, 0.0))                       # work bench
+	var belly := _prim(_pot_mesh(), Color(0.74, 0.46, 0.28),
+		Vector3(-0.18, 0.72, 0.0))                     # copper belly
+	belly.scale = Vector3(1.15, 1.15, 1.15)
+	var neck := _prim(_log_mesh(), Color(0.74, 0.46, 0.28),
+		Vector3(0.12, 0.92, 0.0))                      # swan-neck spout
+	neck.rotation.z = -0.85
+	neck.scale = Vector3(0.55, 0.8, 0.55)
+	var flask := _prim(_pot_mesh(), Color(0.62, 0.78, 0.66),
+		Vector3(0.34, 0.62, 0.0))                      # catch-flask
+	flask.scale = Vector3(0.5, 0.6, 0.5)
+	var herbs := _prim(_rock_mesh(0.12), Color(0.45, 0.62, 0.34),
+		Vector3(-0.35, 0.56, 0.22))                    # a bundle drying
+	herbs.scale = Vector3(1.0, 0.6, 1.0)
+	var glow := OmniLight3D.new()
+	glow.position = Vector3(0.0, 0.8, 0.0)
+	glow.light_color = Color(0.7, 0.95, 0.65)
+	glow.light_energy = 0.9
+	glow.omni_range = 2.6
 	add_child(glow)
 
 func _prim(mesh: Mesh, color: Color, pos: Vector3) -> MeshInstance3D:

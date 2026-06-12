@@ -15,6 +15,14 @@ const STATIONS := {
 		"verb": "Cook",
 		"recipes": ["hearth_draught", "deep_draught"],
 	},
+	# A8-full — Quill's still: draughts that sharpen, not just feed.
+	"still": {
+		"title": "Quill's Still",
+		"prompt": "Brew at Quill's still",
+		"trade": "wilds",
+		"verb": "Brew",
+		"recipes": ["quickroot_tonic", "clearwater_philter"],
+	},
 	"forge": {
 		"title": "Hod's Anvil",
 		"prompt": "Smith at Hod's Anvil",
@@ -41,6 +49,20 @@ const RECIPES := {
 		"inputs": {"wild_herb": 4, "logs": 2},
 		"yields_material": "deep_draught", "yields_n": 1,
 		"desc": "Restores 80 vigor. Quaff with Q.",
+	},
+	# A8-full — Quill's tonics. Materials like the draughts, but Q drinks
+	# them only when vigor is full (the hearth shelf keeps priority).
+	"quickroot_tonic": {
+		"name": "Quickroot Tonic", "req_lv": 3, "xp": 20,
+		"inputs": {"wild_herb": 3},
+		"yields_material": "quickroot_tonic", "yields_n": 1,
+		"desc": "Gathering runs a quarter faster for a while. Quaff with Q when hale.",
+	},
+	"clearwater_philter": {
+		"name": "Clearwater Philter", "req_lv": 6, "xp": 30,
+		"inputs": {"wild_herb": 2, "palechalk": 1},
+		"yields_material": "clearwater_philter", "yields_n": 1,
+		"desc": "Focus pools half again as fast for a while. Quaff with Q when hale.",
 	},
 	"copper_bar": {
 		"name": "Copper Bar", "req_lv": 1, "xp": 8,
@@ -139,6 +161,20 @@ const DRAUGHTS := {
 	"deep_draught": 80,
 }
 const DRAUGHT_ORDER := ["hearth_draught", "deep_draught"]
+
+# A8-full — Quill's shelf: timed buffs, quaffed by Q at full vigor.
+# Runtime-only (a sip doesn't outlive the session).
+const BUFF_DRAUGHTS := {
+	"quickroot_tonic": {
+		"stat": "gather_speed", "value": 0.25, "duration": 90.0,
+		"toast": "Quickroot hums in your arms — gathering runs quicker.",
+	},
+	"clearwater_philter": {
+		"stat": "focus_regen", "value": 0.5, "duration": 90.0,
+		"toast": "Clearwater settles the mind — Focus pools faster.",
+	},
+}
+const BUFF_DRAUGHT_ORDER := ["quickroot_tonic", "clearwater_philter"]
 
 static func station(id: String) -> Dictionary:
 	return STATIONS.get(id, {})

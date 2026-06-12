@@ -78,14 +78,14 @@ func _run() -> void:
 	_check("town gather stations 6/3/3",
 		herbs == 6 and ores == 3 and piles == 3,
 		"%d/%d/%d" % [herbs, ores, piles])
-	# A7/A8-lite — the cookfire and the anvil stand in town.
+	# A7/A8 — the cookfire, the anvil, and Quill's still stand in town.
 	var stations: Array = []
 	for c in town.get_children():
 		if c is CraftStation:
 			stations.append(String(c.station_id))
 	stations.sort()
-	_check("craft stations placed (cookfire + forge)",
-		stations == ["cookfire", "forge"], str(stations))
+	_check("craft stations placed (cookfire + forge + still)",
+		stations == ["cookfire", "forge", "still"], str(stations))
 	# Keep `patches` = herb patches only (the tutorial beat forages herbs).
 	patches = patches.filter(func(n): return String(n.kind) == "forage_node")
 

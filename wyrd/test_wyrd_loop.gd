@@ -38,6 +38,7 @@ func _init() -> void:
 	_test_b6_affixes()
 	_test_huntcraft()
 	_test_economy_gate()
+	_test_alchemy()
 	_test_save_roundtrip()
 	print("--- %d passed, %d failed ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
@@ -339,6 +340,56 @@ func _test_economy_gate() -> void:
 			ring = it
 	_check("ring rolls rare w/ 3 affixes", ring != null
 		and String(ring.rarity) == "rare" and (ring.affixes as Array).size() == 3)
+	game.free()
+
+# A8-full — Quill's still: buff draughts + the timed-buff engine.
+func _test_alchemy() -> void:
+	print("[alchemy]")
+	var st: Dictionary = CraftingData.station("still")
+	_check("still station exists (Wildcraft, 2 brews)",
+		String(st.get("trade", "")) == "wilds"
+		and (st.get("recipes", []) as Array).size() == 2, str(st))
+	_check("still has a first-use hint",
+		(load("res://scripts/game.gd").SKILL_HINTS as Dictionary).has("still"))
+	var game = load("res://scripts/game.gd").new()
+	game._ready()
+	game.add_material("wild_herb", 3)
+	_check("tonic gated at wilds 1", not game.craft("still", "quickroot_tonic"))
+	game.trades.wilds.lv = 3
+	_check("tonic brews at wilds 3", game.craft("still", "quickroot_tonic"))
+	_check("tonic in satchel", game.material_count("quickroot_tonic") == 1)
+	# Quaffing the buff shelf: bottle spent, buff live, channels run faster.
+	var GatherNode = load("res://scripts/gather_node.gd")
+	var bare: float = GatherNode.channel_seconds("forage_node", game)
+	_check("quaff the tonic", game.quaff_buff_draught())
+	_check("bottle spent", game.material_count("quickroot_tonic") == 0)
+	_check("gather buff live",
+		absf(float(game.buff_value("gather_speed")) - 0.25) < 0.001)
+	var quick: float = GatherNode.channel_seconds("forage_node", game)
+	_check("channels run a quarter faster", absf(quick - bare * 0.75) < 0.01,
+		"%.2f vs %.2f" % [quick, bare])
+	# The sip ticks down and fades (90s duration).
+	game._process(60.0)
+	_check("still humming at 60s", game.buff_value("gather_speed") > 0.0)
+	game._process(31.0)
+	_check("faded after 91s", game.buff_value("gather_speed") < 0.001)
+	_check("fade restores the channel",
+		absf(GatherNode.channel_seconds("forage_node", game) - bare) < 0.01)
+	# Clearwater: palechalk-gated focus philter.
+	game.add_material("wild_herb", 2)
+	game.add_material("palechalk", 1)
+	_check("philter gated at wilds 3",
+		not game.craft("still", "clearwater_philter"))
+	game.trades.wilds.lv = 6
+	_check("philter brews at wilds 6", game.craft("still", "clearwater_philter"))
+	_check("quaff the philter", game.quaff_buff_draught())
+	_check("focus buff live",
+		absf(float(game.buff_value("focus_regen")) - 0.5) < 0.001)
+	# Empty shelf refuses politely; the heal shelf stays its own verb.
+	_check("empty buff shelf returns false", not game.quaff_buff_draught())
+	game.add_material("hearth_draught", 1)
+	_check("heal shelf untouched by the still", game.quaff_draught() == 35)
+	_check("can't brew at the hearth", not game.craft("cookfire", "quickroot_tonic"))
 	game.free()
 
 # Hod's effective price for a material, following smelt recipes one level

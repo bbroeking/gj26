@@ -119,6 +119,10 @@ const SKILL_HINTS := {
 		"Two lumps of bogiron smelt down to a bar. Bars become gear — that's the whole trade, and it's a good one.",
 		"Earthcraft levels open the deeper recipes. Bring me ore or bring me patience.",
 	]],
+	"still": ["Quill, the Herbalist", [
+		"First brew's the hardest — after that the still does half the work.",
+		"Tonics sit beside your hearth bottles. Quaff with Q when you're hale and it's the tonic you'll taste. They keep a week if you don't shake them too hard.",
+	]],
 }
 
 func first_time_hint(kind: String) -> void:
@@ -385,6 +389,52 @@ func quaff_draught() -> int:
 			return int(CraftingDefs.DRAUGHTS[id])
 	notify("No draughts in the satchel — the hearth makes them.")
 	return 0
+
+# ---- A8-full: Quill's shelf — timed buffs ----
+# id -> {"stat": String, "value": float, "left": float}. Runtime-only:
+# a sip deliberately doesn't outlive the session (not saved).
+
+signal buffs_changed
+var buffs: Dictionary = {}
+
+func apply_buff(id: String, stat: String, value: float, duration: float) -> void:
+	buffs[id] = {"stat": stat, "value": value, "left": duration}
+	buffs_changed.emit()
+
+func buff_value(stat: String) -> float:
+	var total := 0.0
+	for id in buffs:
+		if String(buffs[id].stat) == stat:
+			total += float(buffs[id].value)
+	return total
+
+func _process(delta: float) -> void:
+	if buffs.is_empty():
+		return
+	var expired: Array = []
+	for id in buffs:
+		buffs[id].left = float(buffs[id].left) - delta
+		if float(buffs[id].left) <= 0.0:
+			expired.append(id)
+	for id in expired:
+		buffs.erase(id)
+		notify("The %s fades." % GatherDefs.material_name(String(id)))
+	if not expired.is_empty():
+		buffs_changed.emit()
+
+# Q at full vigor reaches for the buff shelf (the player decides; the
+# hearth's heal shelf keeps priority while hurt).
+func quaff_buff_draught() -> bool:
+	for id in CraftingDefs.BUFF_DRAUGHT_ORDER:
+		if material_count(String(id)) > 0:
+			var def: Dictionary = CraftingDefs.BUFF_DRAUGHTS[id]
+			spend_materials({id: 1})
+			apply_buff(String(id), String(def.stat), float(def.value),
+				float(def.duration))
+			notify(String(def.toast))
+			save_now()
+			return true
+	return false
 
 func mix_ink(ink_id: String) -> bool:
 	var recipe: Dictionary = GatherDefs.INK_RECIPES.get(ink_id, {})

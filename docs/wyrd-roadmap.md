@@ -4,7 +4,7 @@ THE single where-are-we doc. Detail lives in the linked plans; when this
 disagrees with code, code wins. Repo note: the three.js prototype was
 removed 2026-06-12 (recoverable from git history).
 
-## Shipped (all gates green — 217 headless checks across 3 suites)
+## Shipped (all gates green — 236 headless checks across 3 suites)
 
 **Core loop:** tutorial → forage → mix ink → inscribe chart → parameterized
 dungeon (affixes shape gather nodes / density / HP / boss dens) → exit
@@ -16,6 +16,8 @@ Wolf → **Summit** endgame) → gold economy with Hod → save/load.
 thing's vigor, perks at 5/10 (crit/move speed) — ADR 0005;
 channel-time gathering with interrupts; town stations (6 herb / 3 ore /
 3 log, regrowing); cooking at the Cottage Hearth (draughts, Q-quaff);
+alchemy at Quill's still (timed buff tonics — Q at full vigor drinks
+from her shelf);
 smelting+smithing at Hod's Anvil (full gear ladder, 14 recipes E1→E9,
 economy-gated); trade
 tools in their own equip slots (−30% channel); per-level perks ×4;
@@ -76,8 +78,18 @@ Specs 38–41 + notes.
    Palechalk Ring (rare) + Palechalk Longbow E9 — behind a tested economy
    gate: no smithed item sells for more than its Hod-buyable input cost.
    Craft panel grew a scroll. **A8-full alchemy (Quill)** still open.
-7. **A8-full alchemy (Quill)** — port the full potion/draught table; new
-   herb tiers to pair with A6's ore ladder.
+7. ~~A8-full alchemy (Quill)~~ **SHIPPED 2026-06-12**: Quill, the
+   Herbalist (canon npcs.js character, soft-spoken) minds the SW herb
+   corner with her copper still; 2 buff brews — Quickroot Tonic (W3,
+   −25% channel, 90s) + Clearwater Philter (W6, palechalk-gated, +50%
+   Focus regen, 90s); timed-buff engine on Game (runtime-only, not
+   saved); Q at full vigor drinks the buff shelf, heal shelf keeps
+   priority while hurt; first-use still hint in her voice. Deferred:
+   herb tiers to mirror A6's ore ladder (A6-style forage tiers).
+8. **Queue empty — next candidates:** herb tiers (A6-style forage
+   ladder feeding Quill's brews), buff HUD chip (active tonic + time
+   left), fresh-save tutorial + boss-feel playtests (user-side), UI
+   refinement rounds (Craft/Satchel/Charts), P2/P3 animation sets.
 
 ## Standing followups
 

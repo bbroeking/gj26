@@ -351,8 +351,8 @@ func _physics_process(delta: float) -> void:
 	_tick_statuses(delta)
 	# Focus regen — slower while in combat (encourages a spend rhythm).
 	var regen_rate: float = FOCUS_REGEN_IN if _combat_t > 0.0 else FOCUS_REGEN_OUT
-	focus = clampf(focus + regen_rate * _chart_focus_mult() * delta,
-		0.0, focus_max)
+	focus = clampf(focus + regen_rate * _chart_focus_mult()
+		* _buff_focus_mult() * delta, 0.0, focus_max)
 	if _hud != null and _hud.has_method("set_focus"):
 		_hud.set_focus(focus, focus_max)
 	# Spec 33a — refresh HP suffix with any active statuses (no-op if none).
@@ -931,6 +931,14 @@ func _chart_fire_mult() -> float:
 		return 0.9
 	return 1.0
 
+# A8-full — Clearwater Philter: Focus pools half again as fast while the
+# sip lasts (anywhere, unlike chart affixes).
+func _buff_focus_mult() -> float:
+	var game := get_tree().root.get_node_or_null("Game")
+	if game == null:
+		return 1.0
+	return 1.0 + float(game.buff_value("focus_regen"))
+
 # B6 — Echoing Steps: +50% focus regen in-chart; Hollow Echo: -25%.
 func _chart_focus_mult() -> float:
 	var game := get_tree().root.get_node_or_null("Game")
@@ -1109,14 +1117,20 @@ func toggle_trades() -> void:
 
 # Hearth.gd calls this to refill HP before saving the checkpoint slot.
 func _quaff() -> void:
-	if dead or hp >= hp_max:
+	if dead:
 		return
 	var game := get_tree().root.get_node_or_null("Game")
 	if game == null:
 		return
-	var amount := int(game.quaff_draught())
-	if amount <= 0:
-		return
+	var amount := 0
+	if hp < hp_max:
+		amount = int(game.quaff_draught())
+		if amount <= 0:
+			return
+	else:
+		# A8-full — topped up: Q reaches for Quill's shelf instead.
+		if not bool(game.quaff_buff_draught()):
+			return
 	var sfx := get_node_or_null("/root/Sfx")
 	if sfx != null:
 		sfx.play("quaff")
@@ -1127,9 +1141,10 @@ func _quaff() -> void:
 			.set_trans(Tween.TRANS_QUAD)
 		tw.tween_interval(0.25)
 		tw.tween_property(_mesh, "rotation:x", 0.0, 0.2)
-	hp = mini(hp + amount, hp_max)
-	if _hud != null:
-		_hud.set_hp(hp, hp_max)
+	if amount > 0:
+		hp = mini(hp + amount, hp_max)
+		if _hud != null:
+			_hud.set_hp(hp, hp_max)
 
 func heal_to_full() -> void:
 	hp = hp_max

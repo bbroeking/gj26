@@ -276,6 +276,11 @@ static func channel_seconds(kind: String, game, base := -1.0) -> float:
 			t *= 1.0 - clampf(float(tool.get("base_value", 0.0)), 0.0, 0.8)
 	if kind == "ore_rock" and game.perk_active("earth", "quick_mining"):
 		t *= 0.65
+	# A8-full — Quickroot Tonic: every channel runs a quarter faster.
+	var tonic: float = float(game.buff_value("gather_speed")) \
+		if game.has_method("buff_value") else 0.0
+	if tonic > 0.0:
+		t *= 1.0 - clampf(tonic, 0.0, 0.8)
 	# B6 — Barren Veins: gathering drags a third longer in this chart.
 	if bool(game.get("in_dungeon")) and game.affix_bad("wellspring"):
 		t *= 1.33

@@ -11,6 +11,7 @@ const InscribingTableScript = preload("res://scripts/inscribing_table.gd")
 const CraftStationScript = preload("res://scripts/craft_station.gd")
 const PortalWaystoneScript = preload("res://scripts/portal_waystone.gd")
 const VendorScript = preload("res://scripts/vendor_npc.gd")
+const QuillScript = preload("res://scripts/quill_npc.gd")
 
 const OAK_GLB := preload("res://models/oak_v4.glb")
 const WELL_GLB := preload("res://models/well_v2.glb")
@@ -36,6 +37,9 @@ const SIGNPOST_POS := Vector3(23.5, 0.0, 24.0)
 const COTTAGE_POS := Vector3(8.0, 0.0, 8.5)
 const FORGE_POS := Vector3(33.0, 0.0, 9.5)
 const TOWER_POS := Vector3(20.5, 0.0, 5.5)   # the Chartmaker's tower — the landmark
+# A8-full — the herbalist's corner, by the south-west herb beds.
+const QUILL_POS := Vector3(11.0, 0.0, 29.5)
+const STILL_POS := Vector3(13.0, 0.0, 30.5)
 const HERB_PATCHES := [
 	Vector3(10.0, 0.0, 12.0), Vector3(9.0, 0.0, 27.0),
 	Vector3(17.0, 0.0, 31.0), Vector3(30.0, 0.0, 24.0),
@@ -208,6 +212,15 @@ func _place_stations() -> void:
 	anvil.setup("forge")
 	anvil.position = FORGE_POS + Vector3(1.6, 0.0, 3.2)
 	add_child(anvil)
+	# A8-full — Quill minds the herb corner, her still at her elbow.
+	var quill: Node3D = QuillScript.new()
+	quill.position = QUILL_POS
+	quill.rotation.y = -PI * 0.3           # face the yard
+	add_child(quill)
+	var still: Node3D = CraftStationScript.new()
+	still.setup("still")
+	still.position = STILL_POS
+	add_child(still)
 
 func _place_dressing() -> void:
 	# (The old 6-oak scatter is gone — TownEnvironment's treeline ring
@@ -230,10 +243,11 @@ func _build_environment() -> void:
 			SIGNPOST_POS, COTTAGE_POS, FORGE_POS, TOWER_POS,
 			FORGE_POS + Vector3(-1.5, 0.0, 3.0),
 			COTTAGE_POS + Vector3(2.8, 0.0, 2.6),
-			FORGE_POS + Vector3(1.6, 0.0, 3.2)],
+			FORGE_POS + Vector3(1.6, 0.0, 3.2),
+			QUILL_POS, STILL_POS],
 		# ...but only the stations a footpath would actually wear in.
 		[PLAYER_SPAWN, WAYFINDER_POS, TABLE_POS, WAYSTONE_POS,
-			FORGE_POS + Vector3(-1.5, 0.0, 3.0), COTTAGE_POS])
+			FORGE_POS + Vector3(-1.5, 0.0, 3.0), COTTAGE_POS, STILL_POS])
 	add_child(env)
 
 func _place_herb_patches() -> void:
