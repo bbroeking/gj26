@@ -29,20 +29,20 @@ func _ready() -> void:
 	# Spec 39 — the dialog joins the carved-wood panel language. The old
 	# Midjourney scroll art was atmospheric but buried the text (user:
 	# "completely illegible"); a clean wood frame + cream interior wins.
+	# 2026-06-12 — full-screen presentation (user): the conversation owns
+	# the moment instead of strapping to the bottom edge.
 	WyrdUi.style_panel(_panel)
-	_panel.anchor_left = 0.5
-	_panel.anchor_top = 1.0
-	_panel.anchor_right = 0.5
+	_panel.anchor_right = 1.0
 	_panel.anchor_bottom = 1.0
-	_panel.offset_left = -380
-	_panel.offset_right = 380
-	_panel.offset_top = -300
-	_panel.offset_bottom = -36
+	_panel.offset_left = 90
+	_panel.offset_right = -90
+	_panel.offset_top = 70
+	_panel.offset_bottom = -70
 	add_child(_panel)
 	# Portrait well (spec 41) — ghosted silhouette until painted portraits.
 	var well := PortraitWell.new()
-	well.position = Vector2(40, 96)
-	well.size = Vector2(80, 80)
+	well.position = Vector2(48, 104)
+	well.size = Vector2(120, 120)
 	_panel.add_child(well)
 	_name_lbl = Label.new()
 	var hf := WyrdUi.font_header()
@@ -59,23 +59,23 @@ func _ready() -> void:
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.anchor_right = 1.0
 	_body.anchor_bottom = 1.0
-	_body.offset_left = 140
-	_body.offset_top = 84
-	_body.offset_right = -56
-	_body.offset_bottom = -52
-	_body.add_theme_font_size_override("font_size", 19)
+	_body.offset_left = 200
+	_body.offset_top = 104
+	_body.offset_right = -72
+	_body.offset_bottom = -64
+	_body.add_theme_font_size_override("font_size", 21)
 	_body.add_theme_color_override("font_color", Color(0.20, 0.15, 0.11))
-	_body.add_theme_constant_override("line_spacing", 6)
+	_body.add_theme_constant_override("line_spacing", 7)
 	_panel.add_child(_body)
 	_hint = Label.new()
-	_hint.text = "E / Space — continue"
+	_hint.text = "E / Space — continue · Esc — close"
 	WyrdUi.style_chip(_hint, 12)
 	_hint.anchor_left = 1.0
 	_hint.anchor_top = 1.0
 	_hint.anchor_right = 1.0
 	_hint.anchor_bottom = 1.0
-	_hint.offset_left = -240
-	_hint.offset_top = -44
+	_hint.offset_left = -310
+	_hint.offset_top = -48
 	_panel.add_child(_hint)
 	get_tree().paused = true
 	_render()
@@ -93,6 +93,11 @@ func _render() -> void:
 func _process(delta: float) -> void:
 	_lockout += delta
 	if _lockout < 0.25:
+		return
+	# 2026-06-12 — Esc closes the whole conversation (user: "I've always
+	# dismissed them"). Still emits finished so tutorial beats advance.
+	if Input.is_action_just_pressed("ui_cancel"):
+		_finish()
 		return
 	if Input.is_action_just_pressed("interact") \
 			or Input.is_action_just_pressed("roll") \
@@ -114,12 +119,17 @@ func _advance() -> void:
 	_lockout = 0.0
 	_idx += 1
 	if _idx >= _pages.size():
-		_done = true
-		get_tree().paused = false
-		finished.emit()
-		queue_free()
+		_finish()
 	else:
 		_render()
+
+func _finish() -> void:
+	if _done:
+		return
+	_done = true
+	get_tree().paused = false
+	finished.emit()
+	queue_free()
 
 
 # Spec 41 — the round portrait well: parchment disc, ink ring, ghosted

@@ -77,7 +77,9 @@ var materials: Dictionary = {}        # material id -> count
 var charts: Array = []                # crafted chart dicts (the chart case)
 var gold := 0                         # Hod's the faucet AND the sink
 var summit_cleared := false           # the final chart, charted
-var muted := false                    # spec 38 — master audio mute (persisted)
+var muted := true                     # spec 38 — master mute (persisted).
+                                      # Default ON: fresh games start silent
+                                      # (user 2026-06-12); F10 opts in.
 # B5 — the picked skills for hotbar slots 2-4 (slot 1 is always the Bow).
 const SKILL_POOL := ["PowerShot", "MultiShot", "BrambleSnare",
 	"PiercingBolt", "RainOfThorns", "Thornburst", "HuntersMark",
