@@ -95,6 +95,32 @@ func _run() -> void:
 				and n.get_script() != BossScript:
 			prey = n
 			break
+	# B5-wave2 — Hunter's Mark: a marked thing takes +30% (crits disabled
+	# so the arithmetic is deterministic).
+	prey.crit_enabled = false
+	var hp0: int = int(prey.hp)
+	prey.apply_status("marked", 8.0, 0)
+	prey.take_damage(10, Vector3.FORWARD, 0.0, 0.0)
+	_check("marked prey takes +30%", hp0 - int(prey.hp) == 13,
+		str(hp0 - int(prey.hp)))
+	# B5-wave2 — Heartwood Ward: the bark soaks before vigor.
+	var player2: Node = get_first_node_in_group("player")
+	if player2 != null:
+		player2.apply_ward(30, 8.0)
+		var php: int = int(player2.hp)
+		player2._iframe_t = 0.0
+		player2.take_damage(10, Vector3.FORWARD)
+		_check("ward soaks the whole hit", int(player2.hp) == php
+			and int(player2._ward_hp) == 20, str(player2._ward_hp))
+		player2._iframe_t = 0.0
+		player2.take_damage(25, Vector3.FORWARD)
+		_check("overflow spills past the bark", int(player2.hp) == php - 5
+			and int(player2._ward_hp) == 0,
+			"%d hp, %d ward" % [int(player2.hp), int(player2._ward_hp)])
+		player2.heal_to_full()
+	else:
+		_check("player found for ward check", false)
+
 	var hunt_before: int = int(game.trades.hunt.xp)
 	var prey_vigor: int = int(prey.hp_max)
 	prey.take_damage(999, Vector3.FORWARD)

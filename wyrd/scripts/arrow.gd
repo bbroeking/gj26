@@ -61,6 +61,10 @@ var skill_type: String = "basic"
 # resolves on the hit combatant. Replaces the spec 31 `match skill_type:`
 # string-typed dispatch with data-driven on-hit consequences.
 var effects: Array = []
+# B5-wave2 — MercyShot's clean kill: ×execute_mult when the target's vigor
+# fraction is already under execute_below. Defaults are a no-op.
+var execute_mult: float = 1.0
+var execute_below: float = 0.0
 # Spec-34 cookbook (MultiShot focal hierarchy): the center arrow of a fan
 # is "focal" (full brightness); the outer arrows are non-focal (~75%
 # saturation, dimmer head emission, smaller trail particles) so the eye
@@ -190,7 +194,11 @@ func _on_area_entered(area: Area3D) -> void:
 			else:
 				_spent = true
 			var fwd := -global_transform.basis.z
-			c.take_damage(damage, fwd, crit_chance, crit_mult)
+			var dealt: int = damage
+			if execute_mult > 1.0 and float(c.get("hp_max")) > 0.0 \
+					and float(c.get("hp")) / float(c.get("hp_max")) < execute_below:
+				dealt = int(round(float(damage) * execute_mult))
+			c.take_damage(dealt, fwd, crit_chance, crit_mult)
 			# Spec 32b — on-hit effects are data on the arrow. Each Skill
 			# attached its list before spawn; we iterate and apply. Done
 			# AFTER take_damage so a fatal hit dies cleanly (apply on dead

@@ -80,7 +80,14 @@ var summit_cleared := false           # the final chart, charted
 var muted := false                    # spec 38 — master audio mute (persisted)
 # B5 — the picked skills for hotbar slots 2-4 (slot 1 is always the Bow).
 const SKILL_POOL := ["PowerShot", "MultiShot", "BrambleSnare",
-	"PiercingBolt", "RainOfThorns"]
+	"PiercingBolt", "RainOfThorns", "Thornburst", "HuntersMark",
+	"HeartwoodWard", "MercyShot"]
+# B5-wave2 — Huntcraft gates the deeper hunting verbs (kills teach them).
+# Absent key = open from the start.
+const SKILL_REQS := {"HuntersMark": 4, "HeartwoodWard": 7, "MercyShot": 9}
+
+func skill_unlocked(sk: String) -> bool:
+	return trade_lv("hunt") >= int(SKILL_REQS.get(sk, 1))
 var loadout: Array = ["PowerShot", "MultiShot", "BrambleSnare"]
 var seen_hints: Dictionary = {}       # one-time skill tutorials already shown
 var inventory: Inventory = null       # Tetris gear grid — shared across scenes
@@ -192,13 +199,16 @@ func _ready() -> void:
 		tutorial_step = TUTORIAL_OBJECTIVES.size() - 1
 		get_tree().change_scene_to_file.call_deferred(DUNGEON_SCENE)
 
-# B5 — swap the loadout (validated against the pool; exactly 3, no dupes).
+# B5 — swap the loadout (validated against the pool; exactly 3, no dupes,
+# every pick's Huntcraft gate met).
 func set_loadout(picks: Array) -> bool:
 	if picks.size() != 3:
 		return false
 	var seen := {}
 	for sk in picks:
 		if not SKILL_POOL.has(String(sk)) or seen.has(sk):
+			return false
+		if not skill_unlocked(String(sk)):
 			return false
 		seen[sk] = true
 	loadout = picks.duplicate()

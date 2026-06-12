@@ -349,6 +349,11 @@ func _physics_process(delta: float) -> void:
 		_skill_cooldowns[k] = maxf(0.0, _skill_cooldowns[k] - delta)
 	# Spec 33a — player-side status framework tick.
 	_tick_statuses(delta)
+	# B5-wave2 — the ward's timer; bark crumbles when it runs out.
+	if _ward_t > 0.0:
+		_ward_t -= delta
+		if _ward_t <= 0.0:
+			_ward_hp = 0
 	# Focus regen — slower while in combat (encourages a spend rhythm).
 	var regen_rate: float = FOCUS_REGEN_IN if _combat_t > 0.0 else FOCUS_REGEN_OUT
 	focus = clampf(focus + regen_rate * _chart_focus_mult()
@@ -596,6 +601,16 @@ func _anim_state(dir: Vector3) -> String:
 func take_damage(amount: int, from_dir: Vector3) -> void:
 	if dead or _iframe_t > 0.0:
 		return
+	# B5-wave2 — Heartwood Ward soaks before vigor is touched. A fully
+	# soaked hit still grants iframes (the blow landed on the bark).
+	if _ward_hp > 0 and amount > 0:
+		var soak: int = mini(_ward_hp, amount)
+		_ward_hp -= soak
+		amount -= soak
+		if amount <= 0:
+			_iframe_t = IFRAMES_SEC
+			_combat_t = COMBAT_TIMER
+			return
 	hp -= amount
 	_iframe_t = IFRAMES_SEC
 	_combat_t = COMBAT_TIMER       # spec 30 — getting hit puts us in combat
@@ -1067,6 +1082,19 @@ func _try_interact() -> void:
 		_active_interactable.show_prompt(false)
 	_active_interactable = null
 
+# B5-wave2 — Heartwood Ward: a timed absorb pool soaked in take_damage.
+var _ward_hp := 0
+var _ward_t := 0.0
+
+func apply_ward(amount: int, duration: float) -> void:
+	_ward_hp = amount
+	_ward_t = duration
+	# Bark-brown flash on the mesh sells the skin hardening.
+	if _mesh != null:
+		var tw := create_tween()
+		tw.tween_property(_mesh, "scale", _mesh.scale * 1.08, 0.10)
+		tw.tween_property(_mesh, "scale", _mesh.scale, 0.14)
+
 # Shrine.gd calls this with the picked buff's stat + value (additive).
 func apply_shrine_buff(stat: String, value) -> void:
 	if shrine_buffs.has(stat):
@@ -1083,6 +1111,10 @@ const SKILL_FACTORY := {
 	"BrambleSnare": preload("res://scripts/skills/bramble_snare.gd"),
 	"PiercingBolt": preload("res://scripts/skills/piercing_bolt.gd"),
 	"RainOfThorns": preload("res://scripts/skills/rain_of_thorns.gd"),
+	"Thornburst": preload("res://scripts/skills/thornburst.gd"),
+	"HuntersMark": preload("res://scripts/skills/hunters_mark.gd"),
+	"HeartwoodWard": preload("res://scripts/skills/heartwood_ward.gd"),
+	"MercyShot": preload("res://scripts/skills/mercy_shot.gd"),
 }
 
 func rebuild_skills() -> void:

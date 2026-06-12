@@ -82,13 +82,17 @@ const STATUS_COLOR := {
 	"bleed":  Color(0.85, 0.20, 0.20),
 	"snared": Color(0.45, 0.65, 0.30),
 	"root":   Color(0.30, 0.65, 0.25),
+	"marked": Color(1.00, 0.82, 0.30),
 }
 const APPLY_TEXT := {
 	"burn":   "singed!",
 	"bleed":  "bleeding!",
 	"snared": "snared!",
 	"root":   "rooted!",
+	"marked": "marked!",
 }
+# B5-wave2 — Hunter's Mark: a marked thing takes +30% from every hit.
+const MARKED_MULT := 1.3
 # Bleed-on-crit damage fraction — total bleed damage ≈ 25% of crit damage,
 # spread across 4 ticks at 1 s = ~6.25% per tick.
 const BLEED_TICK_FRACTION := 0.0625
@@ -180,6 +184,9 @@ func take_damage(amount: int, from_dir: Vector3,
 		dmg = int(round(float(amount) * (2.0 + bonus)))
 	elif tier == "super":
 		dmg = int(round(float(amount) * (3.0 + bonus)))
+	# B5-wave2 — Hunter's Mark amplifies everything that lands while it holds.
+	if has_status("marked"):
+		dmg = int(round(float(dmg) * MARKED_MULT))
 
 	# Spec 31 — bleed-on-crit. Only enemy combatants bleed (the player has
 	# `take_damage` too, but isn't in the enemy group — keeps the friendly-fire

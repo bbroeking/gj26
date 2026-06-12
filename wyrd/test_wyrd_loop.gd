@@ -157,6 +157,29 @@ func _test_loadout() -> void:
 	var rt = load("res://scripts/skills/rain_of_thorns.gd").new()
 	_check("rain of thorns: cd + cost set",
 		float(rt.base_cd) > 0.0 and float(rt.cost) > 0.0)
+	# B5-wave2 — the pool grew to 9; every entry instantiates sanely.
+	_check("pool carries 9 skills", (game.SKILL_POOL as Array).size() == 9)
+	var paths := {"Thornburst": "thornburst", "HuntersMark": "hunters_mark",
+		"HeartwoodWard": "heartwood_ward", "MercyShot": "mercy_shot"}
+	for sk in paths:
+		var inst = load("res://scripts/skills/%s.gd" % paths[sk]).new()
+		_check("%s: cd + cost set" % sk,
+			float(inst.base_cd) > 0.0 and float(inst.cost) > 0.0)
+	_check("mercy shot executes under 35%",
+		absf(float(load("res://scripts/skills/mercy_shot.gd").new().execute_below)
+		- 0.35) < 0.001)
+	# Huntcraft gates: locked at hunt 1, open at the stated level.
+	_check("mark locked at hunt 1",
+		not game.set_loadout(["HuntersMark", "PowerShot", "MultiShot"]))
+	game.trades.hunt.lv = 4
+	_check("mark opens at hunt 4",
+		game.set_loadout(["HuntersMark", "PowerShot", "MultiShot"]))
+	_check("mercy still locked at hunt 4",
+		not game.set_loadout(["MercyShot", "PowerShot", "MultiShot"]))
+	game.trades.hunt.lv = 9
+	_check("mercy opens at hunt 9",
+		game.set_loadout(["MercyShot", "PowerShot", "MultiShot"]))
+	_check("thornburst open from the start", bool(game.skill_unlocked("Thornburst")))
 	game.free()
 
 # A6 — ore tiers: data sanity, level gating, chart-tier vein mixes.

@@ -43,3 +43,11 @@ static func bleed(dur: float, dpt: int, interval: float) -> SkillEffect:
 	e.damage_per_tick = dpt
 	e.tick_interval = interval
 	return e
+
+# B5-wave2 — Hunter's Mark: no ticks, no slow; combatant.take_damage reads
+# the status and amplifies every hit while it holds.
+static func marked(dur: float) -> SkillEffect:
+	var e := SkillEffect.new()
+	e.status_kind = "marked"
+	e.duration = dur
+	return e

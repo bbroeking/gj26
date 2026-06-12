@@ -10,6 +10,10 @@ const DESCS := {
 	"BrambleSnare": "Roots enemies in a bramble patch. 30 focus.",
 	"PiercingBolt": "Punches through up to 3 enemies in a line. 22 focus.",
 	"RainOfThorns": "Delayed thorn volley on a zone — damage + bleed. 32 focus.",
+	"Thornburst": "Thorns erupt around you — damage + snare close by. 30 focus.",
+	"HuntersMark": "Mark the quarry: it takes +30% from everything, 8s. 15 focus.",
+	"HeartwoodWard": "Bark-skin soaks the next 30 damage, 8s. 25 focus.",
+	"MercyShot": "The clean kill — ×3 damage under 35% vigor. 28 focus.",
 }
 
 var _game: Node
@@ -37,10 +41,10 @@ func _ready() -> void:
 	_panel.anchor_top = 0.5
 	_panel.anchor_right = 0.5
 	_panel.anchor_bottom = 0.5
-	_panel.offset_left = -300
-	_panel.offset_top = -250
-	_panel.offset_right = 300
-	_panel.offset_bottom = 250
+	_panel.offset_left = -330
+	_panel.offset_top = -300
+	_panel.offset_right = 330
+	_panel.offset_bottom = 300
 	add_child(_panel)
 	var title := Label.new()
 	title.text = "Loadout"
@@ -99,12 +103,19 @@ func _render() -> void:
 	var pool: Array = _game.SKILL_POOL if _game != null else DESCS.keys()
 	for sk in pool:
 		var picked: bool = _picks.has(sk)
+		# B5-wave2 — Huntcraft-gated skills stand visible but locked.
+		var locked: bool = _game != null and not _game.skill_unlocked(String(sk))
 		var b := Button.new()
 		WyrdUi.style_kit_button(b)
 		WyrdUi.mark_selected(b, picked)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.text = "%s %s — %s" % ["✓" if picked else "•", String(sk),
-			String(DESCS.get(sk, ""))]
+		if locked:
+			b.text = "✕ %s — Huntcraft %d opens this" % [String(sk),
+				int(_game.SKILL_REQS.get(sk, 1))]
+			b.disabled = true
+		else:
+			b.text = "%s %s — %s" % ["✓" if picked else "•", String(sk),
+				String(DESCS.get(sk, ""))]
 		var sid := String(sk)
 		b.pressed.connect(func():
 			if _picks.has(sid):

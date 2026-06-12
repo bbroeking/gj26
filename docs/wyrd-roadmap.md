@@ -4,7 +4,7 @@ THE single where-are-we doc. Detail lives in the linked plans; when this
 disagrees with code, code wins. Repo note: the three.js prototype was
 removed 2026-06-12 (recoverable from git history).
 
-## Shipped (all gates green — 256 headless checks across 3 suites)
+## Shipped (all gates green — 270 headless checks across 3 suites)
 
 **Core loop:** tutorial → forage → mix ink → inscribe chart → parameterized
 dungeon (affixes shape gather nodes / density / HP / boss dens) → exit
@@ -94,12 +94,20 @@ Specs 38–41 + notes.
    with NPC riddles gated on seen hints; 2 new discoverable inks (Ash —
    groves/sprinter bias · Chalkwash — the deep wave-2 trio); discovery
    rides the save, pre-43 saves keep their three inks.
-9. **Queue — next candidates:** herb tiers (A6-style forage ladder
-   feeding Quill's brews + the reagent ecosystem for more discoverable
-   inks), buff HUD chip (active tonic + time left), discovery feel pass
-   (bigger found-a-recipe moment + fizzle SFX), fresh-save tutorial +
-   boss-feel playtests (user-side), UI refinement rounds, P2/P3
-   animation sets.
+9. ~~B5 wave 2 — the ability roster~~ **SHIPPED 2026-06-12**: pool grew
+   5 → 9. Thornburst (nova + snare panic button), Hunter's Mark (marked
+   status: +30% damage taken, 8s), Heartwood Ward (30-damage absorb,
+   8s), Mercy Shot (×3 execute under 35% vigor). Huntcraft gates the
+   deeper three (4 / 7 / 9) — kills teach the hunting verbs; locked rows
+   stand visible in the loadout picker.
+10. **UI detail pass — reference round 2 (IN FLIGHT, user-side)**:
+    12 Midjourney prompts in `docs/wyrd-ui-reference-prompts.md`
+    (8 page heroes + 4 crop-ready element sheets). Generate → drop in
+    `docs/ui-refs/round2/` → measure/crop/implement (the spec-39 flow).
+11. **Queue — next candidates:** herb tiers (forage ladder + reagent
+    ecosystem for more discoverable inks), buff HUD chip, discovery feel
+    pass, skill-icon paint-over once `sheet-icons` lands, fresh-save
+    tutorial + boss-feel playtests (user-side), P2/P3 animation sets.
 
 ## Standing followups
 
