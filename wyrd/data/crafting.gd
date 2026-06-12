@@ -20,9 +20,11 @@ const STATIONS := {
 		"prompt": "Smith at Hod's Anvil",
 		"trade": "earth",
 		"verb": "Smith",
-		"recipes": ["copper_bar", "bogiron_bar", "pickaxe_smith", "axe_smith",
-			"longbow_smith", "bogiron_ring", "cinder_pickaxe_smith",
-			"cinder_axe_smith"],
+		"recipes": ["copper_bar", "bogiron_bar", "shortbow_smith",
+			"pickaxe_smith", "axe_smith", "longbow_smith",
+			"bogiron_cap_smith", "bogiron_boots_smith", "bogiron_jerkin_smith",
+			"cinder_pickaxe_smith", "cinder_axe_smith", "bogiron_ring",
+			"palechalk_ring_smith", "palechalk_longbow_smith"],
 	},
 }
 
@@ -88,6 +90,45 @@ const RECIPES := {
 		"inputs": {"palechalk": 2, "bogiron_bar": 1, "logs": 1},
 		"yields_item": {"kind": "cinderbloom_axe", "rarity": "normal"},
 		"desc": "Palechalk-edged. Chopping at nearly half time.",
+	},
+	# A7-full — the gear ladder. Selling smithed gear back to Hod always
+	# loses gold vs buying the inputs (the economy gate test asserts it);
+	# the point of the forge is wearing the work, not flipping it.
+	"shortbow_smith": {
+		"name": "Shortbow", "req_lv": 1, "xp": 14,
+		"inputs": {"copper_bar": 1, "logs": 2},
+		"yields_item": {"kind": "shortbow", "rarity": "normal"},
+		"desc": "Copper-tipped and honest. Every wayfinder's first bow.",
+	},
+	"bogiron_cap_smith": {
+		"name": "Bogiron Cap", "req_lv": 5, "xp": 28,
+		"inputs": {"bogiron_bar": 2, "logs": 1},
+		"yields_item": {"kind": "leather_helm", "rarity": "magic"},
+		"desc": "Iron-banded leather. Rolls a magic affix.",
+	},
+	"bogiron_boots_smith": {
+		"name": "Bogiron Boots", "req_lv": 5, "xp": 26,
+		"inputs": {"bogiron_bar": 2},
+		"yields_item": {"kind": "leather_boots", "rarity": "magic"},
+		"desc": "Iron-shod soles for the deep hollows. Rolls a magic affix.",
+	},
+	"bogiron_jerkin_smith": {
+		"name": "Bogiron Jerkin", "req_lv": 6, "xp": 34,
+		"inputs": {"bogiron_bar": 3, "logs": 1},
+		"yields_item": {"kind": "leather_chest", "rarity": "magic"},
+		"desc": "Plated where it counts. Rolls a magic affix.",
+	},
+	"palechalk_ring_smith": {
+		"name": "Palechalk Ring", "req_lv": 9, "xp": 50,
+		"inputs": {"palechalk": 2, "copper_bar": 1},
+		"yields_item": {"kind": "copper_ring", "rarity": "rare"},
+		"desc": "Bone-white inlay on copper. Rolls three affixes.",
+	},
+	"palechalk_longbow_smith": {
+		"name": "Palechalk Longbow", "req_lv": 9, "xp": 50,
+		"inputs": {"palechalk": 2, "bogiron_bar": 1, "logs": 2},
+		"yields_item": {"kind": "longbow", "rarity": "magic"},
+		"desc": "Chalk-cured yew, strung tight. Rolls a magic affix.",
 	},
 }
 

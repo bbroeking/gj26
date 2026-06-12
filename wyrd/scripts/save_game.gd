@@ -66,6 +66,9 @@ static func load_into(game: Node) -> bool:
 	game.tutorial_step = int(data.get("tutorial_step", 0))
 	game.player_hp = int(data.get("player_hp", -1))
 	game.gold = int(data.get("gold", 0))
+	# B7/ADR 0005 — saves from before Huntcraft backfill the trade.
+	if not (game.trades as Dictionary).has("hunt"):
+		game.trades["hunt"] = {"lv": 1, "xp": 0}
 	game.muted = bool(data.get("muted", false))
 	var lo: Array = data.get("loadout", [])
 	if lo.size() == 3:

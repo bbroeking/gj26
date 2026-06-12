@@ -648,6 +648,8 @@ const TRADE_ROWS := [
 		"color": Color(0.62, 0.36, 0.24)},
 	{"key": "wilds", "name": "Wildcraft", "glyph": "❀",
 		"color": Color(0.44, 0.54, 0.31)},
+	{"key": "hunt", "name": "Huntcraft", "glyph": "➳",
+		"color": Color(0.32, 0.44, 0.50)},
 ]
 const CELL_S := 30.0
 const CELL_GAP := 7.0
@@ -662,7 +664,7 @@ func _draw_trades_tab(win: Rect2, font: Font) -> void:
 	_unlock_cells.clear()
 	var x := win.position.x + 64.0
 	var w := win.size.x - 122.0
-	var y := win.position.y + 122.0
+	var y := win.position.y + 114.0
 	for i in TRADE_ROWS.size():
 		var row: Dictionary = TRADE_ROWS[i]
 		var key := String(row.key)
@@ -671,15 +673,15 @@ func _draw_trades_tab(win: Rect2, font: Font) -> void:
 			draw_line(Vector2(x, y - 12.0), Vector2(x + w, y - 12.0),
 				Color(0.52, 0.42, 0.30, 0.45), 1.5)
 		# --- emblem (60px disc, double ink ring — spec 40) ---
-		var ec := Vector2(x + 30.0, y + 36.0)
-		draw_circle(ec, 30.0, (row.color as Color))
-		draw_arc(ec, 30.0, 0, TAU, 48, Color(0.25, 0.18, 0.12), 3.0, true)
-		draw_arc(ec, 24.0, 0, TAU, 48, Color(0.97, 0.93, 0.82, 0.55), 1.4, true)
-		draw_string(hdr, Vector2(ec.x - 30.0, ec.y + 9.0), String(row.glyph),
-			HORIZONTAL_ALIGNMENT_CENTER, 60.0, 26, Color(0.98, 0.95, 0.86))
+		var ec := Vector2(x + 26.0, y + 30.0)
+		draw_circle(ec, 26.0, (row.color as Color))
+		draw_arc(ec, 26.0, 0, TAU, 48, Color(0.25, 0.18, 0.12), 2.5, true)
+		draw_arc(ec, 21.0, 0, TAU, 48, Color(0.97, 0.93, 0.82, 0.55), 1.2, true)
+		draw_string(hdr, Vector2(ec.x - 26.0, ec.y + 8.0), String(row.glyph),
+			HORIZONTAL_ALIGNMENT_CENTER, 52.0, 22, Color(0.98, 0.95, 0.86))
 		# --- name + level (ink, per the design — terracotta is title-only) ---
-		var cx := x + 78.0
-		draw_string(hdr, Vector2(cx, y + 20.0), String(row.name),
+		var cx := x + 68.0
+		draw_string(hdr, Vector2(cx, y + 18.0), String(row.name),
 			HORIZONTAL_ALIGNMENT_LEFT, w - 78.0, 21, WyrdUi.INK)
 		draw_string(hdr, Vector2(cx, y + 20.0), "Lv %d" % lv,
 			HORIZONTAL_ALIGNMENT_RIGHT, w - 78.0, 16, WyrdUi.INK)
@@ -688,18 +690,18 @@ func _draw_trades_tab(win: Rect2, font: Font) -> void:
 		var lo: int = game.xp_for_level(lv)
 		var hi: int = game.xp_for_level(lv + 1)
 		var frac := clampf(float(xp - lo) / float(max(1, hi - lo)), 0.0, 1.0)
-		var bar := Rect2(Vector2(cx, y + 30.0), Vector2(w * 0.56, 14.0))
+		var bar := Rect2(Vector2(cx, y + 26.0), Vector2(w * 0.56, 12.0))
 		draw_rect(bar, Color(0.80, 0.72, 0.58))
 		draw_rect(Rect2(bar.position + Vector2(1, 1),
 			Vector2((bar.size.x - 2.0) * frac, bar.size.y - 2.0)),
 			(row.color as Color).lightened(0.12))
 		draw_rect(bar, Color(0.42, 0.34, 0.25, 0.9), false, 1.5)
-		draw_string(font, Vector2(bar.end.x + 10.0, y + 42.0),
+		draw_string(font, Vector2(bar.end.x + 10.0, y + 37.0),
 			"%d / %d xp" % [xp, hi],
 			HORIZONTAL_ALIGNMENT_LEFT, 120.0, 13, Color(0.30, 0.24, 0.19))
 		# --- unlock mini grid ---
 		var cells := _trade_unlock_rows(key)
-		var cyy := y + 56.0
+		var cyy := y + 46.0
 		var cxx := cx
 		var hovered := ""
 		for cell in cells:
@@ -734,9 +736,9 @@ func _draw_trades_tab(win: Rect2, font: Font) -> void:
 					break
 			if hovered == "":
 				hovered = "Everything earned."
-		draw_string(font, Vector2(cx, cyy + CELL_S + 20.0), hovered,
-			HORIZONTAL_ALIGNMENT_LEFT, w - 78.0, 14, Color(0.36, 0.30, 0.24))
-		y = cyy + CELL_S + 36.0
+		draw_string(font, Vector2(cx, cyy + CELL_S + 17.0), hovered,
+			HORIZONTAL_ALIGNMENT_LEFT, w - 68.0, 13, Color(0.36, 0.30, 0.24))
+		y = cyy + CELL_S + 30.0
 
 # Recipes (from the trade's station) + perks, sorted by level — the same
 # visual language as the Wayfinder ladder.

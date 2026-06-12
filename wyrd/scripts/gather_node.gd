@@ -248,6 +248,9 @@ func _harvest(player: Node) -> void:
 	var game := get_tree().root.get_node_or_null("Game")
 	if game != null:
 		got += int(game.gather_bonus(kind))   # A9 perks
+		# B6 — Wellspring: every node in the chart gives one extra.
+		if bool(game.in_dungeon) and game.affix_good("wellspring"):
+			got += 1
 		game.add_material(item_id, got)
 		game.award_xp(String(def.get("trade", "wilds")),
 			_tier_xp if _tier_xp > 0 else int(def.get("xp", 8)))
@@ -273,6 +276,9 @@ static func channel_seconds(kind: String, game, base := -1.0) -> float:
 			t *= 1.0 - clampf(float(tool.get("base_value", 0.0)), 0.0, 0.8)
 	if kind == "ore_rock" and game.perk_active("earth", "quick_mining"):
 		t *= 0.65
+	# B6 — Barren Veins: gathering drags a third longer in this chart.
+	if bool(game.get("in_dungeon")) and game.affix_bad("wellspring"):
+		t *= 1.33
 	return t
 
 # ---- channel progress bar (billboarded quads) ----

@@ -29,6 +29,8 @@ static var crit_enabled := true   # test seam — evals toggle this off
 
 # ---- AI tunables (spec 15) ----
 const AGGRO_RADIUS := 7.0
+# B6 wave 2 — fog_of_hedge scales perception per spawn.
+var aggro_radius := AGGRO_RADIUS
 const LEASH_RADIUS := 11.0          # past this, give up and idle
 const ATTACK_RANGE := 1.8
 const ENEMY_DAMAGE := 5
@@ -235,7 +237,7 @@ func _tick_ai(delta: float) -> void:
 		State.IDLE:
 			velocity.x = 0.0
 			velocity.z = 0.0
-			if dist < AGGRO_RADIUS:
+			if dist < aggro_radius:
 				_state = State.CHASE
 		State.CHASE:
 			if dist > LEASH_RADIUS:
@@ -655,6 +657,11 @@ func _die() -> void:
 	# the chart rolled Volatile).
 	if burst_on_death:
 		_death_burst()
+	# B7/ADR 0005 — the kill feeds Huntcraft, scaled to the slain thing's
+	# vigor (elites and bosses are worth their weight).
+	var game := get_tree().root.get_node_or_null("Game")
+	if game != null:
+		game.award_xp("hunt", maxi(2, int(hp_max / 3.0)))
 	var sfx := get_node_or_null("/root/Sfx")
 	if sfx != null:
 		sfx.play("death")

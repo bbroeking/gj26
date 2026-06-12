@@ -22,6 +22,7 @@ const TRADE_NAMES := {
 	"carto": "Wayfinder",
 	"earth": "Earthcraft",
 	"wilds": "Wildcraft",
+	"hunt": "Huntcraft",   # B7/ADR 0005 — the one combat trade
 }
 
 signal xp_gained(trade: String, amount: int)
@@ -67,6 +68,7 @@ func _notification(what: int) -> void:
 
 # ---- persistent player-adjacent state ----
 var trades := {
+	"hunt": {"lv": 1, "xp": 0},
 	"carto": {"lv": 1, "xp": 0},
 	"earth": {"lv": 1, "xp": 0},
 	"wilds": {"lv": 1, "xp": 0},
@@ -344,6 +346,12 @@ const PERKS := {
 			"desc": "+1 herb on every forage"},
 		{"id": "clean_splits", "lv": 10, "name": "Clean Splits",
 			"desc": "+1 log on every chop"},
+	],
+	"hunt": [
+		{"id": "steady_hands", "lv": 5, "name": "Steady Hands",
+			"desc": "+5% crit chance"},
+		{"id": "hunters_stride", "lv": 10, "name": "Hunter's Stride",
+			"desc": "+5% move speed"},
 	],
 }
 

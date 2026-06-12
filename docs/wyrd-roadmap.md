@@ -4,17 +4,20 @@ THE single where-are-we doc. Detail lives in the linked plans; when this
 disagrees with code, code wins. Repo note: the three.js prototype was
 removed 2026-06-12 (recoverable from git history).
 
-## Shipped (all gates green — 141 headless checks across 3 suites)
+## Shipped (all gates green — 217 headless checks across 3 suites)
 
 **Core loop:** tutorial → forage → mix ink → inscribe chart → parameterized
 dungeon (affixes shape gather nodes / density / HP / boss dens) → exit
 waystone → completion XP → trophy chain (elites → Hedgemother → Boar →
 Wolf → **Summit** endgame) → gold economy with Hod → save/load.
 
-**Trades:** Wayfinder/Earthcraft/Wildcraft with XP+levels (Trades page K);
+**Trades:** Wayfinder/Earthcraft/Wildcraft/**Huntcraft** with XP+levels
+(Trades page K, four rows); kills feed Huntcraft scaled to the slain
+thing's vigor, perks at 5/10 (crit/move speed) — ADR 0005;
 channel-time gathering with interrupts; town stations (6 herb / 3 ore /
 3 log, regrowing); cooking at the Cottage Hearth (draughts, Q-quaff);
-smelting+smithing at Hod's Anvil (bar → pickaxe/axe/longbow/ring); trade
+smelting+smithing at Hod's Anvil (full gear ladder, 14 recipes E1→E9,
+economy-gated); trade
 tools in their own equip slots (−30% channel); per-level perks ×4;
 first-time hint dialogs per verb.
 
@@ -59,12 +62,22 @@ Specs 38–41 + notes.
    copper chain (ore→bar→Copper Ring); Cinderbloom tools at E7 (−45%
    channel, palechalk-made). Note: stoneground ink now effectively gates
    at Earthcraft 3 — intended ("coveted"), watch the early-game feel.
-4. **B6 affixes** — rolling: 3 of 9 shipped 2026-06-12 (Sprinting
-   Things/Mired Boots · Gilded Hollow/Picked Clean · Bursting/Volatile);
-   6 remain (quiver, fog_of_hedge, frenzied + 3 TBD).
-5. **B7 combat XP as a trade** — ADR first (dilution question).
-6. **A7-full smithing / A8-full alchemy (Quill)** — port the full recipe
-   tables.
+4. ~~B6 affixes~~ **SHIPPED 9/9 2026-06-12**: wave 1 (Sprinting Things ·
+   Gilded Hollow · Bursting) + wave 2 (Quiver/Damp Strings · Fog of
+   Hedge/Blinding Fog · Frenzied/Seething · Wellspring/Barren Veins ·
+   Echoing Steps/Hollow Echo · Marked Quarry/Skittish Prey). 15 rollable
+   affixes total; dens stay trophy-only.
+5. ~~B7 combat XP as a trade~~ **SHIPPED 2026-06-12**: ADR 0005 — ONE
+   combat trade, Huntcraft. Kills award `max(2, hp_max/3)` xp; perks
+   Steady Hands (5, +5% crit) / Hunter's Stride (10, +5% move); fourth
+   Trades-page row; old saves backfill at lv 1.
+6. ~~A7-full smithing~~ **SHIPPED 2026-06-12**: forge now carries the full
+   gear ladder (14 recipes) — Shortbow E1, caps/boots E5, jerkin E6,
+   Palechalk Ring (rare) + Palechalk Longbow E9 — behind a tested economy
+   gate: no smithed item sells for more than its Hod-buyable input cost.
+   Craft panel grew a scroll. **A8-full alchemy (Quill)** still open.
+7. **A8-full alchemy (Quill)** — port the full potion/draught table; new
+   herb tiers to pair with A6's ore ladder.
 
 ## Standing followups
 
@@ -89,5 +102,5 @@ Specs 38–41 + notes.
 | `wyrd-ui-design-pass.md` | Claude-Design workflow + lessons |
 | `wyrd-trades-recap.md` | trade-system ground truth + stale-doc audit |
 | `specs/3x-4x-*.md` (+ notes) | per-feature contracts and deltas |
-| `adr/` | 0003 cozy-skilling spine · 0004 controls |
+| `adr/` | 0003 cozy-skilling spine · 0004 controls · 0005 Huntcraft |
 | `WORLD_BIBLE.md` / `CONTEXT.md` | voice / domain language |

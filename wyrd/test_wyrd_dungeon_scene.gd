@@ -88,6 +88,22 @@ func _run() -> void:
 	var layout_kids := world.get_child_count()
 	_check("dungeon built (%d children)" % layout_kids, layout_kids > 50)
 
+	# B7/ADR 0005 — a kill feeds Huntcraft, scaled to the slain thing's vigor.
+	var prey: CharacterBody3D = null
+	for n in _walk(world):
+		if n is CharacterBody3D and n.is_in_group("enemy") \
+				and n.get_script() != BossScript:
+			prey = n
+			break
+	var hunt_before: int = int(game.trades.hunt.xp)
+	var prey_vigor: int = int(prey.hp_max)
+	prey.take_damage(999, Vector3.FORWARD)
+	var gained: int = int(game.trades.hunt.xp) - hunt_before
+	_check("kill feeds Huntcraft", gained >= 2, str(gained))
+	_check("hunt xp scales to vigor", gained == maxi(2, int(prey_vigor / 3.0)),
+		"%d xp for %d hp" % [gained, prey_vigor])
+	await process_frame
+
 	world.free()
 
 	# ---- B4a: the Boar's charge (windup -> line telegraph -> dodgeable dash) ----

@@ -118,6 +118,42 @@ const AFFIXES := {
 		"bad_desc": "The bursts don't care who's standing close — including you.",
 		"kind": "modifier", "req_carto": 12, "base_stab": 50,
 	},
+	"quiver": {
+		"name": "Quiver", "bad_name": "Damp Strings",
+		"good_desc": "Your bow sings — +20% fire rate inside this chart.",
+		"bad_desc": "The damp gets into the string — 10% slower firing.",
+		"kind": "modifier", "req_carto": 8, "base_stab": 54,
+	},
+	"fog_of_hedge": {
+		"name": "Fog of Hedge", "bad_name": "Blinding Fog",
+		"good_desc": "A low fog dulls their senses — enemies notice you a third later.",
+		"bad_desc": "The fog favors THEM — enemies notice you from further out.",
+		"kind": "modifier", "req_carto": 10, "base_stab": 52,
+	},
+	"frenzied": {
+		"name": "Frenzied", "bad_name": "Seething",
+		"good_desc": "Everything attacks a quarter faster — bring your footwork.",
+		"bad_desc": "The anger settles deep — enemies hit 15% harder.",
+		"kind": "modifier", "req_carto": 11, "base_stab": 50,
+	},
+	"wellspring": {
+		"name": "Wellspring", "bad_name": "Barren Veins",
+		"good_desc": "Every gather node in the chart yields one extra.",
+		"bad_desc": "Thin pickings — gathering takes a third longer.",
+		"kind": "bias", "req_carto": 13, "base_stab": 55,
+	},
+	"echoing": {
+		"name": "Echoing Steps", "bad_name": "Hollow Echo",
+		"good_desc": "The hollow gives back — Focus regenerates half again as fast.",
+		"bad_desc": "The hollow drinks it in — Focus regen drops by a quarter.",
+		"kind": "modifier", "req_carto": 15, "base_stab": 52,
+	},
+	"marked_quarry": {
+		"name": "Marked Quarry", "bad_name": "Skittish Prey",
+		"good_desc": "Elites here carry trophies twice as often.",
+		"bad_desc": "The fiercer things hide their prizes — half the trophy odds.",
+		"kind": "modifier", "req_carto": 16, "base_stab": 50,
+	},
 	"festival_pace": {
 		"name": "Festival Pace", "bad_name": "Lockstep",
 		"good_desc": "+50% enemy density inside. The hollow is thick with them.",
@@ -170,6 +206,12 @@ const BASE_WEIGHTS := {
 	"sprinter": 7,
 	"gilded": 6,
 	"bursting": 6,
+	"quiver": 7,
+	"fog_of_hedge": 6,
+	"frenzied": 6,
+	"wellspring": 7,
+	"echoing": 6,
+	"marked_quarry": 5,
 }
 
 # ---- inks ----

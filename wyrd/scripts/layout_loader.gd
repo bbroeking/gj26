@@ -144,6 +144,10 @@ var _hp_jitter := false
 var _speed_mult := 1.0
 var _burst_on_death := false
 var _burst_hits_player := false
+var _aggro_mult := 1.0
+var _atk_speed_mult := 1.0
+var _dmg_mult := 1.0
+var _trophy_mult := 1.0
 var _density_mult := 1.0
 
 func _ready() -> void:
@@ -238,6 +242,19 @@ func _read_chart_modifiers() -> void:
 	if game.affix_good("bursting") or game.affix_bad("bursting"):
 		_burst_on_death = true
 		_burst_hits_player = game.affix_bad("bursting")
+	# B6 wave 2.
+	if game.affix_good("fog_of_hedge"):
+		_aggro_mult = 0.65
+	if game.affix_bad("fog_of_hedge"):
+		_aggro_mult = 1.3
+	if game.affix_good("frenzied"):
+		_atk_speed_mult = 1.25
+	if game.affix_bad("frenzied"):
+		_dmg_mult = 1.15
+	if game.affix_good("marked_quarry"):
+		_trophy_mult = 2.0
+	if game.affix_bad("marked_quarry"):
+		_trophy_mult = 0.5
 	var cfg: Dictionary = game.run_cfg()
 	# Template base density (snug's gentle cellar) stacks with the affix.
 	_density_mult *= float(cfg.get("enemy_density", 1.0))
@@ -758,7 +775,8 @@ func _build_enemies(layout: Dictionary) -> int:
 					# The chain's first link: the fiercer things sometimes
 					# carry a thorn essence — the Hedgemother den's key.
 					elite_body.died.connect(func():
-						if randf() < 0.25:
+						# B6 — marked_quarry doubles/halves the trophy odds.
+						if randf() < 0.25 * _trophy_mult:
 							var game := get_tree().root.get_node_or_null("Game")
 							if game != null:
 								game.add_material("thorn_essence", 1)
@@ -841,9 +859,10 @@ func _spawn_enemy(ei: int, tx: int, ty: int, role: String = "combat",
 	var hp := maxi(4, roundi(int(def.hp) * _hp_mult * jitter))
 	var body := _spawn_character(inst, tx, ty, 0.4, 1.4, hp)
 	# B3 — per-kind feel: how hard it hits, how fast it closes, how often.
-	body.damage = int(def.get("damage", 5))
+	body.damage = int(round(float(def.get("damage", 5)) * _dmg_mult))
 	body.move_speed = float(def.get("speed", 1.8)) * _speed_mult
-	body.attack_cooldown = float(def.get("atk_cd", 1.5))
+	body.attack_cooldown = float(def.get("atk_cd", 1.5)) / _atk_speed_mult
+	body.aggro_radius = body.AGGRO_RADIUS * _aggro_mult
 	# B6 — bursting corpses.
 	body.burst_on_death = _burst_on_death
 	body.burst_hits_player = _burst_hits_player

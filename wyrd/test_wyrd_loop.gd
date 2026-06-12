@@ -36,6 +36,8 @@ func _init() -> void:
 	_test_loadout()
 	_test_ore_tiers()
 	_test_b6_affixes()
+	_test_huntcraft()
+	_test_economy_gate()
 	_test_save_roundtrip()
 	print("--- %d passed, %d failed ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
@@ -215,16 +217,21 @@ func _test_ore_tiers() -> void:
 	_check("tier-2 carries palechalk (seed 4242)", saw_deep)
 	game.free()
 
-# B6 — sprinter / gilded / bursting.
+# B6 — both waves: wave 1 (sprinter/gilded/bursting) + wave 2 (quiver/
+# fog_of_hedge/frenzied/wellspring/echoing/marked_quarry).
 func _test_b6_affixes() -> void:
 	print("[b6 affixes]")
-	for aid in ["sprinter", "gilded", "bursting"]:
+	for aid in ["sprinter", "gilded", "bursting", "quiver", "fog_of_hedge",
+			"frenzied", "wellspring", "echoing", "marked_quarry"]:
 		_check("%s defined + weighted" % aid,
 			ChartsData.AFFIXES.has(aid) and ChartsData.BASE_WEIGHTS.has(aid))
-	# High-carto weights now include the new three.
+	# High-carto weights include every rollable affix (dens stay out).
 	var w := ChartsData.compute_weights(2, [], 20)
 	_check("new affixes roll at high carto", w.has("sprinter")
 		and w.has("gilded") and w.has("bursting"), str(w.keys()))
+	_check("15 affixes rollable at carto 20", w.size() == 15, str(w.size()))
+	_check("dens never in the random pool", not w.has("hedgemother_den")
+		and not w.has("burrow_boar_den") and not w.has("wolf_alpha_den"))
 	# Gilded scatters exactly two extra chests (not gather nodes).
 	var lay := DungeonGenScript.generate(909, {"grid": 36, "room_min": 7,
 		"room_max": 11, "boss_kind": "", "tier": 2,
@@ -234,6 +241,123 @@ func _test_b6_affixes() -> void:
 		if String(d.get("kind", "")) == "chest" and not bool(d.get("gather", true)):
 			chests += 1
 	_check("gilded adds 2 chests", chests >= 2, str(chests))
+	# Wave-2 behaviors reachable without a scene: the affix twins feed the
+	# player/loader mults, and Barren Veins taxes the channel.
+	var game = load("res://scripts/game.gd").new()
+	game._ready()
+	game.in_dungeon = true
+	game.active_chart = {"affixes": [
+		{"id": "quiver", "good": true},
+		{"id": "wellspring", "good": false},
+	]}
+	_check("affix twins read by side", game.affix_good("quiver")
+		and game.affix_bad("wellspring") and not game.affix_good("wellspring"))
+	var GatherNode = load("res://scripts/gather_node.gd")
+	var t: float = GatherNode.channel_seconds("forage_node", game)
+	_check("barren veins channel ×1.33", absf(t - 1.33) < 0.01, str(t))
+	game.active_chart = {"affixes": [{"id": "wellspring", "good": true}]}
+	_check("wellspring good drops the channel tax",
+		absf(GatherNode.channel_seconds("forage_node", game) - 1.0) < 0.01)
+	game.free()
+
+# B7/ADR 0005 — Huntcraft: the one combat trade. The kill-side award is
+# checked in the dungeon scene suite; this is the trade plumbing.
+func _test_huntcraft() -> void:
+	print("[huntcraft]")
+	var game = load("res://scripts/game.gd").new()
+	game._ready()
+	_check("hunt trade exists at lv 1", game.trade_lv("hunt") == 1)
+	_check("hunt named Huntcraft",
+		String(game.TRADE_NAMES.get("hunt", "")) == "Huntcraft")
+	_check("steady hands off at hunt 1",
+		not game.perk_active("hunt", "steady_hands"))
+	game.trades.hunt.lv = 5
+	_check("steady hands on at hunt 5", game.perk_active("hunt", "steady_hands"))
+	_check("hunters stride waits for 10",
+		not game.perk_active("hunt", "hunters_stride"))
+	game.trades.hunt.lv = 10
+	_check("hunters stride on at hunt 10",
+		game.perk_active("hunt", "hunters_stride"))
+	game.award_xp("hunt", 40)
+	_check("hunt xp rides the shared curve", int(game.trades.hunt.xp) == 40
+		and game.trade_lv("hunt") == 10)
+	game.free()
+
+# A7-full — the economy gate: smithed gear must never sell back to Hod for
+# more than its Hod-buyable input cost (no vendor→forge→vendor gold loop).
+# Inputs Hod doesn't sell (copper, palechalk) can't be farmed with gold, so
+# a recipe carrying one is safe by construction.
+func _test_economy_gate() -> void:
+	print("[economy gate]")
+	var prices := {}
+	for w in EconomyData.WARES:
+		prices[String(w.id)] = int(w.price)
+	var gear := 0
+	for rid in CraftingData.STATIONS.forge.recipes:
+		var rec: Dictionary = CraftingData.recipe(String(rid))
+		if not rec.has("yields_item"):
+			continue
+		gear += 1
+		var sell: int = int(EconomyData.SELL_BY_RARITY.get(
+			String((rec.yields_item as Dictionary).get("rarity", "normal")), 4))
+		var cost := 0
+		var buyable := true
+		for mid in rec.inputs:
+			var c: int = _buy_cost(String(mid), prices)
+			if c < 0:
+				buyable = false
+				break
+			cost += c * int(rec.inputs[mid])
+		if buyable:
+			_check("%s sells %dg < costs %dg" % [String(rid), sell, cost],
+				sell < cost)
+		else:
+			_check("%s has an unbuyable input — no loop" % String(rid), true)
+	_check("forge carries the full gear ladder", gear >= 12, str(gear))
+	# The new recipes smith end-to-end with their gates and rarities.
+	var game = load("res://scripts/game.gd").new()
+	game._ready()
+	game.add_material("bogiron_bar", 2)
+	game.add_material("logs", 1)
+	_check("cap gated at earth 1", not game.craft("forge", "bogiron_cap_smith"))
+	game.trades.earth.lv = 5
+	_check("cap smiths at earth 5", game.craft("forge", "bogiron_cap_smith"))
+	var helm = null
+	for it in game.inventory.items:
+		if String(it.get("kind_id", "")) == "leather_helm":
+			helm = it
+	_check("cap is a magic leather_helm", helm != null
+		and String(helm.rarity) == "magic" and (helm.affixes as Array).size() == 1)
+	game.trades.earth.lv = 9
+	game.add_material("palechalk", 2)
+	game.add_material("copper_bar", 1)
+	_check("palechalk ring smiths at earth 9",
+		game.craft("forge", "palechalk_ring_smith"))
+	var ring = null
+	for it in game.inventory.items:
+		if String(it.get("kind_id", "")) == "copper_ring":
+			ring = it
+	_check("ring rolls rare w/ 3 affixes", ring != null
+		and String(ring.rarity) == "rare" and (ring.affixes as Array).size() == 3)
+	game.free()
+
+# Hod's effective price for a material, following smelt recipes one level
+# down (bogiron_bar = 2× bogiron_ore). -1 = not buyable at any price.
+func _buy_cost(id: String, prices: Dictionary) -> int:
+	if prices.has(id):
+		return int(prices[id])
+	for rid in CraftingData.RECIPES:
+		var rec: Dictionary = CraftingData.RECIPES[rid]
+		if String(rec.get("yields_material", "")) != id:
+			continue
+		var total := 0
+		for mid in rec.inputs:
+			var c: int = _buy_cost(String(mid), prices)
+			if c < 0:
+				return -1
+			total += c * int(rec.inputs[mid])
+		return ceili(float(total) / float(rec.get("yields_n", 1)))
+	return -1
 
 func _test_save_roundtrip() -> void:
 	print("[save/load]")
@@ -250,6 +374,7 @@ func _test_save_roundtrip() -> void:
 	game.summit_cleared = true
 	game.muted = true   # spec 38 — the mute preference rides the save
 	game.loadout = ["PiercingBolt", "MultiShot", "RainOfThorns"]
+	game.trades.erase("hunt")   # simulate a pre-B7 save on disk
 	var ItemsData = load("res://data/items.gd")
 	var item: Dictionary = ItemsData.make_item("shortbow", "magic")
 	var fit: Dictionary = game.inventory.find_first_fit(item)
@@ -275,6 +400,8 @@ func _test_save_roundtrip() -> void:
 	_check("equipment restored w/ Color", helm != null and helm.icon_color is Color)
 	_check("loadout restored", game2.loadout ==
 		["PiercingBolt", "MultiShot", "RainOfThorns"])
+	_check("pre-B7 save backfills Huntcraft",
+		(game2.trades as Dictionary).has("hunt") and game2.trade_lv("hunt") == 1)
 	SaveGame.clear()
 	_check("save file cleaned up", not SaveGame.has_save())
 	game.free()
@@ -287,9 +414,10 @@ func _test_charts_data() -> void:
 	_check("carto-1 weights = mineral_vein only",
 		w1.size() == 1 and w1.has("mineral_vein"), str(w1.keys()))
 	var w9 := ChartsData.compute_weights(1, [], 9)
-	# req ≤ 9: mineral_vein 1, bramble_bloom 4, tyrannical 5, wood_grove 7,
-	# festival_pace 7. Boss dens never roll at random (trophy slot only).
-	_check("carto-9 unlocks 7 random affixes", w9.size() == 7, str(w9.keys()))
+	# req ≤ 9: mineral_vein 1, bramble_bloom 4, tyrannical 5, sprinter 6,
+	# wood_grove 7, festival_pace 7, quiver 8, gilded 9. Boss dens never
+	# roll at random (trophy slot only).
+	_check("carto-9 unlocks 8 random affixes", w9.size() == 8, str(w9.keys()))
 	# Ink bias multiplies and renormalizes.
 	var wb := ChartsData.compute_weights(1, ["hedge_ink"], 9)
 	_check("hedge ink raises bramble_bloom share",

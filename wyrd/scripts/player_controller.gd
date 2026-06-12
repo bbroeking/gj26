@@ -351,7 +351,8 @@ func _physics_process(delta: float) -> void:
 	_tick_statuses(delta)
 	# Focus regen — slower while in combat (encourages a spend rhythm).
 	var regen_rate: float = FOCUS_REGEN_IN if _combat_t > 0.0 else FOCUS_REGEN_OUT
-	focus = clampf(focus + regen_rate * delta, 0.0, focus_max)
+	focus = clampf(focus + regen_rate * _chart_focus_mult() * delta,
+		0.0, focus_max)
 	if _hud != null and _hud.has_method("set_focus"):
 		_hud.set_focus(focus, focus_max)
 	# Spec 33a — refresh HP suffix with any active statuses (no-op if none).
@@ -893,12 +894,20 @@ func _derive_stats() -> void:
 				_add_stat(sums, String(a.get("stat", "")), a.get("value", 0))
 	for k in shrine_buffs:
 		_add_stat(sums, String(k), shrine_buffs[k])
+	# B7 — Huntcraft perks ride the same sums.
+	var game_h := get_tree().root.get_node_or_null("Game")
+	if game_h != null:
+		if game_h.perk_active("hunt", "steady_hands"):
+			_add_stat(sums, "crit_chance", 0.05)
+		if game_h.perk_active("hunt", "hunters_stride"):
+			_add_stat(sums, "move_speed", 0.05)
 	derived_stats = {
 		"hp_max":              PLAYER_HP + int(sums.hp),
 		"damage":              6 + int(sums.damage),
 		"crit_chance":         clampf(0.20 + float(sums.crit_chance), 0.0, 1.0),
 		"crit_mult_bonus":     float(sums.crit_mult),
-		"fire_cooldown":       FIRE_COOLDOWN / (1.0 + float(sums.fire_rate)),
+		"fire_cooldown":       FIRE_COOLDOWN / ((1.0 + float(sums.fire_rate))
+			* _chart_fire_mult()),
 		"run_speed":           RUN_SPEED * (1.0 + float(sums.move_speed)) * _chart_speed_mult(),
 		"walk_speed":          WALK_SPEED * (1.0 + float(sums.move_speed)) * _chart_speed_mult(),
 		# Spec 30 — capped CDR for skill 2-4 cooldowns. Skill 1 (BasicShot)
@@ -910,6 +919,28 @@ func _derive_stats() -> void:
 	hp = mini(hp, hp_max)
 	if _hud != null:
 		_hud.set_hp(hp, hp_max)
+
+# B6 — Quiver: +20% fire rate in-chart; Damp Strings: -10%.
+func _chart_fire_mult() -> float:
+	var game := get_tree().root.get_node_or_null("Game")
+	if game == null or not bool(game.in_dungeon):
+		return 1.0
+	if game.affix_good("quiver"):
+		return 1.2
+	if game.affix_bad("quiver"):
+		return 0.9
+	return 1.0
+
+# B6 — Echoing Steps: +50% focus regen in-chart; Hollow Echo: -25%.
+func _chart_focus_mult() -> float:
+	var game := get_tree().root.get_node_or_null("Game")
+	if game == null or not bool(game.in_dungeon):
+		return 1.0
+	if game.affix_good("echoing"):
+		return 1.5
+	if game.affix_bad("echoing"):
+		return 0.75
+	return 1.0
 
 # B6 — Mired Boots (sprinter's bad twin): -10% player speed in-chart.
 func _chart_speed_mult() -> float:
