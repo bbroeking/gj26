@@ -26,6 +26,7 @@ window/size/viewport_height=720
 Hitstop="*res://scripts/hitstop.gd"
 Sfx="*res://scripts/sfx.gd"
 Checkpoint="*res://scripts/checkpoint.gd"
+NetGame="*res://scripts/net_game.gd"
 Game="*res://scripts/game.gd"
 
 [layer_names]

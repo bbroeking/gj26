@@ -86,7 +86,7 @@ func _ready() -> void:
 		if _game != null and _game.set_loadout(_picks):
 			_close())
 	col.add_child(_apply)
-	get_tree().paused = true
+	get_node("/root/Game").modal_opened()
 	_render()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -94,7 +94,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_close()
 
 func _close() -> void:
-	get_tree().paused = false
+	get_node("/root/Game").modal_closed()
 	queue_free()
 
 func _render() -> void:

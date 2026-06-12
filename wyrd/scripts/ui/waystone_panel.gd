@@ -93,7 +93,7 @@ func _ready() -> void:
 	_go_btn.pressed.connect(_on_go)
 	_panel.add_child(_go_btn)
 
-	get_tree().paused = true
+	get_node("/root/Game").modal_opened()
 	_render()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -101,7 +101,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_close()
 
 func _close() -> void:
-	get_tree().paused = false
+	get_node("/root/Game").modal_closed()
 	queue_free()
 
 func _render() -> void:
@@ -151,6 +151,6 @@ func _on_go() -> void:
 	if _game == null or _selected < 0 or _selected >= (_game.charts as Array).size():
 		return
 	var chart: Dictionary = _game.charts[_selected]
-	get_tree().paused = false
+	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()

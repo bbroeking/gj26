@@ -68,7 +68,26 @@ func _ready() -> void:
 	_place_dressing()
 	_place_herb_patches()
 	_build_environment()
-	_position_player()
+	# Spec 46 Phase A — in a co-op session the baked single-player body is
+	# replaced by one player per peer; offline keeps the shipped path.
+	if NetGame.active:
+		NetGame.setup_scene(self)
+	else:
+		_position_player()
+	# Dev: WYRD_NET=host | join:<ip[:port]> — light/join a fire at boot.
+	var net_env := OS.get_environment("WYRD_NET")
+	if net_env == "host" and not NetGame.active:
+		NetGame.host()
+		NetGame.setup_scene(self)
+	elif net_env.begins_with("join:") and not NetGame.active:
+		var addr := net_env.trim_prefix("join:")
+		var port := NetGame.DEFAULT_PORT
+		if ":" in addr:
+			port = int(addr.split(":")[1])
+			addr = addr.split(":")[0]
+		NetGame.join(addr, port)
+		NetGame.roster_changed.connect(func():
+			NetGame.setup_scene(self), CONNECT_ONE_SHOT)
 	# Dev: WYRD_SHOT=1 godot ... → save /tmp/wyrd_town.png after the scene
 	# settles (layout_loader's DEBUG_SHOT pattern).
 	if OS.get_environment("WYRD_SHOT") != "":
@@ -117,6 +136,9 @@ func _ready() -> void:
 				var cpanel: CanvasLayer = load("res://scripts/ui/craft_panel.gd").new()
 				cpanel.station_id = sid
 				add_child(cpanel)
+			elif OS.get_environment("WYRD_UI_SHOT") == "lantern":
+				var lm: CanvasLayer = load("res://scripts/ui/system_menu.gd").new()
+				add_child(lm)
 			elif OS.get_environment("WYRD_UI_SHOT") == "dialog":
 				var dlg: CanvasLayer = load("res://scripts/ui/dialog_panel.gd").new()
 				dlg.open("Mara Linnet, the Wayfinder",

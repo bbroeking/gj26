@@ -53,7 +53,7 @@ func _ready() -> void:
 	_view.bench = self
 	_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_panel.add_child(_view)
-	get_tree().paused = true
+	get_node("/root/Game").modal_opened()
 
 func _process(delta: float) -> void:
 	# The tutorial highlight pulses; only redraw while one is active.
@@ -66,7 +66,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		close()
 
 func close() -> void:
-	get_tree().paused = false
+	get_node("/root/Game").modal_closed()
 	queue_free()
 
 # ---- the public crafting API (UI handlers + tests both use these) ----

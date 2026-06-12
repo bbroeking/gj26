@@ -69,9 +69,9 @@ func setup(buffs: Array) -> void:
 		btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		btn.pressed.connect(_on_pressed.bind(b))
 		_hbox.add_child(btn)
-	get_tree().paused = true
+	get_node("/root/Game").modal_opened()
 
 func _on_pressed(buff: Dictionary) -> void:
-	get_tree().paused = false
+	get_node("/root/Game").modal_closed()
 	chosen.emit(buff)
 	queue_free()

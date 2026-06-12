@@ -105,12 +105,12 @@ func _ready() -> void:
 	_buy_box.add_theme_constant_override("separation", 4)
 	col2.add_child(_buy_box)
 
-	get_tree().paused = true
+	get_node("/root/Game").modal_opened()
 	_render()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		get_tree().paused = false
+		get_node("/root/Game").modal_closed()
 		queue_free()
 
 func _render() -> void:

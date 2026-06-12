@@ -159,6 +159,22 @@ var skills: Array = []
 
 func _ready() -> void:
 	add_to_group("player")
+	# Spec 46 Phase A — in a co-op session only the authority's machine
+	# simulates this body; everyone else's copy is a synced puppet.
+	var net := get_node_or_null("/root/NetGame")
+	var net_on: bool = net != null and bool(net.active)
+	_is_remote = net_on and not is_multiplayer_authority()
+	if net_on:
+		var tag := Label3D.new()
+		tag.text = String(net.peer_name(get_multiplayer_authority()))
+		tag.position = Vector3(0.0, 2.35, 0.0)
+		tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		tag.font_size = 40
+		tag.pixel_size = 0.008
+		tag.modulate = Color(0.96, 0.92, 0.80)
+		tag.outline_size = 10
+		tag.outline_modulate = Color(0.12, 0.09, 0.06)
+		add_child(tag)
 	_bind("p_fwd",   [KEY_W, KEY_UP])
 	_bind("p_back",  [KEY_S, KEY_DOWN])
 	_bind("p_left",  [KEY_A, KEY_LEFT])
@@ -212,8 +228,9 @@ func _ready() -> void:
 		_setup_clips()
 	_attach_bow()
 
+	# Spec 46 — puppets carry no HUD, panels, or hotbar; one set per machine.
 	var scn := get_tree().current_scene
-	if scn != null:
+	if scn != null and not _is_remote:
 		_hud = scn.get_node_or_null("PlayerHUD")
 		# Spec 27c — instance the inventory panel for this scene. Deferred —
 		# the scene is mid-_ready while we're a child of it.
@@ -338,6 +355,11 @@ func set_spawn(pos: Vector3) -> void:
 	_spawn_pos = pos
 
 func _physics_process(delta: float) -> void:
+	# Spec 46 Phase A — puppets only chase their synced transform.
+	if _is_remote:
+		_net_remote_tick(delta)
+		return
+	_net_send_tick(delta)
 	_iframe_t = maxf(0.0, _iframe_t - delta)
 	_dash_cd = maxf(0.0, _dash_cd - delta)
 	_roll_cd = maxf(0.0, _roll_cd - delta)
@@ -379,6 +401,18 @@ func _physics_process(delta: float) -> void:
 	# white-out the player could still grab loot, open panels, and even step
 	# through the exit waystone (cancelling death and banking the run).
 	if dead:
+		return
+	# Spec 46 — while a modal owns the keys in co-op the body just settles
+	# (offline the tree pause makes this unreachable). Esc opens the lantern
+	# menu when nothing else is open.
+	if game_r != null and int(game_r.modal_count) > 0:
+		velocity.x = move_toward(velocity.x, 0.0, 30.0 * delta)
+		velocity.z = move_toward(velocity.z, 0.0, 30.0 * delta)
+		move_and_slide()
+		return
+	if Input.is_action_just_pressed("ui_cancel"):
+		var menu: CanvasLayer = load("res://scripts/ui/system_menu.gd").new()
+		get_tree().current_scene.add_child(menu)
 		return
 	if Input.is_action_just_pressed("fire"):
 		_fire_buffer = INPUT_BUFFER_SEC
@@ -1106,6 +1140,46 @@ func _try_interact() -> void:
 	if _active_interactable.has_method("show_prompt"):
 		_active_interactable.show_prompt(false)
 	_active_interactable = null
+
+# ---- spec 46 Phase A: co-op body sync ----
+# The authority broadcasts position/yaw/moving at NET_SEND_HZ over an
+# unreliable ordered RPC; every other machine lerps its puppet toward the
+# last state. Identical node paths per peer (NetGame names players by id)
+# make the RPC routing free.
+var _is_remote := false
+var _net_accum := 0.0
+var _net_has_target := false
+var _net_target_pos := Vector3.ZERO
+var _net_target_yaw := 0.0
+var _net_moving := false
+const NET_SEND_HZ := 12.0
+
+func _net_send_tick(delta: float) -> void:
+	var net := get_node_or_null("/root/NetGame")
+	if net == null or not bool(net.active):
+		return
+	_net_accum += delta
+	if _net_accum < 1.0 / NET_SEND_HZ:
+		return
+	_net_accum = 0.0
+	var yaw: float = _mesh.rotation.y if _mesh != null else 0.0
+	_net_state.rpc(global_position, yaw,
+		Vector2(velocity.x, velocity.z).length() > 0.5)
+
+@rpc("authority", "unreliable_ordered")
+func _net_state(pos: Vector3, yaw: float, moving: bool) -> void:
+	_net_has_target = true
+	_net_target_pos = pos
+	_net_target_yaw = yaw
+	_net_moving = moving
+
+func _net_remote_tick(delta: float) -> void:
+	if not _net_has_target:
+		return
+	var t := minf(1.0, delta * 10.0)
+	global_position = global_position.lerp(_net_target_pos, t)
+	if _mesh != null:
+		_mesh.rotation.y = lerp_angle(_mesh.rotation.y, _net_target_yaw, t)
 
 # B5-wave2 — Heartwood Ward: a timed absorb pool soaked in take_damage.
 var _ward_hp := 0

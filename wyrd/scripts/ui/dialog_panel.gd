@@ -77,7 +77,7 @@ func _ready() -> void:
 	_hint.offset_left = -310
 	_hint.offset_top = -48
 	_panel.add_child(_hint)
-	get_tree().paused = true
+	get_node("/root/Game").modal_opened()
 	_render()
 
 func open(speaker: String, pages: Array) -> void:
@@ -127,7 +127,7 @@ func _finish() -> void:
 	if _done:
 		return
 	_done = true
-	get_tree().paused = false
+	get_node("/root/Game").modal_closed()
 	finished.emit()
 	queue_free()
 

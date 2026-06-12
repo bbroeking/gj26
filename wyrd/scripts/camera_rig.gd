@@ -56,7 +56,20 @@ func _ready() -> void:
 	# E double-bind made every chest-open also whip the camera).
 	_bind("cam_yaw_left", KEY_Z)
 	_bind("cam_yaw_right", KEY_C)
-	_player = get_tree().get_first_node_in_group("player")
+	# Spec 46 — follow the LOCAL player (in co-op the first in the group may
+	# be a friend's puppet). Deferred: NetGame spawns players after scene
+	# _ready, so retry until one with our authority exists.
+	_acquire_player.call_deferred()
+
+func _acquire_player() -> void:
+	for p in get_tree().get_nodes_in_group("player"):
+		var net := get_node_or_null("/root/NetGame")
+		if net == null or not bool(net.active) \
+				or (p as Node).is_multiplayer_authority():
+			_player = p
+			return
+	if is_inside_tree():
+		get_tree().create_timer(0.2).timeout.connect(_acquire_player)
 
 func _bind(action: String, key: Key) -> void:
 	# Wyrd — a re-instanced rig (Town↔Dungeon transitions) must not append

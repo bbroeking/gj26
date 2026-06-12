@@ -243,6 +243,25 @@ func _run() -> void:
 	await process_frame
 	_check("bench unpaused on close", not paused)
 
+	# Spec 46 Phase A — session + modal semantics on the real autoloads.
+	var net := root.get_node_or_null("NetGame")
+	_check("netgame autoload idle", net != null and not net.active)
+	game.modal_opened()
+	_check("offline modal pauses the tree", paused and game.modal_count == 1)
+	game.modal_closed()
+	_check("offline close unpauses", not paused and game.modal_count == 0)
+	_check("hosting opens a session", net.host(17777))
+	_check("host flag + roster of one", net.active and net.is_host()
+		and (net.players as Dictionary).size() == 1)
+	game.modal_opened()
+	_check("in-session modal does NOT pause the tree",
+		not paused and game.modal_count == 1)
+	game.modal_closed()
+	game.enter_dungeon({}, null)   # gated: must refuse while in session
+	_check("co-op blocks the hollows for now", not game.in_dungeon)
+	net.leave()
+	_check("leave ends the session", not net.active)
+
 	# Input-map hygiene across two player instances: one event per key.
 	var ev_count := InputMap.action_get_events("interact").size()
 	_check("no duplicate interact bindings", ev_count == 1, str(ev_count))

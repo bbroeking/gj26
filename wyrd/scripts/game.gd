@@ -51,6 +51,39 @@ func drain_pending_toasts() -> Array:
 	pending_toasts.clear()
 	return out
 
+# ---- spec 46 Phase A: modal accounting ----
+# Offline, a modal pauses the tree exactly as it always did. In co-op the
+# tree must keep simulating (the host opening the vendor cannot freeze the
+# server), so modals just count and the LOCAL player's input gates on
+# modal_count instead.
+var modal_count := 0
+
+# NetGame looked up at runtime, never as a compile-time global — the loop
+# test loads this script from SceneTree._init, before autoloads register.
+func net_active() -> bool:
+	if not is_inside_tree():
+		return false
+	var net := get_node_or_null("/root/NetGame")
+	return net != null and bool(net.active)
+
+func modal_opened() -> void:
+	modal_count += 1
+	if not net_active() and is_inside_tree():
+		get_tree().paused = true
+
+func modal_closed() -> void:
+	modal_count = maxi(0, modal_count - 1)
+	if not net_active() and modal_count == 0 and is_inside_tree():
+		get_tree().paused = false
+
+# The player this machine controls: offline it's the only one; in co-op
+# it's the body whose multiplayer authority is ours.
+func local_player() -> Node:
+	for p in get_tree().get_nodes_in_group("player"):
+		if not net_active() or (p as Node).is_multiplayer_authority():
+			return p
+	return null
+
 # ---- persistence ----
 # Headless tests drive the real autoload through the whole loop — without
 # this gate they would both inherit and clobber the player's actual save.
@@ -630,6 +663,10 @@ func add_chart(chart: Dictionary) -> void:
 
 # Socket a chart at the Waystone: consume it, snapshot the player, swap scenes.
 func enter_dungeon(chart: Dictionary, player: Node) -> void:
+	# Spec 46 Phase A — co-op stays in town until Phase B syncs the hollows.
+	if net_active():
+		notify("The hollows can't hold a party yet — delving together comes soon.")
+		return
 	_defer_toasts = true       # the dungeon HUD will drain these in _ready
 	charts.erase(chart)
 	charts_changed.emit()

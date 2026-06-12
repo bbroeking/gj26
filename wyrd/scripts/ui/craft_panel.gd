@@ -98,12 +98,12 @@ func _ready() -> void:
 	_satchel_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(_satchel_lbl)
 
-	get_tree().paused = true
+	get_node("/root/Game").modal_opened()
 	_render()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		get_tree().paused = false
+		get_node("/root/Game").modal_closed()
 		queue_free()
 
 func _render() -> void:

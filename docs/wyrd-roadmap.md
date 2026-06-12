@@ -125,11 +125,16 @@ Specs 38–41 + notes.
     rolls + fixed Summit patches); capstone gear out of the drop pool;
     skill bar carries glyphs/tooltips for all 9 skills; vendor/waystone
     lists scroll; Hod's hint stops promising ore-selling.
-13. **Multiplayer co-op — spec 46 (NEXT, decided)**: host-authoritative
-    ENet, 2-4 players, chart-run-as-party-instance. Phase A "town
-    together" first (forces the de-singletonizing; modal de-pause +
-    local hitstop are pre-work). Patterns adopted from the
-    world-of-claudecraft study (.claudecraft-ref/).
+13. **Multiplayer co-op — spec 46**: ~~Phase A "town together"~~
+    **SHIPPED 2026-06-12**: NetGame autoload (ENet host-auth, roster,
+    per-peer spawns), Esc opens The Lantern (host port 7777 / join by
+    IP / roster / leave), 12 Hz transform sync + name tags, all seven
+    modals stopped pausing the tree in-session (offline unchanged),
+    camera/HUD bind the local body, dungeons gated until Phase B.
+    Two-process headless loopback smoke test green; `WYRD_NET=host` /
+    `join:<ip>` dev hooks. **Phase B next**: dungeon co-op (synced
+    enemies, host-validated casts, party run flow) — pre-work: local
+    hitstop, puppet walk anim, reconnect grace.
 14. **Queue — next candidates:** buff HUD chip, discovery feel pass,
     skill-icon paint-over once `sheet-icons` lands, fresh-save tutorial
     + boss-feel playtests (user-side), UI mock picks (round 2, your

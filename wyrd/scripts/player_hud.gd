@@ -270,7 +270,10 @@ func _build_action_bar() -> void:
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var method: String = spec[2]
 		b.pressed.connect(func():
-			var player := get_tree().get_first_node_in_group("player")
+			# Spec 46 — route HUD buttons to the LOCAL player in co-op.
+			var game := get_tree().root.get_node_or_null("Game")
+			var player: Node = game.local_player() if game != null \
+				else get_tree().get_first_node_in_group("player")
 			if player != null and player.has_method(method):
 				player.call(method))
 		bar.add_child(b)
