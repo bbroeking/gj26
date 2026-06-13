@@ -102,8 +102,9 @@ Specs 38–41 + notes.
    deeper three (4 / 7 / 9) — kills teach the hunting verbs; locked rows
    stand visible in the loadout picker.
 10. **UI detail pass — reference round 2 (IN FLIGHT, user-side)**:
-    12 Midjourney prompts in `docs/wyrd-ui-reference-prompts.md`
-    (8 page heroes + 4 crop-ready element sheets). Generate → drop in
+    12 Midjourney prompts (8 page heroes + 4 crop-ready element sheets)
+    — preserved in `../kb/wiki/pipeline/Concept Art Prompts.md` and
+    `kb/wiki/pipeline/UI Workflow.md`. Generate → drop in
     `docs/ui-refs/round2/` → measure/crop/implement (the spec-39 flow).
 11. ~~Trade ladders to the cap — specs 45-*~~ **SHIPPED 2026-06-12**
     (ADR 0006: demo level cap 17, enforced in `award_xp`). Wildcraft: 6
@@ -151,9 +152,9 @@ Specs 38–41 + notes.
 
 ## Standing followups
 
-- **Animation backlog** (`docs/wyrd-animation-backlog.md`): P1 mostly
-  shipped 2026-06-12 — gather swing loop + tool-in-hand + node strike
-  pulses, quaff tip-back, bench socket pops + pot mix bloom. Still owed:
+- **Animation backlog** (now in `../kb/wiki/pipeline/Animation Pipeline.md`):
+  P1 mostly shipped 2026-06-12 — gather swing loop + tool-in-hand + node
+  strike pulses, quaff tip-back, bench socket pops + pot mix bloom. Still owed:
   craft scroll-and-seal, waystone chart-socketing, P2/P3 sets.
 
 - Save-file safety: `_test_save_roundtrip` writes/deletes the REAL save.
@@ -168,9 +169,7 @@ Specs 38–41 + notes.
 | Doc | Role |
 |---|---|
 | `wyrd-roadmap.md` | this — consolidated state + queue |
-| `wyrd-skills-combat-plan.md` | A/B-track detail (v2, plan-optimized) |
-| `wyrd-ui-design-pass.md` | Claude-Design workflow + lessons |
-| `wyrd-trades-recap.md` | trade-system ground truth + stale-doc audit |
-| `specs/3x-4x-*.md` (+ notes) | per-feature contracts and deltas |
-| `adr/` | 0003 cozy-skilling spine · 0004 controls · 0005 Huntcraft |
-| `WORLD_BIBLE.md` / `CONTEXT.md` | voice / domain language |
+| `../kb/` | the LLM Wiki — synthesized, interlinked design map (start at `kb/index.md`). The loose `docs/*.md` design docs (skills/combat plan, UI design pass, trades recap, playbooks, cartography notes, etc.) were folded in here and removed 2026-06-13 |
+| `specs/*.md` (+ notes) | per-feature contracts and deltas (immutable record) |
+| `adr/` | 0003 cozy-skilling spine · 0004 controls · 0005 Huntcraft · 0006 cap 17 |
+| `WORLD_BIBLE.md` / `WORLD_LORE.md` / `CONTEXT.md` | voice / lore / domain language |

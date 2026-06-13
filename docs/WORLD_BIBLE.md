@@ -36,9 +36,9 @@ intimacy is the point.
   than "blast." Bramble-imp bites are described as "a nasty pinch."
 - **Hayao Miyazaki + Beatrix Potter + Wind Waker.** That's the triangle.
 
-The locked UI aesthetic (`docs/UI_BIBLE.md`) — cream paper, brown ink, sage
-and terracotta watercolor washes — is the visual half of this tone. Keep
-the writing matching the look.
+The locked UI aesthetic (`../kb/wiki/systems/UI and HUD.md`) — cream paper,
+brown ink, sage and terracotta watercolor washes — is the visual half of this
+tone. Keep the writing matching the look.
 
 ## Player identity
 
@@ -190,11 +190,12 @@ item IDs use this taxonomy.
 
 ## Cross-references
 
-- `docs/UI_BIBLE.md` — visual language; tone in the writing must match the
-  cream-paper feel.
-- `docs/ART_BIBLE.md` — 3D model style; characters here look like the cow,
-  knight, goblin already in `models/`.
-- `docs/ONBOARDING.md` — the OSRS Tutorial Island reference; will need to
-  be re-flavored to "the new arrival's first day in Bramblewood" before it
-  ships.
+The visual-language, art-style, and onboarding docs that used to live
+beside this file were folded into the `kb/` design wiki and removed
+2026-06-13. See:
+
+- `kb/wiki/systems/UI and HUD.md` + `kb/wiki/pipeline/UI Workflow.md` —
+  visual language; tone in the writing must match the cream-paper feel.
+- `kb/wiki/pipeline/Art Bible.md` — 3D model style.
+- `kb/wiki/systems/Onboarding and Tutorial.md` — the first-day-in-Bramblewood flow.
 - `CLAUDE.md` — engineering spec; references this Bible for naming.

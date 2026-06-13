@@ -84,6 +84,9 @@ docs/                      ← world bible, plans, specs/, adr/, ui-refs/
   `_ready`.
 - **All player-visible writing** follows `docs/WORLD_BIBLE.md` voice; code
   identifiers stay generic.
-- Plans/state: `docs/wyrd-roadmap.md` (consolidated), detail in
-  `docs/wyrd-skills-combat-plan.md`, `docs/wyrd-ui-design-pass.md`,
-  `docs/specs/` (+ per-spec notes files).
+- Plans/state: `docs/wyrd-roadmap.md` (consolidated) + `docs/specs/`
+  (+ per-spec notes files). The synthesized, interlinked design wiki —
+  systems, entities, world, decisions, pipeline — lives in `kb/` (an
+  LLM Wiki; start at `kb/index.md`, schema in `kb/CLAUDE.md`). The loose
+  design docs that used to sit in `docs/` were folded into `kb/` and
+  removed 2026-06-13.
