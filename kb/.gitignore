@@ -1,0 +1,9 @@
+# Obsidian per-user / volatile state (machine-specific, changes constantly)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+.obsidian/plugins/*/data.json
+
+# generated query outputs (regenerate on demand; file the keepers into wiki/)
+outputs/*
+!outputs/.gitkeep
