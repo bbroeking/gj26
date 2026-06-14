@@ -30,6 +30,11 @@ the workflows. Co-evolve it as the wiki grows.
      inks, skills, bosses, enemies, items/gear, gather nodes, NPCs).
    - `wiki/decisions/` — digest of the ADRs (the surprising, hard-to-reverse calls).
    - `wiki/pipeline/` — how art/assets/anim/code get made (Godot, Blender, Meshy…).
+   - `wiki/research/` — external research: the MMO cluster + cross-cutting design
+     and implementation pages, synthesized for Wayfinder.
+   - `wiki/games/` — **game case studies** (the "setups"): one page per game
+     (design + implementation + a Wayfinder-relevance note), grouped by genre
+     subfolder. Catalogued/tracked in `wiki/games/Game Index.md`. Target: 260.
    - `wiki/sources/` — per-cluster source digests: which raw docs were read, a
      one-line summary of each, and what wiki pages they fed.
 
@@ -50,7 +55,7 @@ Navigation files at the vault root: `index.md` (content catalog) and
 - **Every page starts with YAML frontmatter:**
   ```yaml
   ---
-  type: world | system | entity | decision | pipeline | source | overview
+  type: world | system | entity | concept | decision | pipeline | source | overview | game
   tags: [trade, progression]      # lowercase, kebab; for Dataview/graph
   status: stub | draft | maintained
   updated: 2026-06-13              # ISO date; pass dates in, don't invent
