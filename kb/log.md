@@ -97,3 +97,9 @@ Greppable: `grep "^## \[" log.md | tail`.
   cross-cutting impl / cross-cutting design / synthesis).
 - Fixed 13 newline-spanning wikilinks + one non-page [[Wayfinder]] link.
 - Lint clean: **72 pages, ~97K words, 0 unresolved links, 0 multi-line links.**
+
+## [2026-06-14] ingest | Game Studies — 260 game case studies (complete)
+- Built [[Game Index]] (260 titles, 19 genres) + [[Game Studies]] hub; added games/ folder + `game` type to schema.
+- Wrote all 260 dedicated game case studies (design + implementation + Wayfinder relevance), web-researched via 4 waves of parallel research agents; raw provenance in `raw/games/`.
+- Genres: MMORPG, ARPG/looter, roguelike, survival, life-sim, RPG/immersive-sim, soulslike, metroidvania, strategy/4X, colony-sim, MOBA, CCG/deckbuilder, fighting, FPS/hero/BR, co-op, sandbox/UGC, sports/rhythm, puzzle, tower-defense.
+- Lint clean: 0 unresolved wikilinks, frontmatter on every page.

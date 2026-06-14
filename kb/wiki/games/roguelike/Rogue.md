@@ -41,7 +41,7 @@ Rogue is the genre singularity. Every mechanic it introduced — procedural dung
 ## See also
 
 - [[Game Index]] · [[Game Studies]] · [[Design Influences]]
-- [[NetHack (1987)]] · [[Spelunky (2008)]] — direct descendants
+- [[NetHack]] · [[Spelunky]] — direct descendants
 - [[Dungeon Generation]] · [[Chart Loop]] · [[Affixes]]
 - [[MMO Progression Systems]] · [[MMO Lessons for Wayfinder]]
 

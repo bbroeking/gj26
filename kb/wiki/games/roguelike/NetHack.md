@@ -15,7 +15,7 @@ A free, open-source single-player roguelike first released July 28, 1987 by the 
 
 ## Design
 
-- **Origin:** NetHack is a fork of *Hack* (1984), which itself descended from [[Rogue (1980)]]. The name reflects that developers collaborated over the Internet — unusual for 1987.
+- **Origin:** NetHack is a fork of *Hack* (1984), which itself descended from [[Rogue]]. The name reflects that developers collaborated over the Internet — unusual for 1987.
 - **Emergent simulation over authored content:** NetHack's design philosophy centers on interconnected rules rather than scripted scenarios. Hundreds of monsters, items, terrain types, and environmental features interact under consistent physics. Players can dip a sword in a potion to identify it, engrave text with a wand to test its charges, or polymorphed into a monster to bypass locked doors. No single "correct" path exists.
 - **TDTTOE ("The DevTeam Thinks of Everything"):** The community acronym for moments when the game has programmed a response to even the most absurd player action. Sacrificing a unicorn horn on an altar, writing your own name in blood — the game responds to these edge cases. This perceived omniscience is a design goal: every interaction should have a meaningful consequence.
 - **Dungeon structure:** ~50 procedurally generated levels descending through multiple branches — the main dungeon, Gehennom (a hell-themed lower section), the Gnomish Mines, Sokoban, and class-specific quest branches. The objective: retrieve the Amulet of Yendor from the deepest level and ascend through the Astral Plane.
@@ -44,7 +44,7 @@ NetHack demonstrates that *consistent rule systems generate better content than 
 ## See also
 
 - [[Game Index]] · [[Game Studies]] · [[Design Influences]]
-- [[Rogue (1980)]] — parent; [[Spelunky (2008)]] — spiritual descendant
+- [[Rogue]] — parent; [[Spelunky]] — spiritual descendant
 - [[Dungeon Generation]] · [[Affixes]] · [[Balance Philosophy]]
 - [[MMO Progression Systems]] · [[MMO Lessons for Wayfinder]]
 

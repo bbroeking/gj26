@@ -44,8 +44,8 @@ Rebirth is the definitive case study in *emergent complexity from a consistent i
 ## See also
 
 - [[Game Index]] · [[Game Studies]] · [[Design Influences]]
-- [[Rogue (1980)]] · [[NetHack (1987)]] · [[Spelunky (2008)]] — genre ancestors
-- [[Slay the Spire (2019)]] — roguelite sibling
+- [[Rogue]] · [[NetHack]] · [[Spelunky]] — genre ancestors
+- [[Slay the Spire]] — roguelite sibling
 - [[Items and Gear]] · [[Affixes]] · [[Dungeon Generation]] · [[Chart Loop]] · [[Balance Philosophy]]
 - [[Multiplayer Co-op]] · [[MMO Lessons for Wayfinder]]
 

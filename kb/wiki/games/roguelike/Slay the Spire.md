@@ -44,7 +44,7 @@ Slay the Spire proved that *cross-genre pollination is the richest source of new
 ## See also
 
 - [[Game Index]] · [[Game Studies]] · [[Design Influences]]
-- [[Rogue (1980)]] · [[NetHack (1987)]] · [[Spelunky (2008)]] · [[The Binding of Isaac Rebirth (2014)]] — roguelite ancestors
+- [[Rogue]] · [[NetHack]] · [[Spelunky]] · [[The Binding of Isaac Rebirth]] — roguelite ancestors
 - [[Chart Loop]] · [[Affixes]] · [[Items and Gear]] · [[Dungeon Generation]] · [[Multiplayer Co-op]]
 - [[Balance Philosophy]] · [[MMO Progression Systems]] · [[MMO Lessons for Wayfinder]]
 

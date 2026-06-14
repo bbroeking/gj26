@@ -47,23 +47,23 @@ See [[Game Studies]] for the hub once created. Target: 260.
 - [x] [[Grim Dawn]] (2016, Crate Entertainment) — dual-class mastery, faction reputation, devotion constellations
 - [x] [[Last Epoch]] (2024, Eleventh Hour Games) — timeline branching, item forging, endgame monolith
 - [x] [[Hades]] (2020, Supergiant) — narrative-integrated roguelite, heat system, boon synergies
-- [ ] [[Victor Vran]] (2015, Haemimont) — weapon-defines-kit, controller ARPG, destiny card system
-- [ ] [[Wolcen Lords of Mayhem]] (2020, Wolcen Studio) — wheel passive system, apocalyptic form
-- [ ] [[Minecraft Dungeons]] (2020, Mojang) — accessible ARPG, no class, enchantment power budget
-- [ ] [[Chronicon]] (2020, Subworld) — solo dev pixel ARPG, transmog, completionist systems
-- [ ] [[Sacred 2]] (2008, Ascaron) — open-world ARPG, mount system, seraphim lore
+- [x] [[Victor Vran]] (2015, Haemimont) — weapon-defines-kit, controller ARPG, destiny card system
+- [x] [[Wolcen Lords of Mayhem]] (2020, Wolcen Studio) — wheel passive system, apocalyptic form
+- [x] [[Minecraft Dungeons]] (2020, Mojang) — accessible ARPG, no class, enchantment power budget
+- [x] [[Chronicon]] (2020, Subworld) — solo dev pixel ARPG, transmog, completionist systems
+- [x] [[Sacred 2]] (2008, Ascaron) — open-world ARPG, mount system, seraphim lore
 - [x] [[Titan Quest]] (2006, Iron Lore) — dual mastery, mythological settings, anniversary remaster
-- [ ] [[Van Helsing Final Cut]] (2015, Neocore) — tower defense hybrid, Ink world dimension
-- [ ] [[Warhammer Inquisitor Martyr]] (2018, NeocoreGames) — persistent campaign, csm starmap
-- [ ] [[Loot River]] (2022, straka.studio) — block-sliding dungeon + ARPG hybrid
+- [x] [[Van Helsing Final Cut]] (2015, Neocore) — tower defense hybrid, Ink world dimension
+- [x] [[Warhammer Inquisitor Martyr]] (2018, NeocoreGames) — persistent campaign, csm starmap
+- [x] [[Loot River]] (2022, straka.studio) — block-sliding dungeon + ARPG hybrid
 
 ---
 
 ## Roguelike / Roguelite (21)
 - [x] [[Rogue]] (1980, Toy/Wichman) — the ur-template: procedural dungeon, permadeath, ASCII
 - [x] [[NetHack]] (1987, DevTeam) — deep systems, divine punishment, the most-studied roguelike
-- [ ] [[Angband]] (1990, Alex Cutler) — town-level shop, recall scroll, variant ecosystem
-- [ ] [[Dungeon Crawl Stone Soup]] (2006, community) — online high scores, species/background matrix
+- [x] [[Angband]] (1990, Alex Cutler) — town-level shop, recall scroll, variant ecosystem
+- [x] [[Dungeon Crawl Stone Soup]] (2006, community) — online high scores, species/background matrix
 - [x] [[Spelunky]] (2008, Derek Yu) — physics roguelite, ghost timer, tutorial mine design
 - [x] [[Spelunky 2]] (2020, Mossmouth) — layered secrets, cosmic horror, online ghost races
 - [x] [[The Binding of Isaac Rebirth]] (2014, Nicalis/McMillen) — item synergies, DLC cadence, floor boss pacing
@@ -72,15 +72,15 @@ See [[Game Studies]] for the hub once created. Target: 260.
 - [x] [[Enter the Gungeon]] (2016, Dodge Roll) — bullet-hell roguelite, synergy table, reload mechanic
 - [x] [[Slay the Spire]] (2019, MegaCrit) — deckbuilder + roguelite fusion, relic system, boss relics
 - [x] [[Balatro]] (2024, LocalThunk) — poker hand roguelite, joker economy, blind structure
-- [ ] [[Returnal]] (2021, Housemarque) — third-person bullet hell, selene narrative loop, alt-fire cycle
+- [x] [[Returnal]] (2021, Housemarque) — third-person bullet hell, selene narrative loop, alt-fire cycle
 - [x] [[Noita]] (2020, Nolla Games) — pixel physics, wand crafting, emergent chemistry disasters
 - [x] [[Caves of Qud]] (2015, Freehold Games) — deep world sim, mutation builds, procedural history
 - [x] [[Darkest Dungeon]] (2016, Red Hook) — stress mechanic, roster attrition, narrator framing
 - [x] [[Vampire Survivors]] (2021, Poncle) — bullet-heaven autobattler, evolution system, mass enemies
 - [x] [[Hades II]] (2024, Supergiant) — arcana system, surface/underworld dual maps, patron boons
-- [ ] [[Against the Storm]] (2023, Eremite Games) — roguelite city builder, biome hostility, queen reputation
-- [ ] [[Slice and Dice]] (2022, tann) — dice-based tactics roguelite, hero party synergies
-- [ ] [[Wildfrost]] (2023, Deadpan Games) — companion-card roguelite, counter system, sun chime
+- [x] [[Against the Storm]] (2023, Eremite Games) — roguelite city builder, biome hostility, queen reputation
+- [x] [[Slice and Dice]] (2022, tann) — dice-based tactics roguelite, hero party synergies
+- [x] [[Wildfrost]] (2023, Deadpan Games) — companion-card roguelite, counter system, sun chime
 
 ---
 
@@ -91,16 +91,16 @@ See [[Game Studies]] for the hub once created. Target: 260.
 - [x] [[Valheim]] (2021, Iron Gate) — Norse procedural, progression-locked biomes, comfort mechanic
 - [x] [[Subnautica]] (2018, Unknown Worlds) — story-survival, depth pressure, no weapons design
 - [x] [[The Forest]] (2018, Endnight) — co-op survival horror, cannibal AI, base defense
-- [ ] [[Green Hell]] (2019, Creepy Jar) — microsurvival, wound treatment sim, story mode
+- [x] [[Green Hell]] (2019, Creepy Jar) — microsurvival, wound treatment sim, story mode
 - [x] [[Grounded]] (2022, Obsidian) — backyard survival, bug behavior AI, scale design
-- [ ] [[Raft]] (2022, Redbeet Interactive) — floating-base survival, drift with current, ocean exploration
-- [ ] [[7 Days to Die]] (2013, The Fun Pimps) — horde night cadence, voxel building, blood moon scaling
+- [x] [[Raft]] (2022, Redbeet Interactive) — floating-base survival, drift with current, ocean exploration
+- [x] [[7 Days to Die]] (2013, The Fun Pimps) — horde night cadence, voxel building, blood moon scaling
 - [x] [[Rust]] (2018, Facepunch) — naked-start PvP, blueprint system, server wipe cycle
-- [ ] [[DayZ]] (2018, Bohemia) — hardcore survival, scarcity, emergent player banditry
+- [x] [[DayZ]] (2018, Bohemia) — hardcore survival, scarcity, emergent player banditry
 - [x] [[No Man's Sky]] (2016/updated, Hello Games) — live-service redemption arc, planet procedural, base sharing
 - [x] [[Satisfactory]] (2024, Coffee Stain) — factory automation, first-person perspective, phase gates
-- [ ] [[Astroneer]] (2019, System Era) — terrain deformation, byte economy, co-op automation
-- [ ] [[Enshrouded]] (2024, Keen Games) — voxel terrain, shroud mechanic, co-op crafting loop
+- [x] [[Astroneer]] (2019, System Era) — terrain deformation, byte economy, co-op automation
+- [x] [[Enshrouded]] (2024, Keen Games) — voxel terrain, shroud mechanic, co-op crafting loop
 
 ---
 
@@ -225,9 +225,9 @@ See [[Game Studies]] for the hub once created. Target: 260.
 - [x] [[Dota 2]] (2013, Valve) — complex mechanics, courier/vision, item depth, The International
 - [x] [[Heroes of the Storm]] (2015, Blizzard) — team XP, no last-hit, map objective variety
 - [x] [[Smite]] (2014, Hi-Rez) — third-person MOBA, console port, mythology theme
-- [ ] [[Predecessor]] (2024, Omeda Studios) — UE5 Paragon successor, lane design, ability kit
-- [ ] [[Battlerite]] (2017, Stunlock) — arena-brawler MOBA, no towers, pure teamfight
-- [ ] [[Vainglory]] (2014, Super Evil Megacorp) — mobile-first MOBA, touch precision design
+- [x] [[Predecessor]] (2024, Omeda Studios) — UE5 Paragon successor, lane design, ability kit
+- [x] [[Battlerite]] (2017, Stunlock) — arena-brawler MOBA, no towers, pure teamfight
+- [x] [[Vainglory]] (2014, Super Evil Megacorp) — mobile-first MOBA, touch precision design
 - [x] [[Paragon]] (2018, Epic Games) — 3D MOBA postmortem, card deck items, shutdown lessons
 
 ---
@@ -236,16 +236,16 @@ See [[Game Studies]] for the hub once created. Target: 260.
 - [x] [[Hearthstone]] (2014, Blizzard) — digital CCG simplification, mana crystal system, tavern brawl
 - [x] [[Magic The Gathering Arena]] (2019, WotC) — traditional CCG digitized, draft economy, format variety
 - [x] [[Legends of Runeterra]] (2020, Riot Games) — predict/nexus attack, slow speed, regional cards
-- [ ] [[Faeria]] (2017, Abrakam) — land-placement CCG, mana terrain, board strategy hybrid
-- [ ] [[Gwent The Witcher Card Game]] (2018, CD Projekt Red) — row-based CCG, standalone spinoff
+- [x] [[Faeria]] (2017, Abrakam) — land-placement CCG, mana terrain, board strategy hybrid
+- [x] [[Gwent The Witcher Card Game]] (2018, CD Projekt Red) — row-based CCG, standalone spinoff
 - [x] [[Marvel Snap]] (2022, Second Dinner) — 12-card deck, location design, snap escalation
 - [x] [[Teamfight Tactics]] (2019, Riot Games) — autobattler, trait synergies, augment system
-- [ ] [[Underlords]] (2019, Valve) — Dota autobattler, alliance system, underlord passive
-- [ ] [[Inscryption]] (2021, Daniel Mullins) — meta-narrative deckbuilder, sacrifice mechanic, boss tape
-- [ ] [[Dominion]] (2008, Rio Grande/digital) — the deck-building archetype, kingdom card variety
-- [ ] [[Eternal Card Game]] (2016, Dire Wolf) — dual-faction decks, full F2P draft, influence system
-- [ ] [[Mythgard]] (2019, Rhino Games) — lane-lock mechanic, enchantment placement
-- [ ] [[Cobalt Core]] (2023, Rocket Rat) — ship deckbuilder, hull damage, dual-character build
+- [x] [[Underlords]] (2019, Valve) — Dota autobattler, alliance system, underlord passive
+- [x] [[Inscryption]] (2021, Daniel Mullins) — meta-narrative deckbuilder, sacrifice mechanic, boss tape
+- [x] [[Dominion]] (2008, Rio Grande/digital) — the deck-building archetype, kingdom card variety
+- [x] [[Eternal Card Game]] (2016, Dire Wolf) — dual-faction decks, full F2P draft, influence system
+- [x] [[Mythgard]] (2019, Rhino Games) — lane-lock mechanic, enchantment placement
+- [x] [[Cobalt Core]] (2023, Rocket Rat) — ship deckbuilder, hull damage, dual-character build
 
 ---
 
@@ -255,9 +255,9 @@ See [[Game Studies]] for the hub once created. Target: 260.
 - [x] [[Guilty Gear Strive]] (2021, Arc System Works) — wall-break system, rollback netcode, anime art
 - [x] [[Mortal Kombat 1]] (2023, NetherRealm) — kameo system, fatality design, story mode production
 - [x] [[Super Smash Bros Ultimate]] (2018, Nintendo/Sora) — 80+ fighters, spirits system, online woes
-- [ ] [[Brawlhalla]] (2017, Blue Mammoth) — free-to-play platform fighter, legend roster, crossover skins
-- [ ] [[MultiVersus]] (2024, Player First) — WB IP fighter, perk tree, 2v2 focus design
-- [ ] [[Rivals of Aether]] (2017, Dan Fornace) — no-grab platform fighter, elemental rivals, workshop mods
+- [x] [[Brawlhalla]] (2017, Blue Mammoth) — free-to-play platform fighter, legend roster, crossover skins
+- [x] [[MultiVersus]] (2024, Player First) — WB IP fighter, perk tree, 2v2 focus design
+- [x] [[Rivals of Aether]] (2017, Dan Fornace) — no-grab platform fighter, elemental rivals, workshop mods
 
 ---
 
@@ -270,9 +270,9 @@ See [[Game Studies]] for the hub once created. Target: 260.
 - [x] [[Valorant]] (2020, Riot Games) — precise movement-and-shoot, agent abilities, anti-cheat Vanguard
 - [x] [[Apex Legends]] (2019, Respawn) — ping system, respawn beacon, legend kit design
 - [x] [[Fortnite]] (2017, Epic) — build mechanic, battle pass season model, live events
-- [ ] [[PUBG Battlegrounds]] (2017, Krafton) — battle royale template, zone shrink, ballistics model
+- [x] [[PUBG Battlegrounds]] (2017, Krafton) — battle royale template, zone shrink, ballistics model
 - [x] [[Team Fortress 2]] (2007, Valve) — class-role identity, MvM co-op, hat economy
-- [ ] [[Titanfall 2]] (2016, Respawn) — movement system, campaign time-travel level, pilot-titan synergy
+- [x] [[Titanfall 2]] (2016, Respawn) — movement system, campaign time-travel level, pilot-titan synergy
 - [x] [[Destiny 2]] (2019 F2P, Bungie) — gun feel, seasonal model, vault sunset controversy
 - [x] [[Helldivers 2]] (2024, Arrowhead) — third-person co-op shooter, stratagem system, live GM events
 - [x] [[Deep Rock Galactic]] (2020, Ghost Ship) — co-op PvE FPS, class roles, rock-and-stone culture
@@ -281,71 +281,71 @@ See [[Game Studies]] for the hub once created. Target: 260.
 
 ## Co-Op / Party (13)
 - [x] [[Monster Hunter World]] (2018, Capcom) — weapon-type build paths, ecosystem hunting loop, Iceborne
-- [ ] [[Monster Hunter Rise]] (2021, Capcom) — wirebug mobility, Rampage siege, Sunbreak expansion
+- [x] [[Monster Hunter Rise]] (2021, Capcom) — wirebug mobility, Rampage siege, Sunbreak expansion
 - [x] [[Sea of Thieves]] (2018, Rare) — pirate co-op, emergent betrayal, tall-tale narrative quests
-- [ ] [[Phasmophobia]] (2020, Kinetic Games) — co-op ghost hunting, evidence deduction, solo vs. group fear
+- [x] [[Phasmophobia]] (2020, Kinetic Games) — co-op ghost hunting, evidence deduction, solo vs. group fear
 - [x] [[It Takes Two]] (2021, Hazelight) — split-screen puzzle-platformer, co-op required, GOTY design
-- [ ] [[A Way Out]] (2018, Hazelight) — mandatory co-op narrative, cinematic split-screen
-- [ ] [[Overcooked 2]] (2018, Team17) — chaotic kitchen co-op, level-layout stress, online async
-- [ ] [[Gang Beasts]] (2017, Boneloaf) — physics brawler party game, co-op vs., grab mechanics
-- [ ] [[Among Us]] (2018, InnerSloth) — social deduction, task/sabotage balance, cross-platform revival
-- [ ] [[Barotrauma]] (2023, Undertow) — submarine co-op survival, role-critical crew, alien pressure
-- [ ] [[Lethal Company]] (2023, Zeekerss) — quota-pressure co-op horror, moon roster, scrappy solo dev
-- [ ] [[Palworld]] (2024, Pocketpair) — crafting + creature taming co-op, controversy + viral launch
-- [ ] [[Full Metal Furies]] (2017, Cellar Door Games) — co-op brawler RPG, gear-stat fusion, loot roles
+- [x] [[A Way Out]] (2018, Hazelight) — mandatory co-op narrative, cinematic split-screen
+- [x] [[Overcooked 2]] (2018, Team17) — chaotic kitchen co-op, level-layout stress, online async
+- [x] [[Gang Beasts]] (2017, Boneloaf) — physics brawler party game, co-op vs., grab mechanics
+- [x] [[Among Us]] (2018, InnerSloth) — social deduction, task/sabotage balance, cross-platform revival
+- [x] [[Barotrauma]] (2023, Undertow) — submarine co-op survival, role-critical crew, alien pressure
+- [x] [[Lethal Company]] (2023, Zeekerss) — quota-pressure co-op horror, moon roster, scrappy solo dev
+- [x] [[Palworld]] (2024, Pocketpair) — crafting + creature taming co-op, controversy + viral launch
+- [x] [[Full Metal Furies]] (2017, Cellar Door Games) — co-op brawler RPG, gear-stat fusion, loot roles
 
 ---
 
 ## Sandbox / UGC / Virtual World (10)
-- [ ] [[Roblox]] (2006, Roblox Corp) — UGC platform, robux economy, developer program
-- [ ] [[Garry's Mod]] (2006, Facepunch) — sandbox physics, SteamWorkshop mod ecosystem
-- [ ] [[Dreams PS4]] (2020, Media Molecule) — in-game engine, creation community, discoverability problem
-- [ ] [[Second Life]] (2003, Linden Lab) — virtual economy, land ownership, creator rights
-- [ ] [[Habbo Hotel]] (2000, Sulake) — social virtual world, furniture economy, teen identity
-- [ ] [[Core]] (2020, Manticore Games) — UE4-powered UGC, monetization sharing model
-- [ ] [[LittleBigPlanet 3]] (2014, Sumo Digital) — platformer UGC, community levels, sackboy physics
-- [ ] [[Planet Coaster 2]] (2024, Frontier) — theme park UGC, simulation depth, Steam Workshop
-- [ ] [[Rec Room]] (2016, Rec Room Inc) — VR social UGC, cross-platform, token economy
-- [ ] [[VRChat]] (2017, VRChat Inc) — avatar VR social world, avatar creator economy, event culture
+- [x] [[Roblox]] (2006, Roblox Corp) — UGC platform, robux economy, developer program
+- [x] [[Garry's Mod]] (2006, Facepunch) — sandbox physics, SteamWorkshop mod ecosystem
+- [x] [[Dreams PS4]] (2020, Media Molecule) — in-game engine, creation community, discoverability problem
+- [x] [[Second Life]] (2003, Linden Lab) — virtual economy, land ownership, creator rights
+- [x] [[Habbo Hotel]] (2000, Sulake) — social virtual world, furniture economy, teen identity
+- [x] [[Core]] (2020, Manticore Games) — UE4-powered UGC, monetization sharing model
+- [x] [[LittleBigPlanet 3]] (2014, Sumo Digital) — platformer UGC, community levels, sackboy physics
+- [x] [[Planet Coaster 2]] (2024, Frontier) — theme park UGC, simulation depth, Steam Workshop
+- [x] [[Rec Room]] (2016, Rec Room Inc) — VR social UGC, cross-platform, token economy
+- [x] [[VRChat]] (2017, VRChat Inc) — avatar VR social world, avatar creator economy, event culture
 
 ---
 
 ## Sports / Racing / Rhythm (10)
-- [ ] [[Rocket League]] (2015, Psyonix) — physics-soccer hybrid, ceiling-shots, free-to-play pivot
-- [ ] [[FIFA series]] (2023 edition, EA) — Ultimate Team card economy, annual release cadence
-- [ ] [[Gran Turismo 7]] (2022, Polyphony Digital) — Scapes photo mode, car economy microtransaction
-- [ ] [[Forza Horizon 5]] (2021, Playground Games) — open-world racing, seasonal events, accessibility
-- [ ] [[Beat Saber]] (2018, Beat Games) — VR rhythm, custom song mods, fitness use-case
-- [ ] [[Guitar Hero III]] (2007, Neversoft) — track licensing, controller peripheral, co-op face-off
-- [ ] [[Hi-Fi Rush]] (2023, Tango Gameworks) — rhythm-action, cel shading, surprise day-one launch
-- [ ] [[Osu!]] (2007, peppy) — rhythm game, community maps, open-source client
-- [ ] [[Tetris Effect Connected]] (2018/2021, Enhance) — flow-state design, co-op zone mechanic, VR
-- [ ] [[Knockout City]] (2021, Velan Studios) — dodgeball hero game, EA partnership, sunsetting postmortem
+- [x] [[Rocket League]] (2015, Psyonix) — physics-soccer hybrid, ceiling-shots, free-to-play pivot
+- [x] [[FIFA series]] (2023 edition, EA) — Ultimate Team card economy, annual release cadence
+- [x] [[Gran Turismo 7]] (2022, Polyphony Digital) — Scapes photo mode, car economy microtransaction
+- [x] [[Forza Horizon 5]] (2021, Playground Games) — open-world racing, seasonal events, accessibility
+- [x] [[Beat Saber]] (2018, Beat Games) — VR rhythm, custom song mods, fitness use-case
+- [x] [[Guitar Hero III]] (2007, Neversoft) — track licensing, controller peripheral, co-op face-off
+- [x] [[Hi-Fi Rush]] (2023, Tango Gameworks) — rhythm-action, cel shading, surprise day-one launch
+- [x] [[Osu!]] (2007, peppy) — rhythm game, community maps, open-source client
+- [x] [[Tetris Effect Connected]] (2018/2021, Enhance) — flow-state design, co-op zone mechanic, VR
+- [x] [[Knockout City]] (2021, Velan Studios) — dodgeball hero game, EA partnership, sunsetting postmortem
 
 ---
 
 ## Puzzle / Programming (9)
-- [ ] [[Portal 2]] (2011, Valve) — co-op puzzle design, test-chamber narrative, excursion funnel
-- [ ] [[The Witness]] (2016, Jonathan Blow) — open-world puzzle, environmental meta-puzzles
-- [ ] [[Baba Is You]] (2019, Hempuli) — rule-as-object manipulation, emergent solutions
-- [ ] [[Opus Magnum]] (2017, Zachtronics) — visual programming puzzles, alchemical automata
-- [ ] [[Shenzhen I/O]] (2016, Zachtronics) — assembly-language puzzles, real microcontroller feel
-- [ ] [[Human Resource Machine]] (2015, Tomorrow Corp) — visual programming for beginners
-- [ ] [[SpaceChem]] (2011, Zachtronics) — molecular bonding puzzles, optimization culture
-- [ ] [[Cocoon]] (2023, Geometric Interactive) — world-within-world puzzle, no UI, Playdead DNA
-- [ ] [[Return of the Obra Dinn]] (2018, Lucas Pope) — deductive-logic mystery, 1-bit art, elimination method
+- [x] [[Portal 2]] (2011, Valve) — co-op puzzle design, test-chamber narrative, excursion funnel
+- [x] [[The Witness]] (2016, Jonathan Blow) — open-world puzzle, environmental meta-puzzles
+- [x] [[Baba Is You]] (2019, Hempuli) — rule-as-object manipulation, emergent solutions
+- [x] [[Opus Magnum]] (2017, Zachtronics) — visual programming puzzles, alchemical automata
+- [x] [[Shenzhen I O]] (2016, Zachtronics) — assembly-language puzzles, real microcontroller feel
+- [x] [[Human Resource Machine]] (2015, Tomorrow Corp) — visual programming for beginners
+- [x] [[SpaceChem]] (2011, Zachtronics) — molecular bonding puzzles, optimization culture
+- [x] [[Cocoon]] (2023, Geometric Interactive) — world-within-world puzzle, no UI, Playdead DNA
+- [x] [[Return of the Obra Dinn]] (2018, Lucas Pope) — deductive-logic mystery, 1-bit art, elimination method
 
 ---
 
 ## Tower Defense (8)
-- [ ] [[Plants vs Zombies]] (2009, PopCap) — lane defense, resource sun, humor design
-- [ ] [[Bloons TD 6]] (2018, Ninja Kiwi) — tower upgrade paths, hero system, co-op support
-- [ ] [[Kingdom Rush Origins]] (2014, Ironhide) — mobile-first polish, hero ability, stage variety
-- [ ] [[Orcs Must Die 3]] (2021, Robot Entertainment) — 3D tower defense + action hybrid, rift skull
-- [ ] [[Defense Grid The Awakening]] (2008, Hidden Path) — maze-building TD, resource core mechanic
-- [ ] [[Sanctum 2]] (2013, Coffee Stain) — FPS tower defense hybrid, co-op building phase
-- [ ] [[Dungeon Defenders II]] (2017, Trendy) — ARPG tower defense, hero swapping, dungeon loot
-- [ ] [[Mindustry]] (2019, Anuken) — factory-automation tower defense, schematic sharing
+- [x] [[Plants vs Zombies]] (2009, PopCap) — lane defense, resource sun, humor design
+- [x] [[Bloons TD 6]] (2018, Ninja Kiwi) — tower upgrade paths, hero system, co-op support
+- [x] [[Kingdom Rush Origins]] (2014, Ironhide) — mobile-first polish, hero ability, stage variety
+- [x] [[Orcs Must Die 3]] (2021, Robot Entertainment) — 3D tower defense + action hybrid, rift skull
+- [x] [[Defense Grid The Awakening]] (2008, Hidden Path) — maze-building TD, resource core mechanic
+- [x] [[Sanctum 2]] (2013, Coffee Stain) — FPS tower defense hybrid, co-op building phase
+- [x] [[Dungeon Defenders II]] (2017, Trendy) — ARPG tower defense, hero swapping, dungeon loot
+- [x] [[Mindustry]] (2019, Anuken) — factory-automation tower defense, schematic sharing
 
 ---
 

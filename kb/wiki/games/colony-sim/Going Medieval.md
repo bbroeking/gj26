@@ -34,7 +34,7 @@ Going Medieval shows that **3D space is an underexplored constraint in colony si
 
 ## Relevance to Wayfinder
 
-- The **vertical zone strata** model resonates with Wayfinder's dungeon design: [[Dungeon]] floors could encode function by depth (surface camps, mid-level encounters, deep boss chambers) in a way players intuit spatially, not just numerically.
+- The **vertical zone strata** model resonates with Wayfinder's dungeon design: Dungeon floors could encode function by depth (surface camps, mid-level encounters, deep boss chambers) in a way players intuit spatially, not just numerically.
 - The **settler-exit threat** (dissatisfied colonists leave permanently) is a [[Balance Philosophy]] note for co-op: party members abandoning a run due to accumulated stress or failure states creates higher stakes than a simple revive system.
 - The **raid as castle-evaluation** loop offers a template for Wayfinder's boss encounters: the boss fight should test the specific loadout the player assembled during the run, not bypass it — the dungeon is the castle, the boss is the raid.
 

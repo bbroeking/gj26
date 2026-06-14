@@ -43,8 +43,8 @@ Spelunky is the definitive argument that *roguelike principles improve real-time
 ## See also
 
 - [[Game Index]] · [[Game Studies]] · [[Design Influences]]
-- [[Rogue (1980)]] · [[NetHack (1987)]] — roguelike ancestors
-- [[The Binding of Isaac Rebirth (2014)]] · [[Slay the Spire (2019)]] — roguelite contemporaries
+- [[Rogue]] · [[NetHack]] — roguelike ancestors
+- [[The Binding of Isaac Rebirth]] · [[Slay the Spire]] — roguelite contemporaries
 - [[Dungeon Generation]] · [[Chart Loop]] · [[Affixes]] · [[Combat]]
 - [[MMO Lessons for Wayfinder]]
 

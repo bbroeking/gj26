@@ -42,7 +42,7 @@ TF2 invented the cosmetics-only live-service economy. The nine-class silhouette 
 
 ## Relevance to Wayfinder
 
-- **[[Multiplayer Co-op]] — legible class roles.** TF2's instant-silhouette-readable classes let players coordinate without communication. Wayfinder's four [[Trades]] (Wayfinding, Earthcraft, Wildcraft, and combat) have the same potential: distinct gathering, crafting, and combat roles that pub groups self-organize around without being forced into composition requirements.
+- **[[Multiplayer Co-op]] — legible class roles.** TF2's instant-silhouette-readable classes let players coordinate without communication. Wayfinder's four [[Trades and Leveling]] (Wayfinding, Earthcraft, Wildcraft, and combat) have the same potential: distinct gathering, crafting, and combat roles that pub groups self-organize around without being forced into composition requirements.
 - **[[Economy]] — cosmetics as sustainable revenue.** TF2 proved cosmetic revenue can multiply paid-game revenue 12x. Relevant if Wayfinder ever ships commercially: chart cosmetics (ink color, scroll art), cosmetic gathering tools, and housing decorations are a proven live-service spine.
 - **[[Combat]] — Source lag compensation limits.** TF2's high-ping backstab problem documents exactly what happens when lag compensation is not carefully capped. A cautionary reference for Wayfinder's [[MMO Netcode and Tick Systems]] design.
 

@@ -89,3 +89,8 @@ this first to locate pages, then drill in. Start at [[Overview]]; for status see
   - [[MMO Progression Systems]] — OSRS XP formula, WoW level squish, classless vs class-based, vertical vs horizontal, talent trees, gear-score endgame, retention loops
   - [[MMO Social and Endgame]] — holy trinity tradeoffs, Dunbar-layer guilds, matchmaking vs community, raids/lockouts, world bosses, PvP, what scales to 2–4 players
 - **Provenance:** [[mmo-research]] (source digest) · raw notes in `raw/mmo/`
+
+## Game Studies (260 case studies)
+- [[Game Studies]] — the hub; [[Game Index]] — the full 260-title catalog (19 genres), progress-tracked
+- One page per game (design + implementation + Wayfinder relevance) in `wiki/games/<genre>/`; provenance in `raw/games/`
+- Companion: [[MMO Research]] · [[MMO Lessons for Wayfinder]] · [[Design Influences]]

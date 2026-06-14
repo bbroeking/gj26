@@ -21,7 +21,7 @@ Action-RPG (2020, Team Ninja/Koei Tecmo) — a soulslike set in Sengoku Japan wh
 - **Yokai Shift.** Players transform into a yokai form fueled by the Amrita meter, gaining access to powerful attacks, a separate health bar during the form, and immunity to the Dark Realm's Ki drain. Shift timing is both an offensive cooldown and a defensive escape valve.
 - **Soul Cores and the Dark Realm.** Purifying Soul Cores from defeated yokai grants passive abilities and unlocks yokai-specific attacks. The Dark Realm — a corrupted zone activated by certain enemies — drains Ki rapidly unless the player defeats the zone's source, adding spatial urgency to encounters.
 - **Three-player co-op.** Up to three players can cooperate. "Benevolent Graves" allow summoning AI-controlled versions of other players' characters, providing a soft co-op option without requiring live partners.
-- **Deep loot system.** Loot quality, stats, and set bonuses approach ARPG depth (comparable to [[Diablo]]-style games). This is both a strength (enormous build variety) and a accessibility barrier — new players face a daunting equipment screen from the first hour.
+- **Deep loot system.** Loot quality, stats, and set bonuses approach ARPG depth (comparable to [[Diablo II]]-style games). This is both a strength (enormous build variety) and a accessibility barrier — new players face a daunting equipment screen from the first hour.
 
 ## Implementation
 

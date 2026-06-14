@@ -44,7 +44,7 @@ Minimalist turn-based tactics roguelite (2018, Subset Games), fielding a squad o
 
 - [[Game Index]] · [[Game Studies]] · [[Design Influences]]
 - [[Balance Philosophy]] · [[Combat]] · [[Dungeon Generation]]
-- [[XCOM 2]] (tactical predecessor; Firaxis; permadeath contrast) · [[Slay the Spire]] (parallel perfect-information roguelite) · [[FTL Faster Than Light]] (same developer; shared roguelite DNA)
+- [[XCOM 2]] (tactical predecessor; Firaxis; permadeath contrast) · [[Slay the Spire]] (parallel perfect-information roguelite) · FTL: Faster Than Light (same developer; shared roguelite DNA)
 
 ## Sources
 

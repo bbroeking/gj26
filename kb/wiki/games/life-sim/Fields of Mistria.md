@@ -42,7 +42,7 @@ Fields of Mistria shows that a **well-articulated skill tree plus magic** is eno
 
 - **Essence as passive Trade XP:** The essence model — ambient gather activities feeding directed skill trees — is very close to how Wayfinder's [[Trades and Leveling]] should feel. Every GatherNode tap, crafting attempt, and dungeon run should feed passive Trade bar gains, letting players choose where to invest. See also [[Balance Philosophy]].
 - **Magic bridging gather and active play:** Mistria's mana spells (crop acceleration, weather control) reward deep skill-tree investment with active farm powers. Wayfinder's Wayfinding trade could similarly offer active dungeon abilities unlocked by sustained gather/craft engagement — see [[Crafting]] and the chart-affix system.
-- **Character writing as differentiation:** In a crowded cozy genre, NPC depth and distinctive voice are major purchase drivers. Bramblewood's [[NPCs]] and the [[World]] voice should be treated as a primary competitive lever, not a polish pass.
+- **Character writing as differentiation:** In a crowded cozy genre, NPC depth and distinctive voice are major purchase drivers. Bramblewood's [[NPCs]] and the World voice should be treated as a primary competitive lever, not a polish pass.
 
 ## See also
 
