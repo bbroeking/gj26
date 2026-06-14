@@ -27,13 +27,13 @@ See [[Game Studies]] for the hub once created. Target: 260.
 - [x] [[Lost Ark]] (2019, Smilegate) — island hopping, honing system, weekly gate cadence
 - [x] [[Albion Online]] (2017, Sandbox Interactive) — full-loot sandbox, guild territory, cross-platform
 - [x] [[MapleStory]] (2003, Nexon) — 2D side-scroll MMO, job advancement, gacha cosmetic model
-- [ ] [[Tibia]] (1997, CipSoft) — permadeath-adjacent, open PvP, old-school browser roots
+- [x] [[Tibia]] (1997, CipSoft) — permadeath-adjacent, open PvP, old-school browser roots
 - [x] [[New World]] (2021, Amazon Games) — azoth travel tax, territory wars, crafting-centric economy
-- [ ] [[Ragnarok Online]] (2002, Gravity) — sprite MMO, transcendent classes, WoE castle siege
-- [ ] [[Phantasy Star Online 2]] (2012, Sega) — action MMO, urgent quest scheduling, fashion end-game
-- [ ] [[Throne and Liberty]] (2024, NCSoft) — weather-driven PvP, morph system, siege design
-- [ ] [[Wakfu]] (2012, Ankama) — turn-based tactical MMO, player-driven politics, ecosystem ecology
-- [ ] [[Spiral Knights]] (2011, Three Rings) — arcade-cabinet MMO, depth-floor dungeon, co-op waves
+- [x] [[Ragnarok Online]] (2002, Gravity) — sprite MMO, transcendent classes, WoE castle siege
+- [x] [[Phantasy Star Online 2]] (2012, Sega) — action MMO, urgent quest scheduling, fashion end-game
+- [x] [[Throne and Liberty]] (2024, NCSoft) — weather-driven PvP, morph system, siege design
+- [x] [[Wakfu]] (2012, Ankama) — turn-based tactical MMO, player-driven politics, ecosystem ecology
+- [x] [[Spiral Knights]] (2011, Three Rings) — arcade-cabinet MMO, depth-floor dungeon, co-op waves
 
 ---
 
@@ -108,62 +108,62 @@ See [[Game Studies]] for the hub once created. Target: 260.
 - [x] [[Stardew Valley]] (2016, ConcernedApe) — solo dev farming sim, community center goal, seasonal calendar
 - [x] [[Animal Crossing New Horizons]] (2020, Nintendo) — real-time island sim, DIY crafting, KK economy
 - [x] [[Harvest Moon]] (1996, Marvelous) — the ur-farming sim, crop seasons, marriage system
-- [ ] [[Story of Seasons Friends of Mineral Town]] (2003/2020, Marvelous) — portable farming, GBA re-release postmortem
+- [x] [[Story of Seasons Friends of Mineral Town]] (2003/2020, Marvelous) — portable farming, GBA re-release postmortem
 - [x] [[Rune Factory 4]] (2012, Neverland/Marvelous) — farming + action RPG fusion, dungeon boss taming
-- [ ] [[Rune Factory 5]] (2021, Marvelous) — 3D pivot, co-op, crafting skill depth
-- [ ] [[Coral Island]] (2023, Stairway Games) — diverse cast, reef restoration, community vote
-- [ ] [[Fields of Mistria]] (2024, NPC Studio) — pixel farming sim, skill tree, elemental magic
-- [ ] [[Haunted Chocolatier]] (upcoming, ConcernedApe) — shop sim + exploration, ghost NPCs
-- [ ] [[Palia]] (2023, Singularity 6) — cozy MMO, no combat, housing + skill loops
-- [ ] [[Wylde Flowers]] (2022, Studio Drydock) — witch farm sim, narrative focus, inclusive cast
-- [ ] [[Sun Haven]] (2023, Pixel Sprout) — fantasy farming, combat dungeons, multi-species town
-- [ ] [[Tavern Keeper]] (2023, Greenheart Games) — cozy management sim, staff hiring, quest board
-- [ ] [[Potion Craft Alchemist Simulator]] (2022, niceplay) — physical potion crafting map, merchant haggling
-- [ ] [[Spirittea]] (2023, Cheesemaster Games) — spirit bathhouse sim, Spirited Away vibes, day structure
-- [ ] [[Dinkum]] (2022, James Bendon) — Australian farming sim, solo dev, town building
-- [ ] [[Moonstone Island]] (2023, Studio Supersoft) — creature-collector farming sim, deckbuilder battles
+- [x] [[Rune Factory 5]] (2021, Marvelous) — 3D pivot, co-op, crafting skill depth
+- [x] [[Coral Island]] (2023, Stairway Games) — diverse cast, reef restoration, community vote
+- [x] [[Fields of Mistria]] (2024, NPC Studio) — pixel farming sim, skill tree, elemental magic
+- [x] [[Haunted Chocolatier]] (upcoming, ConcernedApe) — shop sim + exploration, ghost NPCs
+- [x] [[Palia]] (2023, Singularity 6) — cozy MMO, no combat, housing + skill loops
+- [x] [[Wylde Flowers]] (2022, Studio Drydock) — witch farm sim, narrative focus, inclusive cast
+- [x] [[Sun Haven]] (2023, Pixel Sprout) — fantasy farming, combat dungeons, multi-species town
+- [x] [[Tavern Keeper]] (2023, Greenheart Games) — cozy management sim, staff hiring, quest board
+- [x] [[Potion Craft Alchemist Simulator]] (2022, niceplay) — physical potion crafting map, merchant haggling
+- [x] [[Spirittea]] (2023, Cheesemaster Games) — spirit bathhouse sim, Spirited Away vibes, day structure
+- [x] [[Dinkum]] (2022, James Bendon) — Australian farming sim, solo dev, town building
+- [x] [[Moonstone Island]] (2023, Studio Supersoft) — creature-collector farming sim, deckbuilder battles
 - [x] [[My Time at Portia]] (2019, Pathea) — 3D crafting-sim, commission board, workshop upgrade arc
 
 ---
 
 ## Single-Player RPG / Immersive Sim (21)
-- [ ] [[The Elder Scrolls III Morrowind]] (2002, Bethesda) — text dialogue, world-building density, modding
+- [x] [[The Elder Scrolls III Morrowind]] (2002, Bethesda) — text dialogue, world-building density, modding
 - [x] [[The Elder Scrolls V Skyrim]] (2011, Bethesda) — radiant quests, perk trees, decade of re-releases
 - [x] [[The Witcher 3 Wild Hunt]] (2015, CD Projekt Red) — quest quality, Gwent mini-game, trophy economy
 - [x] [[Baldurs Gate 3]] (2023, Larian) — D&D 5e adaptation, reaction system, co-op narrative
 - [x] [[Disco Elysium]] (2019, ZA/UM) — skill-as-inner-voice, no combat, ideology system
-- [ ] [[Pillars of Eternity]] (2015, Obsidian) — IE-successor, per-encounter abilities, backer NPC system
+- [x] [[Pillars of Eternity]] (2015, Obsidian) — IE-successor, per-encounter abilities, backer NPC system
 - [x] [[Divinity Original Sin 2]] (2017, Larian) — elemental surface system, origin characters, GM mode
-- [ ] [[Dragon Age Origins]] (2009, BioWare) — origin stories, tactical pause, approval system
-- [ ] [[Deus Ex]] (2000, Ion Storm) — immersive sim, multi-solution quests, augment build paths
-- [ ] [[Prey 2017]] (2017, Arkane) — Typhon neuromods, looking glass DNA, systemic sim
-- [ ] [[Dishonored]] (2012, Arkane) — chaos system, blink traversal, non-lethal design space
-- [ ] [[Arx Fatalis]] (2002, Arkane) — rune-casting gesture magic, dungeon immersive sim
-- [ ] [[Ultima IV]] (1985, Origin) — virtue system, no kill-the-boss goal, moral progression
-- [ ] [[Ultima VII]] (1992, Origin) — Fellowship narrative, seamless open world, NPC schedules
-- [ ] [[Planescape Torment]] (1999, Black Isle) — "what can change the nature of a man," narrative RPG
-- [ ] [[Pathfinder Wrath of the Righteous]] (2021, Owlcat) — mythic powers, crusade management layer
-- [ ] [[Shadowrun Returns]] (2013, Harebrained) — tabletop adaptation, cyberspace runs, Kickstarter model
-- [ ] [[Tyranny]] (2016, Obsidian) — villain protagonist, lore-stamp system, reactive world consequences
-- [ ] [[Kenshi]] (2018, Lo-Fi Games) — no protagonist, squad survival, skill-by-doing, harsh world
-- [ ] [[Wasteland 3]] (2020, inXile) — co-op tactical RPG, reputation dials, branching state machine
-- [ ] [[Torment Tides of Numenera]] (2017, inXile) — crises-not-combat, effort system, Numenera lore
+- [x] [[Dragon Age Origins]] (2009, BioWare) — origin stories, tactical pause, approval system
+- [x] [[Deus Ex]] (2000, Ion Storm) — immersive sim, multi-solution quests, augment build paths
+- [x] [[Prey 2017]] (2017, Arkane) — Typhon neuromods, looking glass DNA, systemic sim
+- [x] [[Dishonored]] (2012, Arkane) — chaos system, blink traversal, non-lethal design space
+- [x] [[Arx Fatalis]] (2002, Arkane) — rune-casting gesture magic, dungeon immersive sim
+- [x] [[Ultima IV]] (1985, Origin) — virtue system, no kill-the-boss goal, moral progression
+- [x] [[Ultima VII]] (1992, Origin) — Fellowship narrative, seamless open world, NPC schedules
+- [x] [[Planescape Torment]] (1999, Black Isle) — "what can change the nature of a man," narrative RPG
+- [x] [[Pathfinder Wrath of the Righteous]] (2021, Owlcat) — mythic powers, crusade management layer
+- [x] [[Shadowrun Returns]] (2013, Harebrained) — tabletop adaptation, cyberspace runs, Kickstarter model
+- [x] [[Tyranny]] (2016, Obsidian) — villain protagonist, lore-stamp system, reactive world consequences
+- [x] [[Kenshi]] (2018, Lo-Fi Games) — no protagonist, squad survival, skill-by-doing, harsh world
+- [x] [[Wasteland 3]] (2020, inXile) — co-op tactical RPG, reputation dials, branching state machine
+- [x] [[Torment Tides of Numenera]] (2017, inXile) — crises-not-combat, effort system, Numenera lore
 
 ---
 
 ## Soulslike (12)
 - [x] [[Dark Souls]] (2011, FromSoftware) — interconnected world, bonfires, death-drop mechanic
-- [ ] [[Dark Souls III]] (2016, FromSoftware) — FP system, covenant invasions, legacy dungeons
+- [x] [[Dark Souls III]] (2016, FromSoftware) — FP system, covenant invasions, legacy dungeons
 - [x] [[Elden Ring]] (2022, FromSoftware) — open-world soulslike, legacy dungeons, Great Rune system
 - [x] [[Sekiro Shadows Die Twice]] (2019, FromSoftware) — posture/deflect system, no build variety design
 - [x] [[Bloodborne]] (2015, FromSoftware) — rally mechanic, trick weapons, Lovecraftian mood
-- [ ] [[Nioh 2]] (2020, Team Ninja) — stance system, burst counter, soul core drops
+- [x] [[Nioh 2]] (2020, Team Ninja) — stance system, burst counter, soul core drops
 - [x] [[Hollow Knight]] (2017, Team Cherry) — geo currency, charm notch system, bench checkpoints
-- [ ] [[Salt and Sanctuary]] (2016, Ska Studios) — 2D soulslike, class tree, co-op
-- [ ] [[Lies of P]] (2023, Neowiz) — puppet fable, weapon assembly, specter-ash system
-- [ ] [[Remnant From the Ashes]] (2019, Gunfire Games) — soulslike + third-person shooter, procedural areas
-- [ ] [[Lords of the Fallen 2023]] (2023, Hexworks) — Umbral lamp, dual-world traversal design
-- [ ] [[Mortal Shell]] (2020, Cold Symmetry) — shell-possession mechanic, harden ability design
+- [x] [[Salt and Sanctuary]] (2016, Ska Studios) — 2D soulslike, class tree, co-op
+- [x] [[Lies of P]] (2023, Neowiz) — puppet fable, weapon assembly, specter-ash system
+- [x] [[Remnant From the Ashes]] (2019, Gunfire Games) — soulslike + third-person shooter, procedural areas
+- [x] [[Lords of the Fallen 2023]] (2023, Hexworks) — Umbral lamp, dual-world traversal design
+- [x] [[Mortal Shell]] (2020, Cold Symmetry) — shell-possession mechanic, harden ability design
 
 ---
 
@@ -171,36 +171,36 @@ See [[Game Studies]] for the hub once created. Target: 260.
 - [x] [[Super Metroid]] (1994, Nintendo) — atmosphere, sequence break community, power-up gating
 - [x] [[Castlevania Symphony of the Night]] (1997, Konami) — RPG stats in action game, familiars, inverted castle
 - [x] [[Ori and the Blind Forest]] (2015, Moon Studios) — momentum-platformer, spirit tree, visual design
-- [ ] [[Guacamelee 2]] (2018, DrinkBox) — lucha Metroidvania, pollo alter-ego, co-op brawl
+- [x] [[Guacamelee 2]] (2018, DrinkBox) — lucha Metroidvania, pollo alter-ego, co-op brawl
 - [x] [[Blasphemous]] (2019, The Game Kitchen) — Spanish Catholic horror, guilt mechanics, bile flask
-- [ ] [[Metroid Dread]] (2021, MercurySteam) — EMMI fear design, slide/phantom-cloak kit
-- [ ] [[Axiom Verge]] (2015, Tom Happ) — solo dev Metroidvania, glitch gun, lore depth
+- [x] [[Metroid Dread]] (2021, MercurySteam) — EMMI fear design, slide/phantom-cloak kit
+- [x] [[Axiom Verge]] (2015, Tom Happ) — solo dev Metroidvania, glitch gun, lore depth
 - [x] [[Celeste]] (2018, Maddy Thorson/Noel Berry) — assist mode accessibility, assist vs. difficulty design
-- [ ] [[Shovel Knight]] (2014, Yacht Club) — NES callback, Order of No Quarter structure, backer knight
-- [ ] [[Hollow Knight Silksong]] (2025, Team Cherry) — sequel design philosophy (when released)
-- [ ] [[Iconoclasts]] (2018, Joakim Sandberg) — solo dev, story-heavy Metroidvania, puzzle-boss design
-- [ ] [[Shantae Half-Genie Hero]] (2016, WayForward) — transformation platformer, backer content
-- [ ] [[Aeterna Noctis]] (2021, Aeternum Game Studios) — difficult platforming, RPG metroidvania hybrid
-- [ ] [[Prince of Persia The Lost Crown]] (2024, Ubisoft Montpellier) — time-power Metroidvania revival
-- [ ] [[Nine Sols]] (2024, Red Candle Games) — deflect-focused Metroidvania, Sekiro DNA
+- [x] [[Shovel Knight]] (2014, Yacht Club) — NES callback, Order of No Quarter structure, backer knight
+- [x] [[Hollow Knight Silksong]] (2025, Team Cherry) — sequel design philosophy (when released)
+- [x] [[Iconoclasts]] (2018, Joakim Sandberg) — solo dev, story-heavy Metroidvania, puzzle-boss design
+- [x] [[Shantae Half-Genie Hero]] (2016, WayForward) — transformation platformer, backer content
+- [x] [[Aeterna Noctis]] (2021, Aeternum Game Studios) — difficult platforming, RPG metroidvania hybrid
+- [x] [[Prince of Persia The Lost Crown]] (2024, Ubisoft Montpellier) — time-power Metroidvania revival
+- [x] [[Nine Sols]] (2024, Red Candle Games) — deflect-focused Metroidvania, Sekiro DNA
 
 ---
 
 ## Strategy / 4X / RTS (14)
 - [x] [[Civilization VI]] (2016, Firaxis) — district unstacking, governor system, cultural victory path
 - [x] [[Crusader Kings III]] (2020, Paradox) — character-driven dynasty, trait-based events, stress system
-- [ ] [[Europa Universalis IV]] (2013, Paradox) — nation simulation, mission tree, mana system debate
+- [x] [[Europa Universalis IV]] (2013, Paradox) — nation simulation, mission tree, mana system debate
 - [x] [[StarCraft II]] (2010, Blizzard) — APM design, race asymmetry, BNET ladder
-- [ ] [[Age of Empires II]] (1999, Ensemble) — civilization bonuses, treaty rush, remaster community
-- [ ] [[Warcraft III]] (2002, Blizzard) — hero unit, item drops, custom map ecosystem (DotA birth)
+- [x] [[Age of Empires II]] (1999, Ensemble) — civilization bonuses, treaty rush, remaster community
+- [x] [[Warcraft III]] (2002, Blizzard) — hero unit, item drops, custom map ecosystem (DotA birth)
 - [x] [[XCOM 2]] (2016, Firaxis) — timer tension, pod-activation, soldier bond system
 - [x] [[Into the Breach]] (2018, Subset Games) — perfect-information tactics, mech synergy, turn-undo
-- [ ] [[Total War Warhammer III]] (2022, Creative Assembly) — Realm of Chaos campaign, race variety
-- [ ] [[Humankind]] (2021, Amplitude) — accumulation model, culture switching, stars-not-score
-- [ ] [[Battletech 2018]] (2018, Harebrained Schemes) — heat management, called shots, pilot wounds
-- [ ] [[Endless Legend]] (2014, Amplitude) — asymmetric factions, season system, quest victory
-- [ ] [[Old World]] (2022, Mohawk Games) — orders system, narrative events, co-designer design philosophy
-- [ ] [[Terra Nil]] (2023, Free Lives) — reverse city-builder, ecological restoration, no fail state
+- [x] [[Total War Warhammer III]] (2022, Creative Assembly) — Realm of Chaos campaign, race variety
+- [x] [[Humankind]] (2021, Amplitude) — accumulation model, culture switching, stars-not-score
+- [x] [[Battletech 2018]] (2018, Harebrained Schemes) — heat management, called shots, pilot wounds
+- [x] [[Endless Legend]] (2014, Amplitude) — asymmetric factions, season system, quest victory
+- [x] [[Old World]] (2022, Mohawk Games) — orders system, narrative events, co-designer design philosophy
+- [x] [[Terra Nil]] (2023, Free Lives) — reverse city-builder, ecological restoration, no fail state
 
 ---
 
@@ -210,13 +210,13 @@ See [[Game Studies]] for the hub once created. Target: 260.
 - [x] [[Oxygen Not Included]] (2019, Klei) — gas/liquid simulation, dupe morale, research tree
 - [x] [[Factorio]] (2020, Wube Software) — automation loop, biters scaling pressure, blueprint library
 - [x] [[Frostpunk]] (2018, 11 bit studios) — law system, hope/discontent dials, survival city
-- [ ] [[Frostpunk 2]] (2024, 11 bit studios) — council voting, faction tension, scale-up design
-- [ ] [[Surviving Mars]] (2018, Haemimont) — dome pressure, supply chain, mystery events
-- [ ] [[Banished]] (2014, Shining Rock) — isolated village survival, no combat, supply-demand
-- [ ] [[Timberborn]] (2021, Mechanistry) — beaver colony, drought cycle, vertical building
-- [ ] [[Anno 1800]] (2019, Ubisoft Blue Byte) — supply-chain chains, population tier needs, DLC islands
-- [ ] [[Going Medieval]] (2021, Foxy Voxel) — medieval colony sim, siege defense, RimWorld adjacent
-- [ ] [[Workers and Resources Soviet Republic]] (2019, 3Division) — real-logistics colony, vehicle routing
+- [x] [[Frostpunk 2]] (2024, 11 bit studios) — council voting, faction tension, scale-up design
+- [x] [[Surviving Mars]] (2018, Haemimont) — dome pressure, supply chain, mystery events
+- [x] [[Banished]] (2014, Shining Rock) — isolated village survival, no combat, supply-demand
+- [x] [[Timberborn]] (2021, Mechanistry) — beaver colony, drought cycle, vertical building
+- [x] [[Anno 1800]] (2019, Ubisoft Blue Byte) — supply-chain chains, population tier needs, DLC islands
+- [x] [[Going Medieval]] (2021, Foxy Voxel) — medieval colony sim, siege defense, RimWorld adjacent
+- [x] [[Workers and Resources Soviet Republic]] (2019, 3Division) — real-logistics colony, vehicle routing
 
 ---
 
@@ -241,7 +241,7 @@ See [[Game Studies]] for the hub once created. Target: 260.
 - [x] [[Marvel Snap]] (2022, Second Dinner) — 12-card deck, location design, snap escalation
 - [x] [[Teamfight Tactics]] (2019, Riot Games) — autobattler, trait synergies, augment system
 - [ ] [[Underlords]] (2019, Valve) — Dota autobattler, alliance system, underlord passive
-- [ ] [[Inscription]] (2021, Daniel Mullins) — meta-narrative deckbuilder, sacrifice mechanic, boss tape
+- [ ] [[Inscryption]] (2021, Daniel Mullins) — meta-narrative deckbuilder, sacrifice mechanic, boss tape
 - [ ] [[Dominion]] (2008, Rio Grande/digital) — the deck-building archetype, kingdom card variety
 - [ ] [[Eternal Card Game]] (2016, Dire Wolf) — dual-faction decks, full F2P draft, influence system
 - [ ] [[Mythgard]] (2019, Rhino Games) — lane-lock mechanic, enchantment placement
@@ -317,7 +317,7 @@ See [[Game Studies]] for the hub once created. Target: 260.
 - [ ] [[Forza Horizon 5]] (2021, Playground Games) — open-world racing, seasonal events, accessibility
 - [ ] [[Beat Saber]] (2018, Beat Games) — VR rhythm, custom song mods, fitness use-case
 - [ ] [[Guitar Hero III]] (2007, Neversoft) — track licensing, controller peripheral, co-op face-off
-- [ ] [[Hifumi Rush]] (2023, Tango Gameworks) — rhythm-action, cel shading, surprise day-one launch
+- [ ] [[Hi-Fi Rush]] (2023, Tango Gameworks) — rhythm-action, cel shading, surprise day-one launch
 - [ ] [[Osu!]] (2007, peppy) — rhythm game, community maps, open-source client
 - [ ] [[Tetris Effect Connected]] (2018/2021, Enhance) — flow-state design, co-op zone mechanic, VR
 - [ ] [[Knockout City]] (2021, Velan Studios) — dodgeball hero game, EA partnership, sunsetting postmortem
