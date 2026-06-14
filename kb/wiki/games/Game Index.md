@@ -43,16 +43,16 @@ See [[Game Studies]] for the hub once created. Target: 260.
 - [x] [[Diablo IV]] (2023, Blizzard) — seasonal model, open world, paragon board end-game
 - [x] [[Path of Exile]] (2013, Grinding Gear) — passive tree web, currency orbs, league mechanic
 - [x] [[Path of Exile 2]] (2024, Grinding Gear) — campaign redesign, gem socketing overhaul
-- [ ] [[Torchlight II]] (2012, Runic Games) — shared stash, pet vendor, mod support
-- [ ] [[Grim Dawn]] (2016, Crate Entertainment) — dual-class mastery, faction reputation, devotion constellations
-- [ ] [[Last Epoch]] (2024, Eleventh Hour Games) — timeline branching, item forging, endgame monolith
-- [ ] [[Hades]] (2020, Supergiant) — narrative-integrated roguelite, heat system, boon synergies
+- [x] [[Torchlight II]] (2012, Runic Games) — shared stash, pet vendor, mod support
+- [x] [[Grim Dawn]] (2016, Crate Entertainment) — dual-class mastery, faction reputation, devotion constellations
+- [x] [[Last Epoch]] (2024, Eleventh Hour Games) — timeline branching, item forging, endgame monolith
+- [x] [[Hades]] (2020, Supergiant) — narrative-integrated roguelite, heat system, boon synergies
 - [ ] [[Victor Vran]] (2015, Haemimont) — weapon-defines-kit, controller ARPG, destiny card system
 - [ ] [[Wolcen Lords of Mayhem]] (2020, Wolcen Studio) — wheel passive system, apocalyptic form
 - [ ] [[Minecraft Dungeons]] (2020, Mojang) — accessible ARPG, no class, enchantment power budget
 - [ ] [[Chronicon]] (2020, Subworld) — solo dev pixel ARPG, transmog, completionist systems
 - [ ] [[Sacred 2]] (2008, Ascaron) — open-world ARPG, mount system, seraphim lore
-- [ ] [[Titan Quest]] (2006, Iron Lore) — dual mastery, mythological settings, anniversary remaster
+- [x] [[Titan Quest]] (2006, Iron Lore) — dual mastery, mythological settings, anniversary remaster
 - [ ] [[Van Helsing Final Cut]] (2015, Neocore) — tower defense hybrid, Ink world dimension
 - [ ] [[Warhammer Inquisitor Martyr]] (2018, NeocoreGames) — persistent campaign, csm starmap
 - [ ] [[Loot River]] (2022, straka.studio) — block-sliding dungeon + ARPG hybrid
@@ -65,19 +65,19 @@ See [[Game Studies]] for the hub once created. Target: 260.
 - [ ] [[Angband]] (1990, Alex Cutler) — town-level shop, recall scroll, variant ecosystem
 - [ ] [[Dungeon Crawl Stone Soup]] (2006, community) — online high scores, species/background matrix
 - [x] [[Spelunky]] (2008, Derek Yu) — physics roguelite, ghost timer, tutorial mine design
-- [ ] [[Spelunky 2]] (2020, Mossmouth) — layered secrets, cosmic horror, online ghost races
+- [x] [[Spelunky 2]] (2020, Mossmouth) — layered secrets, cosmic horror, online ghost races
 - [x] [[The Binding of Isaac Rebirth]] (2014, Nicalis/McMillen) — item synergies, DLC cadence, floor boss pacing
-- [ ] [[Dead Cells]] (2018, Motion Twin) — metroidvania-roguelite hybrid, cell currency, daily runs
-- [ ] [[Risk of Rain 2]] (2019, Hopoo Games) — 3D roguelite, time-pressure scaling, item stacking
-- [ ] [[Enter the Gungeon]] (2016, Dodge Roll) — bullet-hell roguelite, synergy table, reload mechanic
+- [x] [[Dead Cells]] (2018, Motion Twin) — metroidvania-roguelite hybrid, cell currency, daily runs
+- [x] [[Risk of Rain 2]] (2019, Hopoo Games) — 3D roguelite, time-pressure scaling, item stacking
+- [x] [[Enter the Gungeon]] (2016, Dodge Roll) — bullet-hell roguelite, synergy table, reload mechanic
 - [x] [[Slay the Spire]] (2019, MegaCrit) — deckbuilder + roguelite fusion, relic system, boss relics
-- [ ] [[Balatro]] (2024, LocalThunk) — poker hand roguelite, joker economy, blind structure
+- [x] [[Balatro]] (2024, LocalThunk) — poker hand roguelite, joker economy, blind structure
 - [ ] [[Returnal]] (2021, Housemarque) — third-person bullet hell, selene narrative loop, alt-fire cycle
-- [ ] [[Noita]] (2020, Nolla Games) — pixel physics, wand crafting, emergent chemistry disasters
-- [ ] [[Caves of Qud]] (2015, Freehold Games) — deep world sim, mutation builds, procedural history
-- [ ] [[Darkest Dungeon]] (2016, Red Hook) — stress mechanic, roster attrition, narrator framing
-- [ ] [[Vampire Survivors]] (2021, Poncle) — bullet-heaven autobattler, evolution system, mass enemies
-- [ ] [[Hades II]] (2024, Supergiant) — arcana system, surface/underworld dual maps, patron boons
+- [x] [[Noita]] (2020, Nolla Games) — pixel physics, wand crafting, emergent chemistry disasters
+- [x] [[Caves of Qud]] (2015, Freehold Games) — deep world sim, mutation builds, procedural history
+- [x] [[Darkest Dungeon]] (2016, Red Hook) — stress mechanic, roster attrition, narrator framing
+- [x] [[Vampire Survivors]] (2021, Poncle) — bullet-heaven autobattler, evolution system, mass enemies
+- [x] [[Hades II]] (2024, Supergiant) — arcana system, surface/underworld dual maps, patron boons
 - [ ] [[Against the Storm]] (2023, Eremite Games) — roguelite city builder, biome hostility, queen reputation
 - [ ] [[Slice and Dice]] (2022, tann) — dice-based tactics roguelite, hero party synergies
 - [ ] [[Wildfrost]] (2023, Deadpan Games) — companion-card roguelite, counter system, sun chime
@@ -90,15 +90,15 @@ See [[Game Studies]] for the hub once created. Target: 260.
 - [x] [[Don't Starve]] (2013, Klei) — hunger/sanity pressure, biome loop, Together co-op port
 - [x] [[Valheim]] (2021, Iron Gate) — Norse procedural, progression-locked biomes, comfort mechanic
 - [x] [[Subnautica]] (2018, Unknown Worlds) — story-survival, depth pressure, no weapons design
-- [ ] [[The Forest]] (2018, Endnight) — co-op survival horror, cannibal AI, base defense
+- [x] [[The Forest]] (2018, Endnight) — co-op survival horror, cannibal AI, base defense
 - [ ] [[Green Hell]] (2019, Creepy Jar) — microsurvival, wound treatment sim, story mode
-- [ ] [[Grounded]] (2022, Obsidian) — backyard survival, bug behavior AI, scale design
+- [x] [[Grounded]] (2022, Obsidian) — backyard survival, bug behavior AI, scale design
 - [ ] [[Raft]] (2022, Redbeet Interactive) — floating-base survival, drift with current, ocean exploration
 - [ ] [[7 Days to Die]] (2013, The Fun Pimps) — horde night cadence, voxel building, blood moon scaling
-- [ ] [[Rust]] (2018, Facepunch) — naked-start PvP, blueprint system, server wipe cycle
+- [x] [[Rust]] (2018, Facepunch) — naked-start PvP, blueprint system, server wipe cycle
 - [ ] [[DayZ]] (2018, Bohemia) — hardcore survival, scarcity, emergent player banditry
-- [ ] [[No Man's Sky]] (2016/updated, Hello Games) — live-service redemption arc, planet procedural, base sharing
-- [ ] [[Satisfactory]] (2024, Coffee Stain) — factory automation, first-person perspective, phase gates
+- [x] [[No Man's Sky]] (2016/updated, Hello Games) — live-service redemption arc, planet procedural, base sharing
+- [x] [[Satisfactory]] (2024, Coffee Stain) — factory automation, first-person perspective, phase gates
 - [ ] [[Astroneer]] (2019, System Era) — terrain deformation, byte economy, co-op automation
 - [ ] [[Enshrouded]] (2024, Keen Games) — voxel terrain, shroud mechanic, co-op crafting loop
 
@@ -168,14 +168,14 @@ See [[Game Studies]] for the hub once created. Target: 260.
 ---
 
 ## Metroidvania / Platformer (15)
-- [ ] [[Super Metroid]] (1994, Nintendo) — atmosphere, sequence break community, power-up gating
-- [ ] [[Castlevania Symphony of the Night]] (1997, Konami) — RPG stats in action game, familiars, inverted castle
-- [ ] [[Ori and the Blind Forest]] (2015, Moon Studios) — momentum-platformer, spirit tree, visual design
+- [x] [[Super Metroid]] (1994, Nintendo) — atmosphere, sequence break community, power-up gating
+- [x] [[Castlevania Symphony of the Night]] (1997, Konami) — RPG stats in action game, familiars, inverted castle
+- [x] [[Ori and the Blind Forest]] (2015, Moon Studios) — momentum-platformer, spirit tree, visual design
 - [ ] [[Guacamelee 2]] (2018, DrinkBox) — lucha Metroidvania, pollo alter-ego, co-op brawl
-- [ ] [[Blasphemous]] (2019, The Game Kitchen) — Spanish Catholic horror, guilt mechanics, bile flask
+- [x] [[Blasphemous]] (2019, The Game Kitchen) — Spanish Catholic horror, guilt mechanics, bile flask
 - [ ] [[Metroid Dread]] (2021, MercurySteam) — EMMI fear design, slide/phantom-cloak kit
 - [ ] [[Axiom Verge]] (2015, Tom Happ) — solo dev Metroidvania, glitch gun, lore depth
-- [ ] [[Celeste]] (2018, Maddy Thorson/Noel Berry) — assist mode accessibility, assist vs. difficulty design
+- [x] [[Celeste]] (2018, Maddy Thorson/Noel Berry) — assist mode accessibility, assist vs. difficulty design
 - [ ] [[Shovel Knight]] (2014, Yacht Club) — NES callback, Order of No Quarter structure, backer knight
 - [ ] [[Hollow Knight Silksong]] (2025, Team Cherry) — sequel design philosophy (when released)
 - [ ] [[Iconoclasts]] (2018, Joakim Sandberg) — solo dev, story-heavy Metroidvania, puzzle-boss design
@@ -187,14 +187,14 @@ See [[Game Studies]] for the hub once created. Target: 260.
 ---
 
 ## Strategy / 4X / RTS (14)
-- [ ] [[Civilization VI]] (2016, Firaxis) — district unstacking, governor system, cultural victory path
-- [ ] [[Crusader Kings III]] (2020, Paradox) — character-driven dynasty, trait-based events, stress system
+- [x] [[Civilization VI]] (2016, Firaxis) — district unstacking, governor system, cultural victory path
+- [x] [[Crusader Kings III]] (2020, Paradox) — character-driven dynasty, trait-based events, stress system
 - [ ] [[Europa Universalis IV]] (2013, Paradox) — nation simulation, mission tree, mana system debate
-- [ ] [[StarCraft II]] (2010, Blizzard) — APM design, race asymmetry, BNET ladder
+- [x] [[StarCraft II]] (2010, Blizzard) — APM design, race asymmetry, BNET ladder
 - [ ] [[Age of Empires II]] (1999, Ensemble) — civilization bonuses, treaty rush, remaster community
 - [ ] [[Warcraft III]] (2002, Blizzard) — hero unit, item drops, custom map ecosystem (DotA birth)
-- [ ] [[XCOM 2]] (2016, Firaxis) — timer tension, pod-activation, soldier bond system
-- [ ] [[Into the Breach]] (2018, Subset Games) — perfect-information tactics, mech synergy, turn-undo
+- [x] [[XCOM 2]] (2016, Firaxis) — timer tension, pod-activation, soldier bond system
+- [x] [[Into the Breach]] (2018, Subset Games) — perfect-information tactics, mech synergy, turn-undo
 - [ ] [[Total War Warhammer III]] (2022, Creative Assembly) — Realm of Chaos campaign, race variety
 - [ ] [[Humankind]] (2021, Amplitude) — accumulation model, culture switching, stars-not-score
 - [ ] [[Battletech 2018]] (2018, Harebrained Schemes) — heat management, called shots, pilot wounds
@@ -205,11 +205,11 @@ See [[Game Studies]] for the hub once created. Target: 260.
 ---
 
 ## Colony / City / Management Sim (12)
-- [ ] [[RimWorld]] (2018, Ludeon) — storyteller AI, colonist trait drama, modding ecosystem
-- [ ] [[Dwarf Fortress]] (2006, Bay 12 Games) — z-level simulation, emergent tragedy, steam release
-- [ ] [[Oxygen Not Included]] (2019, Klei) — gas/liquid simulation, dupe morale, research tree
-- [ ] [[Factorio]] (2020, Wube Software) — automation loop, biters scaling pressure, blueprint library
-- [ ] [[Frostpunk]] (2018, 11 bit studios) — law system, hope/discontent dials, survival city
+- [x] [[RimWorld]] (2018, Ludeon) — storyteller AI, colonist trait drama, modding ecosystem
+- [x] [[Dwarf Fortress]] (2006, Bay 12 Games) — z-level simulation, emergent tragedy, steam release
+- [x] [[Oxygen Not Included]] (2019, Klei) — gas/liquid simulation, dupe morale, research tree
+- [x] [[Factorio]] (2020, Wube Software) — automation loop, biters scaling pressure, blueprint library
+- [x] [[Frostpunk]] (2018, 11 bit studios) — law system, hope/discontent dials, survival city
 - [ ] [[Frostpunk 2]] (2024, 11 bit studios) — council voting, faction tension, scale-up design
 - [ ] [[Surviving Mars]] (2018, Haemimont) — dome pressure, supply chain, mystery events
 - [ ] [[Banished]] (2014, Shining Rock) — isolated village survival, no combat, supply-demand
@@ -221,25 +221,25 @@ See [[Game Studies]] for the hub once created. Target: 260.
 ---
 
 ## MOBA (8)
-- [ ] [[League of Legends]] (2009, Riot Games) — champion release cadence, patch meta, esports ecosystem
-- [ ] [[Dota 2]] (2013, Valve) — complex mechanics, courier/vision, item depth, The International
-- [ ] [[Heroes of the Storm]] (2015, Blizzard) — team XP, no last-hit, map objective variety
-- [ ] [[Smite]] (2014, Hi-Rez) — third-person MOBA, console port, mythology theme
+- [x] [[League of Legends]] (2009, Riot Games) — champion release cadence, patch meta, esports ecosystem
+- [x] [[Dota 2]] (2013, Valve) — complex mechanics, courier/vision, item depth, The International
+- [x] [[Heroes of the Storm]] (2015, Blizzard) — team XP, no last-hit, map objective variety
+- [x] [[Smite]] (2014, Hi-Rez) — third-person MOBA, console port, mythology theme
 - [ ] [[Predecessor]] (2024, Omeda Studios) — UE5 Paragon successor, lane design, ability kit
 - [ ] [[Battlerite]] (2017, Stunlock) — arena-brawler MOBA, no towers, pure teamfight
 - [ ] [[Vainglory]] (2014, Super Evil Megacorp) — mobile-first MOBA, touch precision design
-- [ ] [[Paragon]] (2018, Epic Games) — 3D MOBA postmortem, card deck items, shutdown lessons
+- [x] [[Paragon]] (2018, Epic Games) — 3D MOBA postmortem, card deck items, shutdown lessons
 
 ---
 
 ## CCG / Deckbuilder / Autobattler (13)
-- [ ] [[Hearthstone]] (2014, Blizzard) — digital CCG simplification, mana crystal system, tavern brawl
-- [ ] [[Magic The Gathering Arena]] (2019, WotC) — traditional CCG digitized, draft economy, format variety
-- [ ] [[Legends of Runeterra]] (2020, Riot Games) — predict/nexus attack, slow speed, regional cards
+- [x] [[Hearthstone]] (2014, Blizzard) — digital CCG simplification, mana crystal system, tavern brawl
+- [x] [[Magic The Gathering Arena]] (2019, WotC) — traditional CCG digitized, draft economy, format variety
+- [x] [[Legends of Runeterra]] (2020, Riot Games) — predict/nexus attack, slow speed, regional cards
 - [ ] [[Faeria]] (2017, Abrakam) — land-placement CCG, mana terrain, board strategy hybrid
 - [ ] [[Gwent The Witcher Card Game]] (2018, CD Projekt Red) — row-based CCG, standalone spinoff
-- [ ] [[Marvel Snap]] (2022, Second Dinner) — 12-card deck, location design, snap escalation
-- [ ] [[Teamfight Tactics]] (2019, Riot Games) — autobattler, trait synergies, augment system
+- [x] [[Marvel Snap]] (2022, Second Dinner) — 12-card deck, location design, snap escalation
+- [x] [[Teamfight Tactics]] (2019, Riot Games) — autobattler, trait synergies, augment system
 - [ ] [[Underlords]] (2019, Valve) — Dota autobattler, alliance system, underlord passive
 - [ ] [[Inscription]] (2021, Daniel Mullins) — meta-narrative deckbuilder, sacrifice mechanic, boss tape
 - [ ] [[Dominion]] (2008, Rio Grande/digital) — the deck-building archetype, kingdom card variety
@@ -250,11 +250,11 @@ See [[Game Studies]] for the hub once created. Target: 260.
 ---
 
 ## Fighting (8)
-- [ ] [[Street Fighter II]] (1991, Capcom) — combo discovery, frame data culture, tournament scene
-- [ ] [[Tekken 7]] (2015, Bandai Namco) — rage system, character diversity, EVO presence
-- [ ] [[Guilty Gear Strive]] (2021, Arc System Works) — wall-break system, rollback netcode, anime art
-- [ ] [[Mortal Kombat 1]] (2023, NetherRealm) — kameo system, fatality design, story mode production
-- [ ] [[Super Smash Bros Ultimate]] (2018, Nintendo/Sora) — 80+ fighters, spirits system, online woes
+- [x] [[Street Fighter II]] (1991, Capcom) — combo discovery, frame data culture, tournament scene
+- [x] [[Tekken 7]] (2015, Bandai Namco) — rage system, character diversity, EVO presence
+- [x] [[Guilty Gear Strive]] (2021, Arc System Works) — wall-break system, rollback netcode, anime art
+- [x] [[Mortal Kombat 1]] (2023, NetherRealm) — kameo system, fatality design, story mode production
+- [x] [[Super Smash Bros Ultimate]] (2018, Nintendo/Sora) — 80+ fighters, spirits system, online woes
 - [ ] [[Brawlhalla]] (2017, Blue Mammoth) — free-to-play platform fighter, legend roster, crossover skins
 - [ ] [[MultiVersus]] (2024, Player First) — WB IP fighter, perk tree, 2v2 focus design
 - [ ] [[Rivals of Aether]] (2017, Dan Fornace) — no-grab platform fighter, elemental rivals, workshop mods
@@ -262,18 +262,18 @@ See [[Game Studies]] for the hub once created. Target: 260.
 ---
 
 ## FPS / Hero Shooter / Battle Royale (14)
-- [ ] [[Doom 1993]] (1993, id Software) — shareware distribution, BSP engine, secret rooms
-- [ ] [[Quake]] (1996, id Software) — true 3D, QuakeWorld netcode, speed-running community
-- [ ] [[Counter-Strike Global Offensive]] (2012, Valve) — economy round system, spray patterns, skin market
-- [ ] [[Overwatch]] (2016, Blizzard) — hero-ability FPS, role queue, Mercy-redesign postmortem
-- [ ] [[Overwatch 2]] (2022, Blizzard) — F2P pivot, 5v5, battle pass monetization lessons
-- [ ] [[Valorant]] (2020, Riot Games) — precise movement-and-shoot, agent abilities, anti-cheat Vanguard
-- [ ] [[Apex Legends]] (2019, Respawn) — ping system, respawn beacon, legend kit design
-- [ ] [[Fortnite]] (2017, Epic) — build mechanic, battle pass season model, live events
+- [x] [[Doom 1993]] (1993, id Software) — shareware distribution, BSP engine, secret rooms
+- [x] [[Quake]] (1996, id Software) — true 3D, QuakeWorld netcode, speed-running community
+- [x] [[Counter-Strike Global Offensive]] (2012, Valve) — economy round system, spray patterns, skin market
+- [x] [[Overwatch]] (2016, Blizzard) — hero-ability FPS, role queue, Mercy-redesign postmortem
+- [x] [[Overwatch 2]] (2022, Blizzard) — F2P pivot, 5v5, battle pass monetization lessons
+- [x] [[Valorant]] (2020, Riot Games) — precise movement-and-shoot, agent abilities, anti-cheat Vanguard
+- [x] [[Apex Legends]] (2019, Respawn) — ping system, respawn beacon, legend kit design
+- [x] [[Fortnite]] (2017, Epic) — build mechanic, battle pass season model, live events
 - [ ] [[PUBG Battlegrounds]] (2017, Krafton) — battle royale template, zone shrink, ballistics model
-- [ ] [[Team Fortress 2]] (2007, Valve) — class-role identity, MvM co-op, hat economy
+- [x] [[Team Fortress 2]] (2007, Valve) — class-role identity, MvM co-op, hat economy
 - [ ] [[Titanfall 2]] (2016, Respawn) — movement system, campaign time-travel level, pilot-titan synergy
-- [ ] [[Destiny 2]] (2019 F2P, Bungie) — gun feel, seasonal model, vault sunset controversy
+- [x] [[Destiny 2]] (2019 F2P, Bungie) — gun feel, seasonal model, vault sunset controversy
 - [x] [[Helldivers 2]] (2024, Arrowhead) — third-person co-op shooter, stratagem system, live GM events
 - [x] [[Deep Rock Galactic]] (2020, Ghost Ship) — co-op PvE FPS, class roles, rock-and-stone culture
 
