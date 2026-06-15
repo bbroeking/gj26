@@ -103,3 +103,9 @@ Greppable: `grep "^## \[" log.md | tail`.
 - Wrote all 260 dedicated game case studies (design + implementation + Wayfinder relevance), web-researched via 4 waves of parallel research agents; raw provenance in `raw/games/`.
 - Genres: MMORPG, ARPG/looter, roguelike, survival, life-sim, RPG/immersive-sim, soulslike, metroidvania, strategy/4X, colony-sim, MOBA, CCG/deckbuilder, fighting, FPS/hero/BR, co-op, sandbox/UGC, sports/rhythm, puzzle, tower-defense.
 - Lint clean: 0 unresolved wikilinks, frontmatter on every page.
+
+## [2026-06-14] query+file | Universe Build-Out Plan (multi-agent workflow)
+- Ran a 29-agent planning workflow (mine KB across 10 themes → 4 competing framings → 3-lens judge panel → synthesize → adversarial critic).
+- Winner: "The Wolds Remembered — A Pillar-by-Pillar Wayfinder" (87/100, over 86/86/83).
+- The critic forced a codebase-verification pass that caught 3 factual errors (save versioning exists-but-destructive; Briar Maze shipped; Boar/Wolf modeled+chained; the "Queen" is the same Hedgemother scaled) — the final plan is grounded in source (its §0).
+- Filed the result back into the wiki as [[Universe Build-Out Plan]] (cozy-spine-protected, scope hard-cut to Pillar Zero + Pillar One, rest = a named Horizon). Lint clean.

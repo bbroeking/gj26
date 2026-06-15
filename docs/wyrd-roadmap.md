@@ -169,6 +169,7 @@ Specs 38–41 + notes.
 | Doc | Role |
 |---|---|
 | `wyrd-roadmap.md` | this — consolidated state + queue |
+| `../kb/wiki/Universe Build-Out Plan.md` | the plan to grow the demo into a full cozy co-op game (KB-mined: Pillar Zero + Pillar One committed, rest = Horizon) |
 | `../kb/` | the LLM Wiki — synthesized, interlinked design map (start at `kb/index.md`). The loose `docs/*.md` design docs (skills/combat plan, UI design pass, trades recap, playbooks, cartography notes, etc.) were folded in here and removed 2026-06-13 |
 | `specs/*.md` (+ notes) | per-feature contracts and deltas (immutable record) |
 | `adr/` | 0003 cozy-skilling spine · 0004 controls · 0005 Huntcraft · 0006 cap 17 |
