@@ -121,3 +121,8 @@ Greppable: `grep "^## \[" log.md | tail`.
 - Red-team caught the first synthesis omitting the gear-ladder linchpin + mis-citing data (Boar trophy is wightpelt not "tusk"; Summit ships a distinct hedgemother_queen kind); final doc grep-verifies every code claim (§0 "rules so it cannot lie again").
 - Notable: the AI asset pipeline has NO runnable executable (clean_ai_mesh.py/register_ai_character.py gone with the three.js removal), and docs/character-pipeline/ was deleted in the aggressive cleanup (recoverable from git b17d221^).
 - Filed [[Gap Analysis and Build Plan]] with a 13-step Tier 0 sprint, instrumented definitions-of-done, and a "make the KB operational" plan (Build Board, status frontmatter, traceability ledger).
+
+## [2026-06-14] build | Tier 0 step: ADR 0010 — gear frozen at zero combat power
+- First real build step from the [[Gap Analysis and Build Plan]]. Resolved the linchpin: the shipped ARPG weapon/gear ladder contradicted "one verb, no gear tier."
+- ADR 0010 (option b): equipped gear keeps slots/inventory/dissolve/Ledger role but adds ZERO to the 5 offensive stats (damage/crit_chance/crit_mult/fire_rate/cooldown_reduction). One surgical filter in player_controller._derive_stats(). HP (armor) + move_speed kept; Huntcraft perks, shrines, chart affixes untouched; the trophy-Ledger becomes the only combat-touching item path.
+- Verified: test_stats 8/8 (GF1 equips a real rolled rare warbow → zero combat change; GF3 HP still applies); four gate suites green (241/26/59/17).

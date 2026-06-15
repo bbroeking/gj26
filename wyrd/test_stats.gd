@@ -61,37 +61,59 @@ func _run() -> void:
 		"+10 HP item (helm base +4): hp_max %d → %d (expect %d)" %
 		[base_hp, p.hp_max, hp_expected])
 
-	# S2 — equip +damage weapon → derived_stats.damage rises.
+	# S2 — ADR 0010: equip a +damage weapon → derived_stats.damage UNCHANGED
+	# (gear is frozen at zero combat power; base_stat + affixes both skipped).
 	var base_dmg: int = int(p.derived_stats.damage)
 	var dmg_item := _custom_item("shortbow",
 		[{"id": "test", "side": "prefix", "display": "Test", "stat": "damage", "value": 5.0}])
 	p.equipment.equip(dmg_item)
-	# Note: shortbow's base_stat is "damage" base_value 6 → +6 also rolls in.
-	var dmg_expected := base_dmg + 6 + 5
-	_check("S2", int(p.derived_stats.damage) == dmg_expected,
-		"+5 dmg weapon: damage %d → %d (expect %d)" %
-		[base_dmg, p.derived_stats.damage, dmg_expected])
+	_check("S2", int(p.derived_stats.damage) == base_dmg,
+		"gear frozen: +damage weapon leaves damage at base %d (got %d)" %
+		[base_dmg, p.derived_stats.damage])
 
-	# S3 — equip +crit-chance ring → derived_stats.crit_chance rises.
+	# S3 — ADR 0010: equip a +crit-chance ring → derived_stats.crit_chance UNCHANGED.
 	var base_cc: float = p.derived_stats.crit_chance
 	var ring := _custom_item("copper_ring",
 		[{"id": "test", "side": "suffix", "display": "Test", "stat": "crit_chance",
 			"value": 0.30}])
 	p.equipment.equip(ring)
-	# ring's base_stat is "crit_chance" base_value 0.04 → +0.04 + 0.30.
-	var cc_expected := base_cc + 0.04 + 0.30
-	_check("S3", absf(p.derived_stats.crit_chance - cc_expected) < 0.001,
-		"+0.30 crit ring: cc %.3f → %.3f (expect %.3f)" %
-		[base_cc, p.derived_stats.crit_chance, cc_expected])
+	_check("S3", absf(p.derived_stats.crit_chance - base_cc) < 0.001,
+		"gear frozen: +crit ring leaves crit_chance at base %.3f (got %.3f)" %
+		[base_cc, p.derived_stats.crit_chance])
 
-	# S4 — unequip reverts.
+	# S4 — unequip: hp reverts (hp is NOT frozen); damage/crit never moved.
 	p.equipment.unequip("ring")
 	p.equipment.unequip("weapon")
 	p.equipment.unequip("helmet")
 	_check("S4", p.hp_max == base_hp \
 			and int(p.derived_stats.damage) == base_dmg \
 			and absf(p.derived_stats.crit_chance - base_cc) < 0.001,
-		"unequip everything: hp/damage/crit back to base")
+		"unequip: hp_max back to base; damage/crit held at base throughout")
+
+	# GF1 — ADR 0010 invariant: a fully-rolled RARE warbow adds zero combat power.
+	var gf_dmg: int = int(p.derived_stats.damage)
+	var gf_cc: float = p.derived_stats.crit_chance
+	var gf_cm: float = float(p.derived_stats.crit_mult_bonus)
+	var gf_fc: float = float(p.derived_stats.fire_cooldown)
+	p.equipment.equip(Items.make_item("warbow", "rare"))
+	_check("GF1", int(p.derived_stats.damage) == gf_dmg \
+			and absf(p.derived_stats.crit_chance - gf_cc) < 0.001 \
+			and absf(float(p.derived_stats.crit_mult_bonus) - gf_cm) < 0.001 \
+			and absf(float(p.derived_stats.fire_cooldown) - gf_fc) < 0.001,
+		"rare warbow: damage/crit/crit_mult/fire_cooldown all unchanged")
+
+	# GF2 — unequip the rare bow; combat stats still at base (no drift either way).
+	p.equipment.unequip("weapon")
+	_check("GF2", int(p.derived_stats.damage) == gf_dmg \
+			and absf(float(p.derived_stats.fire_cooldown) - gf_fc) < 0.001,
+		"unequip rare warbow: damage + fire_cooldown still at base")
+
+	# GF3 — surgical-freeze regression guard: HP from armor STILL applies.
+	var gf_hp: int = p.hp_max
+	p.equipment.equip(Items.make_item("leather_chest", "magic"))
+	_check("GF3", p.hp_max > gf_hp,
+		"leather_chest still raises hp_max %d → %d (hp not frozen)" % [gf_hp, p.hp_max])
+	p.equipment.unequip("chest")
 
 	# S5 — passing a high crit_chance to take_damage raises observed crit rate.
 	CombatantScript.crit_enabled = true

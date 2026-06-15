@@ -990,14 +990,23 @@ func _derive_stats() -> void:
 	var sums := {"hp": 0, "damage": 0, "crit_chance": 0.0,
 		"crit_mult": 0.0, "fire_rate": 0.0, "move_speed": 0.0,
 		"cooldown_reduction": 0.0}
+	# ADR 0010 — gear is frozen at ZERO combat power. Equipped items keep
+	# their slots/inventory/dissolve/Ledger role but add nothing to the five
+	# offensive stats; hp (survival) and move_speed (mobility) still flow.
+	var gear_frozen := ["damage", "crit_chance", "crit_mult", "fire_rate",
+		"cooldown_reduction"]
 	if equipment != null:
 		for slot in Equipment.SLOT_ORDER:
 			var it = equipment.get_slot(slot)
 			if it == null:
 				continue
-			_add_stat(sums, String(it.get("base_stat", "")), it.get("base_value", 0))
+			var bs := String(it.get("base_stat", ""))
+			if not gear_frozen.has(bs):
+				_add_stat(sums, bs, it.get("base_value", 0))
 			for a in it.get("affixes", []):
-				_add_stat(sums, String(a.get("stat", "")), a.get("value", 0))
+				var ast := String(a.get("stat", ""))
+				if not gear_frozen.has(ast):
+					_add_stat(sums, ast, a.get("value", 0))
 	for k in shrine_buffs:
 		_add_stat(sums, String(k), shrine_buffs[k])
 	# B7 — Huntcraft perks ride the same sums.
