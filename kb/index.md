@@ -9,6 +9,7 @@ this first to locate pages, then drill in. Start at [[Overview]]; for status see
 - [[Current State]] — what's playable, in-flight, queued; known doc/code deltas
 - [[Development History]] — three.js → Godot pivot and the spec 01–46 timeline
 - [[Universe Build-Out Plan]] — the plan to grow the demo into a full cozy co-op game (mined from this KB)
+- [[Gap Analysis and Build Plan]] — what's MISSING across the whole framework (107 gaps) + the Tier 0→4 populate-everything plan + the Tier 0 sprint
 
 ## World
 - [[Bramblewood]] — the setting: places, the Summit, factions, mood

@@ -115,3 +115,9 @@ Greppable: `grep "^## \[" log.md | tail`.
 - Wrote 15 [[Systems Interlock Map|"— Deep Design" docs]] under wiki/design/ + the interlock map + [[Red-Team Findings]].
 - Red-team verdict CONDITIONAL: the designs assert "one verb, no gear tier" but the SHIPPED code has a full weapon/gear ladder (shortbow→longbow→warbow, rolled magic/rare affixes, fire_rate scaling) — the linchpin reconciliation. Also found a live co-op determinism break (layout_loader.gd:813 bare randf()), a "Second Pour" name collision, and the summit using a distinct hedgemother_queen kind.
 - 4 intentional forward-ref links remain ([[Almanac]], [[Deepening]], [[Living Atlas]], [[Wayfarer's Codex]] — planned feature pages).
+
+## [2026-06-14] query+file | Gap Analysis & Build Plan (10-agent audit workflow)
+- Audited the whole framework for what's MISSING across 7 dimensions (design completeness, code-vs-design, content, art/audio, tooling, process, KB-as-OS) → 107 gaps, 15 demo blockers.
+- Red-team caught the first synthesis omitting the gear-ladder linchpin + mis-citing data (Boar trophy is wightpelt not "tusk"; Summit ships a distinct hedgemother_queen kind); final doc grep-verifies every code claim (§0 "rules so it cannot lie again").
+- Notable: the AI asset pipeline has NO runnable executable (clean_ai_mesh.py/register_ai_character.py gone with the three.js removal), and docs/character-pipeline/ was deleted in the aggressive cleanup (recoverable from git b17d221^).
+- Filed [[Gap Analysis and Build Plan]] with a 13-step Tier 0 sprint, instrumented definitions-of-done, and a "make the KB operational" plan (Build Board, status frontmatter, traceability ledger).
