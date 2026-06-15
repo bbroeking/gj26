@@ -55,6 +55,14 @@ this first to locate pages, then drill in. Start at [[Overview]]; for status see
 - [[Balance Philosophy]] — cozy pacing, no-arbitrage economy, XP/heal tuning
 - [[Design Archive]] — superseded/cut/deferred design, preserved and labeled
 
+## Design (forward-looking deep designs)
+Deep, buildable designs for every system — grounded in the live code, constrained by the [[Universe Build-Out Plan]]. Read the map and the red-team first.
+- [[Systems Interlock Map]] — how the systems wire into one machine: spine dataflow, build order, shared data, contradictions, the cozy throughline
+- [[Red-Team Findings]] — the adversarial review (verdict: CONDITIONAL — the designs contradict the *shipped* gear ladder; required reconciliations)
+- **The spine:** [[Chart Loop — Deep Design]] · [[Gathering — Deep Design]] · [[Crafting and Inks — Deep Design]] · [[Trades and Leveling — Deep Design]] · [[Charts Affixes and Inks — Deep Design]]
+- **The delve:** [[Dungeon Generation — Deep Design]] · [[Combat — Deep Design]] · [[Skills and Loadout — Deep Design]] · [[Enemies and Bosses — Deep Design]] · [[Items Gear and Economy — Deep Design]]
+- **The frame:** [[Multiplayer Co-op — Deep Design]] · [[Progression and Endgame — Deep Design]] · [[Onboarding and Narrative — Deep Design]] · [[UI HUD Camera and Audio — Deep Design]] · [[Save and Persistence — Deep Design]]
+
 ## Decisions
 - [[Design Decisions]] — digest of the six ADRs (spine, controls, Huntcraft, cap)
 

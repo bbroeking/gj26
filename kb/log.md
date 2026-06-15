@@ -109,3 +109,9 @@ Greppable: `grep "^## \[" log.md | tail`.
 - Winner: "The Wolds Remembered — A Pillar-by-Pillar Wayfinder" (87/100, over 86/86/83).
 - The critic forced a codebase-verification pass that caught 3 factual errors (save versioning exists-but-destructive; Briar Maze shipped; Boar/Wolf modeled+chained; the "Queen" is the same Hedgemother scaled) — the final plan is grounded in source (its §0).
 - Filed the result back into the wiki as [[Universe Build-Out Plan]] (cozy-spine-protected, scope hard-cut to Pillar Zero + Pillar One, rest = a named Horizon). Lint clean.
+
+## [2026-06-14] design | Deep system designs for all 15 systems (multi-agent workflow)
+- Ran a deep-design workflow (15 system designers grounded in live code + KB + the plan → Systems Interlock Map → adversarial red-team). First run hit a server rate-limit storm (14/15 failed); re-ran throttled in batches of 4 → all 15 succeeded.
+- Wrote 15 [[Systems Interlock Map|"— Deep Design" docs]] under wiki/design/ + the interlock map + [[Red-Team Findings]].
+- Red-team verdict CONDITIONAL: the designs assert "one verb, no gear tier" but the SHIPPED code has a full weapon/gear ladder (shortbow→longbow→warbow, rolled magic/rare affixes, fire_rate scaling) — the linchpin reconciliation. Also found a live co-op determinism break (layout_loader.gd:813 bare randf()), a "Second Pour" name collision, and the summit using a distinct hedgemother_queen kind.
+- 4 intentional forward-ref links remain ([[Almanac]], [[Deepening]], [[Living Atlas]], [[Wayfarer's Codex]] — planned feature pages).
