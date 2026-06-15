@@ -777,14 +777,9 @@ func _draw_squiggle(from: Vector2, width: float, color: Color) -> void:
 var _unlock_cells: Array = []     # rebuilt each draw: {rect, label}
 
 const TRADE_ROWS := [
-	{"key": "carto", "name": "Wayfinder", "glyph": "✦",
+	# ADR 0012 — one skill: Wayfinding.
+	{"key": "wayfinding", "name": "Wayfinding", "glyph": "✦",
 		"color": Color(0.71, 0.53, 0.22)},
-	{"key": "earth", "name": "Earthcraft", "glyph": "▲",
-		"color": Color(0.62, 0.36, 0.24)},
-	{"key": "wilds", "name": "Wildcraft", "glyph": "❀",
-		"color": Color(0.44, 0.54, 0.31)},
-	{"key": "hunt", "name": "Huntcraft", "glyph": "➳",
-		"color": Color(0.32, 0.44, 0.50)},
 ]
 const CELL_S := 30.0
 const CELL_GAP := 7.0

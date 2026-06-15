@@ -119,7 +119,7 @@ func _test_loadout_swap(game: Node, p: Node3D) -> void:
 # ---- set_loadout validation + the Huntcraft gates ----
 func _test_gates(game: Node, p: Node3D) -> void:
 	print("[loadout gates]")
-	game.trades["hunt"]["lv"] = 1
+	game.trades["wayfinding"]["lv"] = 1
 	_check("rejects a gated pick at Huntcraft 1",
 		not game.set_loadout(["PowerShot", "MultiShot", "HuntersMark"]))
 	_check("rejects duplicates",
@@ -129,7 +129,7 @@ func _test_gates(game: Node, p: Node3D) -> void:
 		not game.set_loadout(["PowerShot", "MultiShot", "FoxFire"]))
 	_check("failed swaps leave the loadout alone",
 		String(p.skills[1].name) == "PiercingBolt", str(game.loadout))
-	game.trades["hunt"]["lv"] = 9
+	game.trades["wayfinding"]["lv"] = 9
 	var ok: bool = game.set_loadout(["HuntersMark", "HeartwoodWard", "MercyShot"])
 	p.focus = p.focus_max
 	var before: float = float(p.focus)

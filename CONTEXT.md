@@ -15,7 +15,7 @@ A player-usable ability bound to a hotbar slot. Carries cost (Focus), cooldown, 
 _Avoid_: ability, spell, attack. Never use Skill for a leveling discipline — that's a **Trade**.
 
 **Trade**:
-A leveling discipline with an XP curve and per-level unlocks: `carto` (Wayfinding), `earth` (Earthcraft), `wilds` (Wildcraft), `hunt` (Huntcraft — fed by kills, ADR 0005). Lives on the `Game` autoload (`Game.trades`, `trade_lv`, `award_xp`). Player-facing names come from `TRADE_NAMES`. Demo scope: level cap 17 (Wayfinding's natural top — the Summit sits at 16); every Trade's unlock ladder is built out to the cap.
+The single leveling discipline (ADR 0012): **Wayfinding** — one XP curve, one unified perk ladder, level cap 17 (ADR 0006). Every cozy activity (gather / craft / forage / chart) feeds it; **combat gives no Trade XP**. Formerly four trades (`carto`/`earth`/`wilds`/`hunt`, ADR 0005) — now compressed into one. Lives on the `Game` autoload (`Game.trades`, `trade_lv`, `award_xp` — which ignore any legacy key argument). Player-facing name comes from `TRADE_NAMES`.
 _Avoid_: skill (reserved for hotbar abilities), stat, profession.
 
 **Chart**:

@@ -16,13 +16,12 @@ const GatherDefs = preload("res://data/gather.gd")
 const TOWN_SCENE := "res://scenes/Town.tscn"
 const DUNGEON_SCENE := "res://scenes/World.tscn"
 
-# "Trade" = a leveling discipline (carto / earth / wilds). NOT "skill" —
-# that word is reserved for hotbar abilities (CONTEXT.md Language).
+# ADR 0012 — the four trades (carto/earth/wilds/hunt) are compressed into ONE
+# leveling skill, "Wayfinding": every cozy activity (gather, craft, forage,
+# chart) feeds it; combat gives NO skill XP. One unified perk ladder.
+const SKILL := "wayfinding"
 const TRADE_NAMES := {
-	"carto": "Wayfinder",
-	"earth": "Earthcraft",
-	"wilds": "Wildcraft",
-	"hunt": "Huntcraft",   # B7/ADR 0005 — the one combat trade
+	"wayfinding": "Wayfinding",
 }
 
 signal xp_gained(trade: String, amount: int)
@@ -101,10 +100,7 @@ func _notification(what: int) -> void:
 
 # ---- persistent player-adjacent state ----
 var trades := {
-	"hunt": {"lv": 1, "xp": 0},
-	"carto": {"lv": 1, "xp": 0},
-	"earth": {"lv": 1, "xp": 0},
-	"wilds": {"lv": 1, "xp": 0},
+	"wayfinding": {"lv": 1, "xp": 0},   # ADR 0012 — the one skill
 }
 var materials: Dictionary = {}        # material id -> count
 var charts: Array = []                # crafted chart dicts (the chart case)
@@ -269,22 +265,23 @@ static func xp_for_level(n: int) -> int:
 	var k := n - 1
 	return k * k * 8 + k * 32
 
-func trade_lv(key: String) -> int:
-	return int(trades.get(key, {}).get("lv", 1))
+# ADR 0012 — one skill; the key arg is ignored (kept for call-site compat).
+func trade_lv(_key: String = "") -> int:
+	return int(trades[SKILL].lv)
 
 # ADR 0006 — the demo level cap; xp accrues past it but levels stop.
 const LEVEL_CAP := 17
 
-func award_xp(key: String, amount: int) -> void:
-	if amount <= 0 or not trades.has(key):
+func award_xp(_key: String, amount: int) -> void:
+	if amount <= 0:
 		return
-	trades[key].xp += amount
-	xp_gained.emit(key, amount)
-	while int(trades[key].lv) < LEVEL_CAP \
-			and trades[key].xp >= xp_for_level(int(trades[key].lv) + 1):
-		trades[key].lv += 1
-		leveled_up.emit(key, int(trades[key].lv))
-		notify("%s rises to %d" % [TRADE_NAMES.get(key, key), int(trades[key].lv)])
+	trades[SKILL].xp += amount
+	xp_gained.emit(SKILL, amount)
+	while int(trades[SKILL].lv) < LEVEL_CAP \
+			and trades[SKILL].xp >= xp_for_level(int(trades[SKILL].lv) + 1):
+		trades[SKILL].lv += 1
+		leveled_up.emit(SKILL, int(trades[SKILL].lv))
+		notify("%s rises to %d" % [TRADE_NAMES.get(SKILL, "Wayfinding"), int(trades[SKILL].lv)])
 		var sfx_lv := get_node_or_null("/root/Sfx")
 		if sfx_lv != null:
 			sfx_lv.play("level_up")
@@ -409,62 +406,55 @@ func craft(station_id: String, recipe_id: String) -> bool:
 
 # ---- per-trade level perks (A9) ----
 const PERKS := {
-	# Spec 45-carto — the chart/bench game's first perk ladder.
-	"carto": [
+	# ADR 0012 — ONE unified Wayfinding ladder: the old carto/earth/wilds/hunt
+	# perks all live here now, unlocked by the single skill level. (Pick-one-of-N
+	# mastery is a planned refinement.)
+	"wayfinding": [
 		{"id": "marginalia", "lv": 2, "name": "Mara's Marginalia",
 			"desc": "Mara's notes crowd the codex margins — every riddle, plain to read"},
 		{"id": "practiced_measures", "lv": 3, "name": "Practiced Measures",
 			"desc": "Click a known mix in the codex and the pot sets out its makings"},
 		{"id": "curious_fingers", "lv": 5, "name": "Curious Fingers",
 			"desc": "A failed mix smudges less — curiosity keeps more of what it touches"},
-		{"id": "sure_lines", "lv": 10, "name": "Sure Lines",
-			"desc": "Your nib doesn't waver — every affix leans 5 points toward its good twin"},
-		{"id": "thrifty_quill", "lv": 14, "name": "Thrifty Quill",
-			"desc": "Each chart asks one less pot of hedge ink. Waste not"},
-		{"id": "master_wayfinder", "lv": 17, "name": "Master Wayfinder",
-			"desc": "Every chart that takes ink holds one more pot — the page listens closer"},
-	],
-	"earth": [
 		{"id": "double_ore", "lv": 5, "name": "Sturdy Swings",
 			"desc": "25% chance a vein gives a second lump"},
-		{"id": "quick_mining", "lv": 10, "name": "Miner's Rhythm",
-			"desc": "Mining takes a third less time"},
-		# Spec 45-earth.
-		{"id": "rich_seams", "lv": 13, "name": "Rich Seams",
-			"desc": "Starsilver and deeper veins always give a second lump"},
-		{"id": "smiths_thrift", "lv": 17, "name": "Smith's Thrift",
-			"desc": "1 in 4 forge crafts hand back one raw input — never a bar"},
-	],
-	"wilds": [
 		{"id": "keen_eye", "lv": 5, "name": "Keen Eye",
 			"desc": "+1 herb on every forage"},
-		{"id": "clean_splits", "lv": 10, "name": "Clean Splits",
-			"desc": "+1 log on every chop"},
-		# Spec 45-wilds.
-		{"id": "light_hands", "lv": 13, "name": "Light Hands",
-			"desc": "Foraging and chopping take a quarter less time"},
-		{"id": "second_pour", "lv": 17, "name": "Second Pour",
-			"desc": "25% chance a hearth or still recipe pours a second bottle"},
-	],
-	"hunt": [
 		{"id": "steady_hands", "lv": 5, "name": "Steady Hands",
 			"desc": "+5% crit chance"},
+		{"id": "sure_lines", "lv": 10, "name": "Sure Lines",
+			"desc": "Your nib doesn't waver — every affix leans 5 points toward its good twin"},
+		{"id": "quick_mining", "lv": 10, "name": "Miner's Rhythm",
+			"desc": "Mining takes a third less time"},
+		{"id": "clean_splits", "lv": 10, "name": "Clean Splits",
+			"desc": "+1 log on every chop"},
 		{"id": "hunters_stride", "lv": 10, "name": "Hunter's Stride",
 			"desc": "+5% move speed"},
-		# Spec 45-hunt.
 		{"id": "quick_nock", "lv": 12, "name": "Quick Nock",
 			"desc": "Skills come back a tenth sooner"},
+		{"id": "rich_seams", "lv": 13, "name": "Rich Seams",
+			"desc": "Starsilver and deeper veins always give a second lump"},
+		{"id": "light_hands", "lv": 13, "name": "Light Hands",
+			"desc": "Foraging and chopping take a quarter less time"},
+		{"id": "thrifty_quill", "lv": 14, "name": "Thrifty Quill",
+			"desc": "Each chart asks one less pot of hedge ink. Waste not"},
 		{"id": "heavy_draw", "lv": 14, "name": "Heavy Draw",
 			"desc": "Your telling hits land a quarter harder"},
+		{"id": "master_wayfinder", "lv": 17, "name": "Master Wayfinder",
+			"desc": "Every chart that takes ink holds one more pot — the page listens closer"},
+		{"id": "smiths_thrift", "lv": 17, "name": "Smith's Thrift",
+			"desc": "1 in 4 forge crafts hand back one raw input — never a bar"},
+		{"id": "second_pour", "lv": 17, "name": "Second Pour",
+			"desc": "25% chance a hearth or still recipe pours a second bottle"},
 		{"id": "even_breath", "lv": 17, "name": "Even Breath",
 			"desc": "A clean kill steadies you — every kill returns 6 Focus"},
 	],
 }
 
-func perk_active(trade: String, perk_id: String) -> bool:
-	for perk in PERKS.get(trade, []):
+func perk_active(_trade: String, perk_id: String) -> bool:
+	for perk in PERKS[SKILL]:
 		if String(perk.id) == perk_id:
-			return trade_lv(trade) >= int(perk.lv)
+			return trade_lv(SKILL) >= int(perk.lv)
 	return false
 
 # Bonus yield for one harvest of `kind` — deterministic perks return 1,

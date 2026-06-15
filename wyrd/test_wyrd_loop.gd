@@ -102,7 +102,7 @@ func _test_tools_and_mute() -> void:
 	game.add_material("bogiron_bar", 1)
 	game.add_material("logs", 1)
 	_check("pickaxe gated at earth 1", not game.craft("forge", "pickaxe_smith"))
-	game.trades.earth.lv = 2
+	game.trades.wayfinding.lv = 2
 	_check("pickaxe smiths at earth 2", game.craft("forge", "pickaxe_smith"))
 	var pick = null
 	for it in game.inventory.items:
@@ -172,12 +172,12 @@ func _test_loadout() -> void:
 	# Huntcraft gates: locked at hunt 1, open at the stated level.
 	_check("mark locked at hunt 1",
 		not game.set_loadout(["HuntersMark", "PowerShot", "MultiShot"]))
-	game.trades.hunt.lv = 4
+	game.trades.wayfinding.lv = 4
 	_check("mark opens at hunt 4",
 		game.set_loadout(["HuntersMark", "PowerShot", "MultiShot"]))
 	_check("mercy still locked at hunt 4",
 		not game.set_loadout(["MercyShot", "PowerShot", "MultiShot"]))
-	game.trades.hunt.lv = 9
+	game.trades.wayfinding.lv = 9
 	_check("mercy opens at hunt 9",
 		game.set_loadout(["MercyShot", "PowerShot", "MultiShot"]))
 	_check("thornburst open from the start", bool(game.skill_unlocked("Thornburst")))
@@ -200,7 +200,7 @@ func _test_ore_tiers() -> void:
 	node.setup("ore_rock", "copper_ore", false)
 	node.setup_ore_tier("palechalk")
 	_check("palechalk locked at earth 1", node.locked(game))
-	game.trades.earth.lv = 7
+	game.trades.wayfinding.lv = 7
 	_check("palechalk opens at earth 7", not node.locked(game))
 	_check("tier channel overrides kind default",
 		absf(GatherNode.channel_seconds("ore_rock", game, 2.0) - 2.0) < 0.01)
@@ -215,7 +215,7 @@ func _test_ore_tiers() -> void:
 	game.add_material("copper_ore", 2)
 	_check("smelt copper bar", game.craft("forge", "copper_bar"))
 	game.add_material("copper_bar", 1)
-	game.trades.earth.lv = 8
+	game.trades.wayfinding.lv = 8
 	_check("ring takes copper bars now", game.craft("forge", "bogiron_ring"))
 	# Chart-tier vein mixes (deterministic seeds).
 	var t1 := DungeonGenScript.generate(4242, {"grid": 36, "room_min": 7,
@@ -289,24 +289,26 @@ func _test_b6_affixes() -> void:
 # B7/ADR 0005 — Huntcraft: the one combat trade. The kill-side award is
 # checked in the dungeon scene suite; this is the trade plumbing.
 func _test_huntcraft() -> void:
-	print("[huntcraft]")
+	print("[wayfinding skill]")
 	var game = load("res://scripts/game.gd").new()
 	game._ready()
-	_check("hunt trade exists at lv 1", game.trade_lv("hunt") == 1)
-	_check("hunt named Huntcraft",
-		String(game.TRADE_NAMES.get("hunt", "")) == "Huntcraft")
-	_check("steady hands off at hunt 1",
+	_check("the one skill is named Wayfinding",
+		String(game.TRADE_NAMES.get("wayfinding", "")) == "Wayfinding")
+	_check("steady hands off at lv 1",
 		not game.perk_active("hunt", "steady_hands"))
-	game.trades.hunt.lv = 5
-	_check("steady hands on at hunt 5", game.perk_active("hunt", "steady_hands"))
+	game.trades.wayfinding.lv = 5
+	_check("steady hands on at lv 5", game.perk_active("hunt", "steady_hands"))
 	_check("hunters stride waits for 10",
 		not game.perk_active("hunt", "hunters_stride"))
-	game.trades.hunt.lv = 10
-	_check("hunters stride on at hunt 10",
+	game.trades.wayfinding.lv = 10
+	_check("hunters stride on at lv 10",
 		game.perk_active("hunt", "hunters_stride"))
-	game.award_xp("hunt", 40)
-	_check("hunt xp rides the shared curve", int(game.trades.hunt.xp) == 40
-		and game.trade_lv("hunt") == 10)
+	# ADR 0012 — every cozy activity (any old trade key) feeds the one skill.
+	game.trades.wayfinding.lv = 1
+	game.trades.wayfinding.xp = 0
+	game.award_xp("carto", 40)
+	_check("all activities ride one shared curve",
+		int(game.trades.wayfinding.xp) == 40)
 	game.free()
 
 # A7-full — the economy gate: smithed gear must never sell back to Hod for
@@ -346,7 +348,7 @@ func _test_economy_gate() -> void:
 	game.add_material("bogiron_bar", 2)
 	game.add_material("logs", 1)
 	_check("cap gated at earth 1", not game.craft("forge", "bogiron_cap_smith"))
-	game.trades.earth.lv = 5
+	game.trades.wayfinding.lv = 5
 	_check("cap smiths at earth 5", game.craft("forge", "bogiron_cap_smith"))
 	var helm = null
 	for it in game.inventory.items:
@@ -354,7 +356,7 @@ func _test_economy_gate() -> void:
 			helm = it
 	_check("cap is a magic leather_helm", helm != null
 		and String(helm.rarity) == "magic" and (helm.affixes as Array).size() == 1)
-	game.trades.earth.lv = 9
+	game.trades.wayfinding.lv = 9
 	game.add_material("palechalk", 2)
 	game.add_material("copper_bar", 1)
 	_check("palechalk ring smiths at earth 9",
@@ -380,7 +382,7 @@ func _test_alchemy() -> void:
 	game._ready()
 	game.add_material("wild_herb", 3)
 	_check("tonic gated at wilds 1", not game.craft("still", "quickroot_tonic"))
-	game.trades.wilds.lv = 3
+	game.trades.wayfinding.lv = 3
 	_check("tonic brews at wilds 3", game.craft("still", "quickroot_tonic"))
 	_check("tonic in satchel", game.material_count("quickroot_tonic") == 1)
 	# Quaffing the buff shelf: bottle spent, buff live, channels run faster.
@@ -405,7 +407,7 @@ func _test_alchemy() -> void:
 	game.add_material("palechalk", 1)
 	_check("philter gated at wilds 3",
 		not game.craft("still", "clearwater_philter"))
-	game.trades.wilds.lv = 6
+	game.trades.wayfinding.lv = 6
 	_check("philter brews at wilds 6", game.craft("still", "clearwater_philter"))
 	_check("quaff the philter", game.quaff_buff_draught())
 	_check("focus buff live",
@@ -457,25 +459,25 @@ func _test_discovery() -> void:
 		float(w.get("wood_grove", 0.0)) > float(w0.get("wood_grove", 0.0)))
 	# Exact match + undiscovered → discovery: mix, learn, +50 carto.
 	game.add_material("bogiron_ore", 2)
-	var xp0: int = int(game.trades.carto.xp)
+	var xp0: int = int(game.trades.wayfinding.xp)
 	var r: Dictionary = game.try_pot_mix({"bogiron_ore": 2})
 	_check("try discovers stoneground",
 		String(r.get("outcome", "")) == "discovery"
 		and game.ink_discovered("stoneground_ink")
 		and game.material_count("stoneground_ink") == 1
 		and game.material_count("bogiron_ore") == 0, str(r))
-	_check("discovery pays 50 carto", int(game.trades.carto.xp) - xp0 == 50)
+	_check("discovery pays 50 carto", int(game.trades.wayfinding.xp) - xp0 == 50)
 	# The same recipe again is a plain mix — no second bonus.
 	game.add_material("bogiron_ore", 2)
-	xp0 = int(game.trades.carto.xp)
+	xp0 = int(game.trades.wayfinding.xp)
 	r = game.try_pot_mix({"bogiron_ore": 2})
 	_check("known recipe just mixes", String(r.get("outcome", "")) == "mix"
-		and int(game.trades.carto.xp) == xp0)
+		and int(game.trades.wayfinding.xp) == xp0)
 	# A junk pot: consumed minus the cheapest consolation, +5 carto, and
 	# one of the three miss outcomes.
 	game.add_material("wild_herb", 1)
 	game.add_material("bogiron_ore", 1)
-	xp0 = int(game.trades.carto.xp)
+	xp0 = int(game.trades.wayfinding.xp)
 	var inks0 := 0
 	for id in GatherDefs.INK_RECIPE_ORDER:
 		inks0 += game.material_count(String(id))
@@ -487,7 +489,7 @@ func _test_discovery() -> void:
 		game.material_count("wild_herb") == 1
 		and game.material_count("bogiron_ore") == 0)
 	_check("the failed experiment teaches 5 carto",
-		int(game.trades.carto.xp) - xp0 == 5)
+		int(game.trades.wayfinding.xp) - xp0 == 5)
 	var inks1 := 0
 	for id in GatherDefs.INK_RECIPE_ORDER:
 		inks1 += game.material_count(String(id))
@@ -503,11 +505,11 @@ func _test_ladders() -> void:
 	game._ready()
 	# The cap: xp accrues but levels stop at 17.
 	_check("level cap is 17", int(game.LEVEL_CAP) == 17)
-	game.trades.earth.lv = 16
-	game.trades.earth.xp = game.xp_for_level(16)
+	game.trades.wayfinding.lv = 16
+	game.trades.wayfinding.xp = game.xp_for_level(16)
 	game.award_xp("earth", 100000)
-	_check("award clamps at the cap", game.trade_lv("earth") == 17,
-		str(game.trade_lv("earth")))
+	_check("award clamps at the cap", game.trade_lv("wayfinding") == 17,
+		str(game.trade_lv("wayfinding")))
 	# Herb ladder: six tiers, reqs ascend 1/3/7/10/13/16, real materials.
 	var ht: Dictionary = GatherDefs.HERB_TIERS
 	_check("six herb tiers", ht.size() == 6)
@@ -528,15 +530,14 @@ func _test_ladders() -> void:
 	var node = GatherNode.new()
 	node.setup("forage_node", "mothmint", false)
 	node.setup_herb_tier("mothmint")
-	_check("mothmint locked at wilds 1", node.locked(game))
-	game.trades.wilds.lv = 10
-	_check("mothmint opens at wilds 10", not node.locked(game))
-	# Every trade has a built-out perk ladder.
-	_check("perk counts: carto 6 / earth 4 / wilds 4 / hunt 5",
-		(game.PERKS.carto as Array).size() == 6
-		and (game.PERKS.earth as Array).size() == 4
-		and (game.PERKS.wilds as Array).size() == 4
-		and (game.PERKS.hunt as Array).size() == 5)
+	game.trades.wayfinding.lv = 1   # ADR 0012 — one skill; reset for this gate
+	_check("mothmint locked at lv 1", node.locked(game))
+	game.trades.wayfinding.lv = 10
+	_check("mothmint opens at lv 10", not node.locked(game))
+	# ADR 0012 — one unified perk ladder (the old carto 6 + earth 4 + wilds 4
+	# + hunt 5 = 19 perks all live under the single skill now).
+	_check("unified perk ladder carries all 19 perks",
+		(game.PERKS.wayfinding as Array).size() == 19)
 	# The heal ladder quaffs smallest-first: 35/55/80/140/220.
 	game.add_material("hale_draught", 1)
 	game.add_material("bitter_draught", 1)
@@ -564,7 +565,7 @@ func _test_ladders() -> void:
 	_check("the trim floors at one pot",
 		int(ChartsData.craft_cost("snug", [], "", 1).get("hedge_ink", 99)) >= 1)
 	# Light Hands: forage channels a quarter faster at wilds 13.
-	game.trades.wilds.lv = 13
+	game.trades.wayfinding.lv = 13
 	_check("light hands cuts the forage channel",
 		absf(GatherNode.channel_seconds("forage_node", game) - 0.75) < 0.01)
 	# Tier-2 charts grow tier-2..4 herbs (deterministic seed).
@@ -607,7 +608,7 @@ func _test_save_roundtrip() -> void:
 	print("[save/load]")
 	var game = load("res://scripts/game.gd").new()
 	game._ready()
-	game.trades.carto = {"lv": 3, "xp": 250}
+	game.trades.wayfinding = {"lv": 3, "xp": 250}
 	game.add_material("wild_herb", 5)
 	game.charts.append({"template_id": "tier_1", "tier": 1, "scope": "hollow",
 		"name": "Tier 1 Hollow", "seed": 42, "affixes": [
@@ -618,7 +619,7 @@ func _test_save_roundtrip() -> void:
 	game.summit_cleared = true
 	game.muted = true   # spec 38 — the mute preference rides the save
 	game.loadout = ["PiercingBolt", "MultiShot", "RainOfThorns"]
-	game.trades.erase("hunt")   # simulate a pre-B7 save on disk
+	# ADR 0012 — the save now carries a single Wayfinding skill.
 	game.discovered_inks = ["hedge_ink", "ash_ink"]   # spec 43 rides the save
 	var ItemsData = load("res://data/items.gd")
 	var item: Dictionary = ItemsData.make_item("shortbow", "magic")
@@ -645,8 +646,8 @@ func _test_save_roundtrip() -> void:
 	_check("equipment restored w/ Color", helm != null and helm.icon_color is Color)
 	_check("loadout restored", game2.loadout ==
 		["PiercingBolt", "MultiShot", "RainOfThorns"])
-	_check("pre-B7 save backfills Huntcraft",
-		(game2.trades as Dictionary).has("hunt") and game2.trade_lv("hunt") == 1)
+	_check("the single Wayfinding skill restored",
+		(game2.trades as Dictionary).has("wayfinding") and game2.trade_lv("wayfinding") == 3)
 	_check("discovered inks restored",
 		game2.discovered_inks == ["hedge_ink", "ash_ink"])
 	# Spec 43 — a save from before discovery (no key) keeps all three
@@ -769,8 +770,8 @@ func _test_crafting_perks() -> void:
 	_check("draught in satchel", game.material_count("hearth_draught") == 1)
 	_check("inputs spent", game.material_count("wild_herb") == 0
 		and game.material_count("logs") == 0)
-	_check("cook pays wilds xp", int(game.trades.wilds.xp) == 15,
-		str(game.trades.wilds.xp))
+	_check("cook pays wilds xp", int(game.trades.wayfinding.xp) == 15,
+		str(game.trades.wayfinding.xp))
 	# Quaffing: smallest bottle first, consumed, heal amount returned.
 	game.add_material("deep_draught", 1)
 	_check("quaff drinks the hearth bottle first", game.quaff_draught() == 35)
@@ -784,7 +785,7 @@ func _test_crafting_perks() -> void:
 	game.add_material("logs", 2)
 	_check("longbow gated at earth 1", not game.craft("forge", "longbow_smith"))
 	_check("gate spends nothing", game.material_count("bogiron_bar") == 1)
-	game.trades.earth.lv = 4
+	game.trades.wayfinding.lv = 4
 	_check("longbow smiths at earth 4", game.craft("forge", "longbow_smith"))
 	var found := false
 	for it in game.inventory.items:
@@ -795,12 +796,12 @@ func _test_crafting_perks() -> void:
 	_check("can't cook at the anvil", not game.craft("forge", "hearth_draught"))
 	# Perks (A9).
 	_check("keen_eye off at wilds 1", game.gather_bonus("forage_node") == 0)
-	game.trades.wilds.lv = 5
+	game.trades.wayfinding.lv = 5
 	_check("keen_eye on at wilds 5", game.gather_bonus("forage_node") == 1)
 	_check("clean_splits still off", game.gather_bonus("log_pile") == 0)
-	game.trades.wilds.lv = 10
+	game.trades.wayfinding.lv = 10
 	_check("clean_splits on at wilds 10", game.gather_bonus("log_pile") == 1)
-	game.trades.earth.lv = 5
+	game.trades.wayfinding.lv = 5
 	var doubles := 0
 	for _i in 200:
 		doubles += game.gather_bonus("ore_rock")

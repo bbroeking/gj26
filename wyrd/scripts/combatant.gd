@@ -720,7 +720,7 @@ func _die() -> void:
 				and last_hit_peer != multiplayer.get_unique_id():
 			netd.kill_credit(last_hit_peer, hp_max)
 		else:
-			game.award_xp("hunt", maxi(2, int(hp_max / 3.0)))
+			pass  # ADR 0012 — combat gives no skill XP; kills no longer award it
 			# Spec 45-hunt — Even Breath: a clean kill steadies the hunter.
 			if game.perk_active("hunt", "even_breath"):
 				var pl := get_tree().get_first_node_in_group("player")

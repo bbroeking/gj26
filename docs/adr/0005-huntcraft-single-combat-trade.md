@@ -1,5 +1,10 @@
 # Combat XP feeds ONE trade (Huntcraft), not an OSRS stat block
 
+> **⚠️ SUPERSEDED by [ADR 0012](0012-one-skill-wayfinding.md) (2026-06-14).**
+> The four trades were compressed into one skill (**Wayfinding**), and combat now
+> gives **no** skill XP at all. Huntcraft is no longer a separate trade. The
+> reasoning below (one combat trade, not three) is preserved as history.
+
 B7 on the build plan asked whether combat should grant trade XP. The
 three.js prototype's model (awardCombatXp → attack/strength/defence)
 would add three combat trades; the plan's risk table flagged that this

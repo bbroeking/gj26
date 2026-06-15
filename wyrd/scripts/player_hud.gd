@@ -282,9 +282,8 @@ func _refresh_trades() -> void:
 	var game := get_tree().root.get_node_or_null("Game")
 	if game == null:
 		return
-	_skills_lbl.text = "%dg · Wayfinder %d · Earthcraft %d · Wildcraft %d" % [
-		int(game.gold), game.trade_lv("carto"),
-		game.trade_lv("earth"), game.trade_lv("wilds")]
+	_skills_lbl.text = "%dg · Wayfinding %d" % [
+		int(game.gold), game.trade_lv("wayfinding")]
 
 func show_toast(msg: String) -> void:
 	var l := Label.new()

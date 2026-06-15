@@ -126,3 +126,7 @@ Greppable: `grep "^## \[" log.md | tail`.
 - First real build step from the [[Gap Analysis and Build Plan]]. Resolved the linchpin: the shipped ARPG weapon/gear ladder contradicted "one verb, no gear tier."
 - ADR 0010 (option b): equipped gear keeps slots/inventory/dissolve/Ledger role but adds ZERO to the 5 offensive stats (damage/crit_chance/crit_mult/fire_rate/cooldown_reduction). One surgical filter in player_controller._derive_stats(). HP (armor) + move_speed kept; Huntcraft perks, shrines, chart affixes untouched; the trophy-Ledger becomes the only combat-touching item path.
 - Verified: test_stats 8/8 (GF1 equips a real rolled rare warbow → zero combat change; GF3 HP still applies); four gate suites green (241/26/59/17).
+
+## [2026-06-14] build | ADR 0012 — compress the four trades into one skill (Wayfinding)
+- Per the user: Wayfinding · one unified perk ladder · combat gives NO skill XP.
+- One leveling skill; trade_lv/award_xp/perk_active ignore the legacy key arg (carto/earth/wilds/hunt) so ~25 call sites stay; the 19 perks merged into one ladder; combat XP awards removed (combatant.gd, net_game.gd) — Even Breath still refunds Focus; legacy four-trade saves migrate by summing XP. Supersedes ADR 0005; CONTEXT.md glossary + ADR 0005 banner updated.

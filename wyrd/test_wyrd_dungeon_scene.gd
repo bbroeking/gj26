@@ -117,7 +117,7 @@ func _run() -> void:
 	# without re-seeding, so the NEXT cast of any slot crashed out of
 	# bounds. Swap, then actually fire every hotbar slot.
 	if player2 != null:
-		game.trades.hunt.lv = 9
+		game.trades.wayfinding.lv = 9
 		game.set_loadout(["PiercingBolt", "Thornburst", "MercyShot"])
 		player2.focus = 999.0
 		for s in [2, 3, 4]:
@@ -145,19 +145,19 @@ func _run() -> void:
 	else:
 		_check("player found for ward check", false)
 
-	var hunt_before: int = int(game.trades.hunt.xp)
+	var hunt_before: int = int(game.trades.wayfinding.xp)
 	var prey_vigor: int = int(prey.hp_max)
 	# Spec 45-hunt — Even Breath: at the cap, every kill returns 6 Focus.
-	game.trades.hunt.lv = 17
+	game.trades.wayfinding.lv = 17
 	if player2 != null:
 		player2.focus = 10.0
 	prey.take_damage(999, Vector3.FORWARD)
 	if player2 != null:
 		_check("even breath refunds 6 focus on the kill",
 			absf(float(player2.focus) - 16.0) < 0.01, str(player2.focus))
-	var gained: int = int(game.trades.hunt.xp) - hunt_before
-	_check("kill feeds Huntcraft", gained >= 2, str(gained))
-	_check("hunt xp scales to vigor", gained == maxi(2, int(prey_vigor / 3.0)),
+	var gained: int = int(game.trades.wayfinding.xp) - hunt_before
+	# ADR 0012 — combat gives NO skill XP; you level only by skilling.
+	_check("a kill awards no skill XP", gained == 0,
 		"%d xp for %d hp" % [gained, prey_vigor])
 	await process_frame
 

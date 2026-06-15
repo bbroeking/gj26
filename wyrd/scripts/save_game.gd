@@ -67,9 +67,18 @@ static func load_into(game: Node) -> bool:
 	game.tutorial_step = int(data.get("tutorial_step", 0))
 	game.player_hp = int(data.get("player_hp", -1))
 	game.gold = int(data.get("gold", 0))
-	# B7/ADR 0005 — saves from before Huntcraft backfill the trade.
-	if not (game.trades as Dictionary).has("hunt"):
-		game.trades["hunt"] = {"lv": 1, "xp": 0}
+	# ADR 0012 — compress legacy four-trade saves (carto/earth/wilds/hunt)
+	# into the single Wayfinding skill: sum their XP, recompute the level.
+	var _st: Dictionary = data.get("trades", {})
+	if not _st.has("wayfinding"):
+		var _total := 0
+		for _legacy in ["carto", "earth", "wilds", "hunt"]:
+			_total += int((_st.get(_legacy, {}) as Dictionary).get("xp", 0))
+		var _w: Dictionary = game.trades["wayfinding"]
+		_w.xp = _total
+		_w.lv = 1
+		while _w.lv < int(game.LEVEL_CAP) and _total >= int(game.xp_for_level(_w.lv + 1)):
+			_w.lv += 1
 	game.muted = bool(data.get("muted", false))
 	var lo: Array = data.get("loadout", [])
 	if lo.size() == 3:

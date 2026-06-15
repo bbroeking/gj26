@@ -263,7 +263,7 @@ func kill_credit(peer: int, foe_hp_max: int) -> void:
 @rpc("authority", "reliable")
 func _kill_credit(foe_hp_max: int) -> void:
 	var game := get_node("/root/Game")
-	game.award_xp("hunt", maxi(2, int(float(foe_hp_max) / 3.0)))
+	# ADR 0012 — combat gives no skill XP; Even Breath still refunds Focus.
 	if game.perk_active("hunt", "even_breath"):
 		var pl: Node = game.local_player()
 		if pl != null and pl.has_method("add_focus"):

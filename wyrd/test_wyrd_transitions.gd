@@ -31,8 +31,7 @@ func _run() -> void:
 	# Hermetic: never read or write the player's real save, and start from
 	# a blank slate regardless of what Game._ready loaded.
 	game.persistence_enabled = false
-	game.trades = {"carto": {"lv": 1, "xp": 0}, "earth": {"lv": 1, "xp": 0},
-		"wilds": {"lv": 1, "xp": 0}}
+	game.trades = {"wayfinding": {"lv": 1, "xp": 0}}   # ADR 0012 — one skill
 	game.materials = {}
 	game.charts = []
 	game.tutorial_step = 0
@@ -112,8 +111,8 @@ func _run() -> void:
 	_check("3 herbs in satchel", game.material_count("wild_herb") == 3,
 		str(game.material_count("wild_herb")))
 	_check("tutorial 1→2", int(game.tutorial_step) == 2)
-	_check("wilds xp granted", int(game.trades.wilds.xp) == 24,
-		str(game.trades.wilds.xp))
+	_check("wilds xp granted", int(game.trades.wayfinding.xp) == 24,
+		str(game.trades.wayfinding.xp))
 
 	# Beat 3 — mix ink.
 	_check("mix ink", game.mix_ink("hedge_ink"))
@@ -151,13 +150,13 @@ func _run() -> void:
 		if n is ExitWaystone and not bool(n.get("abandoning")):
 			waystone = n
 	_check("exit waystone in dungeon", waystone != null)
-	var xp_before := int(game.trades.carto.xp)
+	var xp_before := int(game.trades.wayfinding.xp)
 	# Regression — a dead player must not be able to bank the run.
 	dungeon_player.set("dead", true)
 	waystone.interact(dungeon_player)
 	await process_frame
 	_check("dead player can't step through", game.in_dungeon
-		and current_scene == world and int(game.trades.carto.xp) == xp_before)
+		and current_scene == world and int(game.trades.wayfinding.xp) == xp_before)
 	dungeon_player.set("dead", false)
 	waystone.interact(dungeon_player)
 	await process_frame
@@ -172,10 +171,11 @@ func _run() -> void:
 	_check("tutorial 5→6", int(game.tutorial_step) == 6,
 		str(game.tutorial_step))
 	_check("snug completion = 75 carto xp",
-		int(game.trades.carto.xp) - xp_before == 75,
-		str(int(game.trades.carto.xp) - xp_before))
-	_check("wayfinding leveled to 2", game.trade_lv("carto") == 2,
-		str(game.trade_lv("carto")))
+		int(game.trades.wayfinding.xp) - xp_before == 75,
+		str(int(game.trades.wayfinding.xp) - xp_before))
+	# ADR 0012 — one pool: 24 (cook) + 75 (chart) = 99 xp crosses lv 2 and lv 3.
+	_check("wayfinding leveled to 3", game.trade_lv("wayfinding") == 3,
+		str(game.trade_lv("wayfinding")))
 
 	# Beat 7 — second chart (tier_1) finishes the tutorial.
 	game.add_material("hedge_ink", 2)
@@ -200,15 +200,15 @@ func _run() -> void:
 		and bench.pot_add("bogiron_ore")
 		and not (bench.pot as Dictionary).is_empty()
 		and game.material_count("stoneground_ink") == 0)
-	var carto_xp: int = int(game.trades.carto.xp)
+	var carto_xp: int = int(game.trades.wayfinding.xp)
 	var tried: Dictionary = bench.pot_try()
 	_check("Try discovers stoneground",
 		String(tried.get("outcome", "")) == "discovery"
 		and game.material_count("stoneground_ink") == 1
 		and bool(game.ink_discovered("stoneground_ink")))
 	_check("discovery pays 50 carto xp",
-		int(game.trades.carto.xp) - carto_xp == 50,
-		str(int(game.trades.carto.xp) - carto_xp))
+		int(game.trades.wayfinding.xp) - carto_xp == 50,
+		str(int(game.trades.wayfinding.xp) - carto_xp))
 	_check("pot empty after the try", (bench.pot as Dictionary).is_empty())
 	game.add_material("bogiron_ore", 2)
 	_check("discovered recipe auto-mixes now", bench.pot_add("bogiron_ore")
@@ -234,12 +234,12 @@ func _run() -> void:
 	_check("bench re-places tier_1", bench.place_base("tier_1"))
 	_check("den refuses below Wayfinder 8",
 		not bench.socket_trophy("thorn_essence"))
-	game.trades.carto.lv = 8
+	game.trades.wayfinding.lv = 8
 	_check("den opens at Wayfinder 8", bench.socket_trophy("thorn_essence"))
 	_check("two ink slots below the capstone", bench.ink_slots() == 2)
-	game.trades.carto.lv = 17
+	game.trades.wayfinding.lv = 17
 	_check("master wayfinder adds an ink slot", bench.ink_slots() == 3)
-	game.trades.carto.lv = 2
+	game.trades.wayfinding.lv = 2
 	bench.clear_base()
 	bench.close()
 	await process_frame
