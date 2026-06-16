@@ -77,29 +77,51 @@ const ORIENT_RY := {
 const DECOR_FACING_OFFSET := {}
 
 # Wyrd — enemy kinds by name. `scale` = calibrated multiplier (spec 16);
-# `fit_h` = GlbFit target height for kinds never calibrated. `tint` paints
-# kinds whose GLB textures don't read in Godot (the Meshy rat). `bob` =
+# `fit_h` = GlbFit target height for kinds never calibrated. `bob` =
 # procedural hop-bob params [move_bob, move_rate] for unrigged critters.
 # B3 — per-kind stats: damage/speed/atk_cd make a rat read different from
 # a skeleton in the hands, not just the eyes. Slow hitters hit hard; fast
 # ones nip. Tier scaling multiplies HP only — speed stays honest.
+#
+# Slice A — ARCHETYPE COLOR-CODING. The raw Meshy GLBs ship with NO surface
+# materials (Godot falls back to flat grey, so skeleton/ghost/hedge_sprite all
+# read as the same grey blob). Every kind now carries a `tint` painted onto a
+# material we own, so size + hue = instant ID and the ink outline (next_pass,
+# below) actually renders. Hues track the kit palette family:
+#   skeleton  = bone-cream high-value     rat     = INK_MID brown
+#   ghost     = pale cool blue (ethereal) hedge   = SAGE green
+#   bramble   = SAGE green (deeper)       skitter = TERRACOTTA
+# `ethereal` adds a faint cool emission + alpha so ghosts read as spirits, not
+# painted stone. Pairs with the existing scale spread for two-axis legibility.
 const ENEMY_KINDS := {
 	"skeleton": {"model": "res://models/enemy_skeleton_v1.glb", "scale": 1.45,
-		"hp": 18, "damage": 7, "speed": 1.55, "atk_cd": 1.7},
+		"hp": 18, "damage": 7, "speed": 1.55, "atk_cd": 1.7,
+		"tint": Color(0.86, 0.82, 0.70)},
 	"rat": {"model": "res://models/enemy_rat_v1.glb", "scale": 0.55,
 		"hp": 10, "damage": 2, "speed": 2.6, "atk_cd": 0.9,
 		"tint": Color(0.42, 0.32, 0.24), "bob": [0.14, 13.0]},
 	"ghost": {"model": "res://models/enemy_ghost_v1.glb", "scale": 2.00,
-		"hp": 14, "damage": 5, "speed": 1.35, "atk_cd": 1.5},
+		"hp": 14, "damage": 5, "speed": 1.35, "atk_cd": 1.5,
+		"tint": Color(0.66, 0.78, 0.90), "ethereal": true},
 	"hedge_sprite": {"model": "res://models/enemy_hedge_sprite_v1.glb", "scale": 2.00,
-		"hp": 22, "damage": 6, "speed": 1.9, "atk_cd": 1.4},
+		"hp": 22, "damage": 6, "speed": 1.9, "atk_cd": 1.4,
+		"tint": Color(0.44, 0.56, 0.27)},
 	"bramble_imp": {"model": "res://models/bramble_imp_v4.glb", "fit_h": 1.05,
 		"hp": 12, "damage": 4, "speed": 2.2, "atk_cd": 1.1,
-		"bob": [0.12, 10.0]},
+		"tint": Color(0.34, 0.46, 0.22), "bob": [0.12, 10.0]},
 	"skitterling": {"model": "res://models/skitterling.glb", "fit_h": 0.55,
 		"hp": 7, "damage": 2, "speed": 3.0, "atk_cd": 0.8,
-		"bob": [0.10, 15.0]},
+		"tint": Color(0.70, 0.30, 0.20), "bob": [0.10, 15.0]},
 }
+
+# Slice A — CHUNKY INK OUTLINE. Deep-INK inverted-hull shell, attached as the
+# `next_pass` of each enemy's painted material (which is why we paint EVERY kind
+# above — next_pass on the materialless GLBs renders nothing). next_pass rides
+# the same skinned/animated mesh, so it deforms with the limbs — no separate
+# static child-shell. grow_amount is tuned for the FATE camera (zoom ~14,
+# telephoto); it is the orchestrator's main tuning knob.
+const OUTLINE_INK := Color(0.13, 0.09, 0.06)
+const OUTLINE_GROW := 0.05   # orchestrator tuning knob (FATE zoom ~14)
 
 # Per-scope weighted spawn tables (the three.js dungeonSpawns pattern) —
 # a Briar Maze run should FEEL different from a Hollow, not just route
@@ -632,7 +654,9 @@ func _build_boss(boss_room, grid: Array, boss_kind: String = "hedgemother") -> v
 	else:
 		GlbFit.normalize_height(inst, float(def.fit_h))
 	_unmetal(inst)
-	# No tint — boss GLBs carry their own textures.
+	# Slice A — keep the boss's own GLB textures but chain on the ink rim so she
+	# matches the enemy silhouette language (no flat tint over her painted skin).
+	_outline_only(inst)
 	var boss_hp: int = int(def.hp)
 	var boss := _spawn_character(inst, cx, cy, float(def.radius),
 		float(def.height), boss_hp, BossScript)
@@ -903,9 +927,11 @@ func _spawn_enemy(ei: int, tx: int, ty: int, role: String = "combat",
 	else:
 		GlbFit.normalize_height(inst, float(def.fit_h) * jitter)
 	_unmetal(inst)
-	# Most GLBs carry real textures; `tint` paints the ones that don't (rat).
+	# Slice A — paint every kind with its archetype hue + ink outline so each
+	# reads instantly (the raw GLBs are materialless grey otherwise). The elite
+	# golden tint (combatant.gd) overrides on top of this — intended.
 	if def.has("tint"):
-		_tint(inst, def.tint)
+		_tint(inst, def.tint, bool(def.get("ethereal", false)))
 	var hp := maxi(4, roundi(int(def.hp) * _hp_mult * jitter))
 	var body := _spawn_character(inst, tx, ty, 0.4, 1.4, hp)
 	# B3 — per-kind feel: how hard it hits, how fast it closes, how often.
@@ -927,13 +953,67 @@ func _spawn_enemy(ei: int, tx: int, ty: int, role: String = "combat",
 	AnimDriverScript.play_idle(inst)
 	return body
 
-func _tint(root: Node, color: Color) -> void:
+# Slice A — paint a kind with its archetype hue AND attach the ink outline.
+# We build ONE shared painted material per call and override every mesh with
+# it; the outline rides as its next_pass (so it deforms with skinned meshes).
+# `ethereal` makes ghosts read as spirits: faint cool emission + light alpha.
+func _tint(root: Node, color: Color, ethereal: bool = false) -> void:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = color
 	m.roughness = 0.85
+	m.metallic = 0.0
+	if ethereal:
+		# Spirit cast — glows faintly and you can half-see through it. Kept
+		# below the glow_hdr_threshold (1.0) so it shimmers without blooming out.
+		m.emission_enabled = true
+		m.emission = Color(0.40, 0.55, 0.78)
+		m.emission_energy_multiplier = 0.45
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.albedo_color = Color(color.r, color.g, color.b, 0.72)
+	m.next_pass = _make_outline_pass()
 	for vi in _all_visual_instances(root):
 		if vi is MeshInstance3D:
 			(vi as MeshInstance3D).material_override = m
+
+# Slice A — the inverted-hull outline shell as a StandardMaterial3D, returned
+# fresh so callers can attach it as `next_pass` on a material they own. Front
+# faces are culled and the hull is grown along normals, so what remains is a
+# dark rim hugging the silhouette. UNSHADED keeps the ink flat at any light.
+func _make_outline_pass() -> StandardMaterial3D:
+	var o := StandardMaterial3D.new()
+	o.grow = true
+	o.grow_amount = OUTLINE_GROW
+	o.cull_mode = BaseMaterial3D.CULL_FRONT
+	o.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	o.albedo_color = OUTLINE_INK
+	return o
+
+# Slice A — give the boss the same ink rim WITHOUT flattening its own GLB
+# textures. We chain the outline onto each surface's real material (via a
+# duplicate so we don't mutate the shared GLB resource); kinds with no surface
+# material fall back to a material_override carrying the outline.
+func _outline_only(root: Node) -> void:
+	for vi in _all_visual_instances(root):
+		if not (vi is MeshInstance3D):
+			continue
+		var mi := vi as MeshInstance3D
+		var mesh: Mesh = mi.mesh
+		var painted := false
+		if mesh != null:
+			for s in range(mesh.get_surface_count()):
+				var base := mi.get_active_material(s)
+				if base is BaseMaterial3D:
+					var dup := (base as BaseMaterial3D).duplicate() as BaseMaterial3D
+					dup.next_pass = _make_outline_pass()
+					mi.set_surface_override_material(s, dup)
+					painted = true
+		if not painted:
+			# Materialless surface — give it a neutral plate to host the outline.
+			var fallback := StandardMaterial3D.new()
+			fallback.albedo_color = Color(0.70, 0.66, 0.60)
+			fallback.roughness = 0.85
+			fallback.next_pass = _make_outline_pass()
+			mi.material_override = fallback
 
 # Wrap a character GLB in a Combatant (CharacterBody3D, spec 15) — a moving
 # body on the ENEMIES layer + HP + hurtbox + chase/attack AI. Group "enemy".
