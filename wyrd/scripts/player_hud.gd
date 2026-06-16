@@ -2,13 +2,11 @@ extends CanvasLayer
 
 # Spec 15 — minimal player HUD: an HP bar + a full-screen damage flash.
 # Spec 23 — plus a Pokémon-style death white-out.
-# Spec-35 — UI_SCALE knob enlarges the whole HUD without touching the .tscn
-# offsets; set as transform.scale on the CanvasLayer in _ready. NOTE: the
-# Flash + Whiteout color rects use anchor_right/bottom = 1.0 (full-screen)
-# so they don't need to scale — they're applied AFTER the transform scales
-# anchored coords back to viewport size. Keep them at the same layer.
-
-const UI_SCALE := 1.5
+# UI scaling is now project-level: the project uses `canvas_items` stretch +
+# `expand` aspect (project.godot [display]), so the whole HUD is authored in
+# the 1280×720 base coordinate space and scales uniformly to any window. The
+# old Spec-35 per-CanvasLayer UI_SCALE transform is retired — it broke anchor
+# resolution (pushed bars off-screen) and was applied inconsistently.
 
 const FILL_LEFT := 2.0
 const FILL_FULL_W := 216.0

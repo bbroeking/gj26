@@ -1,9 +1,10 @@
 extends CanvasLayer
 
 # Spec 17 — the Hedgemother boss HP banner. Hidden until she aggros.
-# Spec-35 — UI_SCALE knob.
+# UI scaling is now project-level (canvas_items stretch); the old Spec-35
+# per-layer UI_SCALE transform is retired so this banner sizes consistently
+# with the rest of the HUD.
 
-const UI_SCALE := 1.5
 const FILL_LEFT := 4.0
 const FILL_FULL_W := 592.0
 
@@ -16,7 +17,6 @@ var _meter: Dictionary = {}
 
 func _ready() -> void:
 	visible = false
-	transform = Transform2D().scaled(Vector2(UI_SCALE, UI_SCALE))
 	# Wyrd UI overhaul — parchment banner over the old flat bar.
 	var bar := get_node_or_null("Bar")
 	if bar != null:
