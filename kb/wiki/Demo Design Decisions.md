@@ -16,7 +16,7 @@ power ([[Design Decisions|ADR 0010]]) and progression is one skill
 ([[Design Decisions|ADR 0012]]).
 
 **The stance in one line:** *a cozy, opt-in-difficulty, fully-horizontal one-verb-read
-crawler where the [[Charts Affixes and Inks|chart]] is the load-bearing bridge,
+crawler where the [[Chart Loop|chart]] is the load-bearing bridge,
 inks are spice-with-a-cost, and the game is built pillar-by-pillar at a
 throughput-honest pace.*
 
