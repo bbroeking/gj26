@@ -130,3 +130,6 @@ Greppable: `grep "^## \[" log.md | tail`.
 ## [2026-06-14] build | ADR 0012 — compress the four trades into one skill (Wayfinding)
 - Per the user: Wayfinding · one unified perk ladder · combat gives NO skill XP.
 - One leveling skill; trade_lv/award_xp/perk_active ignore the legacy key arg (carto/earth/wilds/hunt) so ~25 call sites stay; the 19 perks merged into one ladder; combat XP awards removed (combatant.gd, net_game.gd) — Even Breath still refunds Focus; legacy four-trade saves migrate by summing XP. Supersedes ADR 0005; CONTEXT.md glossary + ADR 0005 banner updated.
+
+## [2026-06-15] design | Demo Design Decisions — baseline answers to the 7 open questions
+- Filed [[Demo Design Decisions]]: opinionated, concrete calls on all 7 (combat=ban-kiting, cozy=warm-reset+opt-in-danger, hybrid=chart-bridge, inks=tradeoff-levers, co-op=social+two-hands beat, endgame=fully-horizontal, pipeline=measure-throughput-first). Three contested calls flagged (#5 co-op mechanic, #6 zero-vertical, #1 kiting). The doc we iterate against.

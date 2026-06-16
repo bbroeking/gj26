@@ -10,6 +10,7 @@ this first to locate pages, then drill in. Start at [[Overview]]; for status see
 - [[Development History]] — three.js → Godot pivot and the spec 01–46 timeline
 - [[Universe Build-Out Plan]] — the plan to grow the demo into a full cozy co-op game (mined from this KB)
 - [[Gap Analysis and Build Plan]] — what's MISSING across the whole framework (107 gaps) + the Tier 0→4 populate-everything plan + the Tier 0 sprint
+- [[Demo Design Decisions]] — the opinionated baseline answer to the 7 open design questions (the doc we iterate against)
 
 ## World
 - [[Bramblewood]] — the setting: places, the Summit, factions, mood
