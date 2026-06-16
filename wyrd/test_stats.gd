@@ -61,59 +61,80 @@ func _run() -> void:
 		"+10 HP item (helm base +4): hp_max %d → %d (expect %d)" %
 		[base_hp, p.hp_max, hp_expected])
 
-	# S2 — ADR 0010: equip a +damage weapon → derived_stats.damage UNCHANGED
-	# (gear is frozen at zero combat power; base_stat + affixes both skipped).
+	# S2 — ADR 0013: equip a +damage weapon → derived_stats.damage RISES.
 	var base_dmg: int = int(p.derived_stats.damage)
 	var dmg_item := _custom_item("shortbow",
 		[{"id": "test", "side": "prefix", "display": "Test", "stat": "damage", "value": 5.0}])
 	p.equipment.equip(dmg_item)
-	_check("S2", int(p.derived_stats.damage) == base_dmg,
-		"gear frozen: +damage weapon leaves damage at base %d (got %d)" %
+	_check("S2", int(p.derived_stats.damage) > base_dmg,
+		"gear gives power: +damage weapon raises damage above %d (got %d)" %
 		[base_dmg, p.derived_stats.damage])
 
-	# S3 — ADR 0010: equip a +crit-chance ring → derived_stats.crit_chance UNCHANGED.
+	# S3 — ADR 0013: equip a +crit-chance ring → derived_stats.crit_chance RISES.
 	var base_cc: float = p.derived_stats.crit_chance
 	var ring := _custom_item("copper_ring",
 		[{"id": "test", "side": "suffix", "display": "Test", "stat": "crit_chance",
 			"value": 0.30}])
 	p.equipment.equip(ring)
-	_check("S3", absf(p.derived_stats.crit_chance - base_cc) < 0.001,
-		"gear frozen: +crit ring leaves crit_chance at base %.3f (got %.3f)" %
+	_check("S3", p.derived_stats.crit_chance > base_cc + 0.001,
+		"gear gives power: +crit ring raises crit_chance above %.3f (got %.3f)" %
 		[base_cc, p.derived_stats.crit_chance])
 
-	# S4 — unequip: hp reverts (hp is NOT frozen); damage/crit never moved.
+	# S4 — unequip everything → stats revert to base.
 	p.equipment.unequip("ring")
 	p.equipment.unequip("weapon")
 	p.equipment.unequip("helmet")
 	_check("S4", p.hp_max == base_hp \
 			and int(p.derived_stats.damage) == base_dmg \
 			and absf(p.derived_stats.crit_chance - base_cc) < 0.001,
-		"unequip: hp_max back to base; damage/crit held at base throughout")
+		"unequip everything: hp/damage/crit revert to base")
 
-	# GF1 — ADR 0010 invariant: a fully-rolled RARE warbow adds zero combat power.
+	# GF1 — ADR 0013: a rolled RARE warbow raises combat power.
 	var gf_dmg: int = int(p.derived_stats.damage)
-	var gf_cc: float = p.derived_stats.crit_chance
-	var gf_cm: float = float(p.derived_stats.crit_mult_bonus)
-	var gf_fc: float = float(p.derived_stats.fire_cooldown)
 	p.equipment.equip(Items.make_item("warbow", "rare"))
-	_check("GF1", int(p.derived_stats.damage) == gf_dmg \
-			and absf(p.derived_stats.crit_chance - gf_cc) < 0.001 \
-			and absf(float(p.derived_stats.crit_mult_bonus) - gf_cm) < 0.001 \
-			and absf(float(p.derived_stats.fire_cooldown) - gf_fc) < 0.001,
-		"rare warbow: damage/crit/crit_mult/fire_cooldown all unchanged")
+	_check("GF1", int(p.derived_stats.damage) > gf_dmg,
+		"rare warbow raises damage above base %d (got %d)" %
+		[gf_dmg, p.derived_stats.damage])
 
-	# GF2 — unequip the rare bow; combat stats still at base (no drift either way).
+	# GF2 — unequip the rare bow → damage drops back to base.
 	p.equipment.unequip("weapon")
-	_check("GF2", int(p.derived_stats.damage) == gf_dmg \
-			and absf(float(p.derived_stats.fire_cooldown) - gf_fc) < 0.001,
-		"unequip rare warbow: damage + fire_cooldown still at base")
+	_check("GF2", int(p.derived_stats.damage) == gf_dmg,
+		"unequip rare warbow: damage back to base %d (got %d)" %
+		[gf_dmg, p.derived_stats.damage])
 
-	# GF3 — surgical-freeze regression guard: HP from armor STILL applies.
+	# GF3 — HP from armor still applies.
 	var gf_hp: int = p.hp_max
 	p.equipment.equip(Items.make_item("leather_chest", "magic"))
 	_check("GF3", p.hp_max > gf_hp,
-		"leather_chest still raises hp_max %d → %d (hp not frozen)" % [gf_hp, p.hp_max])
+		"leather_chest raises hp_max %d → %d" % [gf_hp, p.hp_max])
 	p.equipment.unequip("chest")
+
+	# DB — ADR 0013 vertical progression. Uses the live /root/Game autoload.
+	var game = root.get_node_or_null("Game")
+	if game != null:
+		# DB1 — leveling Wayfinding grows the player's base power.
+		var lv1_dmg: int = int(p.derived_stats.damage)
+		var lv1_hp: int = p.hp_max
+		game.trades.wayfinding.lv = 10
+		p._derive_stats()
+		_check("DB1-level-scales-power",
+			int(p.derived_stats.damage) > lv1_dmg and p.hp_max > lv1_hp,
+			"lv10 dmg %d / hp %d > lv1 dmg %d / hp %d" %
+			[p.derived_stats.damage, p.hp_max, lv1_dmg, lv1_hp])
+		# DB2 — level-delta difficulty: hits-to-kill a skeleton rises with den level.
+		game.trades.wayfinding.lv = 7
+		p._derive_stats()
+		var pdmg := float(p.derived_stats.damage)
+		var lp := float(game.LEVEL_POWER)
+		var ek := func(den_lv: int) -> int:
+			return ceili(18.0 * pow(lp, float(den_lv - 1)) / pdmg)
+		var easy: int = ek.call(5)   # delta -2
+		var fair: int = ek.call(7)   # delta 0
+		var hard: int = ek.call(9)   # delta +2
+		_check("DB2-delta-bands-rise", easy <= fair and fair <= hard and hard > easy,
+			"lv7 vs den 5/7/9 → hits-to-kill %d / %d / %d (rises with depth)" % [easy, fair, hard])
+		game.trades.wayfinding.lv = 1
+		p._derive_stats()
 
 	# S5 — passing a high crit_chance to take_damage raises observed crit rate.
 	CombatantScript.crit_enabled = true

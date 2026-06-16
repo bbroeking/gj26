@@ -990,23 +990,16 @@ func _derive_stats() -> void:
 	var sums := {"hp": 0, "damage": 0, "crit_chance": 0.0,
 		"crit_mult": 0.0, "fire_rate": 0.0, "move_speed": 0.0,
 		"cooldown_reduction": 0.0}
-	# ADR 0010 — gear is frozen at ZERO combat power. Equipped items keep
-	# their slots/inventory/dissolve/Ledger role but add nothing to the five
-	# offensive stats; hp (survival) and move_speed (mobility) still flow.
-	var gear_frozen := ["damage", "crit_chance", "crit_mult", "fire_rate",
-		"cooldown_reduction"]
+	# ADR 0013 — gear gives power again (reverses the 0010 freeze): every
+	# equipped item's base_stat + rolled affixes flow into the sums.
 	if equipment != null:
 		for slot in Equipment.SLOT_ORDER:
 			var it = equipment.get_slot(slot)
 			if it == null:
 				continue
-			var bs := String(it.get("base_stat", ""))
-			if not gear_frozen.has(bs):
-				_add_stat(sums, bs, it.get("base_value", 0))
+			_add_stat(sums, String(it.get("base_stat", "")), it.get("base_value", 0))
 			for a in it.get("affixes", []):
-				var ast := String(a.get("stat", ""))
-				if not gear_frozen.has(ast):
-					_add_stat(sums, ast, a.get("value", 0))
+				_add_stat(sums, String(a.get("stat", "")), a.get("value", 0))
 	for k in shrine_buffs:
 		_add_stat(sums, String(k), shrine_buffs[k])
 	# B7 — Huntcraft perks ride the same sums.
@@ -1023,9 +1016,14 @@ func _derive_stats() -> void:
 			_add_stat(sums, "crit_mult", 0.25)
 		# Spec 45-wilds — Crowsfoot Cordial's stride rides the buff engine.
 		_add_stat(sums, "move_speed", float(game_h.buff_value("move_speed")))
+	# ADR 0013 — your Wayfinding level grows base power (symmetric with the
+	# den scaling, so difficulty tracks level-delta). Gear adds flat on top.
+	var pf := 1.0
+	if game_h != null:
+		pf = pow(float(game_h.LEVEL_POWER), float(game_h.trade_lv() - 1))
 	derived_stats = {
-		"hp_max":              PLAYER_HP + int(sums.hp),
-		"damage":              6 + int(sums.damage),
+		"hp_max":              int(round(PLAYER_HP * pf)) + int(sums.hp),
+		"damage":              int(round(6.0 * pf)) + int(sums.damage),
 		"crit_chance":         clampf(0.20 + float(sums.crit_chance), 0.0, 1.0),
 		"crit_mult_bonus":     float(sums.crit_mult),
 		"fire_cooldown":       FIRE_COOLDOWN / ((1.0 + float(sums.fire_rate))

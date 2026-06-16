@@ -1,7 +1,16 @@
 # ADR 0010 — Gear is frozen at zero combat power
 
-**Status:** Accepted (2026-06-14)
-**Supersedes nothing. Linchpin of the Tier-0 build (see `kb/wiki/Gap Analysis and Build Plan.md`).**
+**Status:** ~~Accepted (2026-06-14)~~ **SUPERSEDED by [ADR 0013](0013-vertical-progression.md) (2026-06-15).**
+
+> ⚠️ **This decision was reversed.** The freeze stood for one day. The user
+> directed that "the numbers should get bigger for sure" — Wayfinder is now a
+> *vertical* progression game where gear, leveling, and trophies all confer real
+> combat power. The `_derive_stats()` freeze-filter described below was removed;
+> equipped gear once again feeds `damage / crit_chance / crit_mult / fire_rate /
+> cooldown_reduction`. See **ADR 0013** for the model and the difficulty curve
+> that replaces this. The original text is kept below for the historical "why".
+
+**Supersedes nothing. Was the linchpin of the Tier-0 build (see `kb/wiki/Gap Analysis and Build Plan.md`).**
 
 ## Context
 

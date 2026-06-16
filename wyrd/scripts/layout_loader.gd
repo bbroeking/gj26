@@ -279,8 +279,12 @@ func _read_chart_modifiers() -> void:
 	var cfg: Dictionary = game.run_cfg()
 	# Template base density (snug's gentle cellar) stacks with the affix.
 	_density_mult *= float(cfg.get("enemy_density", 1.0))
-	# Tier is danger, not just XP: +15% trash HP per tier past the first.
-	_hp_mult *= 1.0 + 0.15 * float(int(cfg.get("tier", 1)) - 1)
+	# ADR 0013 — the den's level scales enemy HP and damage (symmetric with the
+	# player's per-level growth, so difficulty tracks level-delta, not absolutes).
+	var den_lv: int = int(cfg.get("den_level", 3))
+	var den_scale: float = pow(float(game.LEVEL_POWER), float(den_lv - 1))
+	_hp_mult *= den_scale
+	_dmg_mult *= den_scale
 
 func _get_layout() -> Dictionary:
 	if USE_PROCGEN:

@@ -11,13 +11,15 @@ sources: ["kb/wiki/Universe Build-Out Plan.md", "kb/wiki/Gap Analysis and Build 
 The opinionated baseline answer to the seven open design questions (see
 [[Current State]] / the deep designs). **This is a draft to edit against, not
 gospel** — each call is concrete enough to argue with. The three deliberately
-spiky ones are flagged at the bottom. Already locked by ADR: gear gives no combat
-power ([[Design Decisions|ADR 0010]]) and progression is one skill
-([[Design Decisions|ADR 0012]]).
+spiky ones are flagged at the bottom. Already locked by ADR: progression is one
+skill ([[Design Decisions|ADR 0012]]) and power is **vertical** — gear, leveling,
+and trophies all give real combat power ([[Design Decisions|ADR 0013]], which
+*supersedes* the one-day-old ADR 0010 gear-freeze).
 
-**The stance in one line:** *a cozy, opt-in-difficulty, fully-horizontal one-verb-read
-crawler where the [[Chart Loop|chart]] is the load-bearing bridge,
-inks are spice-with-a-cost, and the game is built pillar-by-pillar at a
+**The stance in one line:** *a cozy, opt-in-difficulty, vertical-but-cozy-gated
+one-verb-read crawler where the [[Chart Loop|chart]] is the load-bearing bridge,
+the numbers get bigger by playing the cozy spine, difficulty is your level vs the
+den's, inks are spice-with-a-cost, and the game is built pillar-by-pillar at a
 throughput-honest pace.*
 
 ## 1. One-verb combat — make the *enemies* the content; ban safe kiting

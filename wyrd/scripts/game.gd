@@ -725,6 +725,12 @@ func return_to_town(player: Node, abandoned: bool = false) -> void:
 	# Deferred — the exit waystone calls this from physics processing.
 	get_tree().change_scene_to_file.call_deferred(TOWN_SCENE)
 
+# ADR 0013 — power multiplier per level, applied to BOTH the player (in
+# player_controller._derive_stats) and a den's enemies (in layout_loader).
+# Net difficulty ≈ (LEVEL_POWER^2)^(den_level − player_level). The tuning knob
+# for the level-delta curve (≤−2 easy, ±1 fair, ≥+2 very hard).
+const LEVEL_POWER := 1.25
+
 # The generation config handed to DungeonGen.generate(). {} when booting
 # World.tscn directly (dev) — which keeps today's defaults, boss included.
 func run_cfg() -> Dictionary:
@@ -733,6 +739,8 @@ func run_cfg() -> Dictionary:
 	var t: Dictionary = ChartsData.TEMPLATES.get(String(active_chart.template_id), {})
 	var cfg: Dictionary = (t.get("gen", {}) as Dictionary).duplicate()
 	cfg["tier"] = int(active_chart.get("tier", 1))
+	# ADR 0013 — each den carries a level (tier-derived); enemies scale to it.
+	cfg["den_level"] = ({1: 3, 2: 8, 3: 13}).get(int(cfg["tier"]), 3)
 	cfg["scope"] = String(active_chart.get("scope", "crypt"))
 	cfg["affixes"] = active_chart.get("affixes", [])
 	cfg["seed"] = int(active_chart.get("seed", -1))
