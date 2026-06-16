@@ -170,9 +170,16 @@ func _ready() -> void:
 	else:
 		_rng.randomize()
 
+	# Crypt brick floor — triplanar so the per-tile planes share one continuous
+	# world-projected texture (seam-free) from a single material (cheap). A gentle
+	# warm wash keeps it candle-lit, not morgue-grey.
 	_floor_mat = StandardMaterial3D.new()
-	_floor_mat.albedo_color = Color(0.55, 0.50, 0.45)
-	_floor_mat.roughness = 0.95
+	_floor_mat.albedo_texture = preload(
+		"res://textures/crypt/dungeon-crypt-floor-brick-v1.png")
+	_floor_mat.uv1_triplanar = true
+	_floor_mat.uv1_scale = Vector3(0.34, 0.34, 0.34)
+	_floor_mat.albedo_color = Color(0.84, 0.77, 0.66)
+	_floor_mat.roughness = 0.92
 
 	_wall_mat = StandardMaterial3D.new()
 	_wall_mat.albedo_color = Color(0.34, 0.31, 0.28)   # warm crypt stone
