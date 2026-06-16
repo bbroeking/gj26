@@ -113,12 +113,12 @@ var muted := true                     # spec 38 — master mute (persisted).
 const SKILL_POOL := ["PowerShot", "MultiShot", "BrambleSnare",
 	"PiercingBolt", "RainOfThorns", "Thornburst", "HuntersMark",
 	"HeartwoodWard", "MercyShot"]
-# B5-wave2 — Huntcraft gates the deeper hunting verbs (kills teach them).
-# Absent key = open from the start.
+# B5-wave2 — the deeper hunting verbs gate on Wayfinding level (ADR 0012: one
+# trade; leveling — gather/craft/chart — opens them, not kills). Absent = open.
 const SKILL_REQS := {"HuntersMark": 4, "HeartwoodWard": 7, "MercyShot": 9}
 
 func skill_unlocked(sk: String) -> bool:
-	return trade_lv("hunt") >= int(SKILL_REQS.get(sk, 1))
+	return trade_lv(SKILL) >= int(SKILL_REQS.get(sk, 1))
 var loadout: Array = ["PowerShot", "MultiShot", "BrambleSnare"]
 var seen_hints: Dictionary = {}       # one-time skill tutorials already shown
 var inventory: Inventory = null       # Tetris gear grid — shared across scenes

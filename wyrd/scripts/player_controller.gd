@@ -1020,14 +1020,14 @@ func _derive_stats() -> void:
 	# B7 — Huntcraft perks ride the same sums.
 	var game_h := get_tree().root.get_node_or_null("Game")
 	if game_h != null:
-		if game_h.perk_active("hunt", "steady_hands"):
+		if game_h.perk_active("wayfinding", "steady_hands"):
 			_add_stat(sums, "crit_chance", 0.05)
-		if game_h.perk_active("hunt", "hunters_stride"):
+		if game_h.perk_active("wayfinding", "hunters_stride"):
 			_add_stat(sums, "move_speed", 0.05)
 		# Spec 45-hunt — the deep perks ride the same shape.
-		if game_h.perk_active("hunt", "quick_nock"):
+		if game_h.perk_active("wayfinding", "quick_nock"):
 			_add_stat(sums, "cooldown_reduction", 0.10)
-		if game_h.perk_active("hunt", "heavy_draw"):
+		if game_h.perk_active("wayfinding", "heavy_draw"):
 			_add_stat(sums, "crit_mult", 0.25)
 		# Spec 45-wilds — Crowsfoot Cordial's stride rides the buff engine.
 		_add_stat(sums, "move_speed", float(game_h.buff_value("move_speed")))
