@@ -55,12 +55,16 @@ throughput-honest pace.*
 - **Signature co-op identity = #1 post-demo bet: the chart-reader seat** (one player reads the chart's tells and calls them while others fight).
 - See [[Multiplayer Co-op — Deep Design]].
 
-## 6. Endgame — fully horizontal, no apology ⚠️
-- **No power growth past level-17 + the gear freeze.** Audience choice: cozy completionists, not treadmill-chasers — we don't serve both.
-- **Retention kit, in build order:** (1) the **Deepening ladder** (+1 affix slot per depth — runs more *interesting*, not you stronger), (2) the **Codex** (collection), (3) the **Living Atlas** (the village fills in), (4) opt-in seasonal affix rotations (novelty, no FOMO).
-- **Hard rule: zero daily chores / streaks / expiring rewards.**
-- First post-demo system built: **Deepening**.
-- See [[Progression and Endgame — Deep Design]].
+## 6. Progression — VERTICAL power, fueled by the cozy spine (RESOLVED 2026-06-15)
+*The earlier "fully horizontal" call was overruled: the numbers DO get bigger.*
+- **You get stronger via three sources, all fed by the cozy loop (never by grinding kills):**
+  1. **Leveling** your Wayfinding skill grows damage/HP; the cap rises past 17 in the full game. You level by gather/craft/chart, so the cozy loop is the engine of power. (Combat still gives no skill XP — ADR 0012.)
+  2. **Gear** — crafted, gather-gated equipment gives power (rolled affixes matter). **Reverses ADR 0010** → to be rewritten as "gear gives power, gather-gated." Power flows from smithing, not kill-loot.
+  3. **Boss trophies / Ledger** — each trophy grants a real stat boost (capped per slot), tied to the trophy chain — the "kill boss → get stronger" beat.
+- **Dungeons scale to match:** deeper tiers / Deepening scale enemy numbers up. Anti-escalation holds — *no new, worse creature*; the Hedgemother stays the apex being, deeper just means bigger numbers.
+- **Cozy guardrail:** the fastest way to get strong is to play the cozy game (skill/craft/charts/bosses), never to grind mobs.
+- **Still horizontal alongside the vertical:** Codex (collection), Living Atlas (the village grows), opt-in seasonal novelty — no daily chores/streaks.
+- See [[Progression and Endgame — Deep Design]], [[Items Gear and Economy — Deep Design]].
 
 ## 7. Content pipeline — scope follows a *measured* throughput number, not ambition
 - **Rebuild the pipeline immediately (Tier 0/1), then measure one biome** before sizing the universe.
