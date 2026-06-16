@@ -62,6 +62,11 @@ throughput-honest pace.*
   2. **Gear** — crafted, gather-gated equipment gives power (rolled affixes matter). **Reverses ADR 0010** → to be rewritten as "gear gives power, gather-gated." Power flows from smithing, not kill-loot.
   3. **Boss trophies / Ledger** — each trophy grants a real stat boost (capped per slot), tied to the trophy chain — the "kill boss → get stronger" beat.
 - **Dungeons scale to match:** deeper tiers / Deepening scale enemy numbers up. Anti-escalation holds — *no new, worse creature*; the Hedgemother stays the apex being, deeper just means bigger numbers.
+- **Difficulty = your level vs the den's level (the felt curve).** Each den carries a level (chart tier + Deepening depth), shown on the summary card. With `delta = den_level − your_level`:
+  - **delta ≤ −2 → easy:** 1–2 shots to kill, it can't really hurt you (cozy farming).
+  - **delta −1..+1 → moderately hard:** ~3–5 hits; it can kill you if careless (a fair fight).
+  - **delta ≥ +2 → very hard:** 8+ hits to kill, it 2–3 shots you (read perfectly or come back stronger).
+  - Knob: ≈ **1.25× effective threat per level of delta** (tuned in playtest). This is what makes leveling *felt* — a level flips a den very-hard → fair → easy — and it makes difficulty opt-in (you pick the chart).
 - **Cozy guardrail:** the fastest way to get strong is to play the cozy game (skill/craft/charts/bosses), never to grind mobs.
 - **Still horizontal alongside the vertical:** Codex (collection), Living Atlas (the village grows), opt-in seasonal novelty — no daily chores/streaks.
 - See [[Progression and Endgame — Deep Design]], [[Items Gear and Economy — Deep Design]].
