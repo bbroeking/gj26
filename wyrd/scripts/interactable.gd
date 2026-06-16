@@ -32,12 +32,32 @@ func _ready() -> void:
 	# Floating prompt — built by base, parameterised by subclass.
 	# Wyrd — playtest: the old 48px prompt washed out against the world.
 	# Bigger, heavier outline, and a soft bob so the eye finds it.
+	# Slice B — a parchment plate behind the prompt so it reads as a tooltip
+	# on a scrap of parchment, not floating text. Built first so it draws
+	# behind the label; sized to the text in _size_prompt_plate, toggled with
+	# the prompt in show_prompt. Billboarded + no-depth like the label.
+	var plate := MeshInstance3D.new()
+	plate.name = "PromptPlate"
+	var pmesh := QuadMesh.new()
+	pmesh.size = Vector2(1.0, 0.34)            # provisional — resized to text below
+	plate.mesh = pmesh
+	var pmat := StandardMaterial3D.new()
+	pmat.albedo_color = Color(0.20, 0.15, 0.11, 0.90)   # dark parchment scrap
+	pmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	pmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	pmat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	pmat.no_depth_test = true
+	pmat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	plate.material_override = pmat
+	plate.position = get_prompt_position()
+	plate.visible = false
+	add_child(plate)
 	var lbl := Label3D.new()
 	lbl.name = "PromptLabel"
 	lbl.text = get_prompt_text()
 	lbl.modulate = get_prompt_color()
 	# Storybook typeface (IM Fell) so the prompt reads as the game's voice, not
-	# debug text. A parchment plate behind it is a followup (needs a SubViewport).
+	# debug text. It now sits on a parchment plate (PromptPlate above).
 	var pfont := WyrdUi.font_header()
 	if pfont != null:
 		lbl.font = pfont
@@ -47,9 +67,11 @@ func _ready() -> void:
 	lbl.pixel_size = 0.005
 	lbl.outline_size = 22
 	lbl.outline_modulate = Color(0.10, 0.07, 0.05, 1.0)
-	lbl.position = get_prompt_position()
+	lbl.position = get_prompt_position() + Vector3(0.0, 0.0, 0.004)
 	lbl.visible = false
 	add_child(lbl)
+	# Size the plate to the text once the label can measure its AABB.
+	_size_prompt_plate(lbl, plate)
 	# A small always-on marker diamond so interactables read from across
 	# the yard even before the player is in prompt range.
 	var mark := Label3D.new()
@@ -74,13 +96,37 @@ func _ready() -> void:
 
 # ---- Concrete: prompt visibility, gated by is_used ----
 func show_prompt(on: bool) -> void:
+	var shown := on and not is_used()
 	var lbl := get_node_or_null("PromptLabel") as Label3D
 	if lbl != null:
-		lbl.visible = on and not is_used()
+		lbl.visible = shown
+	# The parchment plate tracks the label.
+	var plate := get_node_or_null("PromptPlate") as MeshInstance3D
+	if plate != null:
+		plate.visible = shown
 	# The marker hands off to the prompt up close, and dies with one-shots.
 	var mark := get_node_or_null("Marker") as Label3D
 	if mark != null:
 		mark.visible = not on and not is_used()
+
+# Size the parchment plate to the prompt text. Label3D reports its mesh AABB
+# after a frame, so we wait one frame, then convert the AABB extents (already
+# in world units via pixel_size) into the plate's QuadMesh size with padding.
+func _size_prompt_plate(lbl: Label3D, plate: MeshInstance3D) -> void:
+	await get_tree().process_frame
+	if not is_instance_valid(lbl) or not is_instance_valid(plate):
+		return
+	# Label3D.get_aabb() can read ~0 before its mesh lays out, so floor the size
+	# with a text-length estimate (font_size * pixel_size = char height; ~0.42 of
+	# that per advance) — the plate then always spans the whole prompt.
+	var char_h: float = float(lbl.font_size) * lbl.pixel_size
+	var est_w: float = float(lbl.text.length()) * char_h * 0.42
+	var aabb := lbl.get_aabb()
+	var w: float = maxf(aabb.size.x, est_w)
+	var h: float = maxf(aabb.size.y, char_h)
+	var pad_x := 0.16
+	var pad_y := 0.10
+	(plate.mesh as QuadMesh).size = Vector2(w + pad_x * 2.0, h + pad_y * 2.0)
 
 # ---- Virtual hooks (override in subclasses) ----
 

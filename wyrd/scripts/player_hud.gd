@@ -32,6 +32,11 @@ var _skills_lbl: Label
 var _hp_globe: GlobeGauge = null
 var _focus_globe: GlobeGauge = null
 var _mute_lbl: Label = null
+# Slice B — a radial hurt-vignette: transparent center darkening to a
+# terracotta rim, flashed on the player taking damage (richer than the flat
+# full-screen red _flash). A TextureRect fed by a radial GradientTexture2D —
+# no shader, no _draw, so it's safe in this CanvasLayer.
+var _vignette: TextureRect = null
 
 func _ready() -> void:
 	# Spec-35: scale up the HP + Focus bars together. Flash and Whiteout
@@ -48,6 +53,7 @@ func _ready() -> void:
 	_place_globe(_focus_globe, 220.0)
 	_hp_globe.update_to(1.0, "30/30", "")
 	_focus_globe.update_to(1.0, "50/50", "")
+	_build_hurt_vignette()
 	_build_draught_chip()
 	_build_mute_indicator()
 	_build_wyrd_overlay()
@@ -129,25 +135,13 @@ func _build_wyrd_overlay() -> void:
 	# Quest tracker — a parchment scroll plate top-center, with a small-caps
 	# QUEST header, the objective, and a live progress counter.
 	_quest_plate = Panel.new()
-	if true:
-		# Spec 41 — kit banner: parchment plate, ink border, wood end-caps.
-		_quest_plate.add_theme_stylebox_override("panel", WyrdUi.chip_stylebox())
-		for side in [0.0, 1.0]:
-			var cap := Panel.new()
-			var cs := StyleBoxFlat.new()
-			cs.bg_color = Color(0.45, 0.32, 0.19)
-			cs.border_color = WyrdUi.KIT_EDGE
-			cs.set_border_width_all(2)
-			cap.add_theme_stylebox_override("panel", cs)
-			cap.anchor_left = side
-			cap.anchor_right = side
-			cap.anchor_bottom = 1.0
-			cap.offset_left = -5.0 if side == 1.0 else -3.0
-			cap.offset_right = 5.0 if side == 0.0 else 3.0
-			cap.offset_top = -4.0
-			cap.offset_bottom = 4.0
-			_quest_plate.add_child(cap)
-	elif ResourceLoader.exists(WyrdUi.BUTTON_TEX_PATH):
+	# Slice B — promote the quest tracker from a flat chip to a SEALED SCROLL:
+	# a painted-wood 9-patch backing + a drawn parchment-grain / flourish /
+	# wax-seal overlay (QuestScrollArt below). The button-plate art (144×80,
+	# 18px margins) is the right scale for a ~90px banner — panel_frame's
+	# ~37/40px margins would crush a plate this short — so it's the primary,
+	# with the chip stylebox as the only fallback.
+	if ResourceLoader.exists(WyrdUi.BUTTON_TEX_PATH):
 		var sb := StyleBoxTexture.new()
 		sb.texture = load(WyrdUi.BUTTON_TEX_PATH)
 		sb.texture_margin_left = WyrdUi.BUTTON_MARGIN
@@ -155,13 +149,23 @@ func _build_wyrd_overlay() -> void:
 		sb.texture_margin_top = WyrdUi.BUTTON_MARGIN
 		sb.texture_margin_bottom = WyrdUi.BUTTON_MARGIN
 		_quest_plate.add_theme_stylebox_override("panel", sb)
+	else:
+		_quest_plate.add_theme_stylebox_override("panel", WyrdUi.chip_stylebox())
 	_quest_plate.anchor_left = 0.5
 	_quest_plate.anchor_right = 0.5
 	_quest_plate.offset_left = -260
 	_quest_plate.offset_right = 260
 	_quest_plate.offset_top = 10
-	_quest_plate.offset_bottom = 86
+	_quest_plate.offset_bottom = 92
 	add_child(_quest_plate)
+	# Drawn scroll dressing — added first so it sits behind the text. Fills the
+	# plate; redraws on resize. The _draw-on-Control pattern is proven in this
+	# CanvasLayer (GlobeGauge).
+	var art := QuestScrollArt.new()
+	art.anchor_right = 1.0
+	art.anchor_bottom = 1.0
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_quest_plate.add_child(art)
 	var qhdr := Label.new()
 	qhdr.text = "✦ Quest"
 	var hf := WyrdUi.font_header()
@@ -170,7 +174,7 @@ func _build_wyrd_overlay() -> void:
 	qhdr.add_theme_font_size_override("font_size", 14)
 	qhdr.add_theme_color_override("font_color", WyrdUi.TERRACOTTA)
 	qhdr.anchor_right = 1.0
-	qhdr.offset_top = 8
+	qhdr.offset_top = 11
 	qhdr.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_quest_plate.add_child(qhdr)
 	_objective = Label.new()
@@ -325,6 +329,49 @@ func flash() -> void:
 	var t := create_tween()
 	t.tween_property(_flash, "modulate:a", 0.0, 0.35)
 
+# Slice B — build the radial hurt-vignette once: a full-screen TextureRect
+# stretched over a radial GradientTexture2D (clear center → terracotta rim).
+# Kept at modulate.a = 0 until a hit flashes it via hurt_vignette().
+func _build_hurt_vignette() -> void:
+	var grad := Gradient.new()
+	# Center clear, holds clear through the middle, then ramps to a heavy
+	# terracotta rim so the edges darken without obscuring the action.
+	# Replace the default 2-point ramp wholesale (offsets + colors arrays so
+	# point indices don't shift under us).
+	grad.offsets = PackedFloat32Array([0.0, 0.55, 0.80, 1.0])
+	grad.colors = PackedColorArray([
+		Color(WyrdUi.TERRACOTTA, 0.0),
+		Color(WyrdUi.TERRACOTTA, 0.0),
+		Color(WyrdUi.TERRACOTTA, 0.45),
+		Color(WyrdUi.TERRACOTTA.darkened(0.1), 0.85),
+	])
+	var gt := GradientTexture2D.new()
+	gt.gradient = grad
+	gt.width = 256
+	gt.height = 256
+	gt.fill = GradientTexture2D.FILL_RADIAL
+	gt.fill_from = Vector2(0.5, 0.5)
+	gt.fill_to = Vector2(1.0, 0.5)        # radius reaches the horizontal edge
+	_vignette = TextureRect.new()
+	_vignette.texture = gt
+	_vignette.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_vignette.stretch_mode = TextureRect.STRETCH_SCALE
+	_vignette.anchor_right = 1.0
+	_vignette.anchor_bottom = 1.0
+	_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_vignette.modulate.a = 0.0
+	add_child(_vignette)
+
+# Slice B — flash the hurt-vignette: snap to full, fade out over ~0.25s.
+# The player's take_damage hook calls this (orchestrator wires the one call
+# site if it lives outside this file — see notes).
+func hurt_vignette() -> void:
+	if _vignette == null:
+		return
+	_vignette.modulate.a = 1.0
+	var t := create_tween()
+	t.tween_property(_vignette, "modulate:a", 0.0, 0.25)
+
 # Death white-out (spec 23) — the screen fades to white, the respawn
 # happens unseen under it, then it fades back.
 func whiteout_in() -> void:
@@ -426,3 +473,28 @@ class GlobeGauge extends Control:
 				HORIZONTAL_ALIGNMENT_CENTER, size.x, 11, 4, Color(0.12, 0.09, 0.06))
 			draw_string(f, Vector2(0, c.y - 16), status,
 				HORIZONTAL_ALIGNMENT_CENTER, size.x, 11, Color(0.95, 0.78, 0.5))
+
+
+# Slice B — the quest plate's scroll dressing, drawn over the painted-wood
+# 9-patch backing: faint parchment grain, a flourish under the QUEST header,
+# and a small wax seal up top so the banner reads as a sealed proclamation.
+# Pure-vector + WyrdUi primitives (grain + flourish); the seal is lifted from
+# WyrdUi.draw_scroll. _draw-on-Control is the proven pattern in this layer.
+class QuestScrollArt extends Control:
+	func _ready() -> void:
+		resized.connect(queue_redraw)
+
+	func _draw() -> void:
+		if size.x < 2.0 or size.y < 2.0:
+			return
+		# Faint parchment grain across the inner face (inset off the wood frame).
+		var inner := Rect2(Vector2(18, 16), size - Vector2(36, 32))
+		WyrdUi.draw_parchment_grain(self, inner, 23)
+		# Flourish centred under the QUEST header (header sits ~y 11–28).
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 30.0), 120.0)
+		# A small wax seal up top-left, clear of the wood frame — the scroll's
+		# signature read (same motif as WyrdUi.draw_scroll's seal).
+		var sc := Vector2(28.0, 24.0)
+		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
+		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
+		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)

@@ -730,6 +730,10 @@ func _die() -> void:
 	if sfx != null:
 		sfx.play("death")
 	_spawn_drops()                       # spec 27b — loot before we sink
+	# Slice B — a cozy ember-pop on EVERY kill (not just bursting elites):
+	# a one-shot particle burst + an expanding warm ground-ring, so a felled
+	# foe reads as a soft puff of leaves/embers rather than a silent shrink.
+	_kill_burst()
 	# Spec 32 — clear the elite feet-ring so it doesn't outlive the body.
 	if _elite_ring != null and is_instance_valid(_elite_ring):
 		_elite_ring.queue_free()
@@ -969,3 +973,83 @@ func _death_burst() -> void:
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.parallel().tween_property(mat, "albedo_color:a", 0.0, 0.25)
 	tw.tween_callback(mi.queue_free)
+
+# Slice B — the cozy kill-burst. Fired from _die() on every death. Two parts,
+# both parented to OUR parent so they outlive the body's queue_free:
+#   1. a one-shot GPUParticles3D ember/leaf pop (template: hit_spark.gd) — warm
+#      gold/cream sparks that fountain up and settle, short and soft;
+#   2. an expanding warm ground-ring (recipe: layout_loader._death_burst /
+#      our own _death_burst torus) — a single ripple that fades.
+# Kept short and warm so it reads as a puff of embers, not a violent gib.
+const KILL_BURST_COLOR := Color(1.0, 0.82, 0.45)        # warm gold-cream embers
+const KILL_RING_COLOR := Color(0.85, 0.50, 0.28, 0.7)   # soft terracotta ripple
+func _kill_burst() -> void:
+	var host := get_parent()
+	if host == null:
+		host = get_tree().root
+	var center := global_position + Vector3(0.0, 0.5, 0.0)
+	# --- 1. ember pop (one-shot particle fountain) ---
+	var p := GPUParticles3D.new()
+	p.amount = 20
+	p.lifetime = 0.6
+	p.one_shot = true
+	p.explosiveness = 1.0
+	p.local_coords = false
+	var pm := ParticleProcessMaterial.new()
+	pm.direction = Vector3(0, 1, 0)
+	pm.spread = 75.0
+	pm.initial_velocity_min = 2.0
+	pm.initial_velocity_max = 4.5
+	pm.gravity = Vector3(0, -7.5, 0)         # gentle settle, not a hard spray
+	pm.scale_min = 0.5
+	pm.scale_max = 1.2
+	pm.color = KILL_BURST_COLOR
+	var grad := Gradient.new()
+	grad.set_color(0, Color(KILL_BURST_COLOR.r, KILL_BURST_COLOR.g,
+		KILL_BURST_COLOR.b, 0.95))
+	grad.set_color(1, Color(KILL_BURST_COLOR.r, KILL_BURST_COLOR.g,
+		KILL_BURST_COLOR.b, 0.0))
+	var ramp := GradientTexture1D.new()
+	ramp.gradient = grad
+	pm.color_ramp = ramp
+	p.process_material = pm
+	# Textured billboard spark — soft-circle alpha falloff (matches hit_spark
+	# and the status particles); 3x size convention from spec-34.
+	var qmesh := QuadMesh.new()
+	qmesh.size = Vector2(0.10 * 12.0, 0.10 * 12.0)
+	var qmat := StandardMaterial3D.new()
+	qmat.albedo_color = KILL_BURST_COLOR
+	qmat.albedo_texture = TEX_SOFT_CIRCLE
+	qmat.emission_enabled = true
+	qmat.emission = KILL_BURST_COLOR
+	qmat.emission_energy_multiplier = 2.5
+	qmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	qmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	qmat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	qmesh.material = qmat
+	p.draw_pass_1 = qmesh
+	host.add_child(p)
+	p.global_position = center
+	p.emitting = true
+	p.get_tree().create_timer(1.4).timeout.connect(p.queue_free)
+	# --- 2. expanding warm ground-ring (a single fading ripple) ---
+	var ring := MeshInstance3D.new()
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.22
+	torus.outer_radius = 0.34
+	ring.mesh = torus
+	var rmat := StandardMaterial3D.new()
+	rmat.albedo_color = KILL_RING_COLOR
+	rmat.emission_enabled = true
+	rmat.emission = Color(KILL_RING_COLOR.r, KILL_RING_COLOR.g, KILL_RING_COLOR.b)
+	rmat.emission_energy_multiplier = 1.4
+	rmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	rmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ring.material_override = rmat
+	ring.position = global_position + Vector3(0.0, 0.12, 0.0)
+	host.add_child(ring)
+	var rtw := ring.create_tween()
+	rtw.tween_property(ring, "scale", Vector3.ONE * 4.5, 0.35) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	rtw.parallel().tween_property(rmat, "albedo_color:a", 0.0, 0.35)
+	rtw.tween_callback(ring.queue_free)

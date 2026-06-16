@@ -696,6 +696,8 @@ func take_damage(amount: int, from_dir: Vector3) -> void:
 		hs.freeze(0.07)
 	if _hud != null:
 		_hud.flash()
+		if _hud.has_method("hurt_vignette"):
+			_hud.hurt_vignette()
 		_hud.set_hp(hp, hp_max)
 	if hp <= 0:
 		_die()
