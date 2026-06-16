@@ -825,9 +825,22 @@ func _apply_elite_tint(tint: Color) -> void:
 	mat.emission_enabled = true
 	mat.emission = tint
 	mat.emission_energy_multiplier = 0.6
+	# Keep the chunky ink silhouette on promoted elites — the golden override
+	# would otherwise drop the rim that layout_loader painted on the base kind.
+	mat.next_pass = _ink_outline_pass()
 	for mi in _meshes:
 		if mi is MeshInstance3D:
 			(mi as MeshInstance3D).material_override = mat
+
+# The shared inverted-hull ink rim (mirrors layout_loader._make_outline_pass).
+func _ink_outline_pass() -> StandardMaterial3D:
+	var o := StandardMaterial3D.new()
+	o.grow = true
+	o.grow_amount = 0.05
+	o.cull_mode = BaseMaterial3D.CULL_FRONT
+	o.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	o.albedo_color = Color(0.13, 0.09, 0.06)
+	return o
 
 # Slow-spinning golden ring at the elite's feet. Cheap GPUParticles3D — 8
 # box particles in a tight ring, low velocity.

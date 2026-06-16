@@ -233,6 +233,7 @@ func _ready() -> void:
 		_ap = _find_anim_player(_mesh)
 		_skel = _find_skeleton(_mesh)
 		_setup_clips()
+		_add_ink_outline(_mesh)        # the player wears the same ink rim as foes
 	_attach_bow()
 
 	# Spec 46 — puppets carry no HUD, panels, or hotbar; one set per machine.
@@ -254,6 +255,39 @@ func _ready() -> void:
 	if _hud != null:
 		_hud.set_hp.call_deferred(hp, hp_max)
 		_hud.set_focus.call_deferred(focus, focus_max)
+
+# The chunky ink silhouette (mirrors layout_loader / combatant). Chains a
+# grown back-face shell as next_pass onto each mesh's real material (duplicated
+# so the shared GLB resource isn't mutated); a materialless surface gets a
+# neutral plate to host the rim. Keeps the player consistent with the foes.
+func _add_ink_outline(root: Node) -> void:
+	for n in _all_mesh_instances(root):
+		var mi := n as MeshInstance3D
+		var mesh: Mesh = mi.mesh
+		var painted := false
+		if mesh != null:
+			for s in range(mesh.get_surface_count()):
+				var base := mi.get_active_material(s)
+				if base is BaseMaterial3D:
+					var dup := (base as BaseMaterial3D).duplicate() as BaseMaterial3D
+					dup.next_pass = _ink_outline_pass()
+					mi.set_surface_override_material(s, dup)
+					painted = true
+		if not painted:
+			var fallback := StandardMaterial3D.new()
+			fallback.albedo_color = Color(0.70, 0.66, 0.60)
+			fallback.roughness = 0.85
+			fallback.next_pass = _ink_outline_pass()
+			mi.material_override = fallback
+
+func _ink_outline_pass() -> StandardMaterial3D:
+	var o := StandardMaterial3D.new()
+	o.grow = true
+	o.grow_amount = 0.05
+	o.cull_mode = BaseMaterial3D.CULL_FRONT
+	o.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	o.albedo_color = Color(0.13, 0.09, 0.06)
+	return o
 
 # Swap the ranger for the chibi wayfinder when her rigged GLB is present.
 func _maybe_swap_chibi() -> void:
