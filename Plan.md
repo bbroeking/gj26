@@ -66,7 +66,7 @@ density down.** Keep idle breath ≤ ~3% (more = rubbery on chunky-toon).
 | Player **micro-stun (input-lock)** | ✅ `STUN_SEC 0.10` | `player_controller.gd` |
 | Player **i-frame blink tell** + mesh **flinch** | ✅ `BLINK_PERIOD`/`FLINCH_SEC` | `player_controller.gd` |
 | Enemy **ranged attacks / projectiles** | ✅ ghost lobs telegraphed orbs | `enemy_projectile.gd`, `combatant.gd` |
-| Player **bow-draw** (arms draw on fire) | ⬜ torso-tip fake only | `player_controller.gd` |
+| Player **bow-draw** (arms draw on fire) | ✅ SkeletonModifier3D draw-and-loose | `bow_draw_modifier.gd`, `player_controller.gd` |
 | Player clip easing (linear → robotic) | ⏸ needs Blender | — |
 
 ---
@@ -155,7 +155,7 @@ wall raycast (low risk at 9 u/s).
   projectiles, host resolves damage.
 - **Effort: M–L.** Motion → play-test + telegraph-decal screenshot.
 
-### Phase 4 — Player bow-draw ⬜
+### Phase 4 — Player bow-draw ✅  *(shipped)*
 Procedural arm pose on fire (no Blender, no AnimationTree): on `trigger_fire`,
 pose the bow/draw-arm bones via a `SkeletonModifier3D` (or `set_bone_pose_rotation`
 after the AnimationPlayer) — raise to draw, snap on release, ease back ~0.15s.

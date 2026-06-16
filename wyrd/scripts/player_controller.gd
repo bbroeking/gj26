@@ -7,6 +7,7 @@ extends CharacterBody3D
 # bone each frame.
 
 const BOW_SCENE := preload("res://models/prop_bow_v1.glb")
+const BowDrawModifier := preload("res://scripts/bow_draw_modifier.gd")  # Phase 4
 const ARROW_SCENE := preload("res://scenes/Arrow.tscn")
 const ArrowScript := preload("res://scripts/arrow.gd")  # static variant_idx
 const InventoryPanelScene := preload("res://scenes/InventoryPanel.tscn")  # spec 27c
@@ -63,6 +64,7 @@ const ROLL_COOLDOWN := 0.85
 
 # ---- weapon ----
 const FIRE_COOLDOWN := 0.28         # spec 26 — snappier cadence
+const BOW_DRAW_TIME := 0.22         # Phase 4 — arm draw-and-loose duration on a shot
 const ARROW_SPAWN_FWD := 0.3
 const INPUT_BUFFER_SEC := 0.15
 const BOW_SCALE := 0.5
@@ -88,6 +90,8 @@ enum Move { NORMAL, DASH, ROLL }
 var _mesh: Node3D
 var _ap: AnimationPlayer
 var _skel: Skeleton3D
+var _bow_draw_t := 0.0       # Phase 4 — bow-draw timer (set on each shot)
+var _bow_modifier: SkeletonModifier3D = null
 var _bow: Node3D
 # Spec 46-C — the bow's hand socket + tunables (local, in socket space).
 var _bow_socket: BoneAttachment3D = null
@@ -238,6 +242,11 @@ func _ready() -> void:
 		_mesh_base_scale = _mesh.scale
 		_ap = _find_anim_player(_mesh)
 		_skel = _find_skeleton(_mesh)
+		if _skel != null:
+			# Phase 4 — a bow-draw modifier runs after the AnimationPlayer so the
+			# arms can loose the bow over the playing locomotion clip.
+			_bow_modifier = BowDrawModifier.new()
+			_skel.add_child(_bow_modifier)
 		_setup_clips()
 		_add_ink_outline(_mesh)        # the player wears the same ink rim as foes
 	_attach_bow()
@@ -410,6 +419,9 @@ func _physics_process(delta: float) -> void:
 	_iframe_t = maxf(0.0, _iframe_t - delta)
 	_stun_t = maxf(0.0, _stun_t - delta)
 	_flinch_t = maxf(0.0, _flinch_t - delta)
+	_bow_draw_t = maxf(0.0, _bow_draw_t - delta)   # Phase 4 — bow-draw decays 1→0
+	if _bow_modifier != null:
+		_bow_modifier.draw_amount = _bow_draw_t / BOW_DRAW_TIME
 	# Phase 1 — i-frame blink ("I'm briefly safe") + flinch squash on the mesh.
 	# Always writes base x squash so it self-restores; skipped while dead (the
 	# death tween owns the mesh).
@@ -875,6 +887,7 @@ func bow_pop(scale_mult: float) -> void:
 # fire-recoil animation. Negative values lean back (the existing convention).
 func apply_recoil(amount: float) -> void:
 	_fire_recoil = amount
+	_bow_draw_t = BOW_DRAW_TIME   # Phase 4 — arms snap into the draw, then settle
 
 # Spec 32b — skill dispatcher. Slot 1 routes through the F-fire buffer
 # (preserves the snappy "press 1 a tick early" feel); slots 2-4 fire
