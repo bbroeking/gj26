@@ -63,8 +63,8 @@ density down.** Keep idle breath ≤ ~3% (more = rubbery on chunky-toon).
 | Player **i-frames** (`IFRAMES_SEC`, roll `0.27`) | ✅ exist (no visible tell) | `player_controller.gd` |
 | Player **dodge-roll** (with i-frames) | ✅ exists — leverage for avoidance | `player_controller.gd` ROLL |
 | Player hit: knockback + hit-stop + flash + hurt-vignette | ✅ exist | `player_controller.gd:take_damage` |
-| Player **micro-stun (input-lock)** | ⬜ missing | — |
-| Player **i-frame blink tell** + mesh **flinch** | ⬜ missing | — |
+| Player **micro-stun (input-lock)** | ✅ `STUN_SEC 0.10` | `player_controller.gd` |
+| Player **i-frame blink tell** + mesh **flinch** | ✅ `BLINK_PERIOD`/`FLINCH_SEC` | `player_controller.gd` |
 | Enemy **ranged attacks / projectiles** | ⬜ none | reuse `arrow.gd` |
 | Player **bow-draw** (arms draw on fire) | ⬜ torso-tip fake only | `player_controller.gd` |
 | Player clip easing (linear → robotic) | ⏸ needs Blender | — |
@@ -99,7 +99,7 @@ density down.** Keep idle breath ≤ ~3% (more = rubbery on chunky-toon).
 
 ## 4. Roadmap (priority order)
 
-### Phase 1 — Player "getting hit" feel ⬜  *(highest priority)*
+### Phase 1 — Player "getting hit" feel ✅  *(shipped)*
 - **Micro-stun:** `_stun_t` on the player; ~**0.10s** set in `take_damage`; gate
   input atop `_physics_process` (`if _stun_t > 0: _stun_t -= delta; decay vel;
   return`). 80–150ms reads without ever feeling like a stunlock.

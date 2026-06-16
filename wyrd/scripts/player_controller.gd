@@ -73,6 +73,10 @@ const PLAYER_HP := 30
 const IFRAMES_SEC := 0.6
 const HIT_KNOCKBACK := 4.5
 const DEATH_PAUSE := 1.2
+# Phase 1 — "getting hit" feel (Plan.md). One block so playtest tuning is fast.
+const STUN_SEC := 0.10        # micro-stun input-lock on a hit (≤0.15 = no stunlock)
+const FLINCH_SEC := 0.16      # mesh squash flinch
+const BLINK_PERIOD := 0.12    # i-frame blink on/off period (the "I'm safe" tell)
 
 # ---- clip names in the Meshy GLBs ----
 const CLIP_IDLE := "Armature|Idle|baselayer"
@@ -113,6 +117,8 @@ var hp := PLAYER_HP
 var hp_max := PLAYER_HP
 var dead := false
 var _iframe_t := 0.0
+var _stun_t := 0.0            # Phase 1 — micro-stun input lock
+var _flinch_t := 0.0          # Phase 1 — mesh flinch squash
 var _spawn_pos := Vector3.ZERO
 var _mesh_base_scale := Vector3.ONE
 
@@ -402,6 +408,20 @@ func _physics_process(delta: float) -> void:
 		return
 	_net_send_tick(delta)
 	_iframe_t = maxf(0.0, _iframe_t - delta)
+	_stun_t = maxf(0.0, _stun_t - delta)
+	_flinch_t = maxf(0.0, _flinch_t - delta)
+	# Phase 1 — i-frame blink ("I'm briefly safe") + flinch squash on the mesh.
+	# Always writes base x squash so it self-restores; skipped while dead (the
+	# death tween owns the mesh).
+	if _mesh != null and not dead:
+		_mesh.visible = _iframe_t <= 0.0 \
+			or fmod(_iframe_t, BLINK_PERIOD) > BLINK_PERIOD * 0.5
+		var fl := _flinch_t / FLINCH_SEC
+		var sq := 0.22 * fl
+		_mesh.scale = Vector3(
+			_mesh_base_scale.x * (1.0 + sq * 0.5),
+			_mesh_base_scale.y * (1.0 - sq),
+			_mesh_base_scale.z * (1.0 + sq * 0.5))
 	_dash_cd = maxf(0.0, _dash_cd - delta)
 	_roll_cd = maxf(0.0, _roll_cd - delta)
 	_fire_buffer = maxf(0.0, _fire_buffer - delta)
@@ -449,6 +469,13 @@ func _physics_process(delta: float) -> void:
 	if game_r != null and int(game_r.modal_count) > 0:
 		velocity.x = move_toward(velocity.x, 0.0, 30.0 * delta)
 		velocity.z = move_toward(velocity.z, 0.0, 30.0 * delta)
+		move_and_slide()
+		return
+	# Phase 1 — micro-stun: a hit briefly locks input. Knockback still carries
+	# (velocity settles through move_and_slide), then control returns.
+	if _stun_t > 0.0:
+		velocity.x = move_toward(velocity.x, 0.0, 18.0 * delta)
+		velocity.z = move_toward(velocity.z, 0.0, 18.0 * delta)
 		move_and_slide()
 		return
 	if Input.is_action_just_pressed("ui_cancel"):
@@ -719,6 +746,8 @@ func take_damage(amount: int, from_dir: Vector3) -> void:
 			return
 	hp -= amount
 	_iframe_t = IFRAMES_SEC
+	_stun_t = STUN_SEC            # Phase 1 — micro-stun input lock
+	_flinch_t = FLINCH_SEC        # Phase 1 — mesh flinch
 	_combat_t = COMBAT_TIMER       # spec 30 — getting hit puts us in combat
 	var flat := Vector3(from_dir.x, 0.0, from_dir.z)
 	if flat.length() > 0.001:

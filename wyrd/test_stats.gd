@@ -150,6 +150,25 @@ func _run() -> void:
 		game.trades.wayfinding.lv = 1
 		p._derive_stats()
 
+	# HF — Phase 1 player hit-feedback: a hit arms the micro-stun + flinch +
+	# i-frame timers, and a second hit inside the i-frame window deals 0 damage.
+	p.dead = false
+	p.hp = p.hp_max
+	p._iframe_t = 0.0
+	p._stun_t = 0.0
+	p._flinch_t = 0.0
+	p.take_damage(5, Vector3(0.0, 0.0, 1.0))
+	var hf_armed: bool = p._stun_t > 0.0 and p._flinch_t > 0.0 and p._iframe_t > 0.0
+	var hf_dmg: int = p.hp_max - p.hp
+	var hf_hp_after_one: int = p.hp
+	p.take_damage(5, Vector3(0.0, 0.0, 1.0))   # inside i-frames → ignored
+	Engine.time_scale = 1.0                      # hitstop left it low; restore
+	_check("HF-hit-arms-stun-flinch-iframe", hf_armed and hf_dmg == 5,
+		"hit: stun %.2f / flinch %.2f / iframe %.2f, took %d dmg" %
+		[p._stun_t, p._flinch_t, p._iframe_t, hf_dmg])
+	_check("HF-iframe-blocks-rehit", p.hp == hf_hp_after_one,
+		"2nd hit inside i-frames: hp %d unchanged (was %d)" % [p.hp, hf_hp_after_one])
+
 	# S5 — passing a high crit_chance to take_damage raises observed crit rate.
 	CombatantScript.crit_enabled = true
 	var ce: Node3D = CombatantScript.new()
