@@ -14,6 +14,7 @@ const AnimDriverScript = preload("res://scripts/anim_driver.gd")
 const CombatantScript = preload("res://scripts/combatant.gd")
 const BossScript = preload("res://scripts/boss.gd")
 const RatAnimScript = preload("res://scripts/rat_anim.gd")
+const CreatureAnimScript = preload("res://scripts/creature_anim.gd")
 const BreakableScript = preload("res://scripts/breakable.gd")
 const GatherNodeScript = preload("res://scripts/gather_node.gd")
 const ExitWaystoneScript = preload("res://scripts/exit_waystone.gd")
@@ -675,11 +676,15 @@ func _build_boss(boss_room, grid: Array, boss_kind: String = "hedgemother") -> v
 				game.add_material(trophy, 1)
 				game.notify("Trophy claimed: %s. Slot it at the Inscribing Table." %
 					GatherDefs.material_name(trophy)))
+	# Every boss breathes/sways at idle and bobs when moving (Meshy can't rig
+	# these). Quadrupeds pass their lumbering bob; humanoid bosses get the
+	# gentle default so they're never frozen.
+	var qa = CreatureAnimScript.new()
 	if def.has("bob"):
-		# Unrigged quadruped boss — lumbering hop-bob (the rat pattern).
-		var qa = RatAnimScript.new()
 		qa.setup(inst, float(def.bob[0]), float(def.bob[1]))
-		boss._proc_anim = qa
+	else:
+		qa.setup(inst)
+	boss._proc_anim = qa
 	AnimDriverScript.play_idle(inst)
 
 	# Arena seal — gate blocks at the boss-room openings, raised on aggro.
@@ -946,10 +951,15 @@ func _spawn_enemy(ei: int, tx: int, ty: int, role: String = "combat",
 	body.role = role
 	body.depth = depth
 	# Unrigged critters scurry via the procedural hop-bob (spec 21 pattern).
+	# Every enemy gets procedural life — breathing/sway at idle, a hop-bob when
+	# moving — so the un-rigged cast (skeleton/ghost/hedge_sprite/Hedgemother)
+	# no longer slides frozen in bind pose. Scurriers pass their own bob.
+	var ra = CreatureAnimScript.new()
 	if def.has("bob"):
-		var ra = RatAnimScript.new()
 		ra.setup(inst, float(def.bob[0]), float(def.bob[1]))
-		body._proc_anim = ra
+	else:
+		ra.setup(inst)
+	body._proc_anim = ra
 	AnimDriverScript.play_idle(inst)
 	return body
 
