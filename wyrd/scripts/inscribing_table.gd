@@ -25,6 +25,7 @@ func _ready_interactable() -> void:
 	var stone := STONE_GLB.instantiate()
 	add_child(stone)
 	GlbFit.normalize_height(stone, 1.1)
+	GlbFit.add_ink_outline(stone)
 	var compass := COMPASS_GLB.instantiate()
 	add_child(compass)
 	GlbFit.normalize_height(compass, 0.35)

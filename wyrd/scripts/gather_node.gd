@@ -113,6 +113,7 @@ func _ready_interactable() -> void:
 			var inst: Node3D = packed.instantiate()
 			GlbFit.normalize_height(inst, float(prop.fit_h))
 			GlbFit.unmetal(inst)
+			GlbFit.add_ink_outline(inst)
 			inst.position = Vector3(0.0, 0.02, 0.0)
 			_body.add_child(inst)
 			if ore_tier != "" and ore_tier != "bogiron":

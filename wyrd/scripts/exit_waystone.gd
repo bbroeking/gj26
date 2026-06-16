@@ -35,6 +35,7 @@ func _ready_interactable() -> void:
 	cairn.position = Vector3(0.0, 0.05, 0.0)
 	add_child(cairn)
 	GlbFit.normalize_height(cairn, 1.8)
+	GlbFit.add_ink_outline(cairn)
 	var glow := OmniLight3D.new()
 	glow.position = Vector3(0.0, 1.4, 0.0)
 	glow.light_color = Color(0.55, 0.75, 1.0)

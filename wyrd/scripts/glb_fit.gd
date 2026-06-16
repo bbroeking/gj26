@@ -12,6 +12,45 @@ static func normalize_height(root: Node3D, target_h: float) -> void:
 	if aabb.size.y > 0.01:
 		root.scale = root.scale * (target_h / aabb.size.y)
 
+# The shared chunky ink silhouette (one source of truth for the rim across
+# enemies, player, NPCs, and key props). A grown, front-culled, unshaded back
+# shell hugging the model — "bold ink outlines". Chained as next_pass on a
+# DUPLICATE of each surface's active material so the shared GLB resource isn't
+# mutated; a materialless surface gets a neutral plate to host the rim.
+const OUTLINE_INK := Color(0.13, 0.09, 0.06)
+const OUTLINE_GROW := 0.05
+
+static func ink_outline_pass() -> StandardMaterial3D:
+	var o := StandardMaterial3D.new()
+	o.grow = true
+	o.grow_amount = OUTLINE_GROW
+	o.cull_mode = BaseMaterial3D.CULL_FRONT
+	o.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	o.albedo_color = OUTLINE_INK
+	return o
+
+static func add_ink_outline(root: Node) -> void:
+	if root is MeshInstance3D:
+		var mi := root as MeshInstance3D
+		var mesh: Mesh = mi.mesh
+		var painted := false
+		if mesh != null:
+			for s in range(mesh.get_surface_count()):
+				var base := mi.get_active_material(s)
+				if base is BaseMaterial3D:
+					var dup := (base as BaseMaterial3D).duplicate() as BaseMaterial3D
+					dup.next_pass = ink_outline_pass()
+					mi.set_surface_override_material(s, dup)
+					painted = true
+		if not painted:
+			var fb := StandardMaterial3D.new()
+			fb.albedo_color = Color(0.70, 0.66, 0.60)
+			fb.roughness = 0.85
+			fb.next_pass = ink_outline_pass()
+			mi.material_override = fb
+	for c in root.get_children():
+		add_ink_outline(c)
+
 # Meshy GLB materials carry a metallic value the Compatibility renderer
 # blows out into chrome — zero it so they render matte (layout_loader's
 # _unmetal, shared).

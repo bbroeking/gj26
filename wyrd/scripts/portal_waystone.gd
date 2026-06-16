@@ -23,6 +23,7 @@ func _ready_interactable() -> void:
 	var cairn := CAIRN_GLB.instantiate()
 	add_child(cairn)
 	GlbFit.normalize_height(cairn, 2.4)
+	GlbFit.add_ink_outline(cairn)
 	var glow := OmniLight3D.new()
 	glow.position = Vector3(0.0, 1.8, 0.0)
 	glow.light_color = Color(0.55, 0.75, 1.0)

@@ -53,6 +53,7 @@ func _ready_interactable() -> void:
 	_altar = ALTAR_GLB.instantiate()
 	_altar.position = Vector3(0.0, 0.05, 0.0)
 	add_child(_altar)
+	GlbFit.add_ink_outline(_altar)
 	# Cool blue blessing glow — distinguishes a shrine from a torch.
 	_glow = OmniLight3D.new()
 	_glow.position = Vector3(0.0, 1.0, 0.0)

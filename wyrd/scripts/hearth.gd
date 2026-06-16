@@ -30,6 +30,7 @@ func _ready_interactable() -> void:
 	_brazier = BRAZIER_GLB.instantiate()
 	_brazier.position = Vector3(0.0, 0.05, 0.0)
 	add_child(_brazier)
+	GlbFit.add_ink_outline(_brazier)
 	# Warm hearth pool — visually distinct from a shrine's cold blue.
 	_glow = OmniLight3D.new()
 	_glow.position = Vector3(0.0, 1.1, 0.0)

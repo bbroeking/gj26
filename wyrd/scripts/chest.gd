@@ -29,6 +29,7 @@ func _ready_interactable() -> void:
 	_glb = CHEST_GLB.instantiate()
 	_glb.position = Vector3(0.0, 0.05, 0.0)
 	add_child(_glb)
+	GlbFit.add_ink_outline(_glb)
 
 func is_used() -> bool:
 	return _opened

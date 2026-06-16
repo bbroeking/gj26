@@ -24,6 +24,7 @@ func _ready_interactable() -> void:
 	add_child(mesh)
 	GlbFit.normalize_height(mesh, 1.62)   # her in-lore height (npcs.js)
 	GlbFit.unmetal(mesh)
+	GlbFit.add_ink_outline(mesh)
 
 func interact(_player: Node) -> void:
 	var dlg: CanvasLayer = DialogPanelScript.new()

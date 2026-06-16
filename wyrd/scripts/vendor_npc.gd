@@ -23,6 +23,7 @@ func _ready_interactable() -> void:
 	add_child(mesh)
 	GlbFit.normalize_height(mesh, 1.72)   # his in-lore height
 	GlbFit.unmetal(mesh)
+	GlbFit.add_ink_outline(mesh)
 
 func interact(_player: Node) -> void:
 	var panel := VendorPanelScript.new()
