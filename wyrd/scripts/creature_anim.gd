@@ -21,6 +21,9 @@ const IDLE_RATE := 2.0       # breaths/sway phase rad/sec
 const ATK_WINDBACK := 0.16   # metres pulled back during anticipation
 const ATK_LUNGE := 0.34      # metres lunged forward on the strike
 const ATK_STRIKE_SEC := 0.16 # lunge-and-settle duration
+# Juice (Phase 5)
+const SPAWN_TIME := 0.28     # pop-in duration on spawn (overshoot)
+const LEAN_ANGLE := 0.12     # rad — forward lean while moving (~7°)
 
 var _node: Node3D
 var _base_pos := Vector3.ZERO
@@ -37,6 +40,10 @@ var _atk_windup := 0.0
 var _atk_t := 0.0            # windup countdown
 var _strike_t := 0.0
 var _atk_dir := Vector3.ZERO
+# juice (Phase 5)
+var _spawn_t := 0.0          # counts 0→SPAWN_TIME; pop-in while < SPAWN_TIME
+var _lean := 0.0
+var _base_rot_x := 0.0
 
 func setup(node: Node3D, move_bob: float = 0.05, move_rate: float = 9.0,
 		idle_rate: float = IDLE_RATE) -> void:
@@ -48,6 +55,10 @@ func setup(node: Node3D, move_bob: float = 0.05, move_rate: float = 9.0,
 		_base_pos = node.position
 		_base_scale = node.scale
 		_base_rot_z = node.rotation.z
+		_base_rot_x = node.rotation.x
+		# Phase 5 — start tiny so update() pops the creature in over SPAWN_TIME.
+		_spawn_t = 0.0
+		node.scale = _base_scale * 0.01
 		# Per-creature phase offset so a room doesn't breathe in lockstep
 		# (deterministic, RNG-free).
 		_breath = absf(node.global_position.x + node.global_position.z) * 1.7
@@ -68,6 +79,12 @@ func strike() -> void:
 
 func update(delta: float, moving: bool) -> void:
 	if _node == null:
+		return
+	if _spawn_t < SPAWN_TIME:
+		# Phase 5 — pop in with an overshoot (squash/stretch on arrival).
+		_spawn_t += delta
+		_node.scale = _base_scale * _back_out(clampf(_spawn_t / SPAWN_TIME, 0.0, 1.0))
+		_node.position = _base_pos
 		return
 	if _attacking:
 		if _atk_t > 0.0:
@@ -99,6 +116,7 @@ func update(delta: float, moving: bool) -> void:
 		_node.scale = _node.scale.lerp(_base_scale, clampf(delta * 6.0, 0.0, 1.0))
 		_node.rotation.z = lerp_angle(_node.rotation.z, _base_rot_z,
 			clampf(delta * 6.0, 0.0, 1.0))
+		_lean = lerpf(_lean, LEAN_ANGLE, clampf(delta * 8.0, 0.0, 1.0))  # lean into travel
 	else:
 		_breath += delta * _idle_rate
 		var b := sin(_breath) * IDLE_BREATH
@@ -108,3 +126,11 @@ func update(delta: float, moving: bool) -> void:
 			_base_scale.y * (1.0 + b),
 			_base_scale.z * (1.0 - b * 0.5))
 		_node.rotation.z = _base_rot_z + sin(_breath * 0.7) * IDLE_SWAY
+		_lean = lerpf(_lean, 0.0, clampf(delta * 8.0, 0.0, 1.0))         # straighten at rest
+	_node.rotation.x = _base_rot_x + _lean
+
+# Back-out easing (overshoot past 1.0 then settle) for the spawn pop-in.
+func _back_out(t: float) -> float:
+	var c := 1.70158
+	var u := t - 1.0
+	return 1.0 + u * u * ((c + 1.0) * u + c)

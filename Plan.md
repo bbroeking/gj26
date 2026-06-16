@@ -165,10 +165,13 @@ Mixamo-named arm bones. **Audio:** a bow-creak.
   (additive); screenshot-verified mid-draw.
 - **Effort: M.** Screenshot-able.
 
-### Phase 5 — Animation juice (cheap, broad) ⬜
-- Overshoot & settle on existing one-shot tweens (`TRANS_BACK`).
-- Event scale-punches: spawn pop-in (0→1, ~0.2s), land-squash, death-squash.
-- Velocity lean ±6–8° on moving creatures + player.
+### Phase 5 — Animation juice (cheap, broad) ✅  *(core shipped)*
+- ✅ **Spawn pop-in** — every enemy/boss overshoots into existence (back-out
+  scale 0→1 over 0.28s) instead of popping at full size (`creature_anim`).
+- ✅ **Velocity lean** — creatures tilt ~7° forward while moving, straighten at
+  rest (`creature_anim`).
+- ⬜ Remaining optional polish: land-squash on hop valleys, death-squash,
+  overshoot on the other one-shot tweens, a player movement lean.
 - **Effort: S–M.**
 
 ### Parked — ⏸ Player clip easing (needs Blender)
