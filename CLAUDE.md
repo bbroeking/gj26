@@ -26,7 +26,10 @@ Dev hooks (env vars): `WYRD_NO_SAVE=1` (never touch the real save),
 `WYRD_SHOT=1` (screenshot to /tmp/wyrd_town.png), `WYRD_UI_SHOT=<surface>`
 (open a UI for capture; see `bash wyrd/tools/capture_ui.sh` for all 10),
 `WYRD_DEV_CHART=<template>` + `WYRD_DEV_BOSS=<den_affix>` (boot straight
-into a chart run), `WYRD_FAST_CHANNEL=1` (instant gather channels).
+into a chart run), `WYRD_FAST_CHANNEL=1` (instant gather channels),
+`WYRD_DEV_LEVEL=<n>` (set Wayfinding level on boot — eyeball the mastery
+ladder + ADR-0013 difficulty bands), `WYRD_NET=host|join:<ip[:port]>`
+(light/join a fire at boot).
 
 ## Tests
 
