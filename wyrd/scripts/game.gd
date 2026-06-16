@@ -206,6 +206,13 @@ func _ready() -> void:
 	if ResourceLoader.exists("res://assets/ui/cursor_default.png"):
 		Input.set_custom_mouse_cursor(load("res://assets/ui/cursor_default.png"),
 			Input.CURSOR_ARROW, Vector2(3, 2))
+	# Dev: WYRD_DEV_LEVEL=<n> sets the Wayfinding level on boot — for eyeballing
+	# the mastery ladder and the ADR-0013 difficulty bands at any level.
+	var dev_level := OS.get_environment("WYRD_DEV_LEVEL")
+	if dev_level != "":
+		var dl: int = clampi(int(dev_level), 1, LEVEL_CAP)
+		trades.wayfinding.lv = dl
+		trades.wayfinding.xp = xp_for_level(dl)
 	# Dev: WYRD_DEV_CHART=<template_id> boots straight into a chart run with
 	# every gather affix landed good — visual checks without the town loop.
 	var dev_chart := OS.get_environment("WYRD_DEV_CHART")

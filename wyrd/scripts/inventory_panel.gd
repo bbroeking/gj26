@@ -770,19 +770,17 @@ func _draw_squiggle(from: Vector2, width: float, color: Color) -> void:
 	# Usability pass — a quiet straight rule beats the wobbly one.
 	draw_line(from, from + Vector2(width, 0.0), color, 1.2)
 
-# Spec 39 — the Trades page as professions rows (WoW refs, 2026-06-11):
-# one band per trade — round emblem, name + level, XP bar, then a mini
-# grid of unlock cells (OSRS-style): glyph when earned, level number when
-# locked. Hovering a cell names it; otherwise the next unlock is shown.
-var _unlock_cells: Array = []     # rebuilt each draw: {rect, label}
-
+# Spec 39 — the Trades page: the Wayfinding band (round emblem, name + level,
+# XP bar) followed by the mastery ladder — a level 1→17 skill tree of every
+# perk as a card down a spine, lit when earned, dim with its Lv gate when not.
 const TRADE_ROWS := [
 	# ADR 0012 — one skill: Wayfinding.
 	{"key": "wayfinding", "name": "Wayfinding", "glyph": "✦",
 		"color": Color(0.71, 0.53, 0.22)},
 ]
-const CELL_S := 30.0
-const CELL_GAP := 7.0
+# Mastery-ladder card dimensions (the skill tree, level 1→17).
+const CARD_H := 66.0
+const CARD_GAP := 10.0
 
 func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> void:
 	var game := get_tree().root.get_node_or_null("Game")
@@ -791,7 +789,6 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 	var hdr: Font = WyrdUi.font_header()
 	if hdr == null:
 		hdr = font
-	_unlock_cells.clear()
 	var x := win.position.x + 64.0
 	var w := win.size.x - 122.0
 	var y := win.position.y + 114.0
@@ -832,79 +829,60 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 			draw_string(font, Vector2(bar.end.x + 10.0, y + 37.0),
 				"%d / %d xp" % [xp, hi],
 				HORIZONTAL_ALIGNMENT_LEFT, 120.0, 13, Color(0.30, 0.24, 0.19))
-		# --- unlock mini grid (layout always advances; draws are culled) ---
-		var cells := _trade_unlock_rows(key)
-		var cyy := y + 46.0
-		var cxx := cx
-		var hovered := ""
-		for cell in cells:
-			if cxx + CELL_S > x + w:
-				cxx = cx
-				cyy += CELL_S + CELL_GAP
-			var r := Rect2(Vector2(cxx, cyy), Vector2(CELL_S, CELL_S))
-			var ok: bool = lv >= int(cell.lv)
-			if _span_visible(cyy, cyy + CELL_S, scroll, view):
+		# --- the mastery ladder (level 1→17): every perk, locked or earned ---
+		var perks: Array = (game.PERKS as Dictionary).get(key, []).duplicate()
+		perks.sort_custom(func(a, b): return int(a.lv) < int(b.lv))
+		var earned := 0
+		for p in perks:
+			if lv >= int(p.lv):
+				earned += 1
+		var sy := y + 72.0
+		if _span_visible(sy - 18.0, sy + 4.0, scroll, view):
+			draw_string(hdr, Vector2(cx, sy), "Masteries",
+				HORIZONTAL_ALIGNMENT_LEFT, w - 78.0, 18, WyrdUi.TERRACOTTA)
+			draw_string(font, Vector2(cx, sy),
+				"%d / %d earned" % [earned, perks.size()],
+				HORIZONTAL_ALIGNMENT_RIGHT, w - 78.0, 13, Color(0.40, 0.34, 0.27))
+		# cards march down a spine in the left gutter; the disc lights when earned
+		var lx := x + 18.0
+		var card_x := x + 42.0
+		var card_w := w - 50.0
+		var cardy := sy + 18.0
+		for p in perks:
+			var pl: int = int(p.lv)
+			var ok: bool = lv >= pl
+			if _span_visible(cardy - CARD_GAP, cardy + CARD_H + CARD_GAP, scroll, view):
+				# spine segment (left gutter — cards sit to its right, never cover it)
+				draw_line(Vector2(lx, cardy - CARD_GAP),
+					Vector2(lx, cardy + CARD_H + CARD_GAP),
+					Color(0.55, 0.62, 0.40, 0.65), 3.0)
+				var cr := Rect2(Vector2(card_x, cardy), Vector2(card_w, CARD_H))
 				if ok:
-					draw_rect(r, Color(0.93, 0.88, 0.74))
-					draw_rect(r, WyrdUi.SAGE.darkened(0.15), false, 2.0)
-					draw_string(font, Vector2(r.position.x, r.position.y + 21.0),
-						String(cell.get("glyph", "✓")), HORIZONTAL_ALIGNMENT_CENTER,
-						CELL_S, 15, Color(0.30, 0.36, 0.20))
+					draw_rect(cr, Color(0.93, 0.88, 0.74))
+					draw_rect(cr, WyrdUi.SAGE.darkened(0.12), false, 2.0)
 				else:
-					draw_rect(r, Color(0.76, 0.70, 0.58))
-					draw_rect(r, Color(0.48, 0.40, 0.30, 0.8), false, 1.5)
-					draw_string(font, Vector2(r.position.x, r.position.y + 21.0),
-						str(int(cell.lv)), HORIZONTAL_ALIGNMENT_CENTER,
-						CELL_S, 14, Color(0.40, 0.34, 0.27))
-			var label := "%s · lv %d%s" % [String(cell.name), int(cell.lv),
-				"  ✓" if ok else ""]
-			# Hit rects live in screen space: offset by the scroll, and only
-			# bite inside the view (masked cells under the bands stay inert).
-			var rs := Rect2(r.position - Vector2(0.0, scroll), r.size)
-			_unlock_cells.append({"rect": rs, "label": label})
-			if view.has_point(_cursor_screen) and rs.has_point(_cursor_screen):
-				hovered = label
-			cxx += CELL_S + CELL_GAP
-		# --- info line: hovered cell, else the next locked unlock ---
-		if hovered == "":
-			for cell in cells:
-				if lv < int(cell.lv):
-					hovered = "Next: %s · lv %d" % [String(cell.name), int(cell.lv)]
-					break
-			if hovered == "":
-				hovered = "Everything earned."
-		if _span_visible(cyy + CELL_S + 4.0, cyy + CELL_S + 21.0, scroll, view):
-			draw_string(font, Vector2(cx, cyy + CELL_S + 17.0), hovered,
-				HORIZONTAL_ALIGNMENT_LEFT, w - 68.0, 13, Color(0.36, 0.30, 0.24))
-		y = cyy + CELL_S + 30.0
+					draw_rect(cr, Color(0.78, 0.72, 0.60, 0.85))
+					draw_rect(cr, Color(0.50, 0.42, 0.32, 0.7), false, 1.5)
+				# node disc on the spine
+				var dc := Vector2(lx, cardy + CARD_H * 0.5)
+				draw_circle(dc, 12.0, WyrdUi.SAGE.darkened(0.05) if ok \
+					else Color(0.62, 0.55, 0.45))
+				draw_arc(dc, 12.0, 0.0, TAU, 24, Color(0.25, 0.18, 0.12), 1.5, true)
+				draw_string(hdr, Vector2(dc.x - 12.0, dc.y + 6.0),
+					"❖" if ok else "⚿", HORIZONTAL_ALIGNMENT_CENTER, 24.0, 13,
+					Color(0.97, 0.95, 0.86) if ok else Color(0.86, 0.81, 0.73))
+				# name + state tag
+				draw_string(hdr, Vector2(cr.position.x + 12.0, cardy + 23.0),
+					String(p.name), HORIZONTAL_ALIGNMENT_LEFT, card_w - 96.0, 16,
+					WyrdUi.INK if ok else Color(0.44, 0.38, 0.31))
+				draw_string(font, Vector2(cr.position.x, cardy + 21.0),
+					"✓ earned" if ok else "Lv %d" % pl,
+					HORIZONTAL_ALIGNMENT_RIGHT, card_w - 12.0, 13,
+					WyrdUi.SAGE.darkened(0.2) if ok else Color(0.50, 0.42, 0.32))
+				# description (up to two lines)
+				draw_multiline_string(font, Vector2(cr.position.x + 12.0, cardy + 41.0),
+					String(p.desc), HORIZONTAL_ALIGNMENT_LEFT, card_w - 24.0, 12, 2,
+					Color(0.34, 0.28, 0.22) if ok else Color(0.52, 0.46, 0.39))
+			cardy += CARD_H + CARD_GAP
+		y = cardy + 12.0
 	_tab_content_h[3] = y - view.position.y
-
-# Recipes (from the trade's station) + perks, sorted by level — the same
-# visual language as the Wayfinder ladder.
-func _trade_unlock_rows(trade: String) -> Array:
-	var rows: Array = []
-	if trade == "carto":
-		# Wayfinding unlocks ARE the chart ladder: templates + rollable affixes.
-		for tid in ChartsData.TEMPLATE_ORDER:
-			var t: Dictionary = ChartsData.TEMPLATES[tid]
-			rows.append({"name": String(t.name), "lv": int(t.req_carto),
-				"glyph": "✦"})
-		for aid in ChartsData.AFFIXES:
-			if not ChartsData.AFFIXES[aid].has("trophy"):
-				rows.append({"name": String(ChartsData.AFFIXES[aid].name),
-					"lv": int(ChartsData.AFFIXES[aid].req_carto), "glyph": "★"})
-	for sid in CraftingDefs.STATIONS:
-		var st: Dictionary = CraftingDefs.STATIONS[sid]
-		if String(st.trade) != trade:
-			continue
-		for rid in st.recipes:
-			var rec: Dictionary = CraftingDefs.RECIPES[String(rid)]
-			rows.append({"name": String(rec.name),
-				"lv": int(rec.get("req_lv", 1)), "glyph": "⚒"})
-	var game := get_tree().root.get_node_or_null("Game")
-	if game != null:
-		for perk in (game.PERKS as Dictionary).get(trade, []):
-			rows.append({"name": String(perk.name), "lv": int(perk.lv),
-				"glyph": "❖"})
-	rows.sort_custom(func(a, b): return int(a.lv) < int(b.lv))
-	return rows
