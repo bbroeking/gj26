@@ -36,6 +36,11 @@ func _ready() -> void:
 	lbl.name = "PromptLabel"
 	lbl.text = get_prompt_text()
 	lbl.modulate = get_prompt_color()
+	# Storybook typeface (IM Fell) so the prompt reads as the game's voice, not
+	# debug text. A parchment plate behind it is a followup (needs a SubViewport).
+	var pfont := WyrdUi.font_header()
+	if pfont != null:
+		lbl.font = pfont
 	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lbl.no_depth_test = true
 	lbl.font_size = 72
