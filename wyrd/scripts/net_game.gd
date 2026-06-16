@@ -10,15 +10,27 @@ extends Node
 
 signal roster_changed
 signal session_ended(reason: String)
+signal reconnecting(attempt: int, max_attempts: int)
 
 const DEFAULT_PORT := 7777
 const MAX_PLAYERS := 4
 const PlayerScene := preload("res://scenes/Player.tscn")
 
+# A dropped host connection gets a short grace: try to find the lantern again
+# a few times before giving up (handles a transient blip while the host is up).
+const RECONNECT_TRIES := 3
+const RECONNECT_DELAY := 2.0
+
 var active := false
 var display_name := ""
 # peer_id -> {"name": String}. On every peer; host's copy is truth.
 var players: Dictionary = {}
+
+# reconnect state (guest only)
+var _last_ip := ""
+var _last_port := DEFAULT_PORT
+var _leaving := false
+var _reconnect_left := 0
 
 func _ready() -> void:
 	display_name = OS.get_environment("USER")
@@ -27,8 +39,32 @@ func _ready() -> void:
 	multiplayer.peer_connected.connect(_on_peer_connected)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 	multiplayer.connected_to_server.connect(_on_connected)
-	multiplayer.connection_failed.connect(func(): _end("No answer at that door."))
-	multiplayer.server_disconnected.connect(func(): _end("The host's lantern went out."))
+	multiplayer.connection_failed.connect(_on_connect_failed)
+	multiplayer.server_disconnected.connect(_on_server_lost)
+
+# Best-guess shareable IPv4 addresses for "give this to your friend" — the
+# Tailscale (100.x) and LAN (192.168/10/172) addresses first, loopback and
+# link-local dropped. Returns [] if none look shareable.
+func local_addresses() -> Array:
+	var out: Array = []
+	for a in IP.get_local_addresses():
+		var s := String(a)
+		if ":" in s:                                       # skip IPv6
+			continue
+		if s.begins_with("127.") or s.begins_with("169.254."):
+			continue
+		out.append(s)
+	out.sort_custom(func(x, y): return _addr_rank(x) < _addr_rank(y))
+	return out
+
+func _addr_rank(s: String) -> int:
+	if s.begins_with("100."):                              # Tailscale CGNAT
+		return 0
+	if s.begins_with("192.168.") or s.begins_with("10."):  # home LAN
+		return 1
+	if s.begins_with("172."):
+		return 2
+	return 3
 
 func is_host() -> bool:
 	return active and multiplayer.is_server()
@@ -39,6 +75,8 @@ func host(port: int = DEFAULT_PORT) -> bool:
 		return false
 	multiplayer.multiplayer_peer = peer
 	active = true
+	_last_ip = ""                # the host never reconnects to itself
+	_leaving = false
 	players = {1: {"name": display_name}}
 	roster_changed.emit()
 	return true
@@ -49,16 +87,22 @@ func join(ip: String, port: int = DEFAULT_PORT) -> bool:
 		return false
 	multiplayer.multiplayer_peer = peer
 	active = true
+	_last_ip = ip                # remembered so a dropped host can be re-found
+	_last_port = port
+	_leaving = false
+	_reconnect_left = 0
 	players = {}
 	return true
 
 func leave(reason: String = "You left the party.") -> void:
+	_leaving = true              # an intentional exit must not auto-reconnect
 	_end(reason)
 
 func _end(reason: String) -> void:
 	if not active:
 		return
 	active = false
+	_reconnect_left = 0
 	players = {}
 	multiplayer.multiplayer_peer = null
 	roster_changed.emit()
@@ -67,8 +111,47 @@ func _end(reason: String) -> void:
 # ---- handshake + roster (host = truth) ----
 
 func _on_connected() -> void:
-	# We reached the host — introduce ourselves.
+	# We reached the host — introduce ourselves (and clear any reconnect run).
+	_reconnect_left = 0
 	_register_player.rpc_id(1, display_name)
+
+# ---- connection loss + bounded reconnect (guest side) ----
+
+func _on_connect_failed() -> void:
+	if _reconnect_left > 0:
+		_try_reconnect()         # a reconnect attempt didn't catch — try again
+	else:
+		_end("No answer at that door.")
+
+func _on_server_lost() -> void:
+	if _leaving or _last_ip == "":
+		_end("The host's lantern went out.")
+		return
+	# Transient drop — give it a few tries before tearing the party down.
+	_reconnect_left = RECONNECT_TRIES
+	multiplayer.multiplayer_peer = null
+	_try_reconnect()
+
+func _try_reconnect() -> void:
+	if _reconnect_left <= 0:
+		_end("The host's lantern went out.")
+		return
+	var attempt: int = RECONNECT_TRIES - _reconnect_left + 1
+	_reconnect_left -= 1
+	active = true
+	reconnecting.emit(attempt, RECONNECT_TRIES)
+	var game := get_node_or_null("/root/Game")
+	if game != null and game.has_method("notify"):
+		game.notify("Lost the host — trying the door again (%d/%d)…"
+			% [attempt, RECONNECT_TRIES])
+	get_tree().create_timer(RECONNECT_DELAY).timeout.connect(func():
+		if _leaving or not active:
+			return
+		var peer := ENetMultiplayerPeer.new()
+		if peer.create_client(_last_ip, _last_port) != OK:
+			_try_reconnect()
+			return
+		multiplayer.multiplayer_peer = peer)
 
 func _on_peer_connected(_id: int) -> void:
 	pass   # the roster updates when the peer introduces itself

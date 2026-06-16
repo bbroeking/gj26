@@ -64,6 +64,8 @@ func _ready() -> void:
 	col.add_child(_roster)
 
 	if NetGame.active:
+		if NetGame.is_host():
+			_build_address_invite(col)
 		var leave := Button.new()
 		WyrdUi.style_kit_button(leave)
 		leave.text = "Leave the party"
@@ -94,15 +96,48 @@ func _ready() -> void:
 		row.add_child(join)
 		col.add_child(row)
 		var note := Label.new()
-		note.text = "Same network or a VPN (Tailscale works well). Friends join while you keep playing."
+		note.text = "Paste your friend's address (they copy it from their Lantern). Same network or a VPN — Tailscale works well. Friends join while you keep playing."
 		WyrdUi.style_dim(note, 12)
 		note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		col.add_child(note)
 
 	NetGame.roster_changed.connect(_refresh)
+	NetGame.reconnecting.connect(func(attempt: int, total: int):
+		_status.text = "Lost the host — trying the door again (%d/%d)…" \
+			% [attempt, total])
 	if _game != null:
 		_game.modal_opened()
 	_refresh()
+
+# Host invite: show the shareable address(es) and a one-click copy. The host
+# opens the Lantern (Esc), copies, and sends it to a friend.
+func _build_address_invite(col: VBoxContainer) -> void:
+	var addrs: Array = NetGame.local_addresses()
+	var addr_lbl := Label.new()
+	WyrdUi.style_body(addr_lbl, 14)
+	addr_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if addrs.is_empty():
+		addr_lbl.text = "Share your address with a friend (port %d)." \
+			% NetGame.DEFAULT_PORT
+		col.add_child(addr_lbl)
+		return
+	var primary := "%s:%d" % [String(addrs[0]), NetGame.DEFAULT_PORT]
+	addr_lbl.text = "Your address:  %s" % primary
+	col.add_child(addr_lbl)
+	var copy := Button.new()
+	WyrdUi.style_kit_button(copy)
+	copy.text = "Copy address"
+	copy.custom_minimum_size = Vector2(0, 40)
+	copy.pressed.connect(func():
+		DisplayServer.clipboard_set(primary)
+		_status.text = "Copied %s — send it to a friend." % primary)
+	col.add_child(copy)
+	if addrs.size() > 1:
+		var more := Label.new()
+		WyrdUi.style_dim(more, 12)
+		more.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		more.text = "Other addresses: %s" % ", ".join(addrs.slice(1))
+		col.add_child(more)
 
 func _refresh() -> void:
 	if NetGame.active:
@@ -120,8 +155,7 @@ func _refresh() -> void:
 func _on_host() -> void:
 	if NetGame.host():
 		if _game != null:
-			_game.notify("The fire is lit — friends can join at port %d."
-				% NetGame.DEFAULT_PORT)
+			_game.notify("The fire is lit — reopen the Lantern (Esc) to copy your address for a friend.")
 		NetGame.setup_scene(get_tree().current_scene)
 		_close()
 	else:
