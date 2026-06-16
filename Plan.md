@@ -58,7 +58,7 @@ density down.** Keep idle breath ≤ ~3% (more = rubbery on chunky-toon).
 |---|---|---|
 | Enemy hit-feel (flash, knockback, hit-stop, spark, shake) | ✅ textbook, leave it | `hit_feedback.gd`, `hitstop.gd`, `camera_rig.gd` |
 | Hit-stop tiers (0.07 / 0.13 / 0.20s) | ✅ | `hit_feedback.gd` |
-| Enemy attack **telegraph** (stop + windup) | ✅ (`TELEGRAPH_SEC 0.35`) — no *visual* wind-back | `combatant.gd` ATTACK |
+| Enemy attack tell (wind-back → lunge) | ✅ visible anticipation + lunge | `creature_anim.gd`, `combatant.gd` ATTACK |
 | Procedural idle/locomotion (all enemies) | ✅ | `creature_anim.gd` |
 | Player **i-frames** (`IFRAMES_SEC`, roll `0.27`) | ✅ exist (no visible tell) | `player_controller.gd` |
 | Player **dodge-roll** (with i-frames) | ✅ exists — leverage for avoidance | `player_controller.gd` ROLL |
@@ -113,7 +113,7 @@ density down.** Keep idle breath ≤ ~3% (more = rubbery on chunky-toon).
   damage. Verified by the timer test (§5) + a blink screenshot.
 - **Effort: S–M.** Pure GDScript, solo.
 
-### Phase 2 — Enemy melee attack tell (anticipation → lunge) ⬜
+### Phase 2 — Enemy melee attack tell (anticipation → lunge) ✅  *(shipped)*
 Enrich the *existing* telegraph window with visible motion.
 - During `_telegraph_t` (bump melee ~0.45s): **wind-back** — pull mesh from
   target + squash (ease-in). On strike: **lunge** toward target (ease-out pop),
@@ -176,10 +176,11 @@ Phase-5 lean + a speed-driven blend mask some of the robotic feel.
 2. **Timer-assertion tests** (test_stats-style, headless): assert stun duration,
    i-frame window (a 2nd hit inside it deals 0), projectile spawn + damage routing,
    telegraph length. Catches logic regressions a screenshot can't.
-3. **Combat-dummy gallery mode** — extend `tools/animation_gallery.gd` with a
-   dummy combatant that plays attack / ranged-telegraph / hit-react / draw on a
-   key, so attack & projectile *feel* is reviewable on demand (the screenshot gap
-   for Phases 2–4). Build alongside Phase 2.
+3. **Combat-dummy gallery mode** — ✅ built: `tools/animation_gallery.gd` attaches
+   `creature_anim` to static enemies (so the gallery shows the procedural idle),
+   `A` demos the attack tell, and `WYRD_GALLERY_ATTACK=1` captures the lunge
+   frame. Closes the screenshot gap for Phases 2–4; extend with ranged-telegraph
+   + draw demos as those land.
 4. **Screenshot** where static reads: i-frame blink (P1), telegraph decal (P3),
    bow-draw mid-frame (P4).
 5. **Play-test sign-off** from the user for the felt timing of P2/P3 (motion).

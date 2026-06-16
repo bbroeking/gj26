@@ -12,6 +12,7 @@ extends Node3D
 
 const AnimDriver = preload("res://scripts/anim_driver.gd")
 const GlbFit = preload("res://scripts/glb_fit.gd")
+const CreatureAnim = preload("res://scripts/creature_anim.gd")
 
 const ENTRIES := [
 	{"name": "Player — Chibi Wayfinder", "body": "res://models/player_chibi_v1_rigged.glb",
@@ -33,6 +34,7 @@ var _idx := 0
 var _clip_idx := 0
 var _clips: Array = []
 var _ap: AnimationPlayer = null
+var _ca = null               # creature_anim on static models (idle + attack demo)
 var _pivot: Node3D
 var _paused := false
 var _speed := 1.0
@@ -80,8 +82,15 @@ func _ready() -> void:
 	if gi != "":
 		_idx = clampi(int(gi), 0, ENTRIES.size() - 1)
 	_load_entry()
-	# Dev: WYRD_SHOT=1 [+ WYRD_GALLERY_IDX=N] grabs one frame and quits.
-	if OS.get_environment("WYRD_SHOT") != "":
+	# Dev: WYRD_GALLERY_ATTACK triggers an attack and grabs the lunge frame
+	# (Phase 2 verification); WYRD_SHOT grabs a plain frame. Both then quit.
+	if OS.get_environment("WYRD_GALLERY_ATTACK") != "":
+		await get_tree().create_timer(0.5).timeout    # let load settle
+		_do_attack()
+		await get_tree().create_timer(0.48).timeout   # windup(0.45) → into the lunge
+		get_viewport().get_texture().get_image().save_png("/tmp/godot_selfshot.png")
+		get_tree().quit()
+	elif OS.get_environment("WYRD_SHOT") != "":
 		await get_tree().create_timer(1.3).timeout
 		get_viewport().get_texture().get_image().save_png("/tmp/godot_selfshot.png")
 		get_tree().quit()
@@ -111,6 +120,7 @@ func _load_entry() -> void:
 	for c in _pivot.get_children():
 		c.queue_free()
 	_ap = null
+	_ca = null
 	_clips = []
 	_clip_idx = 0
 	var entry: Dictionary = ENTRIES[_idx]
@@ -126,6 +136,11 @@ func _load_entry() -> void:
 		return
 	_fit(inst)
 	_ap = AnimDriver.find_anim_player(inst)
+	if _ap == null:
+		# Static enemy → give it the in-game procedural idle so the gallery
+		# shows real motion, and so 'A' / WYRD_GALLERY_ATTACK can demo the tell.
+		_ca = CreatureAnim.new()
+		_ca.setup(inst)
 	if _ap != null:
 		var lib: AnimationLibrary = _ap.get_animation_library("")
 		for cp in entry.clips:
@@ -191,6 +206,14 @@ func _has_skeleton(n: Node) -> bool:
 func _process(delta: float) -> void:
 	if _pivot != null:
 		_pivot.rotation.y += delta * 0.6
+	if _ca != null:
+		_ca.update(delta, false)
+
+func _do_attack() -> void:
+	if _ca == null:
+		return
+	_ca.attack(0.45, Vector3(0.0, 0.0, 1.0))
+	get_tree().create_timer(0.45).timeout.connect(_ca.strike, CONNECT_ONE_SHOT)
 
 func _unhandled_input(ev: InputEvent) -> void:
 	if not (ev is InputEventKey) or not ev.pressed or ev.echo:
@@ -227,5 +250,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 			if _ap != null and not _paused:
 				_ap.speed_scale = _speed
 			_update_ui()
+		KEY_A:
+			_do_attack()         # demo the Phase 2 attack tell (static enemies)
 		KEY_ESCAPE:
 			get_tree().quit()

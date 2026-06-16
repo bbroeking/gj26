@@ -295,10 +295,15 @@ func _tick_ai(delta: float) -> void:
 				_state = State.IDLE
 			elif dist <= ATTACK_RANGE and _attack_cd <= 0.0:
 				_state = State.ATTACK
-				_telegraph_t = TELEGRAPH_SEC
+				# Phase 2 — telegraph scales with the attack's weight so heavy,
+				# slow hitters tell longer (fairer to read). Drives both the
+				# damage timing and the wind-back animation.
+				_telegraph_t = clampf(attack_cooldown * 0.3, 0.32, 0.6)
 				_did_hit = false
 				velocity.x = 0.0
 				velocity.z = 0.0
+				if _proc_anim != null and _proc_anim.has_method("attack"):
+					_proc_anim.attack(_telegraph_t, to.normalized())
 			else:
 				_chase_move(delta)
 				moving = true
@@ -308,6 +313,8 @@ func _tick_ai(delta: float) -> void:
 			_telegraph_t -= delta
 			if _telegraph_t <= 0.0 and not _did_hit:
 				_did_hit = true
+				if _proc_anim != null and _proc_anim.has_method("strike"):
+					_proc_anim.strike()    # Phase 2 — the lunge
 				if dist <= ATTACK_RANGE * 1.4 and _player.has_method("take_damage"):
 					_player.take_damage(damage, -to.normalized())
 					# Spec 32 — elite on_attack dispatch (e.g. Sunlit burn pulse).
@@ -361,13 +368,12 @@ func _tick_feedback(delta: float) -> void:
 		_flash_t -= delta
 		if _flash_t <= 0.0:
 			_restore_flash()
-	# hit-react + attack telegraph both express as a scale punch
+	# Hit-react scale-punch on the BODY (the attack tell is now the mesh
+	# wind-back/lunge in creature_anim — Phase 2).
 	var punch := 0.0
 	if _react_t > 0.0:
 		_react_t -= delta
 		punch = 0.18 * (_react_t / REACT_SEC)
-	elif _state == State.ATTACK and _telegraph_t > 0.0:
-		punch = 0.22 * (1.0 - _telegraph_t / TELEGRAPH_SEC)
 	scale = _base_scale * (1.0 + punch)
 
 # Spec 32c — public mesh-flash entry point. HitFeedback calls this for both
