@@ -812,9 +812,14 @@ func _build_enemies(layout: Dictionary) -> int:
 					elite_body.apply_elite(elite_modifier)
 					# The chain's first link: the fiercer things sometimes
 					# carry a thorn essence — the Hedgemother den's key.
+					# B6 — marked_quarry doubles/halves the trophy odds. Roll
+					# NOW off the seeded layout RNG (not a death-time randf()),
+					# so every co-op peer agrees on which elites carry one — the
+					# build sequence is identical across peers, runtime deaths
+					# are not. (Fixes the bare-randf() co-op determinism bug.)
+					var drops_trophy: bool = _rng.randf() < 0.25 * _trophy_mult
 					elite_body.died.connect(func():
-						# B6 — marked_quarry doubles/halves the trophy odds.
-						if randf() < 0.25 * _trophy_mult:
+						if drops_trophy:
 							var game := get_tree().root.get_node_or_null("Game")
 							if game != null:
 								game.add_material("thorn_essence", 1)
