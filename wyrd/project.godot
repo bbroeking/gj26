@@ -30,6 +30,7 @@ Sfx="*res://scripts/sfx.gd"
 Checkpoint="*res://scripts/checkpoint.gd"
 NetGame="*res://scripts/net_game.gd"
 Game="*res://scripts/game.gd"
+Cursor="*res://scripts/ui/cursor.gd"
 
 [layer_names]
 
