@@ -259,6 +259,25 @@ static func style_dim(l: Label, size: int = 12) -> void:
 # carved button, and parchment face reads the same. Pure vector draws — no
 # textures touched (the _draw/load white-rect gotcha stays impossible).
 
+# Spec C — the shared list-row plate. Every code-drawn modal list (vendor
+# wares, loadout skills, the pack's satchel + charts) sits a row on this so the
+# panels read as carved cards, not a flat spreadsheet. A KIT_PLATE face, a top
+# light bevel, a KIT_EDGE border, and a 3px accent stripe down the LEFT edge.
+# Accent convention: SAGE = good/available, TERRACOTTA = locked/danger,
+# GOLD = selected, INK_MID = neutral. Template: crafting_bench _tray_row.
+static func draw_list_row(c: CanvasItem, r: Rect2, accent: Color) -> void:
+	c.draw_rect(r, KIT_PLATE)
+	# top light bevel — the card catches the page's warm light
+	c.draw_rect(Rect2(r.position + Vector2(1.0, 1.0),
+		Vector2(r.size.x - 2.0, 1.5)), Color(1.0, 1.0, 0.93, 0.40))
+	# soft bottom shade so the card sits ON the parchment
+	c.draw_rect(Rect2(r.position + Vector2(2.0, r.size.y - 2.5),
+		Vector2(r.size.x - 4.0, 1.5)), Color(KIT_EDGE, 0.22))
+	c.draw_rect(r, KIT_EDGE, false, 1.5)
+	# accent stripe down the left edge — the row's state at a glance
+	c.draw_rect(Rect2(r.position + Vector2(1.5, 1.5),
+		Vector2(3.0, r.size.y - 3.0)), accent)
+
 # A recessed rectangular well: stepped inner shadow top-left, light lip
 # bottom — the socket reads as carved INTO the bench, not painted on.
 static func draw_well(c: CanvasItem, r: Rect2, fill := KIT_WELL) -> void:

@@ -705,25 +705,36 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
 		_tab_content_h[1] = 0.0
 		return
+	# Slice C — each material rides a list-row plate: an ink-disc holding its
+	# glyph on the left, name + count on the card, the lore line beneath.
 	for id in game.materials:
 		var def: Dictionary = GatherDefs.MATERIALS.get(String(id), {})
-		if _span_visible(y - 18.0, y + 6.0, scroll, view):
-			draw_string(font, Vector2(x, y),
-				"%s  %s" % [String(def.get("icon", "·")),
-					String(def.get("name", id))],
-				HORIZONTAL_ALIGNMENT_LEFT, w - 80, 18, WyrdUi.INK)
-			draw_string(font, Vector2(x + w - 70, y), "× %d" % int(game.materials[id]),
-				HORIZONTAL_ALIGNMENT_RIGHT, 70, 18, WyrdUi.TERRACOTTA)
-		y += 27.0
+		var row_top := y - 18.0
+		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 30.0))
+		if _span_visible(row_top, row.end.y, scroll, view):
+			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
+			# glyph disc on the left
+			var dc := Vector2(row.position.x + 19.0, row.position.y + 15.0)
+			WyrdUi.draw_round_well(self, dc, 11.0, Color(0.88, 0.81, 0.66))
+			draw_string(font, Vector2(dc.x - 11.0, dc.y + 6.0),
+				String(def.get("icon", "·")), HORIZONTAL_ALIGNMENT_CENTER,
+				22.0, 14, WyrdUi.INK)
+			draw_string(font, Vector2(x + 28.0, y + 1.0),
+				String(def.get("name", id)),
+				HORIZONTAL_ALIGNMENT_LEFT, w - 110.0, 17, WyrdUi.INK)
+			draw_string(font, Vector2(x + w - 78.0, y + 1.0),
+				"× %d" % int(game.materials[id]),
+				HORIZONTAL_ALIGNMENT_RIGHT, 70.0, 17, WyrdUi.TERRACOTTA)
+		y += 34.0
 		var desc := String(def.get("desc", ""))
 		if desc != "":
 			var dh: float = font.get_multiline_string_size(desc,
-				HORIZONTAL_ALIGNMENT_LEFT, w - 26, 15).y
+				HORIZONTAL_ALIGNMENT_LEFT, w - 30, 14).y
 			if _span_visible(y - 13.0, y + dh, scroll, view):
-				draw_multiline_string(font, Vector2(x + 26, y), desc,
-					HORIZONTAL_ALIGNMENT_LEFT, w - 26, 15, -1, Color(0.30, 0.24, 0.19))
+				draw_multiline_string(font, Vector2(x + 30, y), desc,
+					HORIZONTAL_ALIGNMENT_LEFT, w - 30, 14, -1, Color(0.30, 0.24, 0.19))
 			y += dh + 4.0
-		y += 8.0
+		y += 10.0
 	_tab_content_h[1] = y - view.position.y
 
 func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> void:
@@ -739,29 +750,31 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
 		_tab_content_h[2] = 0.0
 		return
+	# Slice C — each chart rides a list-row plate led with a drawn scroll
+	# (the rolled-parchment, wax-sealed read); its affixes list beneath.
 	for chart in game.charts:
-		if _span_visible(y - 18.0, y + 7.0, scroll, view):
-			var cx := x
-			var chart_tex: Texture2D = _cached_tex("res://assets/ui/icons/chart.png")
-			if chart_tex != null:
-				draw_texture_rect(chart_tex,
-					Rect2(Vector2(x, y - 16), Vector2(22, 22)), false)
-				cx = x + 30.0
-			draw_string(font, Vector2(cx, y), ChartsData.chart_label(chart),
-				HORIZONTAL_ALIGNMENT_LEFT, w - (cx - x), 17, WyrdUi.INK)
-		y += 24.0
+		var row_top := y - 18.0
+		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 32.0))
+		if _span_visible(row_top, row.end.y, scroll, view):
+			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
+			WyrdUi.draw_scroll(self, Rect2(Vector2(row.position.x + 8.0,
+				row.position.y + 5.0), Vector2(24.0, 22.0)))
+			draw_string(font, Vector2(x + 30.0, y + 1.0),
+				ChartsData.chart_label(chart),
+				HORIZONTAL_ALIGNMENT_LEFT, w - 36.0, 17, WyrdUi.INK)
+		y += 36.0
 		for a in chart.get("affixes", []):
 			var aff: Dictionary = ChartsData.AFFIXES.get(String(a.get("id", "")), {})
 			if aff.is_empty():
 				continue
 			if _span_visible(y - 14.0, y + 5.0, scroll, view):
 				var good: bool = bool(a.get("good", false))
-				draw_string(font, Vector2(x + 26, y),
+				draw_string(font, Vector2(x + 30, y),
 					("✓ " + String(aff.name)) if good else ("✗ " + String(aff.bad_name)),
-					HORIZONTAL_ALIGNMENT_LEFT, w - 26, 13,
+					HORIZONTAL_ALIGNMENT_LEFT, w - 30, 13,
 					WyrdUi.SAGE.darkened(0.2) if good else WyrdUi.TERRACOTTA)
 			y += 20.0
-		y += 8.0
+		y += 10.0
 	_tab_content_h[2] = y - view.position.y
 
 

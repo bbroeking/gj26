@@ -3,6 +3,10 @@ extends CanvasLayer
 # B5 — the loadout picker: slot 1 is always the Bow; pick exactly three
 # skills for slots 2-4 from the pool. Opened at the dungeon Hearth and
 # from the Cottage Hearth's craft panel. Pure view over Game.set_loadout.
+#
+# Slice C — the rows are drawn skill cards now (icon + name + focus tag +
+# short desc). Picked = a sage ring; locked = dim with a lock glyph. The
+# "Bow fixed in slot 1, pick 3" semantics are unchanged.
 
 const DESCS := {
 	"PowerShot": "A heavy arrow, 2.5× damage, burns on hit. 20 focus.",
@@ -16,17 +20,43 @@ const DESCS := {
 	"MercyShot": "The clean kill — ×3 damage under 35% vigor. 28 focus.",
 }
 
+# Short focus-cost tags (lifted from the descs so the card's corner reads at a
+# glance) and a skill → painted icon map. Four icons cover the pool; kindred
+# verbs share one (thorn skills → snare icon, line/heavy → power).
+const FOCUS := {
+	"PowerShot": 20, "MultiShot": 25, "BrambleSnare": 30, "PiercingBolt": 22,
+	"RainOfThorns": 32, "Thornburst": 30, "HuntersMark": 15,
+	"HeartwoodWard": 25, "MercyShot": 28,
+}
+const SKILL_ICON := {
+	"PowerShot": "res://assets/ui/icons/skill_power.png",
+	"MultiShot": "res://assets/ui/icons/skill_multi.png",
+	"BrambleSnare": "res://assets/ui/icons/skill_snare.png",
+	"PiercingBolt": "res://assets/ui/icons/skill_power.png",
+	"RainOfThorns": "res://assets/ui/icons/skill_snare.png",
+	"Thornburst": "res://assets/ui/icons/skill_snare.png",
+	"HuntersMark": "res://assets/ui/icons/skill_basic.png",
+	"HeartwoodWard": "res://assets/ui/icons/skill_basic.png",
+	"MercyShot": "res://assets/ui/icons/skill_basic.png",
+}
+
 var _game: Node
 var _panel: Panel
 var _picks: Array = []
 var _rows: VBoxContainer
 var _slots_lbl: Label
 var _apply: Button
+var _tex_cache := {}
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 95
 	_game = get_tree().root.get_node_or_null("Game")
+	# Preload skill icons once (white-rect-in-_draw gotcha).
+	for path in SKILL_ICON.values():
+		if ResourceLoader.exists(String(path)) \
+				and not _tex_cache.has(String(path)):
+			_tex_cache[String(path)] = load(String(path))
 	_picks = (_game.loadout as Array).duplicate() if _game != null \
 		else ["PowerShot", "MultiShot", "BrambleSnare"]
 	var bg := ColorRect.new()
@@ -72,9 +102,15 @@ func _ready() -> void:
 	sub.text = "The Bow rides slot 1 always. Pick three for slots 2–4:"
 	WyrdUi.style_body(sub, 14)
 	col.add_child(sub)
+	# The pool can outgrow the panel; the card list scrolls.
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	col.add_child(scroll)
 	_rows = VBoxContainer.new()
 	_rows.add_theme_constant_override("separation", 6)
-	col.add_child(_rows)
+	_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(_rows)
 	_slots_lbl = Label.new()
 	WyrdUi.style_body(_slots_lbl, 14)
 	col.add_child(_slots_lbl)
@@ -102,28 +138,127 @@ func _render() -> void:
 		c.queue_free()
 	var pool: Array = _game.SKILL_POOL if _game != null else DESCS.keys()
 	for sk in pool:
-		var picked: bool = _picks.has(sk)
+		var skill := String(sk)
+		var picked: bool = _picks.has(skill)
 		# B5-wave2 — Huntcraft-gated skills stand visible but locked.
-		var locked: bool = _game != null and not _game.skill_unlocked(String(sk))
-		var b := Button.new()
-		WyrdUi.style_kit_button(b)
-		WyrdUi.mark_selected(b, picked)
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		if locked:
-			b.text = "✕ %s — Huntcraft %d opens this" % [String(sk),
-				int(_game.SKILL_REQS.get(sk, 1))]
-			b.disabled = true
-		else:
-			b.text = "%s %s — %s" % ["✓" if picked else "•", String(sk),
-				String(DESCS.get(sk, ""))]
-		var sid := String(sk)
-		b.pressed.connect(func():
-			if _picks.has(sid):
-				_picks.erase(sid)
-			elif _picks.size() < 3:
-				_picks.append(sid)
-			_render())
-		_rows.add_child(b)
+		var locked: bool = _game != null and not _game.skill_unlocked(skill)
+		var req: int = int(_game.SKILL_REQS.get(skill, 1)) if _game != null else 1
+		var path := String(SKILL_ICON.get(skill, ""))
+		var card := _SkillCard.new()
+		card.setup(skill, String(DESCS.get(skill, "")), int(FOCUS.get(skill, 0)),
+			picked, locked, req, _tex_cache.get(path, null))
+		var sid := skill
+		if not locked:
+			card.pressed.connect(func():
+				if _picks.has(sid):
+					_picks.erase(sid)
+				elif _picks.size() < 3:
+					_picks.append(sid)
+				_render())
+		_rows.add_child(card)
 	_slots_lbl.text = "Slots 2–4:  %s" % (" · ".join(_picks) \
 		if not _picks.is_empty() else "—")
 	_apply.disabled = _picks.size() != 3
+
+
+# ---- the drawn skill card (one row) ----
+# A clickable Control: draw_list_row plate (sage accent when picked, terracotta
+# when locked, neutral otherwise), a painted skill-icon plate on the left, the
+# name + focus-cost tag, and a short desc. Picked = a sage ring; locked = dim
+# with a padlock glyph and no click.
+class _SkillCard extends Control:
+	const ICON_W := 44.0
+
+	var _name := ""
+	var _desc := ""
+	var _focus := 0
+	var _picked := false
+	var _locked := false
+	var _req := 1
+	var _tex: Texture2D = null
+	var _hover := false
+
+	signal pressed
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 62.0)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
+	func setup(skill_name: String, desc: String, focus: int, picked: bool,
+			locked: bool, req: int, tex: Texture2D) -> void:
+		_name = skill_name
+		# Strip the trailing "N focus." — the cost lives in its own tag now.
+		var trimmed := desc
+		var cut := trimmed.rfind(". ")
+		if cut > 0 and trimmed.substr(cut).contains("focus"):
+			trimmed = trimmed.substr(0, cut + 1)
+		_desc = trimmed
+		_focus = focus
+		_picked = picked
+		_locked = locked
+		_req = req
+		_tex = tex
+		queue_redraw()
+
+	func _gui_input(event: InputEvent) -> void:
+		if _locked:
+			return
+		if event is InputEventMouseButton and event.pressed \
+				and event.button_index == MOUSE_BUTTON_LEFT:
+			pressed.emit()
+			accept_event()
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_MOUSE_ENTER:
+			_hover = true
+			queue_redraw()
+		elif what == NOTIFICATION_MOUSE_EXIT:
+			_hover = false
+			queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		var accent: Color = WyrdUi.SAGE if _picked \
+			else (WyrdUi.TERRACOTTA if _locked else WyrdUi.INK_MID)
+		WyrdUi.draw_list_row(self, r, accent)
+		if _locked:
+			# wash the whole card down so it reads as out-of-reach
+			draw_rect(r.grow(-1.5), Color(0.80, 0.74, 0.62, 0.45))
+		elif _hover:
+			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.10))
+		var font := get_theme_default_font()
+		var ink: Color = WyrdUi.INK if not _locked else Color(0.50, 0.43, 0.34)
+		var dim: Color = WyrdUi.INK_MID if not _locked else Color(0.56, 0.49, 0.40)
+		# --- icon plate on the left ---
+		var ir := Rect2(Vector2(9.0, (size.y - ICON_W) * 0.5),
+			Vector2(ICON_W, ICON_W))
+		WyrdUi.draw_well(self, ir, Color(0.95, 0.91, 0.80))
+		if _tex != null:
+			var mod := Color.WHITE
+			if _locked:
+				mod.a = 0.5
+			draw_texture_rect(_tex, ir.grow(-4.0), false, mod)
+		# picked = sage ring around the icon (WyrdUi selection language)
+		if _picked:
+			draw_rect(ir, WyrdUi.SAGE.darkened(0.08), false, 2.5)
+		# --- name + focus tag ---
+		var tx := ir.end.x + 12.0
+		var mark := "✓ " if _picked else ""
+		draw_string(font, Vector2(tx, 22.0), mark + _name,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 92.0, 16, ink)
+		if _locked:
+			# padlock glyph + the gate, right-aligned
+			draw_string(font, Vector2(size.x - 156.0, 22.0),
+				"⚿ Huntcraft %d" % _req, HORIZONTAL_ALIGNMENT_RIGHT,
+				146.0, 13, WyrdUi.TERRACOTTA)
+		elif _focus > 0:
+			# focus-cost chip in the top-right corner
+			var chip := Rect2(Vector2(size.x - 78.0, 8.0), Vector2(66.0, 18.0))
+			draw_rect(chip, Color(0.86, 0.79, 0.66))
+			draw_rect(chip, Color(WyrdUi.KIT_EDGE, 0.6), false, 1.0)
+			draw_string(font, Vector2(chip.position.x, chip.position.y + 14.0),
+				"%d focus" % _focus, HORIZONTAL_ALIGNMENT_CENTER, chip.size.x,
+				12, WyrdUi.INK_MID)
+		# --- short desc (up to two lines) ---
+		draw_multiline_string(font, Vector2(tx, 40.0), _desc,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 16.0, 12, 2, dim)
