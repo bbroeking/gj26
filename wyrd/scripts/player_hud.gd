@@ -259,6 +259,14 @@ func _build_action_bar() -> void:
 			["Trades", "K", "toggle_trades", "trades"]]:
 		var b := Button.new()
 		WyrdUi.style_kit_button(b)
+		# Carry the trade-color language: Gear terracotta, Satchel sage, Trades gold.
+		var accent: Color = WyrdUi.TERRACOTTA
+		if spec[3] == "satchel":
+			accent = WyrdUi.SAGE
+		elif spec[3] == "trades":
+			accent = WyrdUi.GOLD
+		b.add_theme_color_override("font_color", accent.darkened(0.12))
+		b.add_theme_color_override("font_hover_color", accent)
 		b.text = "%s (%s)" % [spec[0], spec[1]]
 		var icon_path := "res://assets/ui/icons/%s.png" % spec[3]
 		if ResourceLoader.exists(icon_path):
@@ -342,12 +350,20 @@ class GlobeGauge extends Control:
 
 	const RING_WOOD := Color(0.85, 0.74, 0.52)   # pale carved honey
 	const RING_EDGE := Color(0.26, 0.19, 0.13)
+	var _t := 0.0                                # animation clock (low-warn pulse)
 
 	func update_to(p_frac: float, p_label: String, p_status: String) -> void:
 		frac = clampf(p_frac, 0.0, 1.0)
 		label = p_label
 		status = p_status
 		queue_redraw()
+
+	# Only the low-resource danger pulse needs per-frame redraws; otherwise the
+	# globe is static (redrawn on update_to).
+	func _process(delta: float) -> void:
+		if frac < 0.30:
+			_t += delta
+			queue_redraw()
 
 	func _draw() -> void:
 		var c := size * 0.5
@@ -358,9 +374,7 @@ class GlobeGauge extends Control:
 		for i in 4:
 			var a := PI * 0.25 + float(i) * PI * 0.5
 			var np := c + Vector2(cos(a), sin(a)) * (R + 8.0)
-			var nr := Rect2(np - Vector2(8, 8), Vector2(16, 16))
-			draw_rect(nr, Color(0.93, 0.88, 0.74))
-			draw_rect(nr, RING_EDGE, false, 2.0)
+			WyrdUi.draw_round_well(self, np, 8.0, Color(0.93, 0.88, 0.74))
 		# --- glass orb ---
 		draw_circle(c, R, Color(0.12, 0.10, 0.09))
 		if frac > 0.003:
@@ -395,6 +409,12 @@ class GlobeGauge extends Control:
 			Color(1, 1, 1, 0.40))
 		# Ink rim.
 		draw_arc(c, R, 0, TAU, 64, Color(0.20, 0.14, 0.10), 3.5, true)
+		# Low-resource danger pulse — a breathing rim in the liquid's own hue
+		# so a near-empty HP/Focus globe pulls the eye.
+		if frac < 0.30:
+			var pulse := 0.30 + 0.40 * (0.5 + 0.5 * sin(_t * 6.5))
+			draw_arc(c, R + 4.0, 0, TAU, 64,
+				Color(liquid.lightened(0.15), pulse), 3.0, true)
 		# --- numbers ---
 		var f := get_theme_default_font()
 		draw_string_outline(f, Vector2(0, c.y + 5), label,

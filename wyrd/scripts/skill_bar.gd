@@ -12,6 +12,11 @@ const SLOT_SIZE := 72
 const SLOT_GAP := 8
 const ROW_BOTTOM := 114           # pixels from the bottom of the viewport
 
+# Preloaded (not class_name) so headless runs pick them up without an editor
+# rescan of the global class cache.
+const HotbarSlot := preload("res://scripts/ui/hotbar_slot.gd")
+const HotbarTray := preload("res://scripts/ui/hotbar_tray.gd")
+
 # Short labels for each Skill class name — covers all nine B5 skills.
 const SKILL_LABEL := {
 	"BasicShot":     "Bow",
@@ -58,8 +63,8 @@ const SKILL_DESC := {
 }
 
 var _player: Node = null
-var _slots: Array = []           # 4 Control nodes — built on bind
-var _plate: Panel = null         # spec 38 — the tray under the row
+var _slots: Array = []           # 4 HotbarSlot nodes — built on bind
+var _plate: Control = null       # spec 38 — the carved tray under the row
 
 func _ready() -> void:
 	layer = 50
@@ -78,17 +83,10 @@ func bind_to_player(p: Node) -> void:
 	if _player == null or _player.get("skills") == null:
 		return
 	var total_w := 4 * SLOT_SIZE + 3 * SLOT_GAP
-	# Spec 38 style pass — one parchment plate under the whole row (the
-	# mock's slot tray), so the slots read as a single carved piece.
-	var plate := Panel.new()
+	# One carved wooden plank under the whole row (HotbarTray._draw), so the
+	# slots read as a single crafted piece instead of a flat engine panel.
+	var plate := HotbarTray.new()
 	plate.name = "Plate"
-	if true:
-		# Spec 41 — the kit's carved tray: flat parchment + ink border.
-		var psb := StyleBoxFlat.new()
-		psb.bg_color = WyrdUi.KIT_PLATE.darkened(0.04)
-		psb.border_color = WyrdUi.KIT_EDGE
-		psb.set_border_width_all(2)
-		plate.add_theme_stylebox_override("panel", psb)
 	plate.anchor_left = 0.5
 	plate.anchor_right = 0.5
 	plate.anchor_top = 1.0
@@ -124,7 +122,7 @@ func bind_to_player(p: Node) -> void:
 			tr.offset_bottom = -8
 			tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			slot.add_child(tr)
-			slot.move_child(tr, 1)   # above bg, under sweep/labels
+			slot.move_child(tr, 0)   # under the keybind/cost labels
 			var nm := slot.get_node_or_null("SkillName")
 			if nm != null:
 				nm.visible = false   # the icon IS the name now
@@ -145,7 +143,7 @@ func bind_to_player(p: Node) -> void:
 			gl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			gl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			slot.add_child(gl)
-			slot.move_child(gl, 1)   # above bg, under sweep/labels
+			slot.move_child(gl, 0)   # under the keybind/cost labels
 			var nm := slot.get_node_or_null("SkillName")
 			if nm != null:
 				nm.add_theme_font_size_override("font_size", 13)
@@ -169,17 +167,14 @@ func _process(_delta: float) -> void:
 		var cost: float = float(skill.cost)
 		var on_cd := cd > 0.01
 		var no_focus := focus < cost
-		var slot: Control = _slots[i]
-		slot.modulate.a = 0.45 if (on_cd or no_focus) else 1.0
-		var sweep: ColorRect = slot.get_node("Sweep")
-		if on_cd:
-			sweep.visible = true
-			sweep.modulate.a = clampf(cd / max(0.05, base_cd), 0.0, 1.0) * 0.65
-		else:
-			sweep.visible = false
+		var slot: HotbarSlot = _slots[i]
+		var ratio: float = clampf(cd / max(0.05, base_cd), 0.0, 1.0) if on_cd else 0.0
+		slot.set_state(ratio, not (on_cd or no_focus))
 
 func _make_slot(i: int, total_w: int, label: String, cost: int) -> Control:
-	var s := Control.new()
+	# A HotbarSlot draws its own carved face + radial cooldown wedge + ready
+	# flash; the icon/keybind/cost children below render over it.
+	var s := HotbarSlot.new()
 	s.name = "Slot%d" % (i + 1)
 	# Anchor to bottom-centre; pixel-offset relative to that.
 	s.anchor_left = 0.5
@@ -191,27 +186,6 @@ func _make_slot(i: int, total_w: int, label: String, cost: int) -> Control:
 	s.offset_right = x + SLOT_SIZE
 	s.offset_top = -ROW_BOTTOM
 	s.offset_bottom = -ROW_BOTTOM + SLOT_SIZE
-	# Background — parchment plate (UI overhaul); flat ink fallback.
-	var bg := Panel.new()
-	bg.name = "Bg"
-	if true:
-		# Spec 41 — kit slot: lighter parchment well, thin ink border.
-		var sb := StyleBoxFlat.new()
-		sb.bg_color = Color(0.95, 0.91, 0.79)
-		sb.border_color = WyrdUi.KIT_EDGE
-		sb.set_border_width_all(2)
-		bg.add_theme_stylebox_override("panel", sb)
-	bg.anchor_right = 1.0
-	bg.anchor_bottom = 1.0
-	s.add_child(bg)
-	# Cooldown overlay (simple fading alpha — proper radial sweep is a followup).
-	var sweep := ColorRect.new()
-	sweep.name = "Sweep"
-	sweep.color = Color(0.0, 0.0, 0.0, 0.65)
-	sweep.anchor_right = 1.0
-	sweep.anchor_bottom = 1.0
-	sweep.visible = false
-	s.add_child(sweep)
 	# Keybind label (top-left).
 	var kb := Label.new()
 	kb.name = "Keybind"

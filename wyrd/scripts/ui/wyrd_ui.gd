@@ -102,11 +102,20 @@ static func style_chip(l: Label, size: int = 14) -> void:
 	l.add_theme_font_size_override("font_size", size)
 
 static func style_kit_button(b: Button) -> void:
-	b.add_theme_stylebox_override("normal", chip_stylebox())
-	b.add_theme_stylebox_override("hover", chip_stylebox(KIT_PLATE.lightened(0.06)))
-	b.add_theme_stylebox_override("pressed", chip_stylebox(KIT_WELL))
 	b.add_theme_font_size_override("font_size", 15)
 	b.add_theme_color_override("font_color", INK)
+	b.add_theme_color_override("font_hover_color", TERRACOTTA)
+	b.add_theme_color_override("font_pressed_color", TERRACOTTA)
+	# Use the painted wood button plate so kit buttons read as carved objects
+	# (HUD action bar + craft/vendor/loadout rows), not flat parchment chips.
+	if ResourceLoader.exists(BUTTON_TEX_PATH):
+		b.add_theme_stylebox_override("normal", _btn_tex(Color.WHITE))
+		b.add_theme_stylebox_override("hover", _btn_tex(Color(1.06, 1.03, 0.95)))
+		b.add_theme_stylebox_override("pressed", _btn_tex(Color(0.88, 0.84, 0.76)))
+	else:
+		b.add_theme_stylebox_override("normal", chip_stylebox())
+		b.add_theme_stylebox_override("hover", chip_stylebox(KIT_PLATE.lightened(0.06)))
+		b.add_theme_stylebox_override("pressed", chip_stylebox(KIT_WELL))
 
 static func make_meter(width: float, height: float, fill_color: Color) -> Dictionary:
 	var root := Panel.new()
