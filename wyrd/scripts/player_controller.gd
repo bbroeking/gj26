@@ -217,6 +217,8 @@ func _ready() -> void:
 		inventory = Inventory.new()
 		equipment = Equipment.new()
 	equipment.changed.connect(_on_gear_changed)
+	if game != null and game.has_signal("leveled_up"):
+		game.leveled_up.connect(_on_leveled_up)
 	_derive_stats()                # spec 27e — base values until gear changes
 	if game != null:
 		game.restore_player(self)  # Wyrd — carry hp across the scene change
@@ -980,6 +982,19 @@ func _on_gear_changed() -> void:
 	var sfx := get_node_or_null("/root/Sfx")
 	if sfx != null:
 		sfx.play("equip")
+
+# ADR 0013 — leveling Wayfinding grows base damage/HP, so a level-up must
+# refresh the live combat stats (they otherwise only re-derive on equip/load).
+# Grow current HP by the pool increase so the level is *felt* — but only the
+# delta, so it can't be abused as a full-heal by leveling mid-run.
+func _on_leveled_up(_trade: String, _new_lv: int) -> void:
+	var prev_max: int = hp_max
+	_derive_stats()
+	var grew: int = hp_max - prev_max
+	if grew > 0:
+		hp = mini(hp + grew, hp_max)
+		if _hud != null:
+			_hud.set_hp(hp, hp_max)
 
 # Sum every equipped item's base stat + affixes into a derived totals dict
 # (HP max, damage, crit chance/mult bonus, scaled fire cooldown + move

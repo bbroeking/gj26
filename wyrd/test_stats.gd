@@ -133,6 +133,20 @@ func _run() -> void:
 		var hard: int = ek.call(9)   # delta +2
 		_check("DB2-delta-bands-rise", easy <= fair and fair <= hard and hard > easy,
 			"lv7 vs den 5/7/9 → hits-to-kill %d / %d / %d (rises with depth)" % [easy, fair, hard])
+		# DB3 — a level-up refreshes live stats via the leveled_up signal (no
+		# manual _derive_stats), and grows current HP by the pool increase.
+		game.trades.wayfinding.lv = 1
+		p._derive_stats()
+		var b_dmg: int = int(p.derived_stats.damage)
+		var b_hpmax: int = p.hp_max
+		p.hp = b_hpmax
+		game.trades.wayfinding.lv = 8
+		game.leveled_up.emit("wayfinding", 8)
+		_check("DB3-levelup-refreshes-live",
+			int(p.derived_stats.damage) > b_dmg and p.hp_max > b_hpmax \
+				and p.hp > b_hpmax,
+			"lv1→8 via signal: dmg %d→%d, hp_max %d→%d, hp grew to %d" %
+			[b_dmg, p.derived_stats.damage, b_hpmax, p.hp_max, p.hp])
 		game.trades.wayfinding.lv = 1
 		p._derive_stats()
 
