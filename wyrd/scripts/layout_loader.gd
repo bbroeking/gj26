@@ -103,7 +103,8 @@ const ENEMY_KINDS := {
 		"tint": Color(0.42, 0.32, 0.24), "bob": [0.14, 13.0]},
 	"ghost": {"model": "res://models/enemy_ghost_v1.glb", "scale": 2.00,
 		"hp": 14, "damage": 5, "speed": 1.35, "atk_cd": 1.5,
-		"tint": Color(0.66, 0.78, 0.90), "ethereal": true},
+		"tint": Color(0.66, 0.78, 0.90), "ethereal": true,
+		"ranged": true, "proj_speed": 9.0, "proj_damage": 5},
 	"hedge_sprite": {"model": "res://models/enemy_hedge_sprite_v1.glb", "scale": 2.00,
 		"hp": 22, "damage": 6, "speed": 1.9, "atk_cd": 1.4,
 		"tint": Color(0.44, 0.56, 0.27)},
@@ -944,6 +945,10 @@ func _spawn_enemy(ei: int, tx: int, ty: int, role: String = "combat",
 	body.move_speed = float(def.get("speed", 1.8)) * _speed_mult
 	body.attack_cooldown = float(def.get("atk_cd", 1.5)) / _atk_speed_mult
 	body.aggro_radius = body.AGGRO_RADIUS * _aggro_mult
+	# Phase 3 — ranged casters (the ghost lobs slow spectral orbs).
+	body.is_ranged = bool(def.get("ranged", false))
+	body.proj_speed = float(def.get("proj_speed", 9.0))
+	body.proj_damage = int(def.get("proj_damage", body.damage))
 	# B6 — bursting corpses.
 	body.burst_on_death = _burst_on_death
 	body.burst_hits_player = _burst_hits_player

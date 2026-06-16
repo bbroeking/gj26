@@ -10,6 +10,7 @@ const HitSparkScript := preload("res://scripts/hit_spark.gd")
 const Drops = preload("res://data/drops.gd")                     # spec 27b
 const StatusEffectScript := preload("res://scripts/status_effect.gd")  # spec 31
 const Elites = preload("res://data/elites.gd")                   # spec 32
+const EnemyProjectile = preload("res://scripts/enemy_projectile.gd")  # Phase 3
 const TEX_SOFT_CIRCLE := preload("res://assets/vfx/soft_circle.png")  # spec-34
 const TEX_EMBER := preload("res://assets/vfx/ember.png")              # spec-34
 
@@ -33,6 +34,8 @@ const AGGRO_RADIUS := 7.0
 var aggro_radius := AGGRO_RADIUS
 const LEASH_RADIUS := 11.0          # past this, give up and idle
 const ATTACK_RANGE := 1.8
+const RANGED_RANGE := 8.0            # Phase 3 — ranged enemies fire from afar
+const RANGED_MIN := 4.0              # ...but keep this standoff — point-blank orbs are undodgeable
 const ENEMY_DAMAGE := 5
 const ATTACK_COOLDOWN := 1.5
 const TELEGRAPH_SEC := 0.35
@@ -62,6 +65,12 @@ var depth := 0
 # B6 — bursting chart affix: this corpse pops on death (2m, 6 dmg to
 # kin; Volatile also hits the player).
 var burst_on_death := false
+# Phase 3 — ranged attack (a ghost lobs slow spectral orbs you strafe around).
+var is_ranged := false
+var proj_speed := 9.0
+var proj_damage := 5
+var _aim_dir := Vector3.FORWARD
+var _ranged_tele: Node3D = null
 var burst_hits_player := false
 var is_elite: bool = false
 var modifier: String = ""
@@ -277,6 +286,13 @@ func _tick_ai(delta: float) -> void:
 	if has_status("root"):
 		velocity.x = 0.0
 		velocity.z = 0.0
+		# Rooting a ranged caster mid-windup interrupts the cast — free the
+		# aim-line and reset, so rooting a charging ghost is rewarded.
+		if _state == State.ATTACK and _ranged_tele != null and is_instance_valid(_ranged_tele):
+			_ranged_tele.queue_free()
+			_ranged_tele = null
+			_did_hit = false
+			_state = State.CHASE
 		return
 	var to := _player.global_position - global_position
 	to.y = 0.0
@@ -293,17 +309,31 @@ func _tick_ai(delta: float) -> void:
 		State.CHASE:
 			if dist > LEASH_RADIUS:
 				_state = State.IDLE
-			elif dist <= ATTACK_RANGE and _attack_cd <= 0.0:
+			elif is_ranged and dist < RANGED_MIN:
+				# Ranged kiter — keep a fair standoff so shots stay dodgeable
+				# (never a point-blank orb the player can't outrun). Back off,
+				# still facing, so it can fire once it has the distance.
+				var away := -to.normalized()
+				velocity.x = away.x * move_speed
+				velocity.z = away.z * move_speed
+				_face(to.normalized())
+				moving = true
+			elif dist <= (RANGED_RANGE if is_ranged else ATTACK_RANGE) and _attack_cd <= 0.0:
 				_state = State.ATTACK
 				# Phase 2 — telegraph scales with the attack's weight so heavy,
-				# slow hitters tell longer (fairer to read). Drives both the
-				# damage timing and the wind-back animation.
+				# slow hitters tell longer (fairer to read). Drives the damage
+				# timing, the wind-back animation, and (ranged) the aim-line tell.
 				_telegraph_t = clampf(attack_cooldown * 0.3, 0.32, 0.6)
+				if is_ranged:
+					_telegraph_t = maxf(_telegraph_t, 0.6)   # ranged reads longer
 				_did_hit = false
 				velocity.x = 0.0
 				velocity.z = 0.0
+				_aim_dir = to.normalized()                   # locked aim for the shot
 				if _proc_anim != null and _proc_anim.has_method("attack"):
-					_proc_anim.attack(_telegraph_t, to.normalized())
+					_proc_anim.attack(_telegraph_t, _aim_dir)
+				if is_ranged:
+					_spawn_ranged_telegraph(_aim_dir, dist)
 			else:
 				_chase_move(delta)
 				moving = true
@@ -314,12 +344,14 @@ func _tick_ai(delta: float) -> void:
 			if _telegraph_t <= 0.0 and not _did_hit:
 				_did_hit = true
 				if _proc_anim != null and _proc_anim.has_method("strike"):
-					_proc_anim.strike()    # Phase 2 — the lunge
-				if dist <= ATTACK_RANGE * 1.4 and _player.has_method("take_damage"):
+					_proc_anim.strike()    # Phase 2 — the lunge / throw
+				if is_ranged:
+					_fire_projectile(_aim_dir)
+				elif dist <= ATTACK_RANGE * 1.4 and _player.has_method("take_damage"):
 					_player.take_damage(damage, -to.normalized())
-					# Spec 32 — elite on_attack dispatch (e.g. Sunlit burn pulse).
-					if is_elite and modifier != "":
-						_elite_on_attack()
+				# Spec 32 — elite on_attack dispatch (fires for melee + ranged).
+				if is_elite and modifier != "":
+					_elite_on_attack()
 				# Spec 32 — Swift elites attack faster.
 				_attack_cd = attack_cooldown / _attack_speed_mult
 				_state = State.CHASE
@@ -354,6 +386,31 @@ func _chase_move(delta: float) -> void:
 	velocity.x = step.x * move_speed * slow * _move_mult
 	velocity.z = step.z * move_speed * slow * _move_mult
 	_face(step)
+
+# Phase 3 — ranged: a floor aim-line tell during the windup, freed on the shot.
+func _spawn_ranged_telegraph(dir: Vector3, length: float) -> void:
+	if _ranged_tele != null and is_instance_valid(_ranged_tele):
+		_ranged_tele.queue_free()
+	var tg := EnemyProjectile.make_telegraph(dir, clampf(length, 2.0, RANGED_RANGE))
+	add_child(tg)
+	_ranged_tele = tg
+	# Grow the aim-line over the windup so it reads as a charging shot, not a
+	# constant beam (F1) — and a "filling up" cue for when it fires.
+	tg.scale.z = 0.05
+	var tw := tg.create_tween()
+	tw.tween_property(tg, "scale:z", 1.0, maxf(0.08, _telegraph_t))
+
+func _fire_projectile(dir: Vector3) -> void:
+	if _ranged_tele != null and is_instance_valid(_ranged_tele):
+		_ranged_tele.queue_free()
+		_ranged_tele = null
+	var scene := get_parent()
+	if scene == null:
+		return
+	var proj := EnemyProjectile.new()
+	scene.add_child(proj)
+	proj.setup(global_position + Vector3(0.0, 0.6, 0.0) + dir.normalized() * 0.5,
+		dir, proj_speed, proj_damage)
 
 func _face(dir: Vector3) -> void:
 	if dir.length() < 0.01:
@@ -706,6 +763,11 @@ func _die() -> void:
 	# in spec 30; now generalised).
 	_clear_all_statuses()
 	_restore_flash()
+	# Phase 3 — a ghost killed mid-windup shouldn't paint a "shot incoming"
+	# aim-line on its own corpse through the death tween.
+	if _ranged_tele != null and is_instance_valid(_ranged_tele):
+		_ranged_tele.queue_free()
+		_ranged_tele = null
 	# Spec 32 — elite on_death dispatch (Brambled bleed-nova). Fires BEFORE
 	# queue_free so AoeQuery sees us as a valid position source.
 	if is_elite and modifier != "":

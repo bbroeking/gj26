@@ -65,7 +65,7 @@ density down.** Keep idle breath ≤ ~3% (more = rubbery on chunky-toon).
 | Player hit: knockback + hit-stop + flash + hurt-vignette | ✅ exist | `player_controller.gd:take_damage` |
 | Player **micro-stun (input-lock)** | ✅ `STUN_SEC 0.10` | `player_controller.gd` |
 | Player **i-frame blink tell** + mesh **flinch** | ✅ `BLINK_PERIOD`/`FLINCH_SEC` | `player_controller.gd` |
-| Enemy **ranged attacks / projectiles** | ⬜ none | reuse `arrow.gd` |
+| Enemy **ranged attacks / projectiles** | ✅ ghost lobs telegraphed orbs | `enemy_projectile.gd`, `combatant.gd` |
 | Player **bow-draw** (arms draw on fire) | ⬜ torso-tip fake only | `player_controller.gd` |
 | Player clip easing (linear → robotic) | ⏸ needs Blender | — |
 
@@ -127,7 +127,16 @@ Enrich the *existing* telegraph window with visible motion.
   play-tester can name the incoming hit before it lands ≥90% of the time.
 - **Effort: M.** Motion → play-test (use the dummy mode, §5).
 
-### Phase 3 — Enemy ranged / cozy bullet-hell-lite ⬜  *(new system)*
+### Phase 3 — Enemy ranged / cozy bullet-hell-lite ✅  *(shipped; 2 follow-ups noted)*
+**Hardened via adversarial review.** Fixed: a `RANGED_MIN` (4m) standoff so the
+ghost backs off and never fires undodgeable point-blank orbs; the aim-line now
+tweens over the windup + sizes to the shot distance; the telegraph is freed on
+death and on root (rooting interrupts the cast); an `_armed` guard on the orb.
+Verified clean: collision layers / no friendly fire, host-only spawn, remote
+damage forwarding, determinism. **Deferred follow-ups:** co-op guest-visual
+replication of the orb + telegraph (damage already forwards), and a per-step
+wall raycast (low risk at 9 u/s).
+
 - **Reuse `arrow.gd`:** lower `SPEED` 50 → **~10** aimed / **~6** orb; flip the
   Hitbox mask to the **player** layer; route damage through `player.take_damage`.
 - **Every shot telegraphs (~0.6s):** emissive wind-up pulse (reuse Phase-2 yield

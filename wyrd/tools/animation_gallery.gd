@@ -13,6 +13,7 @@ extends Node3D
 const AnimDriver = preload("res://scripts/anim_driver.gd")
 const GlbFit = preload("res://scripts/glb_fit.gd")
 const CreatureAnim = preload("res://scripts/creature_anim.gd")
+const EnemyProjectile = preload("res://scripts/enemy_projectile.gd")
 
 const ENTRIES := [
 	{"name": "Player — Chibi Wayfinder", "body": "res://models/player_chibi_v1_rigged.glb",
@@ -21,7 +22,7 @@ const ENTRIES := [
 		"clips": ["res://models/_ranger_v5_run.glb"]},
 	{"name": "Enemy — Skeleton", "body": "res://models/enemy_skeleton_v1.glb", "clips": []},
 	{"name": "Enemy — Rat", "body": "res://models/enemy_rat_v1.glb", "clips": []},
-	{"name": "Enemy — Ghost", "body": "res://models/enemy_ghost_v1.glb", "clips": []},
+	{"name": "Enemy — Ghost (ranged)", "body": "res://models/enemy_ghost_v1.glb", "clips": [], "ranged": true},
 	{"name": "Enemy — Hedge Sprite", "body": "res://models/enemy_hedge_sprite_v1.glb", "clips": []},
 	{"name": "Enemy — Bramble Imp", "body": "res://models/bramble_imp_v4.glb", "clips": []},
 	{"name": "Enemy — Skitterling", "body": "res://models/skitterling.glb", "clips": []},
@@ -87,7 +88,9 @@ func _ready() -> void:
 	if OS.get_environment("WYRD_GALLERY_ATTACK") != "":
 		await get_tree().create_timer(0.5).timeout    # let load settle
 		_do_attack()
-		await get_tree().create_timer(0.48).timeout   # windup(0.45) → into the lunge
+		# Ranged → grab the aim-line telegraph mid-windup; melee → grab the lunge.
+		var grab: float = 0.28 if bool(ENTRIES[_idx].get("ranged", false)) else 0.48
+		await get_tree().create_timer(grab).timeout
 		get_viewport().get_texture().get_image().save_png("/tmp/godot_selfshot.png")
 		get_tree().quit()
 	elif OS.get_environment("WYRD_SHOT") != "":
@@ -214,6 +217,17 @@ func _do_attack() -> void:
 		return
 	_ca.attack(0.45, Vector3(0.0, 0.0, 1.0))
 	get_tree().create_timer(0.45).timeout.connect(_ca.strike, CONNECT_ONE_SHOT)
+	# Ranged kinds also demo the aim-line telegraph + a fired orb (Phase 3).
+	if bool(ENTRIES[_idx].get("ranged", false)):
+		var tg := EnemyProjectile.make_telegraph(Vector3(0.0, 0.0, 1.0), 4.0)
+		_pivot.add_child(tg)
+		get_tree().create_timer(0.45).timeout.connect(func():
+			if is_instance_valid(tg):
+				tg.queue_free()
+			var pr := EnemyProjectile.new()
+			add_child(pr)
+			pr.setup(Vector3(0.0, 1.0, 0.4), Vector3(0.0, 0.0, 1.0), 5.0, 5),
+			CONNECT_ONE_SHOT)
 
 func _unhandled_input(ev: InputEvent) -> void:
 	if not (ev is InputEventKey) or not ev.pressed or ev.echo:
