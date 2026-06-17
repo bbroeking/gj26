@@ -132,8 +132,11 @@ func _ready() -> void:
 			var game := get_tree().root.get_node_or_null("Game")
 			if game == null:
 				return
+			# WYRD_NET_RUN_BOSS=<trophy_id> forces a boss den (e.g.
+			# thorn_essence → hedgemother_den) for co-op boss-fight testing.
+			var trophy := OS.get_environment("WYRD_NET_RUN_BOSS")
 			var chart: Dictionary = load("res://data/charts.gd") \
-				.inscribe("tier_1", [], 9)
+				.inscribe("tier_1", [], 9, trophy)
 			game.enter_dungeon(chart, null))
 	# Dev: WYRD_SHOT=1 godot ... → save /tmp/wyrd_town.png after the scene
 	# settles (layout_loader's DEBUG_SHOT pattern).

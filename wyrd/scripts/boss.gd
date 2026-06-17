@@ -127,6 +127,8 @@ func _tick_ai(delta: float) -> void:
 	if np != _phase:
 		_phase = np
 		phase_changed.emit(_phase)
+		if _net_broadcasting():
+			_net_boss_phase.rpc(_phase)
 
 	# Aggro — wakes when the player enters the arena.
 	if not _aggroed:
@@ -135,6 +137,8 @@ func _tick_ai(delta: float) -> void:
 		if dist < AGGRO_RADIUS:
 			_aggroed = true
 			aggroed.emit()
+			if _net_broadcasting():
+				_net_boss_aggro.rpc()
 		return
 
 	# B4a — mid-charge: barrel along the line; walls or the timer end it.
@@ -218,6 +222,9 @@ func _begin_attack() -> void:
 		_charge_dir = dir.normalized() if dir.length() > 0.01 else Vector3.FORWARD
 		_telegraph_node = _make_line_telegraph(global_position, _charge_dir,
 			CHARGE_RANGE, CHARGE_WIDTH)
+		if _net_broadcasting():
+			_net_boss_telegraph.rpc(true, global_position, _charge_dir,
+				CHARGE_RANGE, CHARGE_WIDTH, _tele_total)
 		return
 	var center := global_position
 	var radius := SWEEP_RADIUS
@@ -226,6 +233,8 @@ func _begin_attack() -> void:
 		center = _stomp_point
 		radius = STOMP_RADIUS
 	_telegraph_node = _make_telegraph(center, radius)
+	if _net_broadcasting():
+		_net_boss_telegraph.rpc(false, center, Vector3.ZERO, 0.0, radius, _tele_total)
 
 func _begin_lunge(windup: float) -> void:
 	_pending = "lunge"
@@ -238,6 +247,9 @@ func _begin_lunge(windup: float) -> void:
 	_charge_dir = dir.normalized() if dir.length() > 0.01 else Vector3.FORWARD
 	_telegraph_node = _make_line_telegraph(global_position, _charge_dir,
 		LUNGE_RANGE, LUNGE_WIDTH)
+	if _net_broadcasting():
+		_net_boss_telegraph.rpc(true, global_position, _charge_dir,
+			LUNGE_RANGE, LUNGE_WIDTH, _tele_total)
 
 func _resolve_attack() -> void:
 	if _telegraph_node != null:
@@ -319,3 +331,48 @@ func _play_sfx(key: String) -> void:
 	var sfx := get_node_or_null("/root/Sfx")
 	if sfx != null:
 		sfx.play(key)
+
+# ---- C-3: boss host-authority — cosmetic replay on guests --------------------
+# The boss is a net_puppet on guests (combatant._physics_process early-returns,
+# so its _tick_ai never runs there). Pos+hp already replicate via the enemy
+# snapshot batch; these RPCs replay the rest cosmetically so guests get the boss
+# bar, arena gates, phase tint, and dodgeable telegraphs. Same pattern as the
+# player's _net_cast. The boss node is "NetFoe<N>" at an identical path on every
+# peer (deterministic build), so node-targeted RPC routes correctly.
+
+func _net_broadcasting() -> bool:
+	# Only the host (authority over the boss node) broadcasts; these calls sit
+	# inside _tick_ai, which puppets never reach, but guard anyway.
+	var netb := get_node_or_null("/root/NetGame")
+	return netb != null and bool(netb.active) and multiplayer.is_server()
+
+# Guest boss-bar HP tracks the host via the snapshot (the host emits
+# boss_hp_changed from take_damage; the guest takes no damage, so mirror it here).
+func net_apply_state(pos: Vector3, p_hp: int) -> void:
+	super(pos, p_hp)
+	boss_hp_changed.emit(hp, hp_max)
+
+@rpc("authority", "call_remote", "reliable")
+func _net_boss_aggro() -> void:
+	if not _aggroed:
+		_aggroed = true
+		aggroed.emit()        # bar shows + arena gates raise (wired in layout_loader)
+
+@rpc("authority", "call_remote", "reliable")
+func _net_boss_phase(p: int) -> void:
+	if p != _phase:
+		_phase = p
+		phase_changed.emit(p)
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func _net_boss_telegraph(is_line: bool, a: Vector3, b: Vector3,
+		length: float, width_or_radius: float, dur: float) -> void:
+	# Cosmetic-only — the host already resolved the real hit. Show the same decal
+	# for the telegraph window so the guest can dodge, then free it (the AI that
+	# pulses/frees the host's copy doesn't run here).
+	var mi: MeshInstance3D = _make_line_telegraph(a, b, length, width_or_radius) 		if is_line else _make_telegraph(a, width_or_radius)
+	var tw := create_tween()
+	tw.tween_interval(maxf(0.05, dur))
+	tw.tween_callback(func():
+		if is_instance_valid(mi):
+			mi.queue_free())
