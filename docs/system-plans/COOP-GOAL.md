@@ -17,7 +17,13 @@ finish the run — without desync, stuck states, or error spam.
 
 ## The work (phased, highest-leverage first)
 
-### Phase 1 — Live windowed acceptance test  ← START HERE
+### Phase 1 — Live windowed acceptance test  ← VISUAL ✅ / combat-eyeball PENDING
+2-window windowed capture (commit 88d99b2 added WYRD_SHOT_PATH) confirmed live:
+both player bodies render together in the same dungeon with name tags, and the
+party HP frame shows both peers. **Still needs a human at the keyboard:** drive
+actual combat to eyeball guest damage numbers (C-2), arrows, and the boss
+telegraphs in a real fight (the captured characters were idle). Best done as a
+real 2-player session (Tailscale) or by driving two windows.
 The headless logs can't show what a player sees. Run **two windowed instances**
 (`WYRD_NET=host` / `WYRD_NET=join:127.0.0.1`), drive a full session, and capture
 both views at key beats. Confirm with eyes: both players visible & moving in
@@ -65,9 +71,28 @@ status kinds cosmetically (host still owns the DoT). test_coop 10/10; live
 - **Followup:** HP-bar visual styling (default ProgressBar → kit-styled);
   eyeball the frame/banner in a live windowed session (Phase 1).
 
-### Phase 5 — Internet invite (real friends, not just LAN)
-UPnP/external-IP path (`_try_upnp`) can't be tested on localhost. Verify a real
-internet join (or document the Tailscale/LAN path as the supported route).
+### Phase 5 — Internet invite — ✅ DONE (unblocked + documented; commit e1d2a0f)
+UPnP was *crashing* every host→quit (SIGABRT, see below) — fixed by draining the
+worker before teardown + a 900ms discover timeout. local_addresses() surfaces a
+usable IPv4 (verified) and ranks Tailscale (100.x) first. Can't test a real
+internet join from here (no router UPnP / second internet machine), so the
+**supported invite paths** are:
+- **Tailscale / VPN (recommended):** both run Tailscale; host opens the Lantern
+  (Esc), copies its 100.x address, friend pastes it into Join. Rock-solid, no
+  port-forward, works anywhere.
+- **Same LAN:** host shares its 192.168/10.x address; friend on the same network
+  joins. No setup.
+- **UPnP (opportunistic):** if the router supports it, `_try_upnp` maps the port
+  and the external IP appears first in the Lantern. No longer crashes; just may
+  not find a mapping on many routers.
+- Manual port-forward (DEFAULT_PORT 7777) is the fallback for internet without
+  Tailscale/UPnP.
+
+> **The crash (fixed this session):** hosting ran a UPnP probe as a GDScript
+> lambda on a WorkerThreadPool task; `~WorkerThreadPool` aborted on that live
+> Callable at engine teardown → SIGABRT on EVERY host→exit (7 crash reports in
+> ~5h). This was the "engine keeps crashing." Fixed in e1d2a0f; proven by
+> revert (exit 134 + fresh crash report) vs fix (exit 0, none).
 
 ## Pointers
 net_game.gd (host/join/roster/snapshots/rejoin/end-notice) · player_controller
