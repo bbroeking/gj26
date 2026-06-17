@@ -54,13 +54,16 @@ Snapshot extended to `[pos, hp, flags]`; puppet foes mirror the host's active
 status kinds cosmetically (host still owns the DoT). test_coop 10/10; live
 2-instance flows 16 foes under the new format, clean.
 
-### Phase 4 — Party flow polish
-- Exit/party flow: `_end_notice` is a toast (net_game.gd:321) — add an
-  interactive follow/exit-vote HUD prompt so the party leaves together cleanly.
-- Reconnect robustness: guest auto-reconnect exists (`_reconnect_left`); test a
-  real mid-run drop → auto-reconnect → rejoin, and add a host-side slot-hold if
-  the slot isn't preserved.
-- C-6 party HP frame (see allies' health) — low priority.
+### Phase 4 — Party flow polish — ✅ DONE (commit c3361ca)
+- Party HP frame (C-6): player hp rides `_net_state`; top-left HUD frame shows
+  every peer's name + HP bar (co-op only).
+- Exit countdown: `run_ending` signal → prominent HUD countdown banner.
+- Reconnect: `reconnecting` → same HUD banner. Reconnect logic was already sound
+  (3 retries; the guest's own Game persists across the blip; C-4 rejoin guards
+  in_dungeon) — no host-side slot-hold needed since state isn't lost.
+- test_coop 12/12; 2-instance co-op-dungeon smoke runs the party-HUD path clean.
+- **Followup:** HP-bar visual styling (default ProgressBar → kit-styled);
+  eyeball the frame/banner in a live windowed session (Phase 1).
 
 ### Phase 5 — Internet invite (real friends, not just LAN)
 UPnP/external-IP path (`_try_upnp`) can't be tested on localhost. Verify a real
