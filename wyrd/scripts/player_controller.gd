@@ -1335,6 +1335,15 @@ func _net_send_tick(delta: float) -> void:
 	var net := get_node_or_null("/root/NetGame")
 	if net == null or not bool(net.active):
 		return
+	# Don't RPC until the ENet handshake completes — a guest's local player
+	# ticks the instant it boots, ~1s before the peer actually connects, which
+	# otherwise spams "RPC via a peer which is not connected". (The host's server
+	# peer reports CONNECTED, so it's unaffected.)
+	var mp := multiplayer
+	if mp == null or mp.multiplayer_peer == null \
+			or mp.multiplayer_peer.get_connection_status() \
+				!= MultiplayerPeer.CONNECTION_CONNECTED:
+		return
 	_net_accum += delta
 	if _net_accum < 1.0 / NET_SEND_HZ:
 		return
