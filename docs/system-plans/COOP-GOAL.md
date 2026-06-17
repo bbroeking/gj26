@@ -29,7 +29,18 @@ everything below is the known-from-code set; the live test finds the rest.
   scripted input or a co-op playtest with the user. C-2 damage numbers are the
   one piece headless could not exercise.
 
-### Phase 2 — Boss host-authority (C-3) — the biggest correctness gap
+### Phase 2 — Boss host-authority (C-3) — ✅ DONE (commit 4ba2359)
+Shipped: the boss was already a net_puppet (pos+hp+death replicate); added
+cosmetic replay so guests get the boss bar, arena gates, phase, dodgeable
+telegraphs, and live bar HP. test_coop (6/6) in the gate; 2-instance boss-den
+smoke builds an identical den on both peers; boss-node authority = host (default,
+verified). **Minor followups (non-blocking edge cases):** (a) a guest joining
+*mid-boss-fight* misses the one-shot aggro RPC → no bar/gates for that late
+joiner (fix: resend boss aggro/phase in the C-4 `_rejoin_run` path); (b) a
+telegraph decal can outlive a boss that dies mid-telegraph until the dungeon
+unloads (the auto-free tween dies with the boss) — cosmetic leak.
+
+#### (original scope notes)
 Today only `NetFoe<N>` bodies get `net_puppet=true` (layout_loader.gd:1094); the
 **boss is built separately and is NOT a puppet**, so each guest runs its OWN
 boss AI → boss fights desync (and every chart ends in a boss/den). Make the boss
