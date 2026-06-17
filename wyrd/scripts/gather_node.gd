@@ -11,6 +11,7 @@ const GatherDefs = preload("res://data/gather.gd")
 
 var kind := "forage_node"     # ore_rock | forage_node | log_pile
 var item_id := "wild_herb"    # material granted
+signal regrew(pos: Vector3)   # B7 — town listens, pops sprout motes on respawn
 var respawns := false         # town patches regrow; dungeon nodes don't
 var respawn_sec := 20.0
 # A6 — ore tier ("" = untiered). Sets item/xp/channel/req from ORE_TIERS.
@@ -21,6 +22,7 @@ var _tier_xp := 0
 var _tier_channel := -1.0
 
 var _depleted := false
+var _pulse_tween: Tween = null   # deep-herb emission pulse; killed on deplete
 var _body: Node3D
 
 # ---- A4: channel-time gathering ----
@@ -185,6 +187,30 @@ func _tint_tier(root: Node) -> void:
 	m.roughness = 0.85
 	for child in root.find_children("*", "MeshInstance3D", true, false):
 		(child as MeshInstance3D).material_override = m
+	# Deep-ore readability — a faint point-light halo (idempotent via the name).
+	if _body != null and ore_tier in ["starsilver", "hedgesteel"] \
+			and _body.get_node_or_null("GlowLight") == null:
+		var glow := OmniLight3D.new()
+		glow.name = "GlowLight"
+		glow.light_color = Color(0.75, 0.82, 1.0) if ore_tier == "starsilver" \
+			else Color(0.45, 0.90, 0.55)
+		glow.light_energy = 0.6
+		glow.omni_range = 3.0
+		glow.omni_attenuation = 2.0
+		glow.position = Vector3(0.0, 0.4, 0.0)
+		_body.add_child(glow)
+	# Deep-herb readability — a slow emission pulse on the tinted material
+	# (Node3D has no `modulate`, so pulse the material, not the body).
+	if herb_tier in ["foxglove", "stonebreak"]:
+		m.emission_enabled = true
+		m.emission = col
+		if _pulse_tween != null and _pulse_tween.is_valid():
+			_pulse_tween.kill()
+		_pulse_tween = create_tween().set_loops()
+		_pulse_tween.tween_property(m, "emission_energy_multiplier", 1.4, 1.2) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		_pulse_tween.tween_property(m, "emission_energy_multiplier", 0.2, 1.2) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 # ---- the harvest (channelled) ----
 func interact(player: Node) -> void:
@@ -302,6 +328,14 @@ static func channel_seconds(kind: String, game, base := -1.0) -> float:
 		var tool = game.equipment.get_slot(tool_slot)
 		if tool != null:
 			t *= 1.0 - clampf(float(tool.get("base_value", 0.0)), 0.0, 0.8)
+			# Items: a rolled `honed` (gather_speed) affix stacks on the tool's
+			# base, capped at 50% so a fully-rolled tool can't near-zero a channel.
+			var extra_gs := 0.0
+			for a in tool.get("affixes", []):
+				if String(a.get("stat", "")) == "gather_speed":
+					extra_gs += float(a.get("value", 0.0))
+			if extra_gs > 0.0:
+				t *= 1.0 - clampf(extra_gs, 0.0, 0.5)
 	if kind == "ore_rock" and game.perk_active("earth", "quick_mining"):
 		t *= 0.65
 	# Spec 45-wilds — Light Hands: forage and chop run a quarter faster.
@@ -351,6 +385,9 @@ func _set_bar(frac: float) -> void:
 func _deplete() -> void:
 	_depleted = true
 	show_prompt(false)
+	if _pulse_tween != null and _pulse_tween.is_valid():
+		_pulse_tween.kill()
+		_pulse_tween = null
 	if _body != null:
 		var t := create_tween()
 		t.tween_property(_body, "scale", Vector3.ONE * 0.05, 0.25) \
@@ -368,6 +405,11 @@ func _regrow() -> void:
 		var t := create_tween()
 		t.tween_property(_body, "scale", Vector3.ONE, 0.35) \
 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	# Resume the deep-tier glow/pulse a respawned vein or patch had.
+	if _body != null and (ore_tier in ["starsilver", "hedgesteel"] \
+			or herb_tier in ["foxglove", "stonebreak"]):
+		_tint_tier(_body)
+	regrew.emit(global_position)   # B7 — town sprout-motes
 
 # A small rising "+1 X" label at the node.
 func _float_text(text: String) -> void:

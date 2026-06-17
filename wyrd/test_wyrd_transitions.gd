@@ -238,6 +238,7 @@ func _run() -> void:
 	_check("den opens at Wayfinder 8", bench.socket_trophy("thorn_essence"))
 	_check("two ink slots below the capstone", bench.ink_slots() == 2)
 	game.trades.wayfinding.lv = 17
+	game.chosen_perks = {"master_wayfinder": true}   # ADR 0012 mastery — capstone pick
 	_check("master wayfinder adds an ink slot", bench.ink_slots() == 3)
 	game.trades.wayfinding.lv = 2
 	bench.clear_base()

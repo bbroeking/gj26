@@ -173,8 +173,10 @@ func _render() -> void:
 		_sell_box.add_child(card)
 	for c in _buy_box.get_children():
 		c.queue_free()
-	for ware in EconomyData.WARES:
+	for ware in EconomyData.wares_for_level(_game.trade_lv()):
 		var id := String(ware.id)
+		if id == "repair_all":
+			continue   # gold-sink ware needs a durability system first — skip
 		var price := int(ware.price)
 		var have: int = _game.material_count(id)
 		var affordable: bool = int(_game.gold) >= price

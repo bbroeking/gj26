@@ -74,6 +74,14 @@ var _ranged_tele: Node3D = null
 var burst_hits_player := false
 var is_elite: bool = false
 var modifier: String = ""
+var is_support := false        # warden archetype — follows + heals allies, no attack
+var _heal_t := 0.0
+const HEAL_INTERVAL := 4.0
+const HEAL_AMOUNT := 2
+var is_bruiser := false         # barrow brute — telegraphed AoE floor-ring strike
+var _brute_ring: MeshInstance3D = null
+const BRUTE_TELEGRAPH := 0.7    # longer tell — "get out of the circle"
+const BRUTE_RING_MULT := 1.6    # AoE radius = ATTACK_RANGE * this
 var _move_mult: float = 1.0
 var _attack_speed_mult: float = 1.0
 var _cc_immune_until: float = 0.0
@@ -112,6 +120,9 @@ var _player: Node3D
 var _proc_anim                     # optional procedural animator (spec 21 rat)
 var _agent: NavigationAgent3D
 var _repath_t := 0.0
+var _spawn_pos := Vector3.ZERO   # IDLE wander anchor (set lazily on first tick)
+var _wander_t := 0.0
+const WANDER_REPATH := 2.5
 var _attack_cd := 0.0
 var _telegraph_t := 0.0
 var _did_hit := false
@@ -234,7 +245,9 @@ func _nearest_player() -> Node3D:
 	var best: Node3D = null
 	var best_d := INF
 	for p in get_tree().get_nodes_in_group("player"):
-		if not p is Node3D or bool((p as Node).get("dead")):
+		# `== true` is null-safe: a "player"-group stand-in without a `dead`
+		# property returns null from get(), and bool(null) is a hard error.
+		if not p is Node3D or (p as Node).get("dead") == true:
 			continue
 		var d := global_position.distance_squared_to((p as Node3D).global_position)
 		if d < best_d:
@@ -293,6 +306,10 @@ func _tick_ai(delta: float) -> void:
 			_ranged_tele = null
 			_did_hit = false
 			_state = State.CHASE
+		if _state == State.ATTACK and _brute_ring != null:
+			_free_brute_ring()       # rooting a brute mid-windup cancels the strike
+			_did_hit = false
+			_state = State.CHASE
 		return
 	var to := _player.global_position - global_position
 	to.y = 0.0
@@ -302,13 +319,42 @@ func _tick_ai(delta: float) -> void:
 
 	match _state:
 		State.IDLE:
-			velocity.x = 0.0
-			velocity.z = 0.0
+			if _spawn_pos == Vector3.ZERO:
+				_spawn_pos = global_position
 			if dist < aggro_radius:
+				velocity.x = 0.0
+				velocity.z = 0.0
 				_state = State.CHASE
+				_alert_nearby(aggro_radius * 1.4)   # wake the pack
+			else:
+				# Shuffle around the spawn cell so nothing stands frozen. Slow,
+				# bounded (±2 m), nav-guarded (a no-op with no baked navmesh).
+				_wander_t -= delta
+				if _wander_t <= 0.0:
+					_wander_t = WANDER_REPATH
+					if _agent != null:
+						_agent.target_position = _spawn_pos + Vector3(
+							randf_range(-2.0, 2.0), 0.0, randf_range(-2.0, 2.0))
+				if _agent != null and not _agent.is_navigation_finished():
+					var nd: Vector3 = _agent.get_next_path_position() - global_position
+					nd.y = 0.0
+					if nd.length() > 0.3:
+						var sw := move_speed * 0.4
+						velocity.x = nd.normalized().x * sw
+						velocity.z = nd.normalized().z * sw
+						_face(nd.normalized())
+						moving = true
+					else:
+						velocity.x = 0.0
+						velocity.z = 0.0
+				else:
+					velocity.x = 0.0
+					velocity.z = 0.0
 		State.CHASE:
 			if dist > LEASH_RADIUS:
 				_state = State.IDLE
+			elif is_support:
+				moving = _support_tick(delta)   # warden heals, never attacks
 			elif is_ranged and dist < RANGED_MIN:
 				# Ranged kiter — keep a fair standoff so shots stay dodgeable
 				# (never a point-blank orb the player can't outrun). Back off,
@@ -326,6 +372,8 @@ func _tick_ai(delta: float) -> void:
 				_telegraph_t = clampf(attack_cooldown * 0.3, 0.32, 0.6)
 				if is_ranged:
 					_telegraph_t = maxf(_telegraph_t, 0.6)   # ranged reads longer
+				if is_bruiser:
+					_telegraph_t = BRUTE_TELEGRAPH           # heavy AoE tells longest
 				_did_hit = false
 				velocity.x = 0.0
 				velocity.z = 0.0
@@ -334,6 +382,8 @@ func _tick_ai(delta: float) -> void:
 					_proc_anim.attack(_telegraph_t, _aim_dir)
 				if is_ranged:
 					_spawn_ranged_telegraph(_aim_dir, dist)
+				if is_bruiser:
+					_spawn_brute_ring()
 			else:
 				_chase_move(delta)
 				moving = true
@@ -347,8 +397,15 @@ func _tick_ai(delta: float) -> void:
 					_proc_anim.strike()    # Phase 2 — the lunge / throw
 				if is_ranged:
 					_fire_projectile(_aim_dir)
-				elif dist <= ATTACK_RANGE * 1.4 and _player.has_method("take_damage"):
-					_player.take_damage(damage, -to.normalized())
+				elif _player.has_method("take_damage"):
+					# Bruiser lands anyone still inside the (bigger) ring; others
+					# get the normal melee reach.
+					var hit_range: float = (ATTACK_RANGE * BRUTE_RING_MULT) \
+						if is_bruiser else (ATTACK_RANGE * 1.4)
+					if dist <= hit_range:
+						_player.take_damage(damage, -to.normalized())
+				if is_bruiser:
+					_free_brute_ring()
 				# Spec 32 — elite on_attack dispatch (fires for melee + ranged).
 				if is_elite and modifier != "":
 					_elite_on_attack()
@@ -360,6 +417,108 @@ func _tick_ai(delta: float) -> void:
 	# Procedural animator (the rat — spec 21) runs alongside the clip driver.
 	if _proc_anim != null:
 		_proc_anim.update(delta, moving)
+
+# Chain aggro — waking one wakes the pack. When this enemy first spots the
+# player, nearby IDLE peers also give chase, so a room threatens as a group.
+# Only IDLE peers flip (CHASE/ATTACK are already awake); dead bodies and net
+# puppets are skipped (the host drives puppet state in co-op). Runs host-side
+# only — _physics_process returns early for net puppets, so this never fires
+# on a guest.
+func _alert_nearby(radius: float) -> void:
+	for peer in get_tree().get_nodes_in_group("enemy"):
+		if peer == self or not is_instance_valid(peer):
+			continue
+		if peer.get("dead") == true or peer.get("net_puppet") == true:
+			continue   # null-safe (bool(null) is a hard error)
+		if int(peer.get("_state")) != State.IDLE:
+			continue
+		if global_position.distance_to((peer as Node3D).global_position) <= radius:
+			peer.set("_state", State.CHASE)
+
+# Warden support tick — follow the nearest living NON-support ally and heal it
+# on a timer when adjacent. Returns whether it moved (for the locomotion anim).
+func _support_tick(delta: float) -> bool:
+	_heal_t = maxf(0.0, _heal_t - delta)
+	var ally := _nearest_ally(6.0)
+	if ally == null:
+		velocity.x = 0.0
+		velocity.z = 0.0
+		return false
+	var ato: Vector3 = (ally as Node3D).global_position - global_position
+	ato.y = 0.0
+	if ato.length() <= 1.6:
+		velocity.x = 0.0
+		velocity.z = 0.0
+		if ato.length() > 0.01:
+			_face(ato.normalized())
+		if _heal_t <= 0.0:
+			_heal_t = HEAL_INTERVAL
+			ally.call("_heal_direct", HEAL_AMOUNT)
+		return false
+	var step := ato.normalized()
+	velocity.x = step.x * move_speed
+	velocity.z = step.z * move_speed
+	_face(step)
+	return true
+
+# Nearest living, non-support enemy within `radius` (so wardens don't trail
+# each other). Skips dead bodies and net puppets.
+func _nearest_ally(radius: float) -> Node3D:
+	var best: Node3D = null
+	var best_d := radius * radius
+	for peer in get_tree().get_nodes_in_group("enemy"):
+		if peer == self or not is_instance_valid(peer):
+			continue
+		if peer.get("dead") == true or peer.get("is_support") == true \
+				or peer.get("net_puppet") == true:
+			continue
+		var d := global_position.distance_squared_to((peer as Node3D).global_position)
+		if d < best_d:
+			best_d = d
+			best = peer
+	return best
+
+# Heal `amount`, clamped to hp_max. Floats a small green "+N" (reuses the
+# elite-label pipe). Public so a warden can call it on an ally.
+func _heal_direct(amount: int) -> void:
+	if dead or amount <= 0:
+		return
+	var before := hp
+	hp = mini(hp + amount, hp_max)
+	if hp > before:
+		_spawn_elite_label("+%d" % (hp - before), Color(0.40, 0.85, 0.45))
+
+# Barrow Brute — an expanding orange floor-ring that grows to full over the
+# telegraph, telling the player to step out of the AoE before the strike lands.
+func _spawn_brute_ring() -> void:
+	_free_brute_ring()
+	var disc := MeshInstance3D.new()
+	disc.name = "BruteRing"
+	var dm := CylinderMesh.new()
+	var r := ATTACK_RANGE * BRUTE_RING_MULT
+	dm.top_radius = r
+	dm.bottom_radius = r
+	dm.height = 0.06
+	disc.mesh = dm
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.95, 0.35, 0.10, 0.5)
+	mat.emission_enabled = true
+	mat.emission = Color(0.95, 0.35, 0.10)
+	mat.emission_energy_multiplier = 1.8
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	disc.material_override = mat
+	disc.position = Vector3(0.0, 0.05, 0.0)
+	disc.scale = Vector3(0.05, 1.0, 0.05)
+	add_child(disc)
+	_brute_ring = disc
+	var tw := disc.create_tween()
+	tw.tween_property(disc, "scale", Vector3(1.0, 1.0, 1.0), maxf(_telegraph_t, 0.1))
+
+func _free_brute_ring() -> void:
+	if _brute_ring != null and is_instance_valid(_brute_ring):
+		_brute_ring.queue_free()
+	_brute_ring = null
 
 # Move toward the player along the nav path — straight-line fallback when
 # no path is available (no navmesh, not yet computed, off-mesh). Reused by
@@ -748,6 +907,17 @@ func _spawn_apply_text(kind: String) -> void:
 	if dn.has_method("setup_apply"):
 		dn.setup_apply(label, col)
 
+# Float the elite modifier's name once on promotion, in its label_color.
+func _spawn_elite_label(text: String, col: Color) -> void:
+	var dn := DamageNumberScene.instantiate()
+	var host: Node = get_parent()
+	if host == null:
+		host = get_tree().root
+	host.add_child(dn)
+	dn.global_position = global_position + Vector3(0.0, 2.7, 0.0)
+	if dn.has_method("setup_apply"):
+		dn.setup_apply(text, col)
+
 # Spec 31 — release every status visual + clear the dict. Called from _die()
 # so visuals don't outlive the body.
 func _clear_all_statuses() -> void:
@@ -791,7 +961,7 @@ func _die() -> void:
 			pass  # ADR 0012 — combat gives no skill XP; kills no longer award it
 			# Spec 45-hunt — Even Breath: a clean kill steadies the hunter.
 			if game.perk_active("wayfinding", "even_breath"):
-				var pl := get_tree().get_first_node_in_group("player")
+				var pl := _nearest_player()   # the peer who was fighting it
 				if pl != null and pl.has_method("add_focus"):
 					pl.add_focus(6.0)
 	var sfx := get_node_or_null("/root/Sfx")
@@ -806,6 +976,7 @@ func _die() -> void:
 	if _elite_ring != null and is_instance_valid(_elite_ring):
 		_elite_ring.queue_free()
 		_elite_ring = null
+	_free_brute_ring()   # a brute that dies mid-windup drops its telegraph ring
 	var t := create_tween()
 	t.tween_property(self, "position:y", position.y - 1.6, DEATH_SEC)
 	t.parallel().tween_property(self, "scale", _base_scale * 0.05, DEATH_SEC)
@@ -880,9 +1051,13 @@ func apply_elite(modifier_key: String) -> void:
 	# tint survives every hit thanks to the spec 32c restoration path.
 	var tint: Color = mod.get("tint", Color(1.0, 0.92, 0.55))
 	_apply_elite_tint(tint)
-	# Feet-ring particle — persistent visual signal.
-	_elite_ring = _make_elite_ring(tint)
+	# Feet-ring particle — persistent visual signal, in the modifier's own
+	# ring_color so each elite kind reads distinctly (Batch-4 elite tints).
+	_elite_ring = _make_elite_ring(mod.get("ring_color", tint))
 	add_child(_elite_ring)
+	# Float the modifier name on promotion so the kind is legible at a glance.
+	_spawn_elite_label(String(mod.get("name", modifier_key)),
+		mod.get("label_color", tint))
 
 # Walk _meshes and overlay each with a fresh golden material. Distinct from
 # `apply_flash` because there's no _flash_t timer; the tint is permanent
@@ -961,6 +1136,8 @@ func _elite_on_death() -> void:
 	match String(mod.get("on_death", "")):
 		"bleed_nova":
 			_trigger_bleed_nova()
+		"blight_pool":
+			_trigger_blight_pool()
 
 # Brambled elite — on death, every enemy within 2.5m takes a Bleed
 # (4s / 1s ticks / 1 dpt). Self is excluded (we're dying anyway).
@@ -1002,6 +1179,8 @@ func _elite_on_attack() -> void:
 	match String(mod.get("on_attack", "")):
 		"burn_pulse":
 			_trigger_burn_pulse()
+		"spine_burst":
+			_trigger_spine_burst()
 
 # Sunlit elite — every melee swing applies Burn (3s / 0.5s ticks / 1 dpt = 6
 # total ≈ same damage budget as PowerShot's burn on enemies). Spec 33a put
@@ -1013,6 +1192,49 @@ func _trigger_burn_pulse() -> void:
 	if global_position.distance_to(_player.global_position) <= 2.5:
 		if _player.has_method("apply_status"):
 			_player.apply_status("burn", 3.0, 1, 1.0, 0.5)
+
+# Thornshelled elite — its armour sheds spines on every swing, so the struck
+# player also takes a short Bleed (the tank's chip-damage threat).
+func _trigger_spine_burst() -> void:
+	if _player == null:
+		return
+	if global_position.distance_to(_player.global_position) <= 2.8:
+		if _player.has_method("apply_status"):
+			_player.apply_status("bleed", 2.0, 1, 1.0, 0.5)
+
+# Blightwalker elite — on death it bursts a toxic blight: every enemy AND the
+# player within 2.6m festers with a long Bleed, under a teal disc that lingers.
+func _trigger_blight_pool() -> void:
+	var center := global_position
+	for enemy in AoeQuery.query_circle(get_tree(), center, 2.6, "enemy"):
+		if enemy != self and enemy.has_method("apply_status"):
+			enemy.apply_status("bleed", 5.0, 1, 1.0, 1.0)
+	if _player != null and _player.has_method("apply_status") \
+			and _player.global_position.distance_to(center) <= 2.6:
+		_player.apply_status("bleed", 5.0, 1, 1.0, 1.0)
+	var disc := MeshInstance3D.new()
+	disc.name = "BlightPoolDisc"
+	var dm := CylinderMesh.new()
+	dm.top_radius = 2.6
+	dm.bottom_radius = 2.6
+	dm.height = 0.05
+	disc.mesh = dm
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.30, 0.75, 0.62, 0.45)
+	mat.emission_enabled = true
+	mat.emission = Color(0.30, 0.75, 0.62)
+	mat.emission_energy_multiplier = 1.6
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	disc.material_override = mat
+	disc.position = center
+	var host := get_parent()
+	if host != null:
+		host.add_child(disc)
+		var tw := disc.create_tween()
+		tw.tween_interval(1.5)
+		tw.tween_property(mat, "albedo_color:a", 0.0, 1.0)
+		tw.tween_callback(disc.queue_free)
 
 # B6 — the bursting affix's corpse pop: 6 damage to enemies within 2m
 # (skipping other corpses); Volatile also catches the player. A short
@@ -1029,7 +1251,7 @@ func _death_burst() -> void:
 		dir.y = 0.0
 		other.take_damage(BURST_DMG, dir.normalized())
 	if burst_hits_player:
-		var player := get_tree().get_first_node_in_group("player")
+		var player := _nearest_player()
 		if player != null and player.has_method("take_damage") \
 				and player.global_position.distance_to(global_position) <= BURST_RADIUS:
 			var pdir: Vector3 = player.global_position - global_position

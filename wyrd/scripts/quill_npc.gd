@@ -9,9 +9,10 @@ extends Interactable
 
 const QUILL_GLB := preload("res://models/npc_quill_v2.glb")
 const DialogPanelScript = preload("res://scripts/ui/dialog_panel.gd")
+const QuillPanelScript = preload("res://scripts/ui/quill_panel.gd")
 
 func get_prompt_text() -> String:
-	return "[E] Talk to Quill"
+	return "[E] Quill's Still"
 
 func get_prompt_color() -> Color:
 	return Color(0.72, 0.88, 0.6)        # herb-green
@@ -27,10 +28,7 @@ func _ready_interactable() -> void:
 	GlbFit.add_ink_outline(mesh)
 
 func interact(_player: Node) -> void:
-	var dlg: CanvasLayer = DialogPanelScript.new()
-	dlg.open("Quill, the Herbalist", [
-		"Mind the beds — the yellow-tipped ones are nearly ready.",
-		"The hearth feeds you; my still sharpens you. Bring wild herbs and I'll show you what a proper tonic does.",
-		"They keep a week if you don't shake them too hard.",
-	])
-	get_tree().current_scene.add_child(dlg)
+	# Quill's Still — her buy shelf (tonics + herbs), a second vendor beside Hod.
+	# Kit-styled modal that does its own level-gating and modal accounting.
+	var panel: CanvasLayer = QuillPanelScript.new()
+	get_tree().current_scene.add_child(panel)

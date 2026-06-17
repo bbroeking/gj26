@@ -12,8 +12,15 @@ const FILL_FULL_W := 592.0
 @onready var _label: Label = $Bar/Label
 
 var _hp_max := 100
+var _boss_name := "The Hedgemother"   # set per-kind by layout_loader before prime()
 
 var _meter: Dictionary = {}
+
+# Set the boss's display name (e.g. "The Burrow Boar"). Call before prime().
+# Not `set_name` — that's Node's built-in node-rename method.
+func set_boss_name(n: String) -> void:
+	if n != "":
+		_boss_name = n
 
 func _ready() -> void:
 	visible = false
@@ -34,7 +41,7 @@ func prime(mx: int) -> void:
 	_hp_max = mx
 	_fill.offset_right = FILL_LEFT + FILL_FULL_W
 	if not _meter.is_empty():
-		WyrdUi.set_meter(_meter, 1.0, "The Hedgemother — Unyielding")
+		WyrdUi.set_meter(_meter, 1.0, "%s — Unyielding" % _boss_name)
 
 func show_boss() -> void:
 	visible = true
@@ -51,7 +58,7 @@ func set_phase(phase: int) -> void:
 	# on the boss. The Hedgemother is immune to root + snared (and takes burn
 	# + bleed at 50% reduced duration); the tag makes that visible without a
 	# hidden DR meter.
-	_label.text = "The Hedgemother — Phase %d — Unyielding" % phase
+	_label.text = "%s — Phase %d — Unyielding" % [_boss_name, phase]
 	if not _meter.is_empty():
 		(_meter.label as Label).text = _label.text
 

@@ -4,23 +4,29 @@ extends RefCounted
 # Stat keys: hp · damage · crit_chance · crit_mult · fire_rate · move_speed.
 
 const PREFIXES := {
-	"sharp":     {"display": "Sharp",     "stat": "damage",      "value_range": Vector2(1, 3)},
-	"heavy":     {"display": "Heavy",     "stat": "damage",      "value_range": Vector2(3, 6)},
-	"hardened":  {"display": "Hardened",  "stat": "hp",          "value_range": Vector2(3, 8)},
-	"fortified": {"display": "Fortified", "stat": "hp",          "value_range": Vector2(8, 15)},
-	"fierce":    {"display": "Fierce",    "stat": "crit_chance", "value_range": Vector2(0.02, 0.05)},
-	"swift":     {"display": "Swift",     "stat": "fire_rate",   "value_range": Vector2(0.02, 0.06)},
+	"sharp":     {"display": "Sharp",     "stat": "damage",       "value_range": Vector2(1, 3)},
+	"heavy":     {"display": "Heavy",     "stat": "damage",       "value_range": Vector2(3, 6)},
+	"hardened":  {"display": "Hardened",  "stat": "hp",           "value_range": Vector2(3, 8)},
+	"fortified": {"display": "Fortified", "stat": "hp",           "value_range": Vector2(8, 15)},
+	"fierce":    {"display": "Fierce",    "stat": "crit_chance",  "value_range": Vector2(0.02, 0.05)},
+	"swift":     {"display": "Swift",     "stat": "fire_rate",    "value_range": Vector2(0.02, 0.06)},
+	# Phase 5 — trade-tool gather_speed + utility affixes.
+	"honed":     {"display": "Honed",     "stat": "gather_speed", "value_range": Vector2(0.10, 0.20)},
+	"vigorous":  {"display": "Vigorous",  "stat": "hp_regen",     "value_range": Vector2(1.0, 3.0)},
 }
 
 const SUFFIXES := {
-	"of_health":    {"display": "of Health",    "stat": "hp",                 "value_range": Vector2(4, 10)},
-	"of_vigor":     {"display": "of Vigor",     "stat": "hp",                 "value_range": Vector2(10, 20)},
-	"of_fury":      {"display": "of Fury",      "stat": "damage",             "value_range": Vector2(2, 5)},
-	"of_carnage":   {"display": "of Carnage",   "stat": "crit_mult",          "value_range": Vector2(0.10, 0.30)},
-	"of_haste":     {"display": "of Haste",     "stat": "move_speed",         "value_range": Vector2(0.05, 0.15)},
-	"of_precision": {"display": "of Precision", "stat": "crit_chance",        "value_range": Vector2(0.01, 0.04)},
+	"of_health":       {"display": "of Health",          "stat": "hp",                 "value_range": Vector2(4, 10)},
+	"of_vigor":        {"display": "of Vigor",           "stat": "hp",                 "value_range": Vector2(10, 20)},
+	"of_fury":         {"display": "of Fury",            "stat": "damage",             "value_range": Vector2(2, 5)},
+	"of_carnage":      {"display": "of Carnage",         "stat": "crit_mult",          "value_range": Vector2(0.10, 0.30)},
+	"of_haste":        {"display": "of Haste",           "stat": "move_speed",         "value_range": Vector2(0.05, 0.15)},
+	"of_precision":    {"display": "of Precision",       "stat": "crit_chance",        "value_range": Vector2(0.01, 0.04)},
 	# Spec 30 — scales skill 2-4 cooldowns; capped at 0.80 in derived_stats.
-	"of_swiftness": {"display": "of Swiftness", "stat": "cooldown_reduction", "value_range": Vector2(0.05, 0.20)},
+	"of_swiftness":    {"display": "of Swiftness",       "stat": "cooldown_reduction", "value_range": Vector2(0.05, 0.20)},
+	# Phase 5 — affix pool expansion.
+	"of_the_bramble":  {"display": "of the Bramble",     "stat": "crit_mult",          "value_range": Vector2(0.15, 0.40)},
+	"of_swiftness_ii": {"display": "of Greater Swiftness", "stat": "cooldown_reduction", "value_range": Vector2(0.15, 0.30)},
 }
 
 # Roll n affixes for the given rarity.
@@ -75,19 +81,27 @@ static func _make_entry(side: String, key: String) -> Dictionary:
 		"value": v,
 	}
 
-# Compose a display name: magic uses "<Prefix> <Kind> <Suffix>"; rare/unique
-# stay as the kind name (rare carries its readout in the tooltip).
+# Compose a display name.
+#   magic  → "<Prefix> <Kind> <Suffix>" (first prefix + first suffix found)
+#   rare   → "<Kind> <Suffix>"  using the first suffix affix; falls back to
+#             kind name when no suffix is present.
+#   unique → kind name (caller sets item.name from UNIQUES directly).
 static func compose_name(kind_name: String, affixes: Array, rarity: String) -> String:
-	if rarity != "magic":
-		return kind_name
-	var pref := ""
-	var suff := ""
-	for a in affixes:
-		if a.side == "prefix" and pref == "":
-			pref = String(a.display) + " "
-		elif a.side == "suffix" and suff == "":
-			suff = " " + String(a.display)
-	return "%s%s%s" % [pref, kind_name, suff]
+	if rarity == "magic":
+		var pref := ""
+		var suff := ""
+		for a in affixes:
+			if String(a.side) == "prefix" and pref == "":
+				pref = String(a.display) + " "
+			elif String(a.side) == "suffix" and suff == "":
+				suff = " " + String(a.display)
+		return "%s%s%s" % [pref, kind_name, suff]
+	if rarity == "rare":
+		for a in affixes:
+			if String(a.side) == "suffix":
+				return "%s %s" % [kind_name, String(a.display)]
+		return kind_name   # rare with no suffix keeps kind name
+	return kind_name
 
 # One-line tooltip readout for an affix entry.
 static func format_affix(a: Dictionary) -> String:
@@ -101,4 +115,6 @@ static func format_affix(a: Dictionary) -> String:
 		"fire_rate":          return "+%d%% Attack Speed" % int(round(float(v) * 100.0))
 		"move_speed":         return "+%d%% Movement Speed" % int(round(float(v) * 100.0))
 		"cooldown_reduction": return "+%d%% Skill Cooldown Reduction" % int(round(float(v) * 100.0))
+		"gather_speed":       return "+%d%% Gather Speed" % int(round(float(v) * 100.0))
+		"hp_regen":           return "+%d HP per Second" % int(round(float(v)))
 	return "+%s %s" % [str(v), stat]

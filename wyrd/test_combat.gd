@@ -339,6 +339,24 @@ func _test_section_f() -> void:
 	# State enum: IDLE=0, CHASE=1, ATTACK=2.
 	_check("F1", e._state != 0, "enemy left IDLE (state=%d)" % e._state)
 
+	# F1b — chain aggro: a fresh lead enemy wakes (player in range) and alerts a
+	# grouped IDLE peer 8 m away (out of its OWN aggro range of the player, so it
+	# can only wake via the chain); a peer 20 m away stays asleep.
+	var lead := _make_enemy(host, 100)
+	lead.global_position = Vector3(0, 0, 0)
+	var near := _make_enemy(host, 100)
+	near.global_position = Vector3(0, 0, -8)
+	near.add_to_group("enemy")
+	var far_peer := _make_enemy(host, 100)
+	far_peer.global_position = Vector3(0, 0, -20)
+	far_peer.add_to_group("enemy")
+	for i in 5:
+		await physics_frame
+	_check("F1b-chain-wakes-near", near._state != 0,
+		"near peer chained to CHASE (state=%d)" % near._state)
+	_check("F1b-far-stays-idle", far_peer._state == 0,
+		"far peer still IDLE (state=%d)" % far_peer._state)
+
 	# F2 — chase: enemy closes distance. Measured over a short 15-frame
 	# window so the enemy is still chasing — not yet in attack range
 	# (where it stops + knocks the player back, confounding the metric).

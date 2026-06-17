@@ -34,6 +34,14 @@ var _spokes: Array = []            # path destinations (subset of stations)
 var _path_points: Array = []       # sampled path centers (Vector3)
 var _rng := RandomNumberGenerator.new()
 
+# B7 — ambient life state
+const MOTE_COUNT := 12             # drifting firefly/dust motes (capped cheap)
+var _mote_nodes: Array = []        # MeshInstance3D references for sway update
+var _mote_phases: Array = []       # float phase offset per mote (varied drift)
+var _lantern_lights: Array = []    # OmniLight3D refs for flicker
+var _lantern_phases: Array = []    # float phase offset per lantern
+var _ambient_t := 0.0              # running time for procedural sway
+
 func setup(yard: float, plaza: Vector3, stations: Array, spokes: Array) -> void:
 	_yard = yard
 	_plaza = plaza
@@ -46,6 +54,10 @@ func _ready() -> void:
 	_build_treeline()
 	_build_grass_and_flowers()
 	_build_scatter()
+	# B7 — ambient life: drifting motes + lantern flicker driven by _process.
+	_build_ambient_motes()
+	_gather_lantern_lights()
+	set_process(true)
 
 # ---- ground (called by town.gd in place of its flat material) ----
 # Two greens mixed by large noise + a fine brightness grain. Shader, not
@@ -270,3 +282,90 @@ func _near_path(pos: Vector3) -> bool:
 		if pos.distance_to(p) < PATH_CLEAR:
 			return true
 	return false
+
+# ---- B7 — ambient life ----
+
+# Spawn MOTE_COUNT cheap billboard quads that drift gently in _process.
+# They float in a loose band just above the plaza and herb beds.
+# Origins are stored in _mote_phases (x/z are the phase float; the resting
+# world positions are kept in a parallel _mote_origins array).
+var _mote_origins: Array = []     # Vector3 rest positions, set once in build
+
+func _build_ambient_motes() -> void:
+	var rng_m := RandomNumberGenerator.new()
+	rng_m.seed = 99
+	# Three flavour pools: warm firefly (golden), cool dust (grey-blue), leaf green.
+	var colors: Array[Color] = [
+		Color(0.96, 0.88, 0.42, 0.65),
+		Color(0.78, 0.86, 0.95, 0.45),
+		Color(0.62, 0.92, 0.60, 0.50),
+	]
+	for _i in MOTE_COUNT:
+		var mi := MeshInstance3D.new()
+		var qm := QuadMesh.new()
+		qm.size = Vector2(0.06, 0.06)
+		mi.mesh = qm
+		var mat := StandardMaterial3D.new()
+		var cidx: int = int(rng_m.randf_range(0.0, float(colors.size()) - 0.01))
+		mat.albedo_color = colors[cidx]
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat.no_depth_test = true
+		mi.material_override = mat
+		# Scatter across the plaza ± 6 m, floating 0.4–1.8 m above ground.
+		var origin := _plaza + Vector3(
+			rng_m.randf_range(-6.0, 6.0),
+			rng_m.randf_range(0.4, 1.8),
+			rng_m.randf_range(-6.0, 6.0))
+		mi.position = origin
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(mi)
+		_mote_nodes.append(mi)
+		_mote_phases.append(rng_m.randf() * TAU)
+		_mote_origins.append(origin)
+
+# Collect OmniLight3D children of the lantern dressing so we can flicker them.
+# Lanterns are dropped as direct children via _drop(); we scan for any
+# OmniLight3D one level deep inside each child node.
+func _gather_lantern_lights() -> void:
+	var rng_l := RandomNumberGenerator.new()
+	rng_l.seed = 77
+	for child in get_children():
+		for sub in child.get_children():
+			if sub is OmniLight3D:
+				_lantern_lights.append(sub)
+				_lantern_phases.append(rng_l.randf() * TAU)
+
+# Drive ambient life every frame: drift motes + flicker lanterns.
+# Cost: one sin/cos + one property write per mote/lantern — negligible.
+func _process(delta: float) -> void:
+	_ambient_t += delta
+	# Oscillate each mote around its rest origin using a slow Lissajous curve.
+	# Reading from _mote_origins avoids the additive-drift problem.
+	for i in _mote_nodes.size():
+		var mi: MeshInstance3D = _mote_nodes[i] as MeshInstance3D
+		if not is_instance_valid(mi):
+			continue
+		var ph: float = _mote_phases[i]
+		var org: Vector3 = _mote_origins[i]
+		# X and Z at different frequencies → organic, never perfectly circular.
+		mi.position = org + Vector3(
+			sin(_ambient_t * 0.35 + ph) * 0.25,
+			sin(_ambient_t * 0.18 + ph * 1.3) * 0.12,
+			cos(_ambient_t * 0.28 + ph * 0.7) * 0.22)
+		# Soft alpha pulse — fireflies breathe in and out.
+		var mat: StandardMaterial3D = mi.material_override as StandardMaterial3D
+		if mat != null:
+			var c: Color = mat.albedo_color
+			c.a = 0.35 + 0.40 * (0.5 + 0.5 * sin(_ambient_t * 0.9 + ph))
+			mat.albedo_color = c
+	# Flicker lantern OmniLights with two overlaid sines → organic, no branching.
+	for j in _lantern_lights.size():
+		var light: OmniLight3D = _lantern_lights[j] as OmniLight3D
+		if not is_instance_valid(light):
+			continue
+		var lph: float = _lantern_phases[j]
+		light.light_energy = 1.8 \
+			+ 0.22 * sin(_ambient_t * 2.1 + lph) \
+			+ 0.10 * sin(_ambient_t * 5.3 + lph * 1.7)

@@ -41,6 +41,9 @@ func _run() -> void:
 	await _t5_status_refresh_rules()
 	await _t6_boss_immunity()
 	await _t7_query_circle()
+	await _t8_blightwalker_on_death()
+	await _t9_warden_heals_ally()
+	await _t10_brute_ring_lifecycle()
 	print("--- status + AoE evals: %d PASS, %d FAIL ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
 
@@ -68,6 +71,51 @@ func _strip_arrow_autosignal(arrow: Node) -> void:
 	var hb: Area3D = arrow.get_node_or_null("Hitbox") as Area3D
 	if hb != null and hb.area_entered.is_connected(arrow._on_area_entered):
 		hb.area_entered.disconnect(arrow._on_area_entered)
+
+# ---- T10 — barrow brute spawns + frees its telegraph ring ----
+func _t10_brute_ring_lifecycle() -> void:
+	var host := Node3D.new()
+	host.name = "T10Host"
+	root.add_child(host)
+	var brute := _make_enemy(host)
+	brute.is_bruiser = true
+	brute._telegraph_t = 0.7
+	brute._spawn_brute_ring()
+	var spawned: bool = brute._brute_ring != null and is_instance_valid(brute._brute_ring)
+	brute._free_brute_ring()
+	var cleared: bool = brute._brute_ring == null
+	_check("T10", spawned and cleared,
+		"brute ring spawns=%s and frees=%s" % [str(spawned), str(cleared)])
+
+# ---- T9 — warden support heals a damaged adjacent ally ----
+func _t9_warden_heals_ally() -> void:
+	var host := Node3D.new()
+	host.name = "T9Host"
+	root.add_child(host)
+	var warden := _make_enemy(host)
+	warden.is_support = true
+	warden.global_position = Vector3(50, 0, 50)   # clear of prior-test enemies at origin
+	var ally := _make_enemy(host)
+	ally.global_position = Vector3(51, 0, 50)      # within the 1.6m heal range
+	ally.hp = 5
+	warden._heal_t = 0.0
+	var moved: bool = warden._support_tick(0.1)
+	_check("T9", ally.hp == 7 and not moved,
+		"warden heals adjacent ally 5→%d (moved=%s)" % [ally.hp, str(moved)])
+
+# ---- T8 — blightwalker elite blights nearby enemies on death ----
+func _t8_blightwalker_on_death() -> void:
+	var host := Node3D.new()
+	host.name = "T8Host"
+	root.add_child(host)
+	var elite := _make_enemy(host)
+	elite.apply_elite("blightwalker")
+	var victim := _make_enemy(host)
+	victim.global_position = elite.global_position + Vector3(1.0, 0.0, 0.0)
+	await physics_frame
+	elite._elite_on_death()
+	_check("T8", victim.has_status("bleed"),
+		"blightwalker death blights a nearby enemy=%s" % str(victim.has_status("bleed")))
 
 # ---- T1 — burn ticks 6× ----
 func _t1_burn_ticks() -> void:

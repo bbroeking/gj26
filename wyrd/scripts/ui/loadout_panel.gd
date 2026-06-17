@@ -222,11 +222,14 @@ class _SkillCard extends Control:
 			else (WyrdUi.TERRACOTTA if _locked else WyrdUi.INK_MID)
 		WyrdUi.draw_list_row(self, r, accent)
 		if _locked:
-			# wash the whole card down so it reads as out-of-reach
-			draw_rect(r.grow(-1.5), Color(0.80, 0.74, 0.62, 0.45))
+			# wash the whole card down so it reads as out-of-reach (kit: KIT_PLATE
+			# at low alpha gives the parchment-grey "locked" read)
+			draw_rect(r.grow(-1.5), Color(WyrdUi.KIT_PLATE, 0.45))
 		elif _hover:
-			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.10))
-		var font := get_theme_default_font()
+			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.12))
+		var font: Font = WyrdUi.font_body()
+		if font == null:
+			font = get_theme_default_font()
 		var ink: Color = WyrdUi.INK if not _locked else Color(0.50, 0.43, 0.34)
 		var dim: Color = WyrdUi.INK_MID if not _locked else Color(0.56, 0.49, 0.40)
 		# --- icon plate on the left ---
@@ -252,10 +255,11 @@ class _SkillCard extends Control:
 				"⚿ Huntcraft %d" % _req, HORIZONTAL_ALIGNMENT_RIGHT,
 				146.0, 13, WyrdUi.TERRACOTTA)
 		elif _focus > 0:
-			# focus-cost chip in the top-right corner
+			# focus-cost chip in the top-right corner — uses kit well so it
+			# sits recessed into the card, not floating above it.
 			var chip := Rect2(Vector2(size.x - 78.0, 8.0), Vector2(66.0, 18.0))
-			draw_rect(chip, Color(0.86, 0.79, 0.66))
-			draw_rect(chip, Color(WyrdUi.KIT_EDGE, 0.6), false, 1.0)
+			draw_rect(chip, WyrdUi.KIT_WELL)
+			draw_rect(chip, Color(WyrdUi.KIT_EDGE, 0.55), false, 1.0)
 			draw_string(font, Vector2(chip.position.x, chip.position.y + 14.0),
 				"%d focus" % _focus, HORIZONTAL_ALIGNMENT_CENTER, chip.size.x,
 				12, WyrdUi.INK_MID)

@@ -34,6 +34,8 @@ func _run() -> void:
 	await _p2_snared_slows_player()
 	await _p3_bleed_total_damage()
 	await _p4_sunlit_burns_player()
+	await _p5_pip_list()
+	await _p6_marked_suffix()
 	print("--- player status evals: %d PASS, %d FAIL ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
 
@@ -124,3 +126,36 @@ func _p4_sunlit_burns_player() -> void:
 	elite._trigger_burn_pulse()
 	_check("P4", p.has_status("burn"),
 		"player has burn after Sunlit melee=%s" % str(p.has_status("burn")))
+
+# ---- P5 — pip list reflects active statuses + stores duration + drains ----
+func _p5_pip_list() -> void:
+	var host := Node3D.new()
+	host.name = "P5Host"
+	root.add_child(host)
+	var p: Node = _make_player(host)
+	await physics_frame
+	await physics_frame
+	p.apply_status("burn", 4.0, 1, 1.0, 0.5)
+	var s = p.get_status("burn")
+	var pips: Array = p._build_pip_list()
+	var start_ok: bool = s != null and absf(float(s.duration) - 4.0) < 0.001 \
+		and pips.size() == 1 and String(pips[0]["kind"]) == "burn" \
+		and absf(float(pips[0]["frac"]) - 1.0) < 0.05
+	p._tick_statuses(0.5)
+	p._tick_statuses(0.5)
+	var drained: Array = p._build_pip_list()
+	var drain_ok: bool = drained.size() == 1 and float(drained[0]["frac"]) < 0.95
+	_check("P5", start_ok and drain_ok,
+		"pip start_ok=%s, drained frac<0.95=%s" % [str(start_ok), str(drain_ok)])
+
+# ---- P6 — marked appears in the HP-bar suffix ----
+func _p6_marked_suffix() -> void:
+	var host := Node3D.new()
+	host.name = "P6Host"
+	root.add_child(host)
+	var p: Node = _make_player(host)
+	await physics_frame
+	await physics_frame
+	p.apply_status("marked", 5.0, 0, 1.0, 0.0)
+	var suffix: String = p._status_suffix()
+	_check("P6", "marked" in suffix, "suffix='%s' (expect contains 'marked')" % suffix)

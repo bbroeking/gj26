@@ -32,6 +32,12 @@ signal gold_changed(amount: int)
 signal tutorial_changed(step: int)
 signal toast(msg: String)
 signal mute_changed(muted: bool)
+# Mastery (ADR 0012 pick-one-of-N): fires when a level-up reaches a choice
+# tier so the HUD can prompt; perks_changed re-derives cached combat stats
+# (crit/move/CDR) on the player after a pick.
+signal mastery_choice_ready(level: int)
+signal perks_changed
+signal crafted(station_id: String)   # B5 — station reacts in-world on a successful craft
 
 # Toasts emitted during a scene change land in a HUD that is freed the same
 # frame; buffer them and let the next scene's HUD drain the queue in _ready.
@@ -120,14 +126,19 @@ const SKILL_REQS := {"HuntersMark": 4, "HeartwoodWard": 7, "MercyShot": 9}
 func skill_unlocked(sk: String) -> bool:
 	return trade_lv(SKILL) >= int(SKILL_REQS.get(sk, 1))
 var loadout: Array = ["PowerShot", "MultiShot", "BrambleSnare"]
+# ADR 0012 mastery — perk_id -> true for the ONE perk the player chose at each
+# multi-perk tier. Single-perk tiers (lv 2/3/12) auto-grant and never appear here.
+var chosen_perks: Dictionary = {}
 var seen_hints: Dictionary = {}       # one-time skill tutorials already shown
 var inventory: Inventory = null       # Tetris gear grid — shared across scenes
 var equipment = null                  # Equipment — shared across scenes
+var ledger: RefCounted = null         # ADR 0013 — boss-trophy stat boosts
 var player_hp := -1                   # -1 = "full" (first boot)
 
 # ---- the active run ----
 var active_chart: Dictionary = {}     # {} = not in a chart run (town / dev boot)
 var in_dungeon := false
+var _returning_from_delve := false    # B7 — town plays an arrival beat when set
 
 # ---- per-skill first-time tutorials ----
 # The first harvest of each kind earns a short word from the right
@@ -195,12 +206,14 @@ func _ready() -> void:
 	inventory = Inventory.new()
 	var EquipmentScript = load("res://scripts/equipment.gd")
 	equipment = EquipmentScript.new()
+	ledger = load("res://scripts/ledger.gd").new()   # ADR 0013 — before load_into restores it
 	# Wyrd — restore the last session before anything else reads state.
 	if OS.get_environment("WYRD_NO_SAVE") != "":
 		persistence_enabled = false
 	elif SaveGame.load_into(self):
 		print("[game] session restored (tutorial step %d)" % tutorial_step)
 	AudioServer.set_bus_mute(0, muted)   # spec 38 — restore the mute state
+	mastery_choice_ready.connect(_on_mastery_choice_ready)   # ADR 0012 mastery modal
 	# Spec 41 — the kit cursor takes over in-game (interact/attack swaps
 	# are a followup; the controller can call set_cursor as states land).
 	if ResourceLoader.exists("res://assets/ui/cursor_default.png"):
@@ -252,7 +265,7 @@ func set_loadout(picks: Array) -> bool:
 	loadout = picks.duplicate()
 	save_now()
 	if is_inside_tree():
-		var player := get_tree().get_first_node_in_group("player")
+		var player := local_player()   # co-op: rebuild the LOCAL player's skills
 		if player != null and player.has_method("rebuild_skills"):
 			player.rebuild_skills()
 		notify("Loadout set: %s." % ", ".join(picks))
@@ -279,6 +292,17 @@ func trade_lv(_key: String = "") -> int:
 # ADR 0006 — the demo level cap; xp accrues past it but levels stop.
 const LEVEL_CAP := 17
 
+# The Tetris pack grows a row at level milestones (lv 6 → 7 rows, lv 12 → 8).
+# Idempotent — safe to call on every level-up and once on load.
+func grow_pack_for_level() -> void:
+	if inventory == null:
+		return
+	var lv := trade_lv()
+	if lv >= 12 and inventory.rows < 8:
+		inventory.resize(8)
+	elif lv >= 6 and inventory.rows < 7:
+		inventory.resize(7)
+
 func award_xp(_key: String, amount: int) -> void:
 	if amount <= 0:
 		return
@@ -292,6 +316,9 @@ func award_xp(_key: String, amount: int) -> void:
 		var sfx_lv := get_node_or_null("/root/Sfx")
 		if sfx_lv != null:
 			sfx_lv.play("level_up")
+		if MASTERY_CHOICE_LVS.has(int(trades[SKILL].lv)):
+			mastery_choice_ready.emit(int(trades[SKILL].lv))
+		grow_pack_for_level()   # the satchel gains a row at lv 6 / lv 12
 
 # ---- materials satchel ----
 
@@ -406,7 +433,10 @@ func craft(station_id: String, recipe_id: String) -> bool:
 				GatherDefs.material_name(back))
 	var sfx := get_node_or_null("/root/Sfx")
 	if sfx != null:
-		sfx.play("craft_cook" if station_id == "cookfire" else "craft_smith")
+		var craft_key: String = "craft_cook" if station_id == "cookfire" \
+			else ("craft_still" if station_id == "still" else "craft_smith")
+		sfx.play(craft_key)
+	crafted.emit(station_id)   # B5 — the in-world station reacts
 	award_xp(trade, int(rec.get("xp", 0)))
 	save_now()
 	return true
@@ -458,11 +488,90 @@ const PERKS := {
 	],
 }
 
+# ADR 0012 mastery — the multi-perk tiers where the player picks ONE of the
+# perks unlocked at that level (the "most choosy" ruling, 2026-06-16). The
+# single-perk tiers (lv 2/3/12) are absent here, so they auto-grant on reach.
+const MASTERY_CHOICE_LVS := [5, 10, 13, 14, 17]
+# Perk flavour grouping for the choice cards (chart / gather / craft / combat).
+const PERK_CATEGORY := {
+	"marginalia": "chart", "practiced_measures": "chart",
+	"curious_fingers": "craft", "double_ore": "gather", "keen_eye": "gather",
+	"steady_hands": "combat", "sure_lines": "chart", "quick_mining": "gather",
+	"clean_splits": "gather", "hunters_stride": "combat", "quick_nock": "combat",
+	"rich_seams": "gather", "light_hands": "gather", "thrifty_quill": "chart",
+	"heavy_draw": "combat", "master_wayfinder": "chart", "smiths_thrift": "craft",
+	"second_pour": "craft", "even_breath": "combat",
+}
+
+# A perk is active when its level is reached AND, for a multi-perk choice tier,
+# it is the one the player picked. Single-perk tiers (lv 2/3/12) auto-grant.
 func perk_active(_trade: String, perk_id: String) -> bool:
 	for perk in PERKS[SKILL]:
 		if String(perk.id) == perk_id:
-			return trade_lv(SKILL) >= int(perk.lv)
+			if trade_lv(SKILL) < int(perk.lv):
+				return false
+			if MASTERY_CHOICE_LVS.has(int(perk.lv)):
+				return bool(chosen_perks.get(perk_id, false))
+			return true
 	return false
+
+# The perks unlocked at a given level (the candidates for that tier's choice).
+func perks_at_level(lv: int) -> Array:
+	var out: Array = []
+	for perk in PERKS[SKILL]:
+		if int(perk.lv) == lv:
+			out.append(perk)
+	return out
+
+# True once the player has picked a perk at this choice tier.
+func tier_chosen(lv: int) -> bool:
+	for perk in perks_at_level(lv):
+		if bool(chosen_perks.get(String(perk.id), false)):
+			return true
+	return false
+
+# Choice tiers the player has reached but not yet picked — for retroactive
+# prompts (a migrated save, or a tier skipped past while another modal was up).
+func pending_mastery_levels() -> Array:
+	var out: Array = []
+	for lv in MASTERY_CHOICE_LVS:
+		if trade_lv(SKILL) >= int(lv) and not tier_chosen(int(lv)):
+			out.append(int(lv))
+	return out
+
+# Pick one perk at its tier. Permanent for now (no respec) — rejects a second
+# pick at a tier that already has one. Returns true if the pick took.
+func choose_perk(perk_id: String) -> bool:
+	for perk in PERKS[SKILL]:
+		if String(perk.id) == perk_id:
+			var pl: int = int(perk.lv)
+			if not MASTERY_CHOICE_LVS.has(pl):
+				return false
+			if trade_lv(SKILL) < pl:
+				return false
+			if tier_chosen(pl):
+				return false
+			chosen_perks[perk_id] = true
+			perks_changed.emit()       # player re-derives cached combat stats
+			save_now()
+			return true
+	return false
+
+# ADR 0012 — pop the pick-one-of-N modal when a level-up reaches a choice tier.
+# The panel owns its own modal accounting (open() → modal_opened; a pick →
+# modal_closed), mirroring the shrine modal. If we're mid-scene-transition the
+# choice stays queued in pending_mastery_levels() for a future prompt.
+func _on_mastery_choice_ready(level: int) -> void:
+	var tree := get_tree()
+	if tree == null:
+		return                       # standalone Game instance (headless tests)
+	var scn := tree.current_scene
+	if scn == null:
+		return
+	var MasteryPanel := load("res://scripts/ui/mastery_choice_panel.gd")
+	var panel: CanvasLayer = MasteryPanel.new()
+	scn.add_child(panel)
+	panel.open(level)
 
 # Bonus yield for one harvest of `kind` — deterministic perks return 1,
 # chance perks roll here so GatherNode stays dumb.
@@ -722,6 +831,7 @@ func return_to_town(player: Node, abandoned: bool = false) -> void:
 			notify("Mara will want to hear of this.")
 	active_chart = {}
 	in_dungeon = false
+	_returning_from_delve = true   # B7 — the town reads + clears this for its arrival beat
 	_snapshot_player(player)
 	if tutorial_step == 5:
 		advance_tutorial()

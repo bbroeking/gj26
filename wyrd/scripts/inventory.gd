@@ -8,14 +8,15 @@ class_name Inventory
 # back to the item dict so collision checks are O(footprint).
 
 const COLS := 5
-const ROWS := 6
+const BASE_ROWS := 6
+var rows: int = BASE_ROWS   # runtime — the pack grows a row at level milestones
 
 var cells: Array        # cells[y][x] = item dict or null
 var items: Array = []   # all placed items, for iteration
 
 func _init() -> void:
 	cells = []
-	for y in ROWS:
+	for y in rows:
 		var row: Array = []
 		for x in COLS:
 			row.append(null)
@@ -32,7 +33,7 @@ func can_place(item: Dictionary, pos: Vector2i, rotated: bool, ignore_item = nul
 	var fp := footprint(item, rotated)
 	if pos.x < 0 or pos.y < 0:
 		return false
-	if pos.x + fp.x > COLS or pos.y + fp.y > ROWS:
+	if pos.x + fp.x > COLS or pos.y + fp.y > rows:
 		return false
 	for j in fp.y:
 		for i in fp.x:
@@ -64,16 +65,37 @@ func remove(item: Dictionary) -> void:
 			cells[pos.y + j][pos.x + i] = null
 	items.erase(item)
 
+# Grow (or shrink) the pack to `new_rows`. Expansion appends empty rows;
+# shrink refuses if any soon-to-be-removed bottom row is occupied.
+func resize(new_rows: int) -> bool:
+	if new_rows == rows:
+		return true
+	if new_rows < rows:
+		for y in range(new_rows, rows):
+			for x in COLS:
+				if cells[y][x] != null:
+					return false
+		cells.resize(new_rows)
+		rows = new_rows
+		return true
+	for _y in range(rows, new_rows):
+		var row: Array = []
+		for _x in COLS:
+			row.append(null)
+		cells.append(row)
+	rows = new_rows
+	return true
+
 # First grid position where the item fits — non-rotated first, then rotated
 # if the footprint isn't square. Returns {} if there's no fit.
 func find_first_fit(item: Dictionary) -> Dictionary:
-	for y in ROWS:
+	for y in rows:
 		for x in COLS:
 			if can_place(item, Vector2i(x, y), false):
 				return {"pos": Vector2i(x, y), "rotated": false}
 	var s: Vector2i = item.size
 	if s.x != s.y:
-		for y in ROWS:
+		for y in rows:
 			for x in COLS:
 				if can_place(item, Vector2i(x, y), true):
 					return {"pos": Vector2i(x, y), "rotated": true}
@@ -84,7 +106,7 @@ func find_first_fit(item: Dictionary) -> Dictionary:
 # a successful move.
 func move(from_pos: Vector2i, to_pos: Vector2i, rotated: bool) -> bool:
 	if from_pos.x < 0 or from_pos.y < 0 \
-			or from_pos.x >= COLS or from_pos.y >= ROWS:
+			or from_pos.x >= COLS or from_pos.y >= rows:
 		return false
 	var item = cells[from_pos.y][from_pos.x]
 	if item == null:

@@ -109,7 +109,7 @@ func take_damage(amount: int, from_dir: Vector3,
 # Override the combatant AI with the boss phase machine.
 func _tick_ai(delta: float) -> void:
 	if _player == null:
-		_player = get_tree().get_first_node_in_group("player")
+		_player = _nearest_player()   # co-op: target the nearest peer, not the first
 		if _player == null:
 			velocity = Vector3.ZERO
 			return

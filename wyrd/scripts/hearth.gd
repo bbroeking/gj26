@@ -8,6 +8,7 @@ extends Interactable
 # v1 reuses the brazier GLB; a proper hearth GLB is still a followup.
 
 const BRAZIER_GLB := preload("res://models/dungeon_crypt_brazier_v1.glb")
+const LoadoutPanelScript := preload("res://scripts/ui/loadout_panel.gd")
 
 # Set by layout_loader from the room's id so the checkpoint slot knows which
 # room it belongs to (handy for debugging + the eval that verifies save).
@@ -56,7 +57,7 @@ func interact(player: Node) -> Dictionary:
 	if sfx != null:
 		sfx.play("hearth_rest")
 	# B5 — resting is the kit-swap moment (FATE checkpoint convention).
-	var lp: CanvasLayer = load("res://scripts/ui/loadout_panel.gd").new()
+	var lp: CanvasLayer = LoadoutPanelScript.new()
 	get_tree().current_scene.add_child(lp)
 	if cp != null and cp.has_method("read"):
 		return cp.read()

@@ -42,6 +42,18 @@ const CORRIDOR_RATIO_MAX := 1.5
 const DEAD_END_MAX_FRAC := 0.40
 const CRITICAL_PATH_TARGET_FRAC := 0.50
 
+# Per-scope score-band defaults.  Populated here as a top-level const because
+# GDScript does not allow const declarations inside static functions.
+# Omitted keys fall through to the generic defaults above.
+const SCOPE_BANDS := {
+	"snug":       {"room_count_min": 3, "room_count_max": 7,
+	               "floor_ratio_min": 0.18, "floor_ratio_max": 0.60,
+	               "dead_end_max_frac": 0.50},
+	"briar_maze": {"dead_end_max_frac": 0.55, "corridor_ratio_max": 2.4},
+	"hollow":     {},
+	"crypt":      {},
+}
+
 # Spec 28 — room themes are { focal, satellites }: the focal owns the room's
 # centre (places first), satellites arrange around it using the existing
 # patterns (walls / corners / cluster / scatter). Each room reads as one
@@ -99,8 +111,60 @@ const ROOM_THEMES := {
 			{"kind": "torch_wall", "pattern": "walls",   "count": [2, 3]},
 		],
 	},
+	# Per-scope biome themes — reuse existing GLB kinds so no new models needed.
+	# New models are a biomes-decor concern; these rooms read distinct via role
+	# and placement pattern, not unique meshes.
+	"root_cellar": {
+		"focal":      {"kind": "pottery",   "pattern": "center", "count": [1, 1]},
+		"satellites": [
+			{"kind": "bones",      "pattern": "scatter", "count": [2, 4]},
+			{"kind": "torch_wall", "pattern": "walls",   "count": [1, 2]},
+		],
+	},
+	"wine_rack": {
+		"focal":      {"kind": "bookshelf", "pattern": "walls",  "count": [2, 3]},
+		"satellites": [
+			{"kind": "pottery",    "pattern": "scatter", "count": [2, 4]},
+		],
+	},
+	"thorn_bower": {
+		"focal":      {"kind": "brazier",   "pattern": "center", "count": [1, 1]},
+		"satellites": [
+			{"kind": "bones",      "pattern": "scatter", "count": [2, 4]},
+			{"kind": "torch_wall", "pattern": "walls",   "count": [1, 2]},
+		],
+	},
+	"glade": {
+		"focal":      {"kind": "column",    "pattern": "corners", "count": [2, 2]},
+		"satellites": [
+			{"kind": "pottery",    "pattern": "scatter", "count": [1, 3]},
+		],
+	},
 }
+# Crypt fallback combat themes — used for unknown scopes.
 const COMBAT_THEMES := ["tomb_hall", "ossuary", "archive"]
+
+# Per-scope theme configuration: which combat themes and which boss room theme
+# to use.  Unknown scopes fall back to crypt.
+const SCOPE_THEMES := {
+	"snug":       {"combat": ["root_cellar", "wine_rack", "ossuary"],
+	               "boss":   "hearthroom"},
+	"hollow":     {"combat": ["tomb_hall", "ossuary", "archive"],
+	               "boss":   "tomb_hall"},
+	"briar_maze": {"combat": ["thorn_bower", "glade", "ossuary"],
+	               "boss":   "thorn_bower"},
+	"crypt":      {"combat": ["tomb_hall", "ossuary", "archive"],
+	               "boss":   "tomb_hall"},
+}
+
+# Per-scope setpiece pools — each scope shows its own authored ASCII templates.
+# Falls back to crypt pool for unknown scopes.
+const SCOPE_SETPIECES := {
+	"snug":       ["larder"],
+	"hollow":     ["vault", "shrine", "crypt_hall"],
+	"briar_maze": ["hedge_circle"],
+	"crypt":      ["vault", "shrine", "crypt_hall"],
+}
 
 # Spec 25 Phase 3 — authored setpieces. ASCII templates in data/rooms/;
 # one is stamped into the largest eligible room each run.
@@ -115,13 +179,17 @@ const SETPIECE_DECOR := {
 # grid / room bands; the acceptance bands shift with it or the 0.70 gate
 # silently degrades every small chart to a best-of-12 fallback.
 static func _score_cfg(cfg: Dictionary = {}) -> Dictionary:
+	var scope := String(cfg.get("scope", "crypt"))
+	# Per-scope defaults shift the acceptance bands to match the scope's grid
+	# profile so snug and briar_maze charts don't silently degrade to best-of-12.
+	var sb: Dictionary = SCOPE_BANDS.get(scope, {})
 	return {
-		"room_count_min": int(cfg.get("room_count_min", ROOM_COUNT_MIN)),
-		"room_count_max": int(cfg.get("room_count_max", ROOM_COUNT_MAX)),
-		"floor_ratio_min": float(cfg.get("floor_ratio_min", FLOOR_RATIO_MIN)),
-		"floor_ratio_max": float(cfg.get("floor_ratio_max", FLOOR_RATIO_MAX)),
-		"corridor_ratio_max": float(cfg.get("corridor_ratio_max", CORRIDOR_RATIO_MAX)),
-		"dead_end_max_frac": DEAD_END_MAX_FRAC,
+		"room_count_min":           int(cfg.get("room_count_min",   sb.get("room_count_min",   ROOM_COUNT_MIN))),
+		"room_count_max":           int(cfg.get("room_count_max",   sb.get("room_count_max",   ROOM_COUNT_MAX))),
+		"floor_ratio_min":          float(cfg.get("floor_ratio_min", sb.get("floor_ratio_min",  FLOOR_RATIO_MIN))),
+		"floor_ratio_max":          float(cfg.get("floor_ratio_max", sb.get("floor_ratio_max",  FLOOR_RATIO_MAX))),
+		"corridor_ratio_max":       float(cfg.get("corridor_ratio_max", sb.get("corridor_ratio_max", CORRIDOR_RATIO_MAX))),
+		"dead_end_max_frac":        float(cfg.get("dead_end_max_frac",  sb.get("dead_end_max_frac",  DEAD_END_MAX_FRAC))),
 		"critical_path_target_frac": CRITICAL_PATH_TARGET_FRAC,
 	}
 
@@ -248,8 +316,9 @@ static func _generate_one(rng: RandomNumberGenerator, cfg: Dictionary = {}) -> D
 	for i in rooms.size():
 		rooms[i]["id"] = i
 	# 7. Roles + themes (1/4), pick a setpiece (3), then dress by rule.
-	_assign_rooms(rooms, rng, boss_idx, adj)
-	_pick_setpiece(rooms, rng)
+	var gen_scope := String(cfg.get("scope", "crypt"))
+	_assign_rooms(rooms, rng, boss_idx, adj, gen_scope)
+	_pick_setpiece(rooms, rng, gen_scope)
 	var decor: Array = _dress_rooms(rooms, grid, entry, exit, rng)
 	for r in rooms:
 		if r.get("role", "") == "setpiece":
@@ -561,7 +630,12 @@ static func _carve_tile(grid: Array, x: int, y: int) -> void:
 # Tag the largest eligible room (still "combat", ≥8×8) as a setpiece.
 # Spec 29 — skip rooms already promoted to a role contract (rest/treasure/shrine);
 # we don't want a setpiece to clobber a typed-room interactable.
-static func _pick_setpiece(rooms: Array, rng: RandomNumberGenerator) -> void:
+static func _pick_setpiece(rooms: Array, rng: RandomNumberGenerator,
+		scope: String = "crypt") -> void:
+	# Use the scope-specific pool; fall back to crypt's pool for unknown scopes.
+	var pool: Array = SCOPE_SETPIECES.get(scope, SCOPE_SETPIECES["crypt"])
+	if pool.is_empty():
+		return
 	var best := -1
 	var best_area := 0
 	for i in rooms.size():
@@ -577,7 +651,7 @@ static func _pick_setpiece(rooms: Array, rng: RandomNumberGenerator) -> void:
 			best = i
 	if best >= 0:
 		rooms[best]["role"] = "setpiece"
-		rooms[best]["setpiece"] = SETPIECES[rng.randi_range(0, SETPIECES.size() - 1)]
+		rooms[best]["setpiece"] = pool[rng.randi_range(0, pool.size() - 1)]
 
 # Stamp an ASCII template into a room — '#' interior wall, '.' floor,
 # decor letters → floor + a decor entry. Template is centred in the room.
@@ -680,13 +754,16 @@ static func _carve_room(grid: Array, r: Dictionary, rng: RandomNumberGenerator) 
 const MIN_COMBAT_ROOMS := 2
 
 static func _assign_rooms(rooms: Array, rng: RandomNumberGenerator,
-		boss_idx: int, adj: Array) -> void:
+		boss_idx: int, adj: Array, scope: String = "crypt") -> void:
+	var stheme: Dictionary = SCOPE_THEMES.get(scope, SCOPE_THEMES["crypt"])
+	var boss_theme: String = String(stheme.get("boss", "tomb_hall"))
+	var ctlist: Array = stheme.get("combat", COMBAT_THEMES)
 	# 1) Fixed roles: entrance + boss.
 	rooms[0]["role"] = "entrance"
 	rooms[0]["theme"] = "antechamber"
 	if boss_idx != 0:
 		rooms[boss_idx]["role"] = "boss"
-		rooms[boss_idx]["theme"] = "tomb_hall"
+		rooms[boss_idx]["theme"] = boss_theme
 	# 2) Budget. After entrance + boss are reserved, we can spend the rest
 	#    on typed-room roles, but always keep MIN_COMBAT_ROOMS in reserve.
 	var fixed_count: int = 1 + (1 if boss_idx != 0 else 0)
@@ -743,12 +820,12 @@ static func _assign_rooms(rooms: Array, rng: RandomNumberGenerator,
 			rooms[shrine_idx]["role"] = "shrine"
 			rooms[shrine_idx]["theme"] = "shrine"
 			slots_left -= 1
-	# 6) Everyone else: combat with a random combat theme.
+	# 6) Everyone else: combat with a random scope-appropriate combat theme.
 	for i in rooms.size():
 		var r: Dictionary = rooms[i]
 		if not r.has("role"):
 			r["role"] = "combat"
-			r["theme"] = COMBAT_THEMES[rng.randi_range(0, COMBAT_THEMES.size() - 1)]
+			r["theme"] = ctlist[rng.randi_range(0, ctlist.size() - 1)]
 
 # Build the decor list by walking each room's theme — focal first (owns the
 # centre cell), then satellites arrange around it (spec 28). Spec 29 — the

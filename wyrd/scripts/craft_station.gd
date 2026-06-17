@@ -11,6 +11,7 @@ const CraftingDefs = preload("res://data/crafting.gd")
 const CraftPanelScript = preload("res://scripts/ui/craft_panel.gd")
 
 var station_id := "cookfire"
+var _react_light: OmniLight3D = null   # B5 — pulsed on a successful craft
 
 func setup(p_station: String) -> void:
 	station_id = p_station
@@ -35,6 +36,9 @@ func _ready_interactable() -> void:
 			_build_anvil()
 		"still":
 			_build_still()
+	var game := get_tree().root.get_node_or_null("Game")
+	if game != null and game.has_signal("crafted"):
+		game.crafted.connect(_on_crafted)   # B5 — react when our station crafts
 
 func interact(_player: Node) -> void:
 	var game := get_tree().root.get_node_or_null("Game")
@@ -65,6 +69,7 @@ func _build_cookfire() -> void:
 	ember.light_energy = 1.6
 	ember.omni_range = 3.5
 	add_child(ember)
+	_react_light = ember
 
 func _build_anvil() -> void:
 	_prim(_box_mesh(Vector3(0.5, 0.42, 0.5)), Color(0.38, 0.30, 0.24),
@@ -80,6 +85,7 @@ func _build_anvil() -> void:
 	glow.light_energy = 1.1
 	glow.omni_range = 3.0
 	add_child(glow)
+	_react_light = glow
 
 # A8-full — Quill's copper still: bench, pot belly, swan-neck, catch-flask.
 func _build_still() -> void:
@@ -104,6 +110,7 @@ func _build_still() -> void:
 	glow.light_energy = 0.9
 	glow.omni_range = 2.6
 	add_child(glow)
+	_react_light = glow
 
 func _prim(mesh: Mesh, color: Color, pos: Vector3) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
@@ -141,3 +148,52 @@ func _box_mesh(size: Vector3) -> Mesh:
 	var m := BoxMesh.new()
 	m.size = size
 	return m
+
+# ---- B5: in-world craft reaction ----
+# game.craft() emits `crafted(station_id)` on success; the matching station
+# pulses its glow and pops a burst of flavour-coloured motes, so a craft READS
+# in the world, not just as a toast. Pause-immune so it plays even with the
+# recipe panel modal up.
+func _on_crafted(sid: String) -> void:
+	if sid == station_id:
+		react()
+
+func react() -> void:
+	if _react_light != null and is_instance_valid(_react_light):
+		var base_e: float = _react_light.light_energy
+		var lt := create_tween()
+		lt.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+		lt.tween_property(_react_light, "light_energy", base_e * 2.4, 0.07)
+		lt.tween_property(_react_light, "light_energy", base_e, 0.55) \
+			.set_ease(Tween.EASE_OUT)
+	_pop_motes(_react_color())
+
+func _pop_motes(col: Color) -> void:
+	for i in 6:
+		var m := MeshInstance3D.new()
+		var sm := SphereMesh.new()
+		sm.radius = 0.05
+		sm.height = 0.1
+		sm.radial_segments = 6
+		sm.rings = 3
+		m.mesh = sm
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = col
+		mat.emission_enabled = true
+		mat.emission = col
+		mat.emission_energy_multiplier = 1.6
+		m.material_override = mat
+		var ang := TAU * float(i) / 6.0
+		m.position = Vector3(cos(ang) * 0.18, 0.7, sin(ang) * 0.18)
+		add_child(m)
+		var t := create_tween()
+		t.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+		t.tween_property(m, "position:y", m.position.y + 0.9, 0.7).set_ease(Tween.EASE_OUT)
+		t.parallel().tween_property(m, "scale", Vector3.ZERO, 0.7).set_ease(Tween.EASE_IN)
+		t.chain().tween_callback(m.queue_free)
+
+func _react_color() -> Color:
+	match station_id:
+		"forge": return Color(1.0, 0.85, 0.4)    # sparks
+		"still": return Color(0.7, 0.95, 0.65)    # green vapor
+		_: return Color(1.0, 0.62, 0.32)          # cookfire embers / steam

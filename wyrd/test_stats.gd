@@ -149,6 +149,27 @@ func _run() -> void:
 			[b_dmg, p.derived_stats.damage, b_hpmax, p.hp_max, p.hp])
 		game.trades.wayfinding.lv = 1
 		p._derive_stats()
+		# LG — ADR 0013 source #3: boss trophies → capped ledger stat boosts.
+		if game.ledger != null:
+			game.ledger.slots = {}
+			_check("LG0-ledger-empty", game.ledger.sum_stats().is_empty(),
+				str(game.ledger.sum_stats()))
+			game.ledger.apply("tusker_tusk")   # +12 hp
+			_check("LG1-apply-sets-slot",
+				int(game.ledger.sum_stats().get("hp", 0)) == 12,
+				str(game.ledger.sum_stats()))
+			var lg_pre: int = p.hp_max
+			p._derive_stats()
+			_check("LG2-ledger-flows-to-derived", p.hp_max == lg_pre + 12,
+				"hp_max %d → %d (expect +12)" % [lg_pre, p.hp_max])
+			var lg_saved: Dictionary = game.ledger.slots.duplicate(true)
+			game.ledger.slots = {}
+			game.ledger.load_slots(lg_saved)
+			_check("LG3-ledger-persists-roundtrip",
+				int(game.ledger.sum_stats().get("hp", 0)) == 12,
+				str(game.ledger.sum_stats()))
+			game.ledger.slots = {}
+			p._derive_stats()
 
 	# HF — Phase 1 player hit-feedback: a hit arms the micro-stun + flinch +
 	# i-frame timers, and a second hit inside the i-frame window deals 0 damage.

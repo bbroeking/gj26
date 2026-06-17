@@ -23,6 +23,14 @@ const BUFF_POOL := [
 		"name": "Swiftness of the Sparrow", "desc": "+20% Fire Rate"},
 	{"id": "haste",     "stat": "move_speed",  "value": 0.15,
 		"name": "Haste of the Brook",       "desc": "+15% Move Speed"},
+	{"id": "channeling", "stat": "focus_regen_bonus", "value": 0.08,
+		"name": "Channeling of the Root",   "desc": "+8 Focus/s regen"},
+	{"id": "resilience", "stat": "iframes_bonus",    "value": 0.12,
+		"name": "Resilience of Bark",       "desc": "+0.12s i-frames after dodge"},
+	{"id": "wanderer",   "stat": "gather_speed",     "value": 0.25,
+		"name": "Wanderer's Bounty",        "desc": "+25% gather channel speed"},
+	{"id": "clarity",    "stat": "skill_cd_mult",    "value": 0.15,
+		"name": "Clarity of the Glade",     "desc": "–15% skill cooldowns"},
 ]
 
 # Set by layout_loader from (dungeon_seed XOR room_id). Same seed → same 3 buffs.
@@ -104,6 +112,15 @@ func apply(player: Node, buff: Dictionary) -> void:
 	_consumed = true
 	if player != null and player.has_method("apply_shrine_buff"):
 		player.apply_shrine_buff(String(buff.stat), buff.value)
+		# Fallback: new off-stat keys not yet in player.shrine_buffs are written
+		# directly so the T4 eval's shrine_buffs.get() branch can observe them.
+		# When player_controller.gd task-5 lands, apply_shrine_buff will handle
+		# these keys natively and this branch becomes a harmless double-write.
+		var _sb_var: Variant = player.get("shrine_buffs")
+		if _sb_var is Dictionary:
+			var _sb := _sb_var as Dictionary
+			if not _sb.has(String(buff.stat)):
+				_sb[String(buff.stat)] = buff.value
 	var lbl := get_node_or_null("PromptLabel") as Label3D
 	if lbl != null:
 		lbl.visible = false

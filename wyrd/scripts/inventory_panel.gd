@@ -49,11 +49,16 @@ const ICON_TEX := {
 	"copper_ring": "res://assets/ui/items/copper_ring.png",
 }
 
+# Live pack row count (grows with level); falls back to the base ROWS const
+# before the Inventory is bound.
+func _rows() -> int:
+	return inventory.rows if inventory != null else ROWS
+
 func _win_rect() -> Rect2:
 	# 116px header band fits the title + tab row above the grid; 64px
 	# footer fits the keys hint.
 	return Rect2(grid_origin - Vector2(272, 124),
-		Vector2(COLS * CELL + 272 + 52, ROWS * CELL + 124 + 96))
+		Vector2(COLS * CELL + 272 + 52, _rows() * CELL + 124 + 96))
 
 func _tab_rect(i: int) -> Rect2:
 	var win := _win_rect()
@@ -66,7 +71,7 @@ func _update_layout() -> void:
 	var vp := get_viewport_rect().size
 	var grid_w := COLS * CELL
 	grid_origin = Vector2(vp.x - grid_w - 70.0,
-		clampf(vp.y * 0.5 - (ROWS * CELL) * 0.5 + 30.0, 90.0, vp.y))
+		clampf(vp.y * 0.5 - (_rows() * CELL) * 0.5 + 30.0, 90.0, vp.y))
 	doll_origin = grid_origin + Vector2(-216.0, 40.0)
 
 var inventory: Inventory
@@ -191,7 +196,7 @@ func _input(event: InputEvent) -> void:
 func _cell_at(screen_pos: Vector2) -> Vector2i:
 	var local := screen_pos - grid_origin
 	if local.x < 0 or local.y < 0 \
-			or local.x >= COLS * CELL or local.y >= ROWS * CELL:
+			or local.x >= COLS * CELL or local.y >= _rows() * CELL:
 		return Vector2i(-1, -1)
 	return Vector2i(int(local.x / CELL), int(local.y / CELL))
 
@@ -394,18 +399,18 @@ func _draw() -> void:
 		_draw_grid()
 		if _held_item != null:
 			_draw_held()
-		draw_string(hint_font, grid_origin + Vector2(0, ROWS * CELL + 30),
+		draw_string(hint_font, grid_origin + Vector2(0, _rows() * CELL + 30),
 			"I close · R rotate · right-click quick-equips",
 			HORIZONTAL_ALIGNMENT_CENTER, COLS * CELL, 13, WyrdUi.INK_MID)
 		# Hover tooltip — drawn last so it sits on top of everything.
 		_draw_tooltip()
 
 func _draw_grid() -> void:
-	var grid_size := Vector2(COLS * CELL, ROWS * CELL)
+	var grid_size := Vector2(COLS * CELL, _rows() * CELL)
 	# Recessed well behind the cells (Diablo's sunken-grid read).
 	draw_rect(Rect2(grid_origin - Vector2(6, 6), grid_size + Vector2(12, 12)),
 		Color(0.72, 0.64, 0.50, 0.85))
-	for y in ROWS:
+	for y in _rows():
 		for x in COLS:
 			var r := Rect2(grid_origin + Vector2(x * CELL, y * CELL),
 				Vector2(CELL, CELL))
@@ -428,7 +433,9 @@ func _draw_grid() -> void:
 func _draw_slots() -> void:
 	if equipment == null:
 		return
-	var font: Font = get_theme_default_font()
+	var font: Font = WyrdUi.font_body()
+	if font == null:
+		font = get_theme_default_font()
 	# Spec 41 (Pack design) — the tool pair gets its section label.
 	var hdr2: Font = WyrdUi.font_header()
 	if hdr2 == null:
@@ -529,6 +536,9 @@ func _draw_tooltip() -> void:
 	var lines: Array = _tooltip_lines(item)
 	var line_h := 18
 	var ipad := 8
+	# Spec items-affixes task 12 — 4 px rarity accent stripe on the left edge;
+	# text x-origin nudged right by 4 px to clear the stripe.
+	var stripe_w := 4.0
 	var w := 280.0
 	var h: float = ipad * 2 + lines.size() * line_h
 	var pos := _cursor_screen + Vector2(16, 16)
@@ -542,13 +552,21 @@ func _draw_tooltip() -> void:
 	if pos.y < 0:
 		pos.y = 0
 	draw_rect(Rect2(pos, Vector2(w, h)), Color(0.93, 0.88, 0.76, 0.97))
+	# Rarity-coloured left stripe (4 px wide, full tooltip height).
+	var rc_accent: Color = RARITY_COLOR.get(String(item.get("rarity", "normal")),
+		Color(0.48, 0.40, 0.30))
+	draw_rect(Rect2(pos, Vector2(stripe_w, h)), rc_accent)
 	draw_rect(Rect2(pos, Vector2(w, h)),
 		Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
-	var font := get_theme_default_font()
+	var font: Font = WyrdUi.font_body()
+	if font == null:
+		font = get_theme_default_font()
+	var text_x_offset := ipad + stripe_w
 	var y := pos.y + ipad + 14
 	for line in lines:
-		draw_string(font, Vector2(pos.x + ipad, y), String(line.text),
-			HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2, int(line.size), line.color)
+		draw_string(font, Vector2(pos.x + text_x_offset, y), String(line.text),
+			HORIZONTAL_ALIGNMENT_LEFT, w - text_x_offset - ipad, int(line.size),
+			line.color)
 		y += line_h
 
 func _draw_held() -> void:
@@ -847,7 +865,10 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 		perks.sort_custom(func(a, b): return int(a.lv) < int(b.lv))
 		var earned := 0
 		for p in perks:
-			if lv >= int(p.lv):
+			if (game.MASTERY_CHOICE_LVS as Array).has(int(p.lv)):
+				if bool(game.chosen_perks.get(String(p.id), false)):
+					earned += 1   # choice-tier perk counts only when chosen
+			elif lv >= int(p.lv):
 				earned += 1
 		var sy := y + 72.0
 		if _span_visible(sy - 18.0, sy + 4.0, scroll, view):
@@ -863,7 +884,10 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 		var cardy := sy + 18.0
 		for p in perks:
 			var pl: int = int(p.lv)
-			var ok: bool = lv >= pl
+			# Choice-tier perks (lv 5/10/13/14/17) light only when CHOSEN;
+			# single-perk tiers light on reaching the level (ADR 0012 mastery).
+			var ok: bool = bool(game.chosen_perks.get(String(p.id), false)) \
+				if (game.MASTERY_CHOICE_LVS as Array).has(pl) else lv >= pl
 			if _span_visible(cardy - CARD_GAP, cardy + CARD_H + CARD_GAP, scroll, view):
 				# spine segment (left gutter — cards sit to its right, never cover it)
 				draw_line(Vector2(lx, cardy - CARD_GAP),
@@ -888,10 +912,23 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 				draw_string(hdr, Vector2(cr.position.x + 12.0, cardy + 23.0),
 					String(p.name), HORIZONTAL_ALIGNMENT_LEFT, card_w - 96.0, 16,
 					WyrdUi.INK if ok else Color(0.44, 0.38, 0.31))
+				# State tag: chosen/earned · an open choice tier · a passed-over
+				# pick · or still level-locked.
+				var tag := "✓ earned"
+				var tag_col: Color = WyrdUi.SAGE.darkened(0.2)
+				if not ok:
+					if (game.MASTERY_CHOICE_LVS as Array).has(pl) and lv >= pl:
+						if game.tier_chosen(pl):
+							tag = "passed"
+							tag_col = Color(0.55, 0.42, 0.32)
+						else:
+							tag = "choose (K)"
+							tag_col = WyrdUi.GOLD.darkened(0.1)
+					else:
+						tag = "Lv %d" % pl
+						tag_col = Color(0.50, 0.42, 0.32)
 				draw_string(font, Vector2(cr.position.x, cardy + 21.0),
-					"✓ earned" if ok else "Lv %d" % pl,
-					HORIZONTAL_ALIGNMENT_RIGHT, card_w - 12.0, 13,
-					WyrdUi.SAGE.darkened(0.2) if ok else Color(0.50, 0.42, 0.32))
+					tag, HORIZONTAL_ALIGNMENT_RIGHT, card_w - 12.0, 13, tag_col)
 				# description (up to two lines)
 				draw_multiline_string(font, Vector2(cr.position.x + 12.0, cardy + 41.0),
 					String(p.desc), HORIZONTAL_ALIGNMENT_LEFT, card_w - 24.0, 12, 2,

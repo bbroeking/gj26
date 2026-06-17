@@ -16,3 +16,4 @@ var slow_factor: float = 1.0            # 1.0 = no slow, 0.5 = half speed
 # The GPUParticles3D / MeshInstance3D child the combatant spawned for this
 # status. Combatant frees it on status expiry or death.
 var visual: Node3D = null
+var duration: float = 0.0   # original apply duration — HUD pip uses it for the drain arc

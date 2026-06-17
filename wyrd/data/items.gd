@@ -105,6 +105,63 @@ const UNIQUES := {
 				"stat": "move_speed", "value": 0.10},
 		],
 	},
+	# Phase 4 — 6 new uniques (impl-system-items-affixes task 8).
+	"longbow": {
+		"name": "Thornwood Longbow",
+		"affixes": [
+			{"id": "unique_dmg",  "side": "unique", "display": "Unique Damage",
+				"stat": "damage",    "value": 7.0},
+			{"id": "unique_fire", "side": "unique", "display": "Unique Speed",
+				"stat": "fire_rate", "value": 0.12},
+		],
+	},
+	"leather_chest": {
+		"name": "Bramble Jerkin",
+		"affixes": [
+			{"id": "unique_hp",   "side": "unique", "display": "Unique HP",
+				"stat": "hp",         "value": 18.0},
+			{"id": "unique_move", "side": "unique", "display": "Unique Move",
+				"stat": "move_speed", "value": 0.08},
+		],
+	},
+	"leather_boots": {
+		"name": "Mudwarden Boots",
+		"affixes": [
+			{"id": "unique_speed", "side": "unique", "display": "Unique Speed",
+				"stat": "move_speed",         "value": 0.15},
+			{"id": "unique_cdr",   "side": "unique", "display": "Unique CDR",
+				"stat": "cooldown_reduction", "value": 0.10},
+		],
+	},
+	"copper_ring": {
+		"name": "Glintband of the Fox",
+		"affixes": [
+			{"id": "unique_crit",     "side": "unique", "display": "Unique Crit",
+				"stat": "crit_chance", "value": 0.08},
+			{"id": "unique_critmult", "side": "unique", "display": "Unique Mult",
+				"stat": "crit_mult",   "value": 0.25},
+		],
+	},
+	"starsilver_band": {
+		"name": "Wyrdstar Signet",
+		"affixes": [
+			{"id": "unique_critmult", "side": "unique", "display": "Unique Mult",
+				"stat": "crit_mult", "value": 0.45},
+			{"id": "unique_hp",      "side": "unique", "display": "Unique HP",
+				"stat": "hp",        "value": 12.0},
+		],
+	},
+	"warbow": {
+		"name": "Hedgesteel Sovereign",
+		"affixes": [
+			{"id": "unique_dmg",  "side": "unique", "display": "Unique Damage",
+				"stat": "damage",      "value": 9.0},
+			{"id": "unique_fire", "side": "unique", "display": "Unique Speed",
+				"stat": "fire_rate",   "value": 0.08},
+			{"id": "unique_crit", "side": "unique", "display": "Unique Crit",
+				"stat": "crit_chance", "value": 0.06},
+		],
+	},
 }
 
 # Rarity → affix count. -1 = predefined (read from UNIQUES).

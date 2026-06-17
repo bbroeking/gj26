@@ -107,7 +107,14 @@ func try_take(player: Node) -> bool:
 	var preview: Dictionary = _get_item()
 	var fit: Dictionary = inv.find_first_fit(preview)
 	if fit.is_empty():
-		print("[loot] inventory full — %s left on the ground" % preview.name)
+		# Pack full — tell the player instead of silently leaving it (no more
+		# print-only path). The item stays on the ground to grab once there's room.
+		var game_h := get_node_or_null("/root/Game")
+		if game_h != null:
+			game_h.notify("Pack full — %s left behind." % String(preview.name))
+		var sfx_h := get_node_or_null("/root/Sfx")
+		if sfx_h != null:
+			sfx_h.play("inv_full")
 		return false
 	var it: Dictionary = _grab()
 	if it.is_empty():

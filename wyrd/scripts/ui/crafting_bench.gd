@@ -504,7 +504,9 @@ class BenchView extends Control:
 	# ---- drawing ----
 	func _draw() -> void:
 		var hdr: Font = WyrdUi.font_header()
-		var font: Font = get_theme_default_font()
+		var font: Font = WyrdUi.font_body()
+		if font == null:
+			font = get_theme_default_font()
 		if hdr == null:
 			hdr = font
 		# Spec 44 — parchment grain over the working face (vector, no tex).

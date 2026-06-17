@@ -64,4 +64,4 @@ class CursorMark extends Control:
 		var game := get_tree().root.get_node_or_null("Game")
 		if game != null and game.has_method("local_player"):
 			return game.local_player()
-		return get_tree().get_first_node_in_group("player")
+		return null

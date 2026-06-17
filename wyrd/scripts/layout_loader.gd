@@ -63,6 +63,8 @@ const DECOR_COLLIDER := {
 # Kinds in this dict get a Breakable wrapper (HP 1, shatters on hit).
 const DECOR_BREAKABLE := {
 	"pottery": Color(0.65, 0.45, 0.30),
+	"bones": Color(0.82, 0.78, 0.65),       # cream bone shards
+	"bookshelf": Color(0.34, 0.24, 0.14),   # splintered dark wood
 }
 # Spec 28 — orient cardinal → Y rotation. layout_loader applies this to the
 # decor body (or pass-through instance). "center" leaves rotation at 0.
@@ -114,6 +116,18 @@ const ENEMY_KINDS := {
 	"skitterling": {"model": "res://models/skitterling.glb", "fit_h": 0.55,
 		"hp": 7, "damage": 2, "speed": 3.0, "atk_cd": 0.8,
 		"tint": Color(0.70, 0.30, 0.20), "bob": [0.10, 15.0]},
+	# Support archetype — a hedge-sprite reskin that follows and HEALS its pack
+	# instead of attacking; greener, slower, low HP. Kill it first or the room
+	# never goes down. (combatant.gd reads `support`.)
+	"warden": {"model": "res://models/enemy_hedge_sprite_v1.glb", "scale": 1.7,
+		"hp": 20, "damage": 3, "speed": 1.6, "atk_cd": 2.2,
+		"tint": Color(0.44, 0.72, 0.40), "support": true},
+	# Bruiser archetype — a chunky bramble-imp reskin that telegraphs an
+	# expanding floor ring (~0.7s) then lands a heavy AoE strike. The first
+	# "get out of the circle" tell in the cast. (combatant.gd reads `bruiser`.)
+	"barrow_brute": {"model": "res://models/bramble_imp_v4.glb", "fit_h": 1.7,
+		"hp": 32, "damage": 14, "speed": 1.0, "atk_cd": 3.0,
+		"tint": Color(0.28, 0.22, 0.18), "bruiser": true},
 }
 
 # Slice A — CHUNKY INK OUTLINE. Deep-INK inverted-hull shell, attached as the
@@ -130,9 +144,9 @@ const OUTLINE_GROW := 0.05   # orchestrator tuning knob (FATE zoom ~14)
 # differently. Weights are relative; unknown scopes fall back to crypt.
 const SPAWN_TABLES := {
 	"snug": [["rat", 70], ["skeleton", 30]],
-	"hollow": [["skeleton", 45], ["rat", 20], ["bramble_imp", 20], ["ghost", 15]],
+	"hollow": [["skeleton", 45], ["rat", 20], ["bramble_imp", 20], ["ghost", 15], ["warden", 10]],
 	"briar_maze": [["bramble_imp", 50], ["hedge_sprite", 30], ["skitterling", 20]],
-	"crypt": [["skeleton", 40], ["rat", 25], ["ghost", 20], ["hedge_sprite", 15]],
+	"crypt": [["skeleton", 40], ["rat", 25], ["ghost", 20], ["hedge_sprite", 15], ["warden", 10], ["barrow_brute", 8]],
 }
 
 # Boss kinds (boss-as-affix). The Hedgemother is rigged; the boar and wolf
@@ -140,23 +154,28 @@ const SPAWN_TABLES := {
 # `trophy` is the chart-chain drop: each boss yields the key that inks the
 # next den at the Inscribing Table (elites drop the first key).
 const BOSS_KINDS := {
-	"hedgemother": {"model": "res://models/hedgemother_v2.glb", "scale": 3.75,
+	"hedgemother": {"name": "The Hedgemother",
+		"model": "res://models/hedgemother_v2.glb", "scale": 3.75,
 		"hp": 60, "damage": 8, "radius": 0.9, "height": 3.0,
 		"trophy": "tusker_tusk"},
-	"burrow_boar": {"model": "res://models/burrow_boar_v3.glb", "fit_h": 2.2,
+	"burrow_boar": {"name": "The Burrow Boar",
+		"model": "res://models/burrow_boar_v3.glb", "fit_h": 2.2,
 		"hp": 80, "damage": 11, "radius": 1.0, "height": 2.2, "bob": [0.10, 6.0],
 		"trophy": "wightpelt"},
-	"wolf_alpha": {"model": "res://models/wolf_alpha_v2.glb", "fit_h": 1.8,
+	"wolf_alpha": {"name": "The Wolf Alpha",
+		"model": "res://models/wolf_alpha_v2.glb", "fit_h": 1.8,
 		"hp": 55, "damage": 7, "radius": 0.8, "height": 1.8, "bob": [0.13, 9.5],
 		"trophy": "alpha_fang"},
 	# The Summit's nest-mother — the final chart's boss. Same silhouette the
 	# player learned at level 8, scaled into a monarch.
-	"hedgemother_queen": {"model": "res://models/hedgemother_v2.glb", "scale": 4.6,
+	"hedgemother_queen": {"name": "The Hedgemother Queen",
+		"model": "res://models/hedgemother_v2.glb", "scale": 4.6,
 		"hp": 160, "damage": 13, "radius": 1.1, "height": 3.6, "trophy": ""},
 }
 
 var _floor_mat: StandardMaterial3D
 var _wall_mat: StandardMaterial3D
+var _scope := "crypt"   # chart scope — recolors the biome palette + filters decor
 var _rng := RandomNumberGenerator.new()
 var _net_foe_idx := 0          # Phase B — deterministic enemy naming
 var net_spawn := Vector3.ZERO  # Phase B — co-op entry spawn for NetGame
@@ -229,6 +248,11 @@ func _ready() -> void:
 		push_error("layout_loader: no layout")
 		return
 
+	# Biome palette — recolour the walls/floor by scope so a hollow / briar
+	# run reads as a different place, not just a different spawn table. Done
+	# before _build_grid (which bakes these materials into the tiles).
+	_scope = String(layout.get("scope", "crypt"))
+	_apply_biome_palette(_scope)
 	_read_chart_modifiers()
 	_build_grid(layout.grid)
 	_build_floor_collision(layout.grid)
@@ -316,6 +340,23 @@ func _read_chart_modifiers() -> void:
 	var den_scale: float = pow(float(game.LEVEL_POWER), float(den_lv - 1))
 	_hp_mult *= den_scale
 	_dmg_mult *= den_scale
+
+# Recolour the shared wall/floor materials by chart scope so a hollow / briar
+# run reads as a different place. Albedo tints only (no texture swaps — keeps
+# it crash-safe with the shipped crypt textures); crypt/summit keep defaults.
+func _apply_biome_palette(scope: String) -> void:
+	match scope:
+		"hollow", "tier_1":
+			_floor_mat.albedo_color = Color(0.66, 0.70, 0.55)   # earthy moss-tan
+			_wall_mat.albedo_color = Color(0.28, 0.32, 0.24)     # dark earth
+		"briar_maze":
+			_floor_mat.albedo_color = Color(0.40, 0.48, 0.34)    # green leaf-litter
+			_wall_mat.albedo_color = Color(0.20, 0.26, 0.18)     # deep briar green
+		"snug":
+			_floor_mat.albedo_color = Color(0.80, 0.72, 0.58)    # cellar sandstone
+			_wall_mat.albedo_color = Color(0.44, 0.38, 0.30)     # rough clay
+		_:
+			pass   # crypt / summit keep the warm stone defaults
 
 func _get_layout() -> Dictionary:
 	if USE_PROCGEN:
@@ -542,6 +583,9 @@ func _build_decor(layout: Dictionary) -> void:
 		var kind := String(d.kind)
 		if not DECOR_MODEL.has(kind):
 			continue
+		# Biome filter — crypt sarcophagi don't belong in a hollow / briar run.
+		if _scope != "crypt" and _scope != "summit" and kind == "sarcophagus":
+			continue
 		var packed: PackedScene = load(DECOR_MODEL[kind])
 		if packed == null:
 			continue
@@ -675,6 +719,8 @@ func _build_boss(boss_room, grid: Array, boss_kind: String = "hedgemother") -> v
 			var game := get_tree().root.get_node_or_null("Game")
 			if game != null:
 				game.add_material(trophy, 1)
+				if game.ledger != null:
+					game.ledger.apply(trophy)   # ADR 0013 — trophy → permanent stat
 				game.notify("Trophy claimed: %s. Slot it at the Inscribing Table." %
 					GatherDefs.material_name(trophy)))
 	# Every boss breathes/sways at idle and bobs when moving (Meshy can't rig
@@ -696,6 +742,7 @@ func _build_boss(boss_room, grid: Array, boss_kind: String = "hedgemother") -> v
 	# Wire the boss bar (spec 17).
 	var bossbar := get_node_or_null("BossBar")
 	if bossbar != null:
+		bossbar.set_boss_name(String(def.get("name", "The Hedgemother")))   # per-kind label
 		boss.aggroed.connect(bossbar.show_boss)
 		boss.boss_hp_changed.connect(bossbar.set_hp)
 		boss.phase_changed.connect(bossbar.set_phase)
@@ -947,6 +994,8 @@ func _spawn_enemy(ei: int, tx: int, ty: int, role: String = "combat",
 	body.aggro_radius = body.AGGRO_RADIUS * _aggro_mult
 	# Phase 3 — ranged casters (the ghost lobs slow spectral orbs).
 	body.is_ranged = bool(def.get("ranged", false))
+	body.is_support = bool(def.get("support", false))   # warden heals its pack
+	body.is_bruiser = bool(def.get("bruiser", false))   # barrow brute — AoE ring
 	body.proj_speed = float(def.get("proj_speed", 9.0))
 	body.proj_damage = int(def.get("proj_damage", body.damage))
 	# B6 — bursting corpses.
@@ -1142,7 +1191,8 @@ func _build_empty_throne(layout: Dictionary) -> void:
 
 func _position_player(entry) -> void:
 	_entry_pos = Vector3(int(entry.x) + 0.5, 0.0, int(entry.y) + 0.5)
-	var player: Node = get_tree().get_first_node_in_group("player")
+	var game := get_node_or_null("/root/Game")
+	var player: Node = game.local_player() if game != null else null
 	if player != null and player is Node3D:
 		(player as Node3D).position = _entry_pos
 		# Hand the player its spawn so death can respawn it here (spec 15).

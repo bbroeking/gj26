@@ -9,6 +9,9 @@ var hp := 1
 var dead := false
 var _break_color := Color(0.65, 0.45, 0.30)
 var _burst_height := 0.5
+var _meshes: Array[MeshInstance3D] = []
+var _flash_t: float = 0.0
+var _flash_mat: StandardMaterial3D
 
 # Called from layout_loader after the body is in the tree.
 func setup(hp_in: int, break_color: Color, hurt_radius: float, hurt_height: float) -> void:
@@ -30,18 +33,51 @@ func setup(hp_in: int, break_color: Color, hurt_radius: float, hurt_height: floa
 	hurt.add_child(col)
 	add_child(hurt)
 	hurt.set_meta("combatant", self)
+	_flash_mat = StandardMaterial3D.new()
+	_flash_mat.albedo_color = Color.WHITE
+	_flash_mat.emission_enabled = true
+	_flash_mat.emission = Color.WHITE
+	_flash_mat.emission_energy_multiplier = 2.0
+	_flash_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	for child in get_children():
+		if child is MeshInstance3D:
+			_meshes.append(child as MeshInstance3D)
+
+func _flash(dur: float, col: Color = Color.WHITE) -> void:
+	_flash_t = dur
+	var mat: StandardMaterial3D = _flash_mat if col == Color.WHITE else StandardMaterial3D.new()
+	if col != Color.WHITE:
+		mat.albedo_color = col
+		mat.emission_enabled = true
+		mat.emission = col
+		mat.emission_energy_multiplier = 2.0
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	for mi: MeshInstance3D in _meshes:
+		mi.material_override = mat
+
+func _process(delta: float) -> void:
+	if _flash_t > 0.0:
+		_flash_t -= delta
+		if _flash_t <= 0.0:
+			for mi: MeshInstance3D in _meshes:
+				mi.material_override = null
 
 # Duck-typed to match Combatant's interface — arrow.gd just calls take_damage.
 func take_damage(_amount: int, _from_dir: Vector3) -> void:
 	if dead:
 		return
 	hp -= 1
+	if not _meshes.is_empty():
+		_flash(0.08, Color.WHITE)
 	if hp <= 0:
 		_break()
 
 func _break() -> void:
 	dead = true
 	_burst()
+	var cr: Node = get_tree().get_first_node_in_group("camera_rig")
+	if cr != null and cr.has_method("shake"):
+		cr.shake(0.06)
 	queue_free()
 
 # Sphere-burst of shards in the break colour, parented to the world so it
@@ -73,6 +109,10 @@ func _burst() -> void:
 	var pbm := StandardMaterial3D.new()
 	pbm.albedo_color = _break_color
 	pbm.roughness = 0.9
+	pbm.emission_enabled = true
+	pbm.emission = _break_color
+	pbm.emission_energy_multiplier = 1.8
+	pbm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	pmesh.material = pbm
 	p.draw_pass_1 = pmesh
 

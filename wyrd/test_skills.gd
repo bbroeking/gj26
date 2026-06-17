@@ -49,6 +49,7 @@ func _run() -> void:
 	_test_dispatch(p)
 	_test_loadout_swap(game, p)
 	_test_gates(game, p)
+	_test_mastery_choice(game, p)
 	print("--- %d passed, %d failed ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
 
@@ -137,3 +138,35 @@ func _test_gates(game: Node, p: Node3D) -> void:
 	_check("Huntcraft 9 opens the gated trio — and slot 2 still pays",
 		ok and absf((before - float(p.focus)) - float(p.skills[1].cost)) < 0.01,
 		"ok=%s drop=%.1f" % [str(ok), before - float(p.focus)])
+
+# ---- ADR 0012 mastery: pick-one-of-N at a choice tier ----
+func _test_mastery_choice(game: Node, _p: Node3D) -> void:
+	print("[mastery choice]")
+	game.chosen_perks = {}
+	game.trades["wayfinding"]["lv"] = 4
+	game.trades["wayfinding"]["xp"] = game.xp_for_level(4)
+	var fired := {"lv": 0}     # dict, not bool — a lambda's captured bool won't escape
+	game.mastery_choice_ready.connect(func(lv): fired.lv = lv, CONNECT_ONE_SHOT)
+	game.award_xp("wayfinding", game.xp_for_level(5) - game.xp_for_level(4) + 1)
+	_check("XP award crosses into level 5",
+		int(game.trades["wayfinding"].lv) == 5, str(game.trades["wayfinding"]))
+	_check("mastery_choice_ready fired for lv 5", int(fired.lv) == 5)
+	_check("lv 5 is pending before a pick", game.pending_mastery_levels().has(5))
+	_check("no lv-5 perk is active before a pick",
+		not game.perk_active("", "steady_hands")
+		and not game.perk_active("", "double_ore"))
+	_check("choose_perk(steady_hands) takes", game.choose_perk("steady_hands"))
+	_check("the chosen perk is active", game.perk_active("", "steady_hands"))
+	_check("unchosen perks in the tier stay inactive",
+		not game.perk_active("", "double_ore")
+		and not game.perk_active("", "keen_eye")
+		and not game.perk_active("", "curious_fingers"))
+	_check("lv 5 no longer pending after the pick",
+		not game.pending_mastery_levels().has(5))
+	_check("a second pick at the same tier is rejected",
+		not game.choose_perk("double_ore"))
+	# Single-perk tiers (lv 12) auto-grant on threshold — no choice involved.
+	game.trades["wayfinding"]["lv"] = 12
+	_check("quick_nock auto-grants at lv 12", game.perk_active("", "quick_nock"))
+	game.trades["wayfinding"]["lv"] = 11
+	_check("quick_nock inactive at lv 11", not game.perk_active("", "quick_nock"))

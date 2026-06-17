@@ -8,6 +8,7 @@ extends CharacterBody3D
 
 const BOW_SCENE := preload("res://models/prop_bow_v1.glb")
 const BowDrawModifier := preload("res://scripts/bow_draw_modifier.gd")  # Phase 4
+const GatherSwingModifier := preload("res://scripts/gather_swing_modifier.gd")  # Plan.md B1
 const ARROW_SCENE := preload("res://scenes/Arrow.tscn")
 const ArrowScript := preload("res://scripts/arrow.gd")  # static variant_idx
 const InventoryPanelScene := preload("res://scenes/InventoryPanel.tscn")  # spec 27c
@@ -92,6 +93,7 @@ var _ap: AnimationPlayer
 var _skel: Skeleton3D
 var _bow_draw_t := 0.0       # Phase 4 — bow-draw timer (set on each shot)
 var _bow_modifier: SkeletonModifier3D = null
+var _gather_modifier: SkeletonModifier3D = null   # Plan.md B1 — gather arm-swing
 var _bow: Node3D
 # Spec 46-C — the bow's hand socket + tunables (local, in socket space).
 var _bow_socket: BoneAttachment3D = null
@@ -168,6 +170,7 @@ var _skill_cooldowns: Dictionary = {1: 0.0, 2: 0.0, 3: 0.0, 4: 0.0}
 # StatusEffect RefCounteds. Sunlit elite + future enemy modifiers apply
 # statuses to the player through `apply_status`.
 var _statuses: Dictionary = {}
+var _hp_regen_accum := 0.0   # fractional HP banked from the hp_regen stat (vigorous affix)
 # Spec 32b — the player's current loadout (4 Skill instances). Instantiated
 # in _ready. Slot N reads `skills[N-1]`. F-key fires `skills[0]`.
 var skills: Array = []
@@ -229,6 +232,8 @@ func _ready() -> void:
 	equipment.changed.connect(_on_gear_changed)
 	if game != null and game.has_signal("leveled_up"):
 		game.leveled_up.connect(_on_leveled_up)
+	if game != null and game.has_signal("perks_changed"):
+		game.perks_changed.connect(_derive_stats)   # mastery pick re-derives crit/move/CDR
 	_derive_stats()                # spec 27e — base values until gear changes
 	if game != null:
 		game.restore_player(self)  # Wyrd — carry hp across the scene change
@@ -247,6 +252,9 @@ func _ready() -> void:
 			# arms can loose the bow over the playing locomotion clip.
 			_bow_modifier = BowDrawModifier.new()
 			_skel.add_child(_bow_modifier)
+			# Plan.md B1 — gather arm-swing rides the same after-AnimationPlayer slot.
+			_gather_modifier = GatherSwingModifier.new()
+			_skel.add_child(_gather_modifier)
 		_setup_clips()
 		_add_ink_outline(_mesh)        # the player wears the same ink rim as foes
 	_attach_bow()
@@ -444,6 +452,16 @@ func _physics_process(delta: float) -> void:
 		_skill_cooldowns[k] = maxf(0.0, _skill_cooldowns[k] - delta)
 	# Spec 33a — player-side status framework tick.
 	_tick_statuses(delta)
+	# Items — hp_regen (vigorous affix) heals slowly over time, in integer steps.
+	if not dead and hp < hp_max:
+		var rg := float(derived_stats.get("hp_regen", 0.0))
+		if rg > 0.0:
+			_hp_regen_accum += rg * delta
+			while _hp_regen_accum >= 1.0 and hp < hp_max:
+				hp += 1
+				_hp_regen_accum -= 1.0
+			if _hud != null:
+				_hud.set_hp(hp, hp_max, _status_suffix())
 	# B5-wave2 — the ward's timer; bark crumbles when it runs out.
 	if _ward_t > 0.0:
 		_ward_t -= delta
@@ -953,18 +971,29 @@ func begin_gather(kind: String, node_pos: Vector3) -> void:
 				_gather_tool.position = Vector3(0, 0.55, 0) + fwd * 0.35 \
 					+ Vector3(fwd.z, 0.0, -fwd.x) * 0.18
 				_gather_tool.rotation.y = yaw
-	# The swing: a forward lean loop (forage kneels lower, slower).
+	# The swing: a forward lean + arm-swing loop (forage kneels lower, slower).
 	if _mesh != null:
 		_gather_tween = create_tween().set_loops()
 		var depth := 0.32 if kind != "forage_node" else 0.2
 		var beat := 0.5 if kind != "forage_node" else 0.7
+		if _gather_modifier != null:
+			_gather_modifier.mode = "forage" if kind == "forage_node" else "mine"
+		# Down-stroke — body leans, arm swings, tool bites; all parallel.
 		_gather_tween.tween_property(_mesh, "rotation:x", depth, beat * 0.4) \
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-		_gather_tween.tween_property(_mesh, "rotation:x", 0.0, beat * 0.6) \
-			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		if _gather_modifier != null:
+			_gather_tween.parallel().tween_property(_gather_modifier,
+				"swing_amount", 1.0, beat * 0.4).set_trans(Tween.TRANS_QUAD)
 		if _gather_tool != null:
 			_gather_tween.parallel().tween_property(_gather_tool, "rotation:x",
 				-1.1, beat * 0.4).set_trans(Tween.TRANS_QUAD)
+		# Up-stroke — everything eases back to rest.
+		_gather_tween.tween_property(_mesh, "rotation:x", 0.0, beat * 0.6) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		if _gather_modifier != null:
+			_gather_tween.parallel().tween_property(_gather_modifier,
+				"swing_amount", 0.0, beat * 0.6).set_trans(Tween.TRANS_QUAD)
+		if _gather_tool != null:
 			_gather_tween.parallel().tween_property(_gather_tool, "rotation:x",
 				0.0, beat * 0.6)
 
@@ -972,6 +1001,8 @@ func end_gather() -> void:
 	if _gather_tween != null:
 		_gather_tween.kill()
 		_gather_tween = null
+	if _gather_modifier != null:
+		_gather_modifier.swing_amount = 0.0   # arm returns to rest
 	if _mesh != null:
 		_mesh.rotation.x = 0.0
 	if _gather_tool != null:
@@ -1082,7 +1113,7 @@ func _on_leveled_up(_trade: String, _new_lv: int) -> void:
 func _derive_stats() -> void:
 	var sums := {"hp": 0, "damage": 0, "crit_chance": 0.0,
 		"crit_mult": 0.0, "fire_rate": 0.0, "move_speed": 0.0,
-		"cooldown_reduction": 0.0}
+		"cooldown_reduction": 0.0, "hp_regen": 0.0}
 	# ADR 0013 — gear gives power again (reverses the 0010 freeze): every
 	# equipped item's base_stat + rolled affixes flow into the sums.
 	if equipment != null:
@@ -1109,6 +1140,12 @@ func _derive_stats() -> void:
 			_add_stat(sums, "crit_mult", 0.25)
 		# Spec 45-wilds — Crowsfoot Cordial's stride rides the buff engine.
 		_add_stat(sums, "move_speed", float(game_h.buff_value("move_speed")))
+		# ADR 0013 — the Ledger (boss trophies, power source #3) sums flat on top.
+		var led = game_h.get("ledger")
+		if led != null:
+			var lsums: Dictionary = led.sum_stats()
+			for lk in lsums:
+				_add_stat(sums, String(lk), lsums[lk])
 	# ADR 0013 — your Wayfinding level grows base power (symmetric with the
 	# den scaling, so difficulty tracks level-delta). Gear adds flat on top.
 	var pf := 1.0
@@ -1126,6 +1163,7 @@ func _derive_stats() -> void:
 		# Spec 30 — capped CDR for skill 2-4 cooldowns. Skill 1 (BasicShot)
 		# is still scaled by `fire_rate` via `fire_cooldown` above.
 		"cooldown_reduction": clampf(float(sums.cooldown_reduction), 0.0, CDR_CAP),
+		"hp_regen":            float(sums.hp_regen),
 	}
 	# Apply HP max change — clamp current HP down if max shrunk; don't auto-heal.
 	hp_max = derived_stats.hp_max
@@ -1516,6 +1554,7 @@ const STATUS_WORD := {
 	"bleed":  "bleeding",
 	"snared": "snared",
 	"root":   "rooted",
+	"marked": "marked",
 }
 
 func apply_status(kind: String, duration: float, dpt: int,
@@ -1528,16 +1567,35 @@ func apply_status(kind: String, duration: float, dpt: int,
 		existing.time_left = maxf(existing.time_left, duration)
 		existing.damage_per_tick = maxi(existing.damage_per_tick, dpt)
 		existing.slow_factor = minf(existing.slow_factor, slow_factor)
+		existing.duration = maxf(existing.duration, duration)
+		_update_pips()
 		return existing
 	var s = StatusEffectScript.new()
 	s.kind = kind
 	s.time_left = duration
+	s.duration = duration
 	s.tick_interval = tick_interval
 	s.next_tick = tick_interval
 	s.damage_per_tick = dpt
 	s.slow_factor = slow_factor
 	_statuses[kind] = s
+	_update_pips()
 	return s
+
+# Serialise active statuses for the HUD pip row + push to the HUD.
+func _build_pip_list() -> Array:
+	var out: Array = []
+	for kind in _statuses:
+		var s = _statuses[kind]
+		var frac := 1.0
+		if float(s.duration) > 0.0:
+			frac = clampf(float(s.time_left) / float(s.duration), 0.0, 1.0)
+		out.append({"kind": kind, "frac": frac})
+	return out
+
+func _update_pips() -> void:
+	if _hud != null and _hud.has_method("update_pips"):
+		_hud.update_pips(_build_pip_list())
 
 func has_status(kind: String) -> bool:
 	return _statuses.has(kind)
@@ -1565,6 +1623,7 @@ func _tick_statuses(delta: float) -> void:
 					return
 		if s.time_left <= 0.0:
 			_statuses.erase(kind)
+	_update_pips()   # animate the drain arcs + drop any expired pips
 
 # Direct HP reduction from a status tick. Bypasses i-frames (DoT ticks
 # shouldn't be dodged by a roll); skips the take_damage crit/feedback pipe

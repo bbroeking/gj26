@@ -11,6 +11,9 @@ const TIER_COLOR := {
 const TIER_SCALE := {"normal": 1.0, "crit": 1.45, "super": 1.9}
 const LIFETIME := 0.62
 
+static func _magnitude_scale(amount: int) -> float:
+	return clampf(1.0 + log(maxf(float(amount), 1.0)) * 0.11, 1.0, 1.6)
+
 var _age := 0.0
 var _vel := Vector3.ZERO
 var _base := 1.0
@@ -18,7 +21,7 @@ var _base := 1.0
 func setup(amount: int, tier: String = "normal") -> void:
 	text = str(amount)
 	modulate = TIER_COLOR.get(tier, TIER_COLOR["normal"])
-	_base = TIER_SCALE.get(tier, 1.0)
+	_base = TIER_SCALE.get(tier, 1.0) * _magnitude_scale(amount)
 	# Scatter — up hard, with a random sideways/forward kick.
 	var ang := randf() * TAU
 	_vel = Vector3(cos(ang) * 1.2, 3.2, sin(ang) * 1.2)

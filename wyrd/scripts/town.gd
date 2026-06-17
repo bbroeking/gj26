@@ -26,6 +26,10 @@ const TOWER_GLB := preload("res://models/chartmaker_tower.glb")
 const YARD := 40.0                    # clearing is YARD × YARD meters
 const LAYER_WORLD := 1
 
+# Net co-op: peers fan into a small arc just behind the solo spawn.
+# net_game.gd:_spawn_pos reads this before falling back to PLAYER_SPAWN.
+var net_spawn: Vector3 = Vector3(20.0, 0.0, 27.2)
+
 # Fixed placements — hand-laid so the yard reads the same every visit.
 const PLAYER_SPAWN := Vector3(20.0, 0.0, 26.0)
 const WAYFINDER_POS := Vector3(20.0, 0.0, 17.0)
@@ -59,15 +63,47 @@ const OAKS := [
 ]
 
 func _ready() -> void:
-	var sfx := get_node_or_null("/root/Sfx")
-	if sfx != null and sfx.has_method("music"):
-		sfx.music("town_theme")
+	# B7 — arrival beat: if we're returning from a delve, delay music and ease
+	# the camera in. On cold boot play music immediately (existing behaviour).
+	# game.gd._returning_from_delve is set in return_to_town before scene change;
+	# reading via get() is null-safe if the flag doesn't exist yet.
+	var game_node: Node = get_node_or_null("/root/Game")
+	var returning: bool = game_node != null and game_node.get("_returning_from_delve") == true
+	if returning:
+		game_node.set("_returning_from_delve", false)
+		# Delay the town music so the player savours the beat, then play.
+		get_tree().create_timer(0.3).timeout.connect(func() -> void:
+			var sfx2 := get_node_or_null("/root/Sfx")
+			if sfx2 != null and sfx2.has_method("music"):
+				sfx2.music("town_theme")
+			if sfx2 != null and sfx2.has_method("play"):
+				sfx2.play("town_arrival_swell")
+		)
+		# Nudge the camera to a slightly pulled-out zoom; it lerps back naturally.
+		var rig: Node = get_tree().get_first_node_in_group("camera_rig")
+		if rig != null:
+			var z_def: Variant = rig.get("ZOOM_DEFAULT")
+			if z_def != null:
+				rig.set("_zoom_target", float(z_def) + 4.0)
+	else:
+		var sfx := get_node_or_null("/root/Sfx")
+		if sfx != null and sfx.has_method("music"):
+			sfx.music("town_theme")
 	_build_ground()
 	_build_bounds()
 	_place_stations()
 	_place_dressing()
 	_place_herb_patches()
 	_build_environment()
+	# B7 — Living Atlas board: reflect progression state and wire leveled_up.
+	_on_board_update()
+	if game_node != null and game_node.has_signal("leveled_up"):
+		game_node.leveled_up.connect(func(_t: String, _lv: int) -> void:
+			_on_board_update())
+	# B7 — ambient life: jittered bird + fire SFX timers (silent stubs until
+	# audio drops; graceful no-op via sfx.play missing-key path).
+	_schedule_ambient("town_ambient_birds", 8.0, 15.0, 0.12)
+	_schedule_ambient("town_fire_crackle", 6.0, 10.0, 0.18)
 	# Spec 46 Phase A — in a co-op session the baked single-player body is
 	# replaced by one player per peer; offline keeps the shipped path.
 	if NetGame.active:
@@ -114,11 +150,11 @@ func _ready() -> void:
 				game.add_material("bogiron_ore", 2)
 				game.add_material("thorn_essence", 1)
 			if OS.get_environment("WYRD_UI_SHOT") == "trades":
-				var player2 := get_tree().get_first_node_in_group("player")
+				var player2 := game.local_player()
 				if player2 != null:
 					player2.toggle_trades()
 			elif OS.get_environment("WYRD_UI_SHOT") in ["satchel", "charts"]:
-				var player3 := get_tree().get_first_node_in_group("player")
+				var player3 := game.local_player()
 				var tab := 1 if OS.get_environment("WYRD_UI_SHOT") == "satchel" else 2
 				if player3 != null and player3._inv_root != null:
 					player3._inv_root.open_tab(tab)
@@ -136,7 +172,7 @@ func _ready() -> void:
 					if not fit.is_empty():
 						game.inventory.try_place(it, fit.pos, fit.rotated)
 				game.equipment.slots["chest"] = items_data.make_item("leather_chest", "magic")
-				var player := get_tree().get_first_node_in_group("player")
+				var player := game.local_player()
 				if player != null:
 					player.toggle_inventory()
 			elif OS.get_environment("WYRD_UI_SHOT") in ["cook", "smith"]:
@@ -266,6 +302,23 @@ func _place_dressing() -> void:
 	_place_glb(TOWER_GLB, TOWER_POS, 7.5, 2.2)
 	# Hod's market stall — his counter, between the forge and the yard.
 	_place_glb(STALL_GLB, FORGE_POS + Vector3(-3.8, 0.0, 3.2), 2.2, 1.2)
+	# B7 — Living Atlas board: a parchment quad on the Tower's south wall.
+	# _on_board_update() lights it with emissive proportional to Wayfinding lv.
+	var board := MeshInstance3D.new()
+	var bm := QuadMesh.new()
+	bm.size = Vector2(0.8, 0.6)
+	board.mesh = bm
+	board.name = "AtlasBoard"
+	var bmat := StandardMaterial3D.new()
+	bmat.albedo_color = Color(0.88, 0.82, 0.65)   # parchment
+	bmat.roughness = 0.9
+	bmat.emission_enabled = true
+	bmat.emission = Color(0.9, 0.85, 0.6)
+	bmat.emission_energy_multiplier = 0.0
+	board.material_override = bmat
+	board.position = Vector3(20.5, 1.6, 8.0)
+	board.rotation.x = -0.12   # tilt toward the yard slightly
+	add_child(board)
 
 # The density pass: paths, treeline, grass, flowers, scatter dressing.
 func _build_environment() -> void:
@@ -289,6 +342,9 @@ func _place_herb_patches() -> void:
 		node.setup("forage_node", "wild_herb", true)   # town patches regrow
 		node.position = pos
 		add_child(node)
+		# B7 — connect regrew if gather_node.gd exposes it (deferred if not yet).
+		if node.has_signal("regrew"):
+			node.regrew.connect(_on_node_regrew)
 	# Spec 45-wilds — one bittergrass patch by Quill's still, locked until
 	# Wildcraft 3 (visible and coveted, like Hod's bogiron).
 	var bitter: Node3D = GatherNodeScript.new()
@@ -296,6 +352,8 @@ func _place_herb_patches() -> void:
 	bitter.setup_herb_tier("bittergrass")
 	bitter.position = STILL_POS + Vector3(-1.6, 0.0, 1.2)
 	add_child(bitter)
+	if bitter.has_signal("regrew"):
+		bitter.regrew.connect(_on_node_regrew)
 	# Hod's spoil heap — A6 tiers: two copper starters and one bogiron
 	# vein that stands locked until Earthcraft 3 (visible, coveted).
 	var heap_tiers := ["copper", "copper", "bogiron"]
@@ -306,6 +364,8 @@ func _place_herb_patches() -> void:
 		rock.respawn_sec = 40.0        # ore is slower than herbs by design
 		rock.position = ORE_ROCKS[i]
 		add_child(rock)
+		if rock.has_signal("regrew"):
+			rock.regrew.connect(_on_node_regrew)
 	# The woodpile by the cottage.
 	for pos in LOG_PILES:
 		var pile: Node3D = GatherNodeScript.new()
@@ -313,6 +373,8 @@ func _place_herb_patches() -> void:
 		pile.respawn_sec = 30.0
 		pile.position = pos
 		add_child(pile)
+		if pile.has_signal("regrew"):
+			pile.regrew.connect(_on_node_regrew)
 
 func _place_glb(packed: PackedScene, pos: Vector3, target_h: float,
 		collider_radius: float) -> void:
@@ -338,7 +400,8 @@ func _place_glb(packed: PackedScene, pos: Vector3, target_h: float,
 		add_child(inst)
 
 func _position_player() -> void:
-	var player := get_tree().get_first_node_in_group("player")
+	var game := get_node_or_null("/root/Game")
+	var player := game.local_player() if game != null else null
 	if player != null and player is Node3D:
 		(player as Node3D).position = PLAYER_SPAWN
 		if player.has_method("set_spawn"):
@@ -365,3 +428,87 @@ func _all_visual_instances(node: Node) -> Array:
 	for c in node.get_children():
 		out.append_array(_all_visual_instances(c))
 	return out
+
+# ---- B7 — ambient life helpers ----
+
+# Called when a gather node regrows. Plays the pop SFX and spawns a leaf
+# mote burst. Wired in _place_herb_patches() via has_signal() guard so it
+# compiles even before gather_node.gd exposes the regrew signal.
+func _on_node_regrew(pos: Vector3) -> void:
+	var sfx := get_node_or_null("/root/Sfx")
+	if sfx != null and sfx.has_method("play"):
+		sfx.play("regrow_pop")
+	_spawn_regrow_motes(pos)
+	print("[town] regrow pop at (%.1f, %.1f)" % [pos.x, pos.z])
+
+# Six cheap procedural leaf-motes that back-out upward and free themselves.
+# Pure MeshInstance3D + tweens — no texture load, no scene required.
+func _spawn_regrow_motes(origin: Vector3) -> void:
+	var rng2 := RandomNumberGenerator.new()
+	rng2.seed = int(origin.x * 1000.0 + origin.z)
+	for i in 6:
+		var mi := MeshInstance3D.new()
+		var sm := SphereMesh.new()
+		sm.radius = 0.045
+		sm.height = 0.09
+		sm.radial_segments = 5
+		sm.rings = 2
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = Color(0.42, 0.72, 0.35)
+		mat.roughness = 1.0
+		mi.mesh = sm
+		mi.material_override = mat
+		mi.position = origin + Vector3(
+			rng2.randf_range(-0.3, 0.3), 0.1, rng2.randf_range(-0.3, 0.3))
+		add_child(mi)
+		var t := create_tween()
+		t.tween_property(mi, "position:y", origin.y + 0.8, 0.4) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		t.parallel().tween_property(mi, "modulate:a", 0.0, 0.35).set_delay(0.1)
+		t.chain().tween_callback(mi.queue_free)
+
+# Living Atlas board: update emissive energy to reflect Wayfinding level
+# and summit state. Pulses with a back-out overshoot on new unlocks.
+func _on_board_update() -> void:
+	var board: Node = get_node_or_null("AtlasBoard")
+	var game3: Node = get_node_or_null("/root/Game")
+	if board == null or game3 == null:
+		return
+	var lv: int = int(game3.call("trade_lv", "wayfinding"))
+	var cleared: bool = game3.get("summit_cleared") == true
+	var base_e: float = clampf(float(lv - 1) / 10.0, 0.0, 1.0)
+	if cleared:
+		base_e = 1.2
+	var mat: StandardMaterial3D = (board as MeshInstance3D).material_override as StandardMaterial3D
+	if mat == null:
+		return
+	if base_e > 0.0:
+		# Pulse: overshoot then settle so the board visibly reacts to each tier.
+		var captured_mat := mat
+		var peak := base_e * 2.0
+		var settle := base_e
+		var fn := func(v: float) -> void:
+			if is_instance_valid(captured_mat):
+				captured_mat.emission_energy_multiplier = v
+		var t := create_tween()
+		t.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		t.tween_method(fn, peak, settle, 0.6)
+	else:
+		mat.emission_energy_multiplier = 0.0
+	print("[town] board updated: lv=%d cleared=%s energy=%.2f" % [lv, cleared, base_e])
+
+# Jittered ambient SFX timer — loops at a random interval in [min_sec, max_sec].
+# Graceful no-op if the audio file is missing (sfx.play already handles it).
+func _schedule_ambient(key: String, min_sec: float, max_sec: float,
+		_vol_scale: float) -> void:
+	var rng3 := RandomNumberGenerator.new()
+	rng3.seed = 26 + key.hash()
+	var delay := rng3.randf_range(min_sec, max_sec)
+	if not is_inside_tree():
+		return
+	get_tree().create_timer(delay).timeout.connect(func() -> void:
+		var sfx4 := get_node_or_null("/root/Sfx")
+		if sfx4 != null and sfx4.has_method("play"):
+			sfx4.play(key)
+		_schedule_ambient(key, min_sec, max_sec, _vol_scale)
+	)

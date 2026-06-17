@@ -3,6 +3,11 @@ extends CanvasLayer
 # Wyrd — a storybook dialog modal. Pages of text, one at a time; E / Space /
 # click advances. Built in code (shrine_choice_modal pattern); pauses the
 # tree while open. Emits `finished` after the last page.
+#
+# Public API (preserve exactly — other NPCs call into this):
+#   open(speaker: String, pages: Array) -> void
+#   open(speaker: String, pages: Array, portrait: Texture2D) -> void  [art-gated]
+# signal finished
 
 signal finished
 
@@ -15,6 +20,7 @@ var _body: Label
 var _name_lbl: Label
 var _hint: Label
 var _lockout := 0.0
+var _well: PortraitWell   # set in _ready; used by open() to pass portrait tex
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -40,10 +46,10 @@ func _ready() -> void:
 	_panel.offset_bottom = -70
 	add_child(_panel)
 	# Portrait well (spec 41) — ghosted silhouette until painted portraits.
-	var well := PortraitWell.new()
-	well.position = Vector2(48, 104)
-	well.size = Vector2(120, 120)
-	_panel.add_child(well)
+	_well = PortraitWell.new()
+	_well.position = Vector2(48, 104)
+	_well.size = Vector2(120, 120)
+	_panel.add_child(_well)
 	_name_lbl = Label.new()
 	var hf := WyrdUi.font_header()
 	if hf != null:
@@ -80,10 +86,18 @@ func _ready() -> void:
 	get_node("/root/Game").modal_opened()
 	_render()
 
-func open(speaker: String, pages: Array) -> void:
+# open() — primary public API.  The two-argument form is used by every existing
+# NPC and is preserved exactly.  The optional third argument (portrait texture)
+# is art-gated: callers pass null or omit it until painted PNGs ship (Phase 5).
+func open(speaker: String, pages: Array, portrait: Texture2D = null) -> void:
 	_speaker = speaker
 	_pages = pages
 	_idx = 0
+	# Wire portrait into the well if it has already been created in _ready.
+	# If open() is somehow called before _ready (shouldn't happen, but guard it),
+	# _well is null and we skip; _ready leaves portrait_texture at null (silhouette).
+	if _well != null:
+		_well.portrait_texture = portrait
 
 func _render() -> void:
 	_name_lbl.text = _speaker
@@ -134,10 +148,24 @@ func _finish() -> void:
 
 # Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
 # silhouette placeholder until painted portraits exist.
+# Phase 5 (art-gated): set portrait_texture before adding to the scene tree
+# (or call queue_redraw() after setting it) to swap out the silhouette.
+# NEVER set portrait_texture inside _draw() — that triggers the white-rect bug
+# (memory: godot-draw-load-white-texture). Preload in _ready_interactable().
 class PortraitWell extends Control:
+	var portrait_texture: Texture2D = null   # null → silhouette; set by NPC
+
 	func _draw() -> void:
 		var c := size * 0.5
 		var r := minf(c.x, c.y)
+		if portrait_texture != null:
+			# Painted portrait path — clip to the disc via the arc border.
+			draw_texture_rect(portrait_texture,
+				Rect2(c - Vector2(r, r), Vector2(r * 2.0, r * 2.0)), false)
+			draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
+			draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+			return
+		# Silhouette fallback (no portrait yet).
 		draw_circle(c, r, Color(0.88, 0.82, 0.67))
 		draw_circle(c + Vector2(0, r * 0.28), r * 0.34, Color(0.55, 0.47, 0.36, 0.55))
 		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))

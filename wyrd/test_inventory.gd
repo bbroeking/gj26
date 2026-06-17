@@ -76,7 +76,7 @@ func _t_find_first_fit() -> void:
 func _t_no_fit_when_full() -> void:
 	var inv := Inventory.new()
 	for x in Inventory.COLS:
-		for y in Inventory.ROWS:
+		for y in inv.rows:
 			inv.try_place(_ring(), Vector2i(x, y), false)
 	var fit := inv.find_first_fit(_helm())
 	_check("T6", fit.is_empty(),
@@ -99,7 +99,7 @@ func _t_remove_clears() -> void:
 	inv.try_place(bow, Vector2i(0, 0), false)
 	inv.remove(bow)
 	var any := false
-	for y in Inventory.ROWS:
+	for y in inv.rows:
 		for x in Inventory.COLS:
 			if inv.cells[y][x] != null:
 				any = true

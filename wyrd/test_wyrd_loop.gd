@@ -41,6 +41,7 @@ func _init() -> void:
 	_test_alchemy()
 	_test_discovery()
 	_test_ladders()
+	_test_pack_progression()
 	_test_save_roundtrip()
 	print("--- %d passed, %d failed ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
@@ -87,6 +88,25 @@ func _test_chain_and_economy() -> void:
 	_check("buy ware", game.buy_ware("hedge_ink", 12)
 		and game.material_count("hedge_ink") == 1 and int(game.gold) == 23)
 	_check("can't buy broke", not game.buy_ware("refined_ink", 38))
+	game.free()
+
+# Pack-size progression — the satchel grows a row at level milestones (6, 12),
+# and resize refuses to shrink over an occupied bottom row.
+func _test_pack_progression() -> void:
+	print("[pack progression]")
+	var game = load("res://scripts/game.gd").new()
+	game._ready()
+	game.persistence_enabled = false
+	_check("pack starts at 6 rows", game.inventory.rows == 6, str(game.inventory.rows))
+	game.trades.wayfinding.lv = 6
+	game.grow_pack_for_level()
+	_check("pack grows to 7 at lv 6", game.inventory.rows == 7, str(game.inventory.rows))
+	game.trades.wayfinding.lv = 12
+	game.grow_pack_for_level()
+	_check("pack grows to 8 at lv 12", game.inventory.rows == 8, str(game.inventory.rows))
+	var it := {"size": Vector2i(1, 1)}
+	game.inventory.try_place(it, Vector2i(0, 7), false)   # occupy the 8th row
+	_check("resize refuses shrink over an occupied row", not game.inventory.resize(6))
 	game.free()
 
 # Serialization roundtrip — including the JSON-hostile Vector2i/Color values
@@ -297,10 +317,12 @@ func _test_huntcraft() -> void:
 	_check("steady hands off at lv 1",
 		not game.perk_active("hunt", "steady_hands"))
 	game.trades.wayfinding.lv = 5
+	game.chosen_perks = {"steady_hands": true}   # ADR 0012 mastery — pick the lv-5 perk
 	_check("steady hands on at lv 5", game.perk_active("hunt", "steady_hands"))
 	_check("hunters stride waits for 10",
 		not game.perk_active("hunt", "hunters_stride"))
 	game.trades.wayfinding.lv = 10
+	game.chosen_perks = {"hunters_stride": true}
 	_check("hunters stride on at lv 10",
 		game.perk_active("hunt", "hunters_stride"))
 	# ADR 0012 — every cozy activity (any old trade key) feeds the one skill.
@@ -566,6 +588,7 @@ func _test_ladders() -> void:
 		int(ChartsData.craft_cost("snug", [], "", 1).get("hedge_ink", 99)) >= 1)
 	# Light Hands: forage channels a quarter faster at wilds 13.
 	game.trades.wayfinding.lv = 13
+	game.chosen_perks = {"light_hands": true}     # ADR 0012 mastery — pick the lv-13 perk
 	_check("light hands cuts the forage channel",
 		absf(GatherNode.channel_seconds("forage_node", game) - 0.75) < 0.01)
 	# Tier-2 charts grow tier-2..4 herbs (deterministic seed).
@@ -766,7 +789,11 @@ func _test_crafting_perks() -> void:
 	# Cooking: 2 herbs + 1 log -> draught + 15 wilds xp.
 	game.add_material("wild_herb", 2)
 	game.add_material("logs", 1)
+	var crafted_sid := {"v": ""}   # dict capture — a lambda's captured String won't escape
+	game.crafted.connect(func(sid): crafted_sid.v = sid, CONNECT_ONE_SHOT)
 	_check("cook hearth draught", game.craft("cookfire", "hearth_draught"))
+	_check("craft emits crafted(cookfire)", String(crafted_sid.v) == "cookfire",
+		String(crafted_sid.v))
 	_check("draught in satchel", game.material_count("hearth_draught") == 1)
 	_check("inputs spent", game.material_count("wild_herb") == 0
 		and game.material_count("logs") == 0)
@@ -797,11 +824,14 @@ func _test_crafting_perks() -> void:
 	# Perks (A9).
 	_check("keen_eye off at wilds 1", game.gather_bonus("forage_node") == 0)
 	game.trades.wayfinding.lv = 5
+	game.chosen_perks = {"keen_eye": true}        # ADR 0012 mastery — pick to enable
 	_check("keen_eye on at wilds 5", game.gather_bonus("forage_node") == 1)
 	_check("clean_splits still off", game.gather_bonus("log_pile") == 0)
 	game.trades.wayfinding.lv = 10
+	game.chosen_perks = {"clean_splits": true}
 	_check("clean_splits on at wilds 10", game.gather_bonus("log_pile") == 1)
 	game.trades.wayfinding.lv = 5
+	game.chosen_perks = {"double_ore": true}
 	var doubles := 0
 	for _i in 200:
 		doubles += game.gather_bonus("ore_rock")

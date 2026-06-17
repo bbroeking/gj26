@@ -57,10 +57,15 @@ static func _tier_to_rarity(tier: int) -> String:
 		return "magic"
 	return "normal"
 
-static func _pick_kind() -> String:
-	# Spec 38 — trade tools are crafted at the anvil, never random loot.
-	# E17 — the capstone gear is forged at the anvil too, never random loot.
-	var ids: Array = Items.kind_ids().filter(func(id):
+# The kinds that CAN drop as random loot — the single source of truth.
+# Spec 38: trade tools are crafted at the anvil, never random loot. E17: the
+# capstone gear (warbow / starsilver_band) is forged too. Used by _pick_kind
+# and by tests so the "what drops" rule lives in exactly one place.
+static func droppable_kinds() -> Array:
+	return Items.kind_ids().filter(func(id):
 		return String(Items.KINDS[id].category) not in ["pickaxe", "axe"] \
 			and String(id) not in ["warbow", "starsilver_band"])
+
+static func _pick_kind() -> String:
+	var ids: Array = droppable_kinds()
 	return ids[randi() % ids.size()]

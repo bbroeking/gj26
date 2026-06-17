@@ -12,11 +12,18 @@ const TIER_COLOR := {
 	"super":  Color(0.82, 0.50, 1.00),
 }
 
-static func spawn(parent: Node, world_pos: Vector3, tier: String) -> void:
+const BIOME_TINT: Dictionary = {
+	"crypt":  Color(1.0,  1.0,  1.0),
+	"forest": Color(0.70, 0.95, 0.60),
+	"swamp":  Color(0.55, 0.80, 0.55),
+}
+
+static func spawn(parent: Node, world_pos: Vector3, tier: String, biome: String = "crypt") -> void:
 	if parent == null:
 		return
 	var big := tier != "normal"
-	var col: Color = TIER_COLOR.get(tier, TIER_COLOR["normal"])
+	var tint: Color = BIOME_TINT.get(biome, Color.WHITE)
+	var col: Color = TIER_COLOR.get(tier, TIER_COLOR["normal"]) * tint
 
 	var p := GPUParticles3D.new()
 	p.amount = 26 if big else 14

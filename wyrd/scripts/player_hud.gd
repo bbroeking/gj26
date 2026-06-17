@@ -13,6 +13,7 @@ const FILL_FULL_W := 216.0
 # Spec 30 — Focus bar dimensions match the HP bar so the two stack cleanly.
 const FOCUS_FILL_LEFT := 2.0
 const FOCUS_FILL_FULL_W := 216.0
+const Feel = preload("res://data/feel.gd")   # Plan.md B0 — feel tunables
 
 @onready var _fill: ColorRect = $HPRoot/Fill
 @onready var _label: Label = $HPRoot/Label
@@ -27,10 +28,13 @@ var _quest_plate: Panel
 var _quest_progress: Label
 var _toast_box: VBoxContainer
 var _skills_lbl: Label
+var _last_toast_text := ""        # toast dedup (Feel.TOAST_DEDUP_WINDOW_SEC)
+var _last_toast_time := 0.0
 # Spec 38 — potion globes (PoE-style): HP red bottom-left of the skill
 # bar, Focus blue bottom-right. The liquid level IS the meter.
 var _hp_globe: GlobeGauge = null
 var _focus_globe: GlobeGauge = null
+var _pip_row: StatusPipRow = null      # active-status drain-arc pips above HP
 var _mute_lbl: Label = null
 # Slice B — a radial hurt-vignette: transparent center darkening to a
 # terracotta rim, flashed on the player taking damage (richer than the flat
@@ -53,6 +57,18 @@ func _ready() -> void:
 	_place_globe(_focus_globe, 220.0)
 	_hp_globe.update_to(1.0, "30/30", "")
 	_focus_globe.update_to(1.0, "50/50", "")
+	# Status pip row — drain-arc pips above the HP globe (system-status-effects).
+	_pip_row = StatusPipRow.new()
+	_pip_row.anchor_left = 0.5
+	_pip_row.anchor_right = 0.5
+	_pip_row.anchor_top = 1.0
+	_pip_row.anchor_bottom = 1.0
+	_pip_row.offset_left = -286
+	_pip_row.offset_right = -154
+	_pip_row.offset_top = -176
+	_pip_row.offset_bottom = -154
+	_pip_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_pip_row)
 	_build_hurt_vignette()
 	_build_draught_chip()
 	_build_mute_indicator()
@@ -224,7 +240,10 @@ func _build_wyrd_overlay() -> void:
 		game.charts_changed.connect(_refresh_objective)
 		game.toast.connect(show_toast)
 		game.xp_gained.connect(func(_k, _a): _refresh_trades())
-		game.leveled_up.connect(func(_k, _l): _refresh_trades())
+		game.leveled_up.connect(func(k: String, l: int):
+			_refresh_trades()
+			_show_levelup_banner(k, l)   # Plan.md B3 — the level-up moment
+			_flash_skills())
 		game.gold_changed.connect(func(_g): _refresh_trades())
 		_refresh_objective()
 		_refresh_trades()
@@ -283,7 +302,7 @@ func _build_action_bar() -> void:
 			# Spec 46 — route HUD buttons to the LOCAL player in co-op.
 			var game := get_tree().root.get_node_or_null("Game")
 			var player: Node = game.local_player() if game != null \
-				else get_tree().get_first_node_in_group("player")
+				else null
 			if player != null and player.has_method(method):
 				player.call(method))
 		bar.add_child(b)
@@ -295,21 +314,62 @@ func _refresh_trades() -> void:
 	_skills_lbl.text = "%dg · Wayfinding %d" % [
 		int(game.gold), game.trade_lv("wayfinding")]
 
-func show_toast(msg: String) -> void:
+func show_toast(msg: String, category: String = "info") -> void:
+	# Dedup — a burst of identical chips in one window collapses to one.
+	var now := float(Time.get_ticks_msec()) / 1000.0
+	if msg == _last_toast_text and (now - _last_toast_time) < Feel.TOAST_DEDUP_WINDOW_SEC:
+		return
+	_last_toast_text = msg
+	_last_toast_time = now
 	var l := Label.new()
 	l.text = msg
 	# Spec 41 — toasts are kit parchment chips.
 	WyrdUi.style_chip(l, 15)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var col: Color = WyrdUi.INK
+	if category == "levelup":
+		col = WyrdUi.GOLD
+	elif category == "damage":
+		col = WyrdUi.TERRACOTTA
+	l.add_theme_color_override("font_color", col)
 	_toast_box.add_child(l)
+	var hold: float = Feel.TOAST_LEVELUP_HOLD_SEC if category == "levelup" \
+		else Feel.TOAST_HOLD_SEC
 	var t := create_tween()
 	# Pause-immune — most toasts (mix, inscribe, level-up) fire while a modal
 	# has the tree paused; a pause-bound tween would freeze them into a stack.
 	t.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-	t.tween_interval(2.4)
-	t.tween_property(l, "modulate:a", 0.0, 0.6)
+	t.tween_interval(hold)
+	t.tween_property(l, "modulate:a", 0.0, Feel.TOAST_FADE_SEC)
 	t.tween_callback(l.queue_free)
+
+# Plan.md B3 — the level-up "moment": a gold perk banner naming the unlock.
+func _show_levelup_banner(trade: String, lv: int) -> void:
+	var game := get_tree().root.get_node_or_null("Game")
+	var perk_name := "Wayfinding %d" % lv
+	if game != null:
+		for p in Array(game.PERKS.get(trade, [])):
+			if int(p.lv) == lv:
+				perk_name = String(p.name)
+				break
+	show_toast("✦ %s" % perk_name, "levelup")
+
+# Gold glow + scale-punch on the Wayfinding readout when a level lands.
+func _flash_skills() -> void:
+	if _skills_lbl == null:
+		return
+	var base_col: Color = _skills_lbl.get_theme_color("font_color")
+	_skills_lbl.pivot_offset = _skills_lbl.size * 0.5
+	_skills_lbl.add_theme_color_override("font_color", WyrdUi.GOLD)
+	var tw := create_tween()
+	tw.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	tw.tween_property(_skills_lbl, "scale",
+		Vector2(Feel.LEVELUP_PUNCH_SCALE, Feel.LEVELUP_PUNCH_SCALE),
+		Feel.LEVELUP_PUNCH_UP_SEC).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_skills_lbl, "scale", Vector2.ONE, Feel.LEVELUP_PUNCH_DOWN_SEC)
+	tw.tween_interval(Feel.LEVELUP_FLASH_SEC)
+	tw.tween_callback(func(): _skills_lbl.add_theme_color_override("font_color", base_col))
 
 func set_hp(cur: int, mx: int, status_suffix: String = "") -> void:
 	var f := clampf(float(cur) / float(max(1, mx)), 0.0, 1.0)
@@ -381,6 +441,12 @@ func whiteout_in() -> void:
 func whiteout_out() -> void:
 	var t := create_tween()
 	t.tween_property(_whiteout, "modulate:a", 0.0, 0.5)
+
+# Push the active-status list to the pip row (system-status-effects).
+# pips: Array of {"kind": String, "frac": float}.
+func update_pips(pips: Array) -> void:
+	if _pip_row != null:
+		_pip_row.set_statuses(pips)
 
 
 # Spec 38 style pass — a potion orb in a bramble nest (Midjourney ref
@@ -480,6 +546,39 @@ class GlobeGauge extends Control:
 # and a small wax seal up top so the banner reads as a sealed proclamation.
 # Pure-vector + WyrdUi primitives (grain + flourish); the seal is lifted from
 # WyrdUi.draw_scroll. _draw-on-Control is the proven pattern in this layer.
+# A row of small drain-arc pips, one per active player status, above the HP
+# globe. Pure _draw (no textures — white-texture gotcha). The combatant has
+# tint-pulse feedback; this is the player's at-a-glance "what's on me" readout.
+class StatusPipRow extends Control:
+	const PIP_COLOR := {
+		"burn":   Color(1.00, 0.55, 0.18), "bleed":  Color(0.85, 0.20, 0.20),
+		"snared": Color(0.45, 0.65, 0.30), "root":   Color(0.30, 0.65, 0.25),
+		"marked": Color(1.00, 0.82, 0.30),
+	}
+	var _pips: Array = []
+
+	func _ready() -> void:
+		resized.connect(queue_redraw)
+
+	func set_statuses(pips: Array) -> void:
+		_pips = pips
+		queue_redraw()
+
+	func _draw() -> void:
+		const R := 8.0
+		const GAP := 22.0
+		if _pips.is_empty():
+			return
+		var cx: float = size.x * 0.5 - float(_pips.size() - 1) * GAP * 0.5
+		for p in _pips:
+			var col: Color = PIP_COLOR.get(String(p.get("kind", "")), Color(0.7, 0.7, 0.7))
+			draw_circle(Vector2(cx, R), R, col.darkened(0.3))
+			var frac: float = clampf(float(p.get("frac", 1.0)), 0.0, 1.0)
+			if frac > 0.0:
+				draw_arc(Vector2(cx, R), R, -PI * 0.5, -PI * 0.5 + TAU * frac, 24, col, 3.5)
+			cx += GAP
+
+
 class QuestScrollArt extends Control:
 	func _ready() -> void:
 		resized.connect(queue_redraw)

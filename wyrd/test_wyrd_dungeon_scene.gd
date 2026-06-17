@@ -149,6 +149,7 @@ func _run() -> void:
 	var prey_vigor: int = int(prey.hp_max)
 	# Spec 45-hunt — Even Breath: at the cap, every kill returns 6 Focus.
 	game.trades.wayfinding.lv = 17
+	game.chosen_perks = {"even_breath": true}    # ADR 0012 mastery — pick the lv-17 capstone
 	if player2 != null:
 		player2.focus = 10.0
 	prey.take_damage(999, Vector3.FORWARD)

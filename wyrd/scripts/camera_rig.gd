@@ -97,7 +97,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
 	if _player == null:
-		_player = get_tree().get_first_node_in_group("player")
+		var game := get_node_or_null("/root/Game")
+		_player = game.local_player() if game != null else null   # follow LOCAL peer
 		if _player == null:
 			return
 	if _camera == null:
