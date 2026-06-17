@@ -39,11 +39,17 @@ WYRD_NO_SAVE=1 godot --headless --path . --script res://test_wyrd_loop.gd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_wyrd_dungeon_scene.gd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_wyrd_transitions.gd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_skills.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_boot_smoke.gd
 ```
 
-All four must stay green (test_skills covers the hotbar dispatch path —
+All five must stay green. test_skills covers the hotbar dispatch path —
 it's the only suite that catches a dead keypress; its absence once let a
-frozen-hotbar regression ship). Gotchas live in project memory
+frozen-hotbar regression ship. **test_boot_smoke** compiles every
+`scripts/*.gd` + loads Town/World.tscn — the only suite that catches a
+boot-path parse error (the others never instantiate the Town scene, so a
+broken `town.gd` once shipped green while the game was unlaunchable; use
+`(GDScript).can_instantiate()`, not `load() != null`, to detect it).
+Gotchas live in project memory
 (`feedback_godot_headless_test_harness`): autoloads DO load in --script
 mode (reuse the real `Game`), `_ready` needs a frame, always run with
 `WYRD_NO_SAVE=1`. **Warning:** `_test_save_roundtrip` writes then deletes
