@@ -76,8 +76,9 @@ func _test_chain_and_economy() -> void:
 		String(cfg.get("boss_kind", "")) == "hedgemother_queen", str(cfg))
 	_check("summit costs the fang", int(ChartsData.craft_cost("summit", [])
 		.get("alpha_fang", 0)) == 1)
-	# Gold: sell a gear item, buy a ware.
+	# Gold: sell a gear item, buy a ware. Lv 6 so hedge_ink (lv 2) is buyable.
 	game.active_chart = {}
+	game.trades.wayfinding = {"lv": 6, "xp": 0}
 	var ItemsData = load("res://data/items.gd")
 	var item: Dictionary = ItemsData.make_item("shortbow", "rare")
 	var fit: Dictionary = game.inventory.find_first_fit(item)
@@ -88,6 +89,18 @@ func _test_chain_and_economy() -> void:
 	_check("buy ware", game.buy_ware("hedge_ink", 12)
 		and game.material_count("hedge_ink") == 1 and int(game.gold) == 23)
 	_check("can't buy broke", not game.buy_ware("refined_ink", 38))
+	# Anti-arbitrage: a ware above the player's level is refused outright
+	# (hedgesteel_ore needs lv 8; game is lv 6) even when affordable.
+	_check("ware level-gated", not game.buy_ware("hedgesteel_ore", 1)
+		and game.material_count("hedgesteel_ore") == 0)
+	# Chart case caps at CHART_CASE_MAX — inscribing past it is refused.
+	game.charts.clear()
+	for _c in game.CHART_CASE_MAX:
+		game.add_chart({"template_id": "snug", "tier": 1, "scope": "snug",
+			"name": "Snug", "seed": 1, "affixes": []})
+	_check("chart case fills to cap",
+		(game.charts as Array).size() == game.CHART_CASE_MAX
+		and game.chart_case_full())
 	game.free()
 
 # Pack-size progression — the satchel grows a row at level milestones (6, 12),
@@ -629,6 +642,10 @@ func _test_ladders() -> void:
 
 func _test_save_roundtrip() -> void:
 	print("[save/load]")
+	# Throwaway path — NEVER the real SAVE_PATH. This suite once wrote then
+	# clear()'d the player's actual save (CLAUDE.md footgun); save_to/load_from
+	# overloads let us round-trip against a temp file instead.
+	const RT_PATH := "user://wyrd_test_loop_roundtrip.json"
 	var game = load("res://scripts/game.gd").new()
 	game._ready()
 	game.trades.wayfinding = {"lv": 3, "xp": 250}
@@ -649,10 +666,10 @@ func _test_save_roundtrip() -> void:
 	var fit: Dictionary = game.inventory.find_first_fit(item)
 	game.inventory.try_place(item, fit.pos, fit.rotated)
 	game.equipment.slots["helmet"] = ItemsData.make_item("leather_helm", "rare")
-	_check("save written", SaveGame.save(game))
+	_check("save written", SaveGame.save_to(RT_PATH, game))
 	var game2 = load("res://scripts/game.gd").new()
 	game2._ready()
-	_check("load ok", SaveGame.load_into(game2))
+	_check("load ok", SaveGame.load_from(RT_PATH, game2) == SaveGame.LOAD_RESULT.OK)
 	_check("trade restored", game2.trade_lv("carto") == 3)
 	_check("satchel restored", game2.material_count("wild_herb") == 5)
 	_check("chart restored", (game2.charts as Array).size() == 1
@@ -675,22 +692,26 @@ func _test_save_roundtrip() -> void:
 		game2.discovered_inks == ["hedge_ink", "ash_ink"])
 	# Spec 43 — a save from before discovery (no key) keeps all three
 	# original inks: doctor the file, reload, assert the backfill.
-	var fdoc := FileAccess.open(SaveGame.SAVE_PATH, FileAccess.READ)
+	var fdoc := FileAccess.open(RT_PATH, FileAccess.READ)
 	var raw: Dictionary = JSON.parse_string(fdoc.get_as_text())
 	fdoc.close()
 	raw.erase("discovered_inks")
-	fdoc = FileAccess.open(SaveGame.SAVE_PATH, FileAccess.WRITE)
+	fdoc = FileAccess.open(RT_PATH, FileAccess.WRITE)
 	fdoc.store_string(JSON.stringify(raw))
 	fdoc.close()
 	var game3 = load("res://scripts/game.gd").new()
 	game3._ready()
-	_check("pre-43 load ok", SaveGame.load_into(game3))
+	_check("pre-43 load ok", SaveGame.load_from(RT_PATH, game3) == SaveGame.LOAD_RESULT.OK)
 	_check("pre-43 save keeps its three inks", game3.discovered_inks ==
 		["hedge_ink", "stoneground_ink", "refined_ink"],
 		str(game3.discovered_inks))
 	game3.free()
-	SaveGame.clear()
-	_check("save file cleaned up", not SaveGame.has_save())
+	# Clean up ONLY the temp file (+ its .bak/.tmp), never the real save.
+	for ext in ["", ".bak", ".tmp"]:
+		var gp := ProjectSettings.globalize_path(RT_PATH + ext)
+		if FileAccess.file_exists(RT_PATH + ext):
+			DirAccess.remove_absolute(gp)
+	_check("save file cleaned up", not FileAccess.file_exists(RT_PATH))
 	game.free()
 	game2.free()
 

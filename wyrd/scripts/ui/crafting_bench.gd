@@ -192,6 +192,12 @@ func craft() -> bool:
 		_hedge_discount())
 	if not _game.can_afford(cost):
 		return false
+	# Gate on chart-case space BEFORE spending — never burn materials on a
+	# chart that won't fit.
+	if _game.chart_case_full():
+		_game.notify("Your chart case is full (max %d) — delve one first." \
+			% _game.CHART_CASE_MAX)
+		return false
 	if not _game.spend_materials(cost):
 		return false
 	var chart: Dictionary = ChartsData.inscribe(base_id, inks, _carto_lv(),

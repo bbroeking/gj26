@@ -365,8 +365,14 @@ func sell_item(item: Dictionary) -> int:
 	save_now()
 	return price
 
-# Buy a material off Hod's shelf. Returns false if gold is short.
+# Buy a material off Hod's shelf. Returns false if gold is short or the ware
+# is above the player's Wayfinding level (defense-in-depth: the vendor panel
+# already hides over-level wares via wares_for_level, but buy_ware enforces its
+# own invariant so no other call path can bypass the gather loop).
 func buy_ware(id: String, price: int) -> bool:
+	if trade_lv() < EconomyData.ware_min_lv(id):
+		notify("Hod won't sell that yet — keep charting.")
+		return false
 	if gold < price:
 		return false
 	gold -= price
@@ -763,6 +769,14 @@ func _cheapest_material(pot: Dictionary) -> String:
 	return best
 
 # ---- chart case ----
+
+# The chart case holds a bounded stack — inscribing is gated on free space so
+# charts stay a "use them" resource, not an infinite hoard. Callers that spend
+# materials (the bench) must check chart_case_full() BEFORE spending.
+const CHART_CASE_MAX := 8
+
+func chart_case_full() -> bool:
+	return charts.size() >= CHART_CASE_MAX
 
 func add_chart(chart: Dictionary) -> void:
 	charts.append(chart)
