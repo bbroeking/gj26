@@ -37,6 +37,7 @@ var _reconnect_left := 0
 # (opportunistic UPnP, for internet friend-invites; empty until/unless found).
 var _active_chart: Dictionary = {}
 var _external_ip := ""
+var _upnp_task := -1            # WorkerThreadPool task id for the UPnP probe
 
 func _ready() -> void:
 	display_name = OS.get_environment("WYRD_DISPLAY_NAME")
@@ -96,13 +97,27 @@ func host(port: int = DEFAULT_PORT) -> bool:
 # internet co-op (not just LAN/Tailscale). Runs off the main thread, and is a
 # pure no-op on routers without UPnP — never blocks or crashes hosting.
 func _try_upnp(port: int) -> void:
-	WorkerThreadPool.add_task(func() -> void:
+	# Short discover timeout (default is 2000ms): the host shouldn't stall on
+	# startup, and the join-on-exit below is bounded by it.
+	_upnp_task = WorkerThreadPool.add_task(func() -> void:
 		var upnp := UPNP.new()
-		if upnp.discover() == UPNP.UPNP_RESULT_SUCCESS:
+		if upnp.discover(900) == UPNP.UPNP_RESULT_SUCCESS:
 			upnp.add_port_mapping(port)
 			var ext := upnp.query_external_address()
 			if ext != "" and ext != "0.0.0.0":
 				call_deferred("_upnp_found", ext))
+
+# A GDScript Callable left running in a WorkerThreadPool task aborts in
+# ~WorkerThreadPool during unregister_core_types — SIGABRT on quit (it crashed
+# every host→exit). Drain the probe before the engine tears down. Bounded by
+# the 900ms discover timeout above.
+func _drain_upnp() -> void:
+	if _upnp_task != -1:
+		WorkerThreadPool.wait_for_task_completion(_upnp_task)
+		_upnp_task = -1
+
+func _exit_tree() -> void:
+	_drain_upnp()
 
 func _upnp_found(ext_ip: String) -> void:
 	_external_ip = ext_ip
