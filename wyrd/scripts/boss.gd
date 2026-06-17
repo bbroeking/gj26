@@ -348,8 +348,8 @@ func _net_broadcasting() -> bool:
 
 # Guest boss-bar HP tracks the host via the snapshot (the host emits
 # boss_hp_changed from take_damage; the guest takes no damage, so mirror it here).
-func net_apply_state(pos: Vector3, p_hp: int) -> void:
-	super(pos, p_hp)
+func net_apply_state(pos: Vector3, p_hp: int, flags: Array = []) -> void:
+	super(pos, p_hp, flags)
 	boss_hp_changed.emit(hp, hp_max)
 
 @rpc("authority", "call_remote", "reliable")

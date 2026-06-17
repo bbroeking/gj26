@@ -350,7 +350,8 @@ func _process(delta: float) -> void:
 		var n := e as Node3D
 		if n == null or bool((n as Node).get("dead")):
 			continue
-		batch[String(n.name)] = [n.global_position, int(n.get("hp"))]
+		var flags: Array = n.net_status_flags() if (n as Node).has_method("net_status_flags") else []
+		batch[String(n.name)] = [n.global_position, int(n.get("hp")), flags]
 	_enemy_state.rpc(batch)
 
 var _esync_seen := false
@@ -367,7 +368,8 @@ func _enemy_state(batch: Dictionary) -> void:
 		var e := scene.get_node_or_null(NodePath(String(nm)))
 		if e != null and e.has_method("net_apply_state"):
 			var st: Array = batch[nm]
-			e.net_apply_state(st[0], int(st[1]))
+			var flags: Array = st[2] if st.size() > 2 else []
+			e.net_apply_state(st[0], int(st[1]), flags)
 	# A foe the host stopped sending that still lives here is dead there
 	# (snapshots are set-membership, claudecraft-style).
 	for e in get_tree().get_nodes_in_group("enemy"):

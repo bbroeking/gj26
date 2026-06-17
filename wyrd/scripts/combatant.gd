@@ -92,6 +92,9 @@ var _elite_ring: GPUParticles3D = null
 # `_tick_statuses` / `_die`. The spec 30 root-disc visual is owned by the
 # StatusEffect itself.
 var _statuses: Dictionary = {}
+# Phase 3 (co-op) — cosmetic status visuals mirrored onto a PUPPET foe from the
+# host's snapshot (kind -> visual Node3D). The host owns the real DoT/slow.
+var _net_status_vis: Dictionary = {}
 
 # Spec 31 — status visual + apply-text palettes.
 const STATUS_COLOR := {
@@ -260,7 +263,7 @@ func _nearest_player() -> Node3D:
 			best = p
 	return best
 
-func net_apply_state(pos: Vector3, p_hp: int) -> void:
+func net_apply_state(pos: Vector3, p_hp: int, flags: Array = []) -> void:
 	net_target_pos = pos
 	net_target_hp = p_hp
 	if p_hp < hp:
@@ -269,7 +272,10 @@ func net_apply_state(pos: Vector3, p_hp: int) -> void:
 		_spawn_damage_number(hp - p_hp, "normal")
 	hp = p_hp
 	if hp <= 0 and not dead:
-		_die()
+		_die()			# _die clears every visual, including _net_status_vis
+	elif not dead:
+		# Phase 3 — mirror the host's active statuses (cosmetic only).
+		_net_apply_status_vis(flags)
 
 func _physics_process(delta: float) -> void:
 	if dead:
@@ -694,6 +700,33 @@ func apply_status(kind: String, duration: float, dpt: int,
 func has_status(kind: String) -> bool:
 	return _statuses.has(kind)
 
+# Phase 3 (co-op) — the host snapshots these so puppet foes mirror the visuals.
+func net_status_flags() -> Array:
+	return _statuses.keys()
+
+# Reconcile a PUPPET's cosmetic status visuals to the host's active set: add
+# visuals for new kinds (respecting the particle cap), free ones that left.
+func _net_apply_status_vis(kinds: Array) -> void:
+	for k in _net_status_vis.keys():
+		if not (k in kinds):
+			var v = _net_status_vis[k]
+			if is_instance_valid(v):
+				v.queue_free()
+			_net_status_vis.erase(k)
+	for kk in kinds:
+		var kind := String(kk)
+		if _net_status_vis.has(kind):
+			continue
+		var particle_count := 0
+		for ek in _net_status_vis:
+			if _net_status_vis[ek] is GPUParticles3D:
+				particle_count += 1
+		if kind == "root" or particle_count < STATUS_PARTICLE_CAP:
+			var vis := _make_status_visual(kind)
+			if vis != null:
+				add_child(vis)
+				_net_status_vis[kind] = vis
+
 func get_status(kind: String) -> StatusEffect:
 	return _statuses.get(kind, null)
 
@@ -931,6 +964,11 @@ func _clear_all_statuses() -> void:
 		if s.visual != null and is_instance_valid(s.visual):
 			s.visual.queue_free()
 	_statuses.clear()
+	for k in _net_status_vis.keys():
+		var v = _net_status_vis[k]
+		if is_instance_valid(v):
+			v.queue_free()
+	_net_status_vis.clear()
 
 func _die() -> void:
 	dead = true

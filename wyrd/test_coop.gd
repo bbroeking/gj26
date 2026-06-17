@@ -9,6 +9,7 @@ extends SceneTree
 # Run: WYRD_NO_SAVE=1 godot --headless --path . --script res://test_coop.gd
 
 const BossScript := preload("res://scripts/boss.gd")
+const CombatantScript := preload("res://scripts/combatant.gd")
 
 var _pass := 0
 var _fail := 0
@@ -24,8 +25,9 @@ func _init() -> void:
 	_run()
 
 func _run() -> void:
-	print("--- co-op evals (C-3 boss replay) ---")
+	print("--- co-op evals (C-3 boss replay + enemy status replication) ---")
 	await _test_boss_replay()
+	await _test_status_replication()
 	print("--- coop evals: %d PASS, %d FAIL ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
 
@@ -88,3 +90,42 @@ func _test_boss_replay() -> void:
 
 	# 6) a non-networked boss must NOT broadcast (offline / solo guard).
 	_check("C3 offline does not broadcast", not boss._net_broadcasting())
+
+# Phase 3 — a guest puppet foe mirrors the host's active status set (cosmetic;
+# the host owns the DoT). Snapshot carries the kinds; the puppet shows/clears
+# the matching visuals.
+func _test_status_replication() -> void:
+	var host := Node3D.new()
+	host.name = "FoeHost"
+	root.add_child(host)
+	var foe = CombatantScript.new()
+	foe.name = "NetFoeS"
+	host.add_child(foe)
+	foe.cache_meshes()
+	foe.setup(50, 0.4, 1.4)
+	foe.net_puppet = true
+	await physics_frame
+	# Host applies burn → snapshot carries ["burn"] → puppet shows it.
+	foe.net_apply_state(foe.global_position, 50, ["burn"])
+	await physics_frame
+	_check("P3 puppet shows host burn", foe._net_status_vis.has("burn"),
+		str(foe._net_status_vis.keys()))
+	# A second status joins.
+	foe.net_apply_state(foe.global_position, 50, ["burn", "snared"])
+	_check("P3 second status mirrored", foe._net_status_vis.size() == 2,
+		str(foe._net_status_vis.keys()))
+	# Host drops them → puppet clears its visuals.
+	foe.net_apply_state(foe.global_position, 50, [])
+	_check("P3 statuses cleared when host drops them",
+		foe._net_status_vis.is_empty(), str(foe._net_status_vis.keys()))
+
+	# Host-side: net_status_flags() reports the real active kinds for the batch.
+	var hfoe = CombatantScript.new()
+	hfoe.name = "HostFoe"
+	host.add_child(hfoe)
+	hfoe.cache_meshes()
+	hfoe.setup(50, 0.4, 1.4)
+	await physics_frame
+	hfoe.apply_status("bleed", 5.0, 2, 1.0, 1.0)
+	_check("P3 net_status_flags reports active kinds",
+		"bleed" in hfoe.net_status_flags(), str(hfoe.net_status_flags()))
