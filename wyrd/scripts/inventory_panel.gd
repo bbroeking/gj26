@@ -527,7 +527,64 @@ func _tooltip_lines(item: Dictionary) -> Array:
 	for a in item.get("affixes", []):
 		lines.append({"text": Affixes.format_affix(a),
 			"color": Color(0.30, 0.42, 0.50), "size": 12})
+	# Spec items-affixes Task 9 — compare-on-hover. Hovering a *pack* item
+	# (grid, not the slot itself) appends the stat swing vs. the gear you'd
+	# swap out. Slot hovers are the equipped item already, so they're skipped.
+	if _cursor_cell.x >= 0 and equipment != null:
+		var cat := String(item.get("category", ""))
+		var equipped = equipment.get_slot(cat)
+		if equipped != null:
+			lines.append_array(_compare_lines(item, equipped, cat))
 	return lines
+
+# Sum an item's stats (base + every affix on the same stat) into a flat map.
+func _accumulate_stats(item: Dictionary) -> Dictionary:
+	var out := {}
+	var bs := String(item.get("base_stat", ""))
+	if bs != "":
+		out[bs] = float(item.get("base_value", 0))
+	for a in item.get("affixes", []):
+		var st := String(a.get("stat", ""))
+		if st == "":
+			continue
+		out[st] = float(out.get(st, 0.0)) + float(a.get("value", 0))
+	return out
+
+# Spec items-affixes Task 9 — stat-swing rows for the hovered item vs. the one
+# in its slot (▲ green gain / ▼ terracotta loss). Returns [] when every delta
+# rounds to nothing on screen, so the header never shows over an empty compare.
+func _compare_lines(item: Dictionary, equipped: Dictionary, cat: String) -> Array:
+	var mine := _accumulate_stats(item)
+	var theirs := _accumulate_stats(equipped)
+	var keys := {}
+	for k in mine:
+		keys[k] = true
+	for k in theirs:
+		keys[k] = true
+	var rows: Array = []
+	for k in keys:
+		var d: float = float(mine.get(k, 0.0)) - float(theirs.get(k, 0.0))
+		if absf(d) <= 0.0001:
+			continue
+		# Reuse the affix formatter on the magnitude, then re-sign it so the
+		# percent/round rules (e.g. crit → "+2%") match the lines above.
+		var ftxt: String = Affixes.format_affix({"stat": String(k), "value": absf(d)})
+		if ftxt.begins_with("+0 ") or ftxt.begins_with("+0%"):
+			continue   # rounds to a no-op on screen — don't show it
+		var up: bool = d > 0.0
+		rows.append({
+			"text": ("▲ " if up else "▼ ") + ("+" if up else "−") + ftxt.substr(1),
+			"color": Color(0.20, 0.52, 0.24) if up else WyrdUi.TERRACOTTA,
+			"size": 12})
+	if rows.is_empty():
+		return []
+	var out: Array = [
+		{"text": "", "color": Color.WHITE, "size": 11},
+		{"text": "vs. equipped %s" % cat.capitalize(),
+			"color": Color(0.42, 0.36, 0.30), "size": 10},
+	]
+	out.append_array(rows)
+	return out
 
 func _draw_tooltip() -> void:
 	var item = _hovered_item()
