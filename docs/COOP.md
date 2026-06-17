@@ -46,12 +46,17 @@ To leave: `Esc` → **"Leave the party"** (or just close the game).
 ## Getting connected — three paths
 
 ### 1. Tailscale (recommended — works anywhere, no router setup)
-Both of you install [Tailscale](https://tailscale.com) (free) and sign in. The
-host's Tailscale address starts with **`100.`** and appears in the Lantern's
-address list (it's the primary one unless your router's UPnP also found a public
-IP — the Lantern shows "Other addresses" too, so grab the `100.x`). Send it; your
-friend joins with it from anywhere on the internet. No port-forwarding, no
-firewall fiddling. This is the most reliable path.
+Both of you install [Tailscale](https://tailscale.com/download) (free) and sign
+in. **You must be on the same _tailnet_** — separate Tailscale accounts can't see
+each other by default, so either both sign into the same account, or one invites
+the other (Tailscale admin console → *Users → Invite*, or *Share* a machine).
+Confirm with `tailscale status` — you should see each other's device + `100.x`.
+
+The host's Tailscale address starts with **`100.`** (run `tailscale ip -4`, or
+read it from the Lantern's address list — it's primary unless your router's UPnP
+also found a public IP, in which case grab the `100.x` from "Other addresses").
+Send it; your friend joins with it from anywhere on the internet. No
+port-forwarding, no firewall fiddling. The most reliable path.
 
 ### 2. Same network / LAN (no setup)
 If you're on the same Wi-Fi/router, the host's address is a **`192.168.x`** or
