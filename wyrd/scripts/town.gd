@@ -150,11 +150,11 @@ func _ready() -> void:
 				game.add_material("bogiron_ore", 2)
 				game.add_material("thorn_essence", 1)
 			if OS.get_environment("WYRD_UI_SHOT") == "trades":
-				var player2 := game.local_player()
+				var player2: Node = game.local_player()
 				if player2 != null:
 					player2.toggle_trades()
 			elif OS.get_environment("WYRD_UI_SHOT") in ["satchel", "charts"]:
-				var player3 := game.local_player()
+				var player3: Node = game.local_player()
 				var tab := 1 if OS.get_environment("WYRD_UI_SHOT") == "satchel" else 2
 				if player3 != null and player3._inv_root != null:
 					player3._inv_root.open_tab(tab)
@@ -172,7 +172,7 @@ func _ready() -> void:
 					if not fit.is_empty():
 						game.inventory.try_place(it, fit.pos, fit.rotated)
 				game.equipment.slots["chest"] = items_data.make_item("leather_chest", "magic")
-				var player := game.local_player()
+				var player: Node = game.local_player()
 				if player != null:
 					player.toggle_inventory()
 			elif OS.get_environment("WYRD_UI_SHOT") in ["cook", "smith"]:
@@ -401,7 +401,7 @@ func _place_glb(packed: PackedScene, pos: Vector3, target_h: float,
 
 func _position_player() -> void:
 	var game := get_node_or_null("/root/Game")
-	var player := game.local_player() if game != null else null
+	var player: Node = game.local_player() if game != null else null
 	if player != null and player is Node3D:
 		(player as Node3D).position = PLAYER_SPAWN
 		if player.has_method("set_spawn"):
