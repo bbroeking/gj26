@@ -115,8 +115,14 @@ func _ready() -> void:
 					_status.text = "This clears your charts, trades, satchel, and gear."
 					return
 				_game.reset_to_defaults()
+				# Buffer the toast across the reload (like return_to_town /
+				# enter_dungeon do) so the FRESH town HUD drains it in _ready —
+				# otherwise it fires to this dying HUD and is never seen.
+				_game._defer_toasts = true
 				_game.notify("A fresh page. The yard waits.")
-				get_tree().change_scene_to_file(_game.TOWN_SCENE)
+				# Deferred — never mutate the scene tree mid-signal (matches the
+				# four change_scene call sites in game.gd).
+				get_tree().change_scene_to_file.call_deferred(_game.TOWN_SCENE)
 				_close())
 			col.add_child(newgame)
 
