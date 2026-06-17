@@ -1,11 +1,25 @@
-# Wayfinder — Combat-Feel & Animation Plan
+# Wayfinder — Feel Plan (whole loop)
 
-Living plan for making combat and movement *feel* good. Grounded in two research
-passes (animation pipeline; hit-feel + bullet-hell tactics), a read of the
-current code, and one plan-optimizer pass (v1 71 → v3 96). **Blender is parked**
-— everything here is code-side (procedural), no asset round-trips.
+Living plan for making **every verb in the loop feel good** — gather → craft →
+chart → delve → town. Grounded in research passes (animation pipeline; hit-feel +
+bullet-hell tactics), a read of the current code, and plan-optimizer passes.
+**Blender is parked** — everything here is code-side (procedural), no asset
+round-trips.
+
+The document has two parts:
+
+- **Part A — Combat & movement feel** (§0–§9 below). **Shipped** (Phases 1–5,
+  gate-green). The animation toolkit in §1 and the cross-cutting rules in §3/§5
+  are the shared vocabulary Part B reuses — read them first.
+- **Part B — Feel across the whole loop** (after §9). **Planned.** Brings the
+  *cozy* half of the loop (gather/craft/inscribe/pickup/level-up/town) up to the
+  bar Part A set for combat, reusing the same patterns.
 
 Status legend: ✅ done · 🔄 doing · ⬜ planned · ⏸ parked
+
+---
+
+# PART A — Combat & movement feel  *(shipped, gate-green)*
 
 ---
 
@@ -224,3 +238,199 @@ Two research passes (session-archived): animation pipeline + 12-principles;
 hit-feel number bands + bullet-hell telegraphing. Anchors: Hollow Knight Hornet
 frame data, Dark Souls roll i-frame, Smash hitlag, shmup bullet-visibility,
 ARPG ground-decal telegraphs.
+
+---
+
+# PART B — Feel across the whole loop  *(planned)*
+
+Cozy skilling is the spine (ADR 0003): the player spends most of their time
+**gathering, crafting, inscribing charts, and resting in town** — and right now
+those verbs are functional but flat next to the combat that Part A polished. Part
+B closes that gap with the *same* toolkit (§1) and the *same* guardrails (§3/§5),
+so nothing here is a new system — it's the existing feel patterns applied to the
+cozy half.
+
+**Guiding rule:** a verb *feels good* when it has anticipation → a clear moment of
+impact → an overshoot-settle payoff, plus a sound. Every phase below adds the
+missing beat(s) to one verb.
+
+## B-0. Current state of the cozy loop (don't rebuild)
+
+| Verb | What already feels good | The gap (what B adds) | Where |
+|---|---|---|---|
+| **Gather** (mine/chop/forage) | per-swing node squash, tool-in-hand, channel bar, per-beat SFX, floating "+N", move/damage cancel | swing rotates the **whole mesh** (stiff) not the arm; no impact chip; harvest end is a quiet number, not a payoff | `gather_node.gd`, `player_controller.gd:begin_gather` |
+| **Craft** (cook/forge/distil) | recipe panel, craft SFX, success toast, perk procs | the **station body does nothing** on success — no flare/spark/bubble | `game.gd:craft`, `craft_station.gd` |
+| **Inscribe a chart** (signature Wayfinding verb) | purple glow OmniLight on the table, toasts | no ritual — affixes don't *reveal*, the chart doesn't *appear*, no seal beat | inscribing table, chart panel |
+| **Pickup** | glowing beacon (`ItemPickup`), proximity scanner, auto/try-take | grab + satchel-landing have no payoff (suck, chime, slot pulse) | `item_pickup.gd`, satchel HUD |
+| **Level / trade-up** | `level_up` SFX, `leveled_up` signal, HUD refresh | the moment is silent visually — no burst, no perk banner, no count-up | `game.gd`, `player_controller.gd:_on_leveled_up`, `player_hud.gd` |
+| **Town / Living-Atlas** | forage/ore/log nodes regrow on timers, town theme | nodes just *appear*; no arrival beat; Atlas/board doesn't react to an unlock | `town.gd` |
+
+## B-1. Cross-cutting (Part B deltas — extend Part A §3/§5, don't duplicate)
+
+- **`feel.gd` central tunables (build FIRST — phase B0).** Part A flagged "one
+  tuning block" as wanted but never built it. Create `data/feel.gd` (a
+  `RefCounted`/autoload const bag) holding every Part B constant: gather swing
+  depth/rate, impact-chip count, harvest mote count + arc time, craft-reaction
+  intensity per station, pickup suck-time, level-up punch scale, town grow-in
+  duration. Every later phase reads from here so a playtest is one-file-fast. No
+  magic numbers buried in logic.
+- **Audio (same pipeline as Part A §3).** Each new beat gets one ElevenLabs SFX
+  via `tools/generate_audio.py`, `pitch_scale = randf_range(0.95, 1.05)` so
+  repetition (especially gather, the most-repeated verb) never fatigues: gather
+  impact-chip (per material kind), harvest chime, craft flare/sizzle/clang/bubble
+  per station, inscribe seal, pickup chime, level-up chord, town arrival swell.
+- **Co-op (CRITICAL — opposite default from Part A projectiles).** Part B
+  reactions are **cosmetic and LOCAL** — gather swing, craft flare, motes,
+  pickup suck, level-up burst, town grow-in run on **each peer independently**.
+  Only the *authoritative state* they accompany (materials added, xp/level,
+  chart created, item taken) routes through `game`/`net_game` as it does today.
+  Do **not** gate cosmetics behind the host or they vanish for guests. (Contrast:
+  enemy projectiles in Part A *are* host-authoritative because they deal damage.)
+- **Performance.** Motes/chips/sparks are short-lived `MeshInstance3D` + a tween,
+  not particle systems or physics. Cap bursts (≤8 motes, ≤6 chips) in `feel.gd`
+  and `log()` if ever clamped. Free on tween-finish; never leak across a scene
+  change (parent to the node, not the scene root).
+- **Accessibility.** The Part A "reduce screen shake" toggle also damps Part B
+  camera micro-kicks (gather impact, craft clang). Reactions stay readable with
+  shake off.
+
+## B-2. Roadmap (priority = frequency × payoff)
+
+### Phase B0 — `feel.gd` tunables + audio scaffolding  ⬜  *(do first)*
+The foundation every other phase reads from. Stub the SFX keys in `sfx.gd` so
+later phases just call `sfx.play("gather_chip")`.
+- **DoD:** `data/feel.gd` exists with the constants above; `Feel.GATHER_*` etc.
+  resolve in a headless smoke test; new SFX keys registered (silent stubs OK
+  until audio is generated). Gate green.
+- **Clones:** `hit_feedback.gd` tunables pattern. **Effort: S.**
+
+### Phase B1 — Gather arm-articulation (the bow-draw treatment) ⬜
+The clearest "make an action feel good" win — gathering is the most-repeated verb
+and the spine of the game. Replace the whole-mesh swing with a `SkeletonModifier3D`
+that drives the **arm bones** through a mine/chop arc (forage = a lower, gentler
+pluck) while the locomotion/idle clip keeps playing underneath — exactly how
+`bow_draw_modifier.gd` layers the bow draw over the legs.
+- Add `GatherSwingModifier` (sibling of `bow_draw_modifier.gd`); `begin_gather`
+  drives `swing_amount` on a per-kind sawtooth synced to the channel beat.
+- On each swing **apex**: a small impact — `feel`-capped chip motes off the node,
+  a sharper node recoil (the existing squash, deeper), a tiny camera micro-kick
+  (shake-toggle aware), and the per-kind impact-chip SFX.
+- **DoD:** the arm visibly articulates the swing (not the whole body tipping);
+  legs/idle keep cycling; mid-swing screenshot via the feel bench (§B-3); gate
+  green. **Clones:** `bow_draw_modifier.gd`. **Effort: M.**
+
+### Phase B2 — Harvest payoff (the "pop") ⬜
+The end of a channel should *pay off*, distinct from each swing. On `_harvest`:
+- node does a bigger squash-burst + a depletion puff; **material motes arc to the
+  player** (≤8 cheap `MeshInstance3D`, back-out tween toward the player, no
+  physics) then the "+N material" float scales in with an overshoot-settle; a
+  brighter harvest chime (distinct from the per-beat tick).
+- **DoD:** harvest reads as a payoff distinct from a swing; motes visibly travel
+  node→player; "+N" overshoots in. Verify by feel bench + a 3-frame capture.
+- **Clones:** `creature_anim._back_out` overshoot; existing `_float_text`.
+  **Effort: S–M.**
+
+### Phase B3 — Level / trade-up moment ⬜
+Cheap, touches every trade, pure dopamine — the progression payoff. On
+`leveled_up`:
+- player burst: pulse the existing ink-outline **gold** + an overshoot scale-punch
+  (reuse the spawn back-out); a **perk banner** toast naming the unlock (we have
+  the perk names in `PERKS`); the HUD trade readout does a count-up/flash; a held
+  level-up chord (we already play `level_up` SFX — layer the chord).
+- **DoD:** crossing a trade level is unmissable — burst + named-perk banner +
+  HUD flash fire together within one frame of the signal. Timer/logic test
+  asserts the banner shows the correct perk for the new level. **Clones:**
+  `creature_anim` back-out; Part A flinch/punch on `_mesh`. **Effort: S–M.**
+
+### Phase B4 — Pickup & satchel-landing feel ⬜
+Independent, satisfying, frequent. On take:
+- the beacon **sucks toward the player** + scales down over `Feel.PICKUP_SUCK`,
+  a pickup chime, a floating item-name chip, and **the satchel slot it lands in
+  pulses/flashes** so "it went in my bag" is legible without opening the pack.
+- **DoD:** taking an item animates beacon→player and pulses the destination slot;
+  no item is consumed if the pack is full (existing reserve-space rule holds).
+  Logic test: suck tween completes and slot-pulse targets the actual fit slot.
+  **Clones:** `item_pickup.gd` beacon; HUD slot draw. **Effort: S–M.**
+
+### Phase B5 — Craft station reaction ⬜
+A successful craft should make the **station react in-world**, not just toast. Add
+a `react()` hook on `CraftStation`; `game.craft()` success finds the active
+station and calls it:
+- **cookfire** — ember-light energy pulse + flame flicker + steam motes rising
+  from the pot; **anvil** — spark burst + a scale-punch on the anvil body + clang
+  micro-flash; **still** — green vapor puff + the catch-flask glints.
+- **DoD:** each station has a distinct visible reaction on a successful craft;
+  reaction fires only on success (not on a gated/failed attempt). Logic test:
+  `react()` called exactly once per successful `craft()`, zero on failure.
+  **Clones:** `craft_station.gd` OmniLight + `_prim`; mote pattern from B2.
+  **Effort: M.**
+
+### Phase B6 — Inscribe / chart ritual (the signature verb) ⬜
+Wayfinding is *the* differentiator (CLAUDE.md). Inscribing a chart should feel
+ceremonial, not like a menu confirm. **Shippable in two slices:**
+- **B6a — table reaction:** the table glow brightens & pulses, a light/quill
+  sweep crosses a parchment plane, the finished chart "drops" onto the table with
+  a settle, a **seal** chime.
+- **B6b — affix reveal:** the chart's affix names reveal **one-by-one** with a
+  stamp/overshoot (good/bad twins in their kit colors) instead of appearing all
+  at once.
+- **DoD (a):** inscribing triggers a visible table ritual + seal SFX. **DoD (b):**
+  affixes reveal sequentially, each with an overshoot stamp, in ≤1.2s total.
+  Verify by feel bench capture. **Clones:** inscribing OmniLight; B3 overshoot;
+  toast/float text. **Effort: M–L** (highest ceremony — do when the toolkit's warm).
+
+### Phase B7 — Town / Living-Atlas ambient feel ⬜
+Town is the rest beat — returning from a delve should feel like arriving home.
+- **arrival beat:** a gentle camera ease-in + a town ambient swell on entering
+  from a delve; **regrowth pop:** a node that respawns **sprouts/grows in** with
+  an overshoot (reuse the spawn back-out) instead of appearing; ambient life —
+  light sway / drifting motes on town props; the **Atlas/chart board reacts**
+  when a new den unlocks (glow + a stamp).
+- **DoD:** a returning player sees ≥1 regrown node grow-in (not pop) within the
+  first seconds; arrival plays the swell once; an unlock visibly marks the board.
+  **Clones:** `creature_anim` back-out (grow-in); `town.gd` node respawn.
+  **Effort: M.**
+
+### Parked / explicitly out of scope
+- ⏸ **Blender arm-clip authoring** — the `SkeletonModifier3D` procedural approach
+  (B1) is the interim, same call as the bow-draw. Re-curve real swing clips
+  whenever the user opens Blender + the MCP add-on; no code dependency.
+- **Defeat / down / revive feel** — *not* in Part B (combat-adjacent, and co-op
+  revive is a netcode question, not a cosmetic one). Flag for a later combat pass.
+- **Delve→town transition wipe** — the transition suite owns this; B7's arrival
+  beat is the town-side reaction, not a new transition.
+
+## B-3. Verification (extends Part A §5)
+1. **Five-suite gate stays green** every commit (`WYRD_NO_SAVE=1`).
+2. **Feel bench** — extend `tools/animation_gallery.gd` (or a sibling
+   `tools/feel_bench.gd`) with triggers for each cozy beat: `G` gather swing,
+   `H` harvest pop, `L` level-up burst, `P` pickup, `C` craft react (cycle
+   station), `I` inscribe. `WYRD_SHOT` + a `WYRD_FEEL=<beat>` hook captures the
+   key frame — closes the "motion can't be screenshotted" gap for the cozy half.
+3. **Logic tests** where there's logic, not just motion: B3 banner names the
+   right perk; B4 suck completes + targets the real fit slot; B5 `react()` fires
+   once per success / never on failure; B7 regrowth grow-in starts on respawn.
+4. **Play-test sign-off** for felt timing of B1 (swing rhythm) and B6 (ritual pace).
+
+## B-4. Success metrics (felt — validate by playtest)
+- **Gather** has rhythm: the swing, the chip, and the harvest pop are three
+  distinct felt beats, not one mushy channel.
+- **Craft** is causal: the player sees the station *do* the thing they made.
+- **Inscribe** reads as the game's signature ritual — a tester unfamiliar with
+  the game calls it "the cool part."
+- **Pickup / level-up** never go unnoticed: the player knows it landed without
+  watching a number.
+- **Town** feels restful and alive — arriving home is a beat, not a load.
+- **Cozy holds** (Part A §8): no jank, no fatigue (pitch-jittered SFX), shake
+  optional, reactions readable.
+
+## B-5. Sequence & first step
+1. **B0** (`feel.gd` + SFX stubs) — foundation, fast, unblocks the rest.
+2. **B1 + B2** (gather swing → harvest pop) — highest frequency, the spine.
+3. **B3** (level-up) — cheap, high dopamine, touches every trade.
+4. **B4** (pickup) — independent, satisfying.
+5. **B5** (craft reaction).
+6. **B6** (inscribe ritual — a then b) — the signature, do when the toolkit's warm.
+7. **B7** (town/atlas) — the connective rest beat.
+**First commit:** `data/feel.gd` with the tunables block + registered SFX stub
+keys + a headless smoke test that the constants resolve. B0 → B1 is the path.
