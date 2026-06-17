@@ -1,5 +1,34 @@
 # Implementation Roadmap — Sequencing the 31 Build Docs
 
+## Build log — 2026-06-17 (live, post-audit)
+**The game now BOOTS and plays end-to-end with a green 5-suite gate.** A
+critical regression (`town.gd` parse error from the big systems build-out) had
+made it unlaunchable since `ff5fc36`; fixed in `299fe61`, and a new
+`test_boot_smoke` suite (`edcf2c6`) compiles every script + loads Town/World so
+this class of bug can't ship green again.
+
+A parallel audit (4 agents, all 31 systems, cross-checked against code) found
+the **core spine is COMPLETE** — chart loop, economy, mastery tree to lv 17,
+ledger (ADR 0013 #3), combat + status + elites + combatant-AI, save/load,
+dungeon-gen scopes, biome palettes, co-op C-1/C-2/C-4/C-5, HUD + feel.gd, the
+inventory pack + compare-on-hover tooltip. What remains splits three ways:
+- **Real, codeable tails** (small, self-contained): per-skill VFX/upgrade
+  passes (snare windup, ward arc, mercy execute-ring, pierce-count), status
+  player-flash + cleanse-factory + MP sync, Herald/Protector elites + depth
+  density, inscription-ritual reveal + run-debrief, SKILL_HINTS, HUD status
+  strip, multi-floor descent, biome decor models, New-Game button.
+- **Blocked on assets/decisions**: ALL audio .mp3 (ElevenLabs, ~$0.85, needs
+  spend approval), painted skill-icon PNGs + NPC portraits (art), new biome
+  GLBs (Meshy), C-3 boss telegraph host-sync (large-structural — guest boss
+  runs own AI), repair/durability + skill perk-ladders (design decisions).
+- **Vetted moot** (audit-flagged but NOT real): consumable stacking + trophy-
+  sell block (consumables/trophies aren't grid items — they're satchel
+  materials / ledger entries); chart entry fee (charts already consumed).
+
+This session shipped: `town.gd` boot fix · boot-smoke suite · compare-on-hover
+tooltip · co-op C-2/C-4/C-5 + Quickroot cleanse · economy buy-gate + chart-case
+cap + save-test footgun fix. See git log `ff5fc36..HEAD`.
+
 ## Build log — 2026-06-16 (live)
 **22 / 31 systems built & gate-green** (all standard suites + per-feature suites pass).
 Serial (me): ㉒ status-effects player parity — HUD drain-arc pip row above the HP globe, `marked` suffix, `StatusEffect.duration`, and the `hp_regen` tick (the `vigorous` affix now heals over time). `test_player_status` P5/P6 added. Deferred: DoT mesh-tint pulse (needs material-flash plumbing), cleanse path, multiplayer status sync.
