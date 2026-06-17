@@ -44,8 +44,10 @@ godot --path wyrd
 ```
 
 **Co-op:** press `Esc` → *The Lantern* → "Light a fire" (host, port
-7777). A friend on the same network (or Tailscale) picks Join and types
-your IP. Quick local test:
+7777), "Copy address", send it to a friend. They pick Join and paste it
+— same network or [Tailscale](https://tailscale.com). Full guide
+(hosting, the three connection paths, how it works, troubleshooting):
+**[docs/COOP.md](docs/COOP.md)**. Quick local test:
 
 ```bash
 WYRD_NET=host godot --path wyrd          # window 1
@@ -57,7 +59,7 @@ I pack · M satchel · K trades · Space roll · F10 sound (off by default)
 
 ## Tests
 
-Four headless suites gate every change (~350 checks):
+Six headless suites gate every change (~450 checks):
 
 ```bash
 cd wyrd
@@ -65,6 +67,8 @@ WYRD_NO_SAVE=1 godot --headless --path . --script res://test_wyrd_loop.gd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_wyrd_dungeon_scene.gd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_wyrd_transitions.gd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_skills.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_boot_smoke.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_coop.gd
 ```
 
 ## How it's built

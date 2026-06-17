@@ -94,6 +94,12 @@ internet join from here (no router UPnP / second internet machine), so the
 > ~5h). This was the "engine keeps crashing." Fixed in e1d2a0f; proven by
 > revert (exit 134 + fresh crash report) vs fix (exit 0, none).
 
+## Minor followups (surfaced by the COOP.md fact-check)
+- **Town-join has no toast** — `_register_player` only notifies `"%s joins the
+  delve."` when the host is `in_dungeon` (net_game.gd ~218). A friend joining in
+  town appears in the party frame/roster but gets no toast. Add a town-join
+  notify for parity. Low priority.
+
 ## Pointers
 net_game.gd (host/join/roster/snapshots/rejoin/end-notice) · player_controller
 .gd (`_net_send_tick`, `_net_cast`, `_net_state`) · combatant.gd
