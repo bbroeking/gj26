@@ -223,6 +223,11 @@ func take_damage(amount: int, from_dir: Vector3,
 
 	hp -= dmg
 	_spawn_damage_number(dmg, tier)
+	# Co-op (C-2) — guests' puppet enemies never run take_damage, so they'd
+	# see no damage popups. The host broadcasts the number to them.
+	var netd := get_node_or_null("/root/NetGame")
+	if netd != null and bool(netd.active) and netd.is_host():
+		netd.dmg_event(global_position + Vector3(0.0, 2.0, 0.0), dmg, tier)
 	_react_t = REACT_SEC
 	# A hit also wakes an idle enemy.
 	if _state == State.IDLE:

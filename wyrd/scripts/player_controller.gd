@@ -1603,6 +1603,11 @@ func has_status(kind: String) -> bool:
 func get_status(kind: String):
 	return _statuses.get(kind, null)
 
+# Clear a status immediately — a Quickroot Tonic shakes off root/snare.
+func cleanse_status(kind: String) -> void:
+	if _statuses.erase(kind):
+		_update_pips()
+
 # Per-frame status tick — single tick per status per frame (no while-loop
 # catch-up). Matches Combatant's tick model.
 func _tick_statuses(delta: float) -> void:

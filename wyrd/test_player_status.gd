@@ -36,6 +36,7 @@ func _run() -> void:
 	await _p4_sunlit_burns_player()
 	await _p5_pip_list()
 	await _p6_marked_suffix()
+	await _p7_cleanse()
 	print("--- player status evals: %d PASS, %d FAIL ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
 
@@ -126,6 +127,20 @@ func _p4_sunlit_burns_player() -> void:
 	elite._trigger_burn_pulse()
 	_check("P4", p.has_status("burn"),
 		"player has burn after Sunlit melee=%s" % str(p.has_status("burn")))
+
+# ---- P7 — cleanse_status removes a movement lock (Quickroot Tonic path) ----
+func _p7_cleanse() -> void:
+	var host := Node3D.new()
+	host.name = "P7Host"
+	root.add_child(host)
+	var p: Node = _make_player(host)
+	await physics_frame
+	await physics_frame
+	p.apply_status("root", 3.0, 0, 0.0, 0.0)
+	var had: bool = p.has_status("root")
+	p.cleanse_status("root")
+	_check("P7", had and not p.has_status("root"),
+		"root applied=%s, cleansed=%s" % [str(had), str(not p.has_status("root"))])
 
 # ---- P5 — pip list reflects active statuses + stores duration + drains ----
 func _p5_pip_list() -> void:

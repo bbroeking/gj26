@@ -84,7 +84,10 @@ func modal_closed() -> void:
 # The player this machine controls: offline it's the only one; in co-op
 # it's the body whose multiplayer authority is ours.
 func local_player() -> Node:
-	for p in get_tree().get_nodes_in_group("player"):
+	var tree := get_tree()
+	if tree == null:
+		return null   # standalone Game instance (headless tests) — not in the tree
+	for p in tree.get_nodes_in_group("player"):
 		if not net_active() or (p as Node).is_multiplayer_authority():
 			return p
 	return null
@@ -639,6 +642,12 @@ func quaff_buff_draught() -> bool:
 			spend_materials({id: 1})
 			apply_buff(String(id), String(def.stat), float(def.value),
 				float(def.duration))
+			# Quickroot Tonic also shakes off movement-locking statuses.
+			if String(id) == "quickroot_tonic":
+				var pl: Node = local_player()
+				if pl != null and pl.has_method("cleanse_status"):
+					pl.cleanse_status("root")
+					pl.cleanse_status("snared")
 			notify(String(def.toast))
 			save_now()
 			return true

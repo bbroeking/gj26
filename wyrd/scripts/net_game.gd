@@ -31,9 +31,15 @@ var _last_ip := ""
 var _last_port := DEFAULT_PORT
 var _leaving := false
 var _reconnect_left := 0
+# C-4 / C-5 — the active chart (for mid-run rejoin) + the host's external IP
+# (opportunistic UPnP, for internet friend-invites; empty until/unless found).
+var _active_chart: Dictionary = {}
+var _external_ip := ""
 
 func _ready() -> void:
-	display_name = OS.get_environment("USER")
+	display_name = OS.get_environment("WYRD_DISPLAY_NAME")
+	if display_name == "":
+		display_name = OS.get_environment("USER")
 	if display_name == "":
 		display_name = "Wayfinder"
 	multiplayer.peer_connected.connect(_on_peer_connected)
@@ -55,6 +61,8 @@ func local_addresses() -> Array:
 			continue
 		out.append(s)
 	out.sort_custom(func(x, y): return _addr_rank(x) < _addr_rank(y))
+	if _external_ip != "":
+		out.push_front(_external_ip)   # external IP first — for internet invites
 	return out
 
 func _addr_rank(s: String) -> int:
@@ -79,7 +87,24 @@ func host(port: int = DEFAULT_PORT) -> bool:
 	_leaving = false
 	players = {1: {"name": display_name}}
 	roster_changed.emit()
+	_try_upnp(port)              # opportunistic — external IP for internet invites
 	return true
+
+# Opportunistic UPnP port-map so the host's EXTERNAL ip can be shared for
+# internet co-op (not just LAN/Tailscale). Runs off the main thread, and is a
+# pure no-op on routers without UPnP — never blocks or crashes hosting.
+func _try_upnp(port: int) -> void:
+	WorkerThreadPool.add_task(func() -> void:
+		var upnp := UPNP.new()
+		if upnp.discover() == UPNP.UPNP_RESULT_SUCCESS:
+			upnp.add_port_mapping(port)
+			var ext := upnp.query_external_address()
+			if ext != "" and ext != "0.0.0.0":
+				call_deferred("_upnp_found", ext))
+
+func _upnp_found(ext_ip: String) -> void:
+	_external_ip = ext_ip
+	roster_changed.emit()        # the Lantern refreshes its address row
 
 func join(ip: String, port: int = DEFAULT_PORT) -> bool:
 	var peer := ENetMultiplayerPeer.new()
@@ -170,6 +195,13 @@ func _register_player(p_name: String) -> void:
 	players[id] = {"name": p_name}
 	_sync_roster.rpc(players)
 	_apply_roster()
+	# C-4 — a peer that joins (or rejoins after a drop) while the host is mid-
+	# dungeon drops straight into the same chart; same seed → deterministic
+	# rebuild, no extra data transfer.
+	var game := get_node_or_null("/root/Game")
+	if game != null and bool(game.in_dungeon) and not _active_chart.is_empty():
+		game.notify("%s joins the delve." % p_name)
+		_rejoin_run.rpc_id(id, _active_chart)
 
 @rpc("authority", "call_local", "reliable")
 func _sync_roster(p_players: Dictionary) -> void:
@@ -240,12 +272,21 @@ func start_run(chart: Dictionary) -> void:
 	if is_host():
 		print("[net] run start: %s (seed %d)" % [
 			String(chart.get("name", "?")), int(chart.get("seed", 0))])
+		_active_chart = chart   # C-4 — remembered for a mid-run (re)join
 		_run_start.rpc(chart)
 
 @rpc("authority", "call_local", "reliable")
 func _run_start(chart: Dictionary) -> void:
 	var game := get_node("/root/Game")
 	game.net_enter(chart)
+
+# C-4 — host → one (re)joining peer: enter the active dungeon. Guarded so a
+# peer already in the dungeon isn't yanked.
+@rpc("authority", "reliable")
+func _rejoin_run(chart: Dictionary) -> void:
+	var game := get_node("/root/Game")
+	if not bool(game.in_dungeon):
+		game.net_enter(chart)
 
 # Any peer at an exit/abandon stone asks the host. Phase C — stepping
 # through the EXIT gives the rest of the party a 5-second grace (grab
@@ -370,3 +411,27 @@ func _drop_event(kind_id: String, rarity: String, pos: Vector3) -> void:
 	var ang := randf() * TAU
 	var kick := Vector3(cos(ang), 0.0, sin(ang)) * randf_range(0.4, 1.0)
 	ItemPickup.spawn(scene, it, pos + kick)
+
+# C-2 — Host → guests: a foe took damage; pop a matching number so guests see
+# hits land (their puppet enemies don't run take_damage). NOT call_local — the
+# host already showed its own via combatant._spawn_damage_number.
+func dmg_event(pos: Vector3, amount: int, tier: String) -> void:
+	if is_host():
+		_dmg_event.rpc(pos, amount, tier)
+
+@rpc("authority", "unreliable_ordered")
+func _dmg_event(pos: Vector3, amount: int, tier: String) -> void:
+	var scene := get_tree().current_scene
+	if scene == null:
+		return
+	var dn = load("res://scenes/DamageNumber.tscn").instantiate()
+	scene.add_child(dn)
+	dn.global_position = pos
+	if dn.has_method("setup"):
+		dn.setup(amount, tier)
+
+# C-3 (boss telegraph replication) is DEFERRED: it presumes a host-driven
+# puppet boss, but today the guest's boss runs its OWN AI (only regular
+# enemies are net_puppets — layout_loader sets it on NetFoe bodies, not the
+# boss). The guest therefore already telegraphs from its local boss AI; true
+# host-authoritative boss sync is a larger Phase-B change. See the build log.
