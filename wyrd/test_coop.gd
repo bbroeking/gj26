@@ -10,6 +10,7 @@ extends SceneTree
 
 const BossScript := preload("res://scripts/boss.gd")
 const CombatantScript := preload("res://scripts/combatant.gd")
+const PlayerScene := preload("res://scenes/Player.tscn")
 
 var _pass := 0
 var _fail := 0
@@ -28,6 +29,7 @@ func _run() -> void:
 	print("--- co-op evals (C-3 boss replay + enemy status replication) ---")
 	await _test_boss_replay()
 	await _test_status_replication()
+	await _test_party_hp_replication()
 	print("--- coop evals: %d PASS, %d FAIL ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
 
@@ -129,3 +131,23 @@ func _test_status_replication() -> void:
 	hfoe.apply_status("bleed", 5.0, 2, 1.0, 1.0)
 	_check("P3 net_status_flags reports active kinds",
 		"bleed" in hfoe.net_status_flags(), str(hfoe.net_status_flags()))
+
+# Phase 4 — player HP rides the position snapshot so the party frame can read
+# every peer's health. Verify the receive path sets hp, and that the old
+# (hp-less) form leaves hp untouched (back-compat).
+func _test_party_hp_replication() -> void:
+	var host := Node3D.new()
+	host.name = "PartyHost"
+	root.add_child(host)
+	var pl = PlayerScene.instantiate()
+	host.add_child(pl)
+	await physics_frame
+	await physics_frame
+	pl._net_state(pl.global_position, 0.0, false, false, 17, 42)
+	_check("P4 player hp replicates via _net_state",
+		int(pl.hp) == 17 and int(pl.hp_max) == 42,
+		"hp=%d max=%d" % [int(pl.hp), int(pl.hp_max)])
+	# A snapshot that omits hp (old 4-arg form) must not corrupt it.
+	pl._net_state(pl.global_position, 0.0, false, false)
+	_check("P4 hp untouched when snapshot omits it", int(pl.hp) == 17,
+		"hp=%d" % int(pl.hp))

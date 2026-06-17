@@ -1350,15 +1350,21 @@ func _net_send_tick(delta: float) -> void:
 	_net_accum = 0.0
 	var yaw: float = _mesh.rotation.y if _mesh != null else 0.0
 	_net_state.rpc(global_position, yaw,
-		Vector2(velocity.x, velocity.z).length() > 0.5, dead)
+		Vector2(velocity.x, velocity.z).length() > 0.5, dead, hp, hp_max)
 
 @rpc("authority", "unreliable_ordered")
 func _net_state(pos: Vector3, yaw: float, moving: bool,
-		p_dead: bool = false) -> void:
+		p_dead: bool = false, p_hp: int = -1, p_hp_max: int = -1) -> void:
 	_net_has_target = true
 	_net_target_pos = pos
 	_net_target_yaw = yaw
 	_net_moving = moving
+	# Phase 4 — mirror hp onto the remote body so the party HP frame can read
+	# every peer's health (the local body keeps its own real hp).
+	if p_hp >= 0:
+		hp = p_hp
+		if p_hp_max > 0:
+			hp_max = p_hp_max
 	# Phase B — enemies skip dead puppets; the died edge feeds party-wipe
 	# checks on every machine.
 	if p_dead and not dead:

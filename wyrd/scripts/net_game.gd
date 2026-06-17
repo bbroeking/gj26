@@ -11,6 +11,8 @@ extends Node
 signal roster_changed
 signal session_ended(reason: String)
 signal reconnecting(attempt: int, max_attempts: int)
+# Phase 4 — a peer stepped through the exit; the party returns after the grace.
+signal run_ending(who_name: String, seconds: float)
 
 const DEFAULT_PORT := 7777
 const MAX_PLAYERS := 4
@@ -322,6 +324,9 @@ func _end_notice(who_name: String) -> void:
 	var game := get_node("/root/Game")
 	game.notify("%s steps through the waystone — the run ends shortly."
 		% who_name)
+	# Phase 4 — the HUD shows a prominent countdown banner (toast above is the
+	# fallback for any scene without the party HUD).
+	run_ending.emit(who_name, EXIT_GRACE_SEC)
 
 @rpc("authority", "call_local", "reliable")
 func _run_end(abandoned: bool) -> void:

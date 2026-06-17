@@ -73,6 +73,7 @@ func _ready() -> void:
 	_build_draught_chip()
 	_build_mute_indicator()
 	_build_wyrd_overlay()
+	_build_coop_hud()
 
 # A globe flanking the bottom-center skill bar at ±cx.
 func _place_globe(g: GlobeGauge, cx: float) -> void:
@@ -370,6 +371,119 @@ func _flash_skills() -> void:
 	tw.tween_property(_skills_lbl, "scale", Vector2.ONE, Feel.LEVELUP_PUNCH_DOWN_SEC)
 	tw.tween_interval(Feel.LEVELUP_FLASH_SEC)
 	tw.tween_callback(func(): _skills_lbl.add_theme_color_override("font_color", base_col))
+
+# ---- Phase 4: co-op party HUD (HP frame + reconnect/exit banner) -------------
+var _party_panel: PanelContainer
+var _party_box: VBoxContainer
+var _coop_banner: Label
+var _ending_left := 0.0
+
+func _build_coop_hud() -> void:
+	# Party HP frame — top-left, one row per peer. Shown only in co-op.
+	_party_panel = PanelContainer.new()
+	# PanelContainer auto-sizes to the VBox; style it with a parchment box
+	# (WyrdUi.style_panel only accepts a plain Panel).
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.93, 0.88, 0.74, 0.85)
+	sb.set_border_width_all(2)
+	sb.border_color = Color(0.42, 0.34, 0.25)
+	sb.set_corner_radius_all(4)
+	sb.set_content_margin_all(8)
+	_party_panel.add_theme_stylebox_override("panel", sb)
+	_party_panel.anchor_left = 0.0
+	_party_panel.anchor_top = 0.0
+	_party_panel.offset_left = 16.0
+	_party_panel.offset_top = 16.0
+	_party_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_party_panel.visible = false
+	_party_box = VBoxContainer.new()
+	_party_box.add_theme_constant_override("separation", 3)
+	_party_panel.add_child(_party_box)
+	add_child(_party_panel)
+	# Prominent center-top banner for reconnect / exit-countdown events.
+	_coop_banner = Label.new()
+	WyrdUi.style_title(_coop_banner)
+	_coop_banner.anchor_left = 0.5
+	_coop_banner.anchor_right = 0.5
+	_coop_banner.anchor_top = 0.0
+	_coop_banner.offset_left = -280.0
+	_coop_banner.offset_right = 280.0
+	_coop_banner.offset_top = 78.0
+	_coop_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_coop_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_coop_banner.visible = false
+	add_child(_coop_banner)
+	# One slow timer drives the party frame + the exit countdown.
+	var t := Timer.new()
+	t.wait_time = 0.25
+	t.autostart = true
+	t.timeout.connect(_coop_tick)
+	add_child(t)
+	# NetGame is an autoload — connecting offline is harmless (events never fire).
+	NetGame.reconnecting.connect(func(a: int, m: int):
+		_banner("Lost the host — reconnecting (%d/%d)…" % [a, m]))
+	NetGame.roster_changed.connect(func():
+		if _ending_left <= 0.0:
+			_clear_banner())     # a settled roster means we're (re)connected
+	NetGame.run_ending.connect(_on_run_ending)
+
+func _banner(text: String) -> void:
+	if _coop_banner == null:
+		return
+	_coop_banner.text = text
+	_coop_banner.visible = true
+
+func _clear_banner() -> void:
+	if _coop_banner != null:
+		_coop_banner.visible = false
+
+func _on_run_ending(who: String, secs: float) -> void:
+	_ending_left = secs
+	_banner("%s steps through — returning in %d…" % [who, int(ceil(secs))])
+
+func _coop_tick() -> void:
+	_refresh_party()
+	if _ending_left > 0.0:
+		_ending_left -= 0.25
+		if _ending_left <= 0.0:
+			_clear_banner()
+		else:
+			_banner("Returning to town in %d…" % int(ceil(_ending_left)))
+
+func _refresh_party() -> void:
+	if _party_panel == null:
+		return
+	if not NetGame.active:
+		if _party_panel.visible:
+			_party_panel.visible = false
+		return
+	_party_panel.visible = true
+	for c in _party_box.get_children():
+		_party_box.remove_child(c)
+		c.free()
+	for p in get_tree().get_nodes_in_group("player"):
+		var node := p as Node
+		if node == null:
+			continue
+		var nm := NetGame.peer_name((node as Node).get_multiplayer_authority())
+		var cur := int(node.get("hp"))
+		var mx := maxi(1, int(node.get("hp_max")))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		var lbl := Label.new()
+		lbl.text = nm
+		WyrdUi.style_body(lbl, 12)
+		lbl.custom_minimum_size = Vector2(96, 0)
+		var bar := ProgressBar.new()
+		bar.min_value = 0
+		bar.max_value = mx
+		bar.value = clampi(cur, 0, mx)
+		bar.show_percentage = false
+		bar.custom_minimum_size = Vector2(86, 12)
+		bar.modulate = Color(0.82, 0.26, 0.20) if cur > 0 else Color(0.45, 0.45, 0.45)
+		row.add_child(lbl)
+		row.add_child(bar)
+		_party_box.add_child(row)
 
 func set_hp(cur: int, mx: int, status_suffix: String = "") -> void:
 	var f := clampf(float(cur) / float(max(1, mx)), 0.0, 1.0)
