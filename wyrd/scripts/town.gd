@@ -209,9 +209,12 @@ func _ready() -> void:
 					panel.pot_add.call_deferred("wild_herb"))
 
 func _debug_screenshot() -> void:
+	var path := OS.get_environment("WYRD_SHOT_PATH")
+	if path == "":
+		path = "/tmp/wyrd_town.png"
 	var img := get_viewport().get_texture().get_image()
-	var err := img.save_png("/tmp/wyrd_town.png")
-	print("[town] debug screenshot → /tmp/wyrd_town.png (err=%d)" % err)
+	var err := img.save_png(path)
+	print("[town] debug screenshot → %s (err=%d)" % [path, err])
 
 func _build_ground() -> void:
 	var mesh := PlaneMesh.new()

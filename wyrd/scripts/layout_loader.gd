@@ -1201,9 +1201,12 @@ func _position_player(entry) -> void:
 
 func _debug_screenshot() -> void:
 	await get_tree().create_timer(0.6).timeout
+	var path := OS.get_environment("WYRD_SHOT_PATH")
+	if path == "":
+		path = "/tmp/godot_selfshot.png"
 	var img := get_viewport().get_texture().get_image()
-	var err := img.save_png("/tmp/godot_selfshot.png")
-	print("[layout_loader] debug screenshot → /tmp/godot_selfshot.png (err=%d)" % err)
+	var err := img.save_png(path)
+	print("[layout_loader] debug screenshot → %s (err=%d)" % [path, err])
 
 # Meshy GLB materials carry a metallic value the web Compatibility renderer
 # blows out into chrome — zero it so they render matte in both renderers.
