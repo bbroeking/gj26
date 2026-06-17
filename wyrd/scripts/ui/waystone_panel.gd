@@ -154,6 +154,22 @@ func _build_detail_preview(chart: Dictionary) -> void:
 	var has_lines := false
 	var boss_bad_den := false  # tracks Task 6 warning condition
 
+	# Wayfinding signature — the difficulty read, the top line of the detail:
+	# how this den's level sits against yours (strategic prep before the delve).
+	var band: Dictionary = _game.difficulty_band(chart)
+	var den_lv: int = _game.den_level_for_tier(int(chart.get("tier", 1)))
+	var band_lbl := Label.new()
+	band_lbl.text = "Den · lv %d — %s" % [den_lv, String(band.get("label", "Fair"))]
+	WyrdUi.style_body(band_lbl, 14)
+	var tone := String(band.get("tone", "fair"))
+	var band_col: Color = WyrdUi.GOLD
+	if tone == "easy":
+		band_col = WyrdUi.SAGE
+	elif tone == "hard" or tone == "deadly":
+		band_col = WyrdUi.TERRACOTTA
+	band_lbl.add_theme_color_override("font_color", band_col)
+	_detail_box.add_child(band_lbl)
+
 	for a in affixes:
 		var aff_id := String(a.get("id", ""))
 		var aff: Dictionary = ChartsData.AFFIXES.get(aff_id, {})

@@ -9,6 +9,7 @@ var _panel: Panel
 var _status: Label
 var _ip_edit: LineEdit
 var _roster: Label
+var _newgame_armed := false   # New Game button: first click arms, second confirms
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -100,6 +101,24 @@ func _ready() -> void:
 		WyrdUi.style_dim(note, 12)
 		note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		col.add_child(note)
+		# New Game — offline + in town only. Two-click confirm, no modal dialog
+		# (a JS-style confirm would block the extension; a re-click is safer).
+		if _game != null and not bool(_game.in_dungeon):
+			var newgame := Button.new()
+			WyrdUi.style_kit_button(newgame)
+			newgame.text = "New game — start over"
+			newgame.custom_minimum_size = Vector2(0, 40)
+			newgame.pressed.connect(func():
+				if not _newgame_armed:
+					_newgame_armed = true
+					newgame.text = "Start over? — click again to confirm"
+					_status.text = "This clears your charts, trades, satchel, and gear."
+					return
+				_game.reset_to_defaults()
+				_game.notify("A fresh page. The yard waits.")
+				get_tree().change_scene_to_file(_game.TOWN_SCENE)
+				_close())
+			col.add_child(newgame)
 
 	NetGame.roster_changed.connect(_refresh)
 	NetGame.reconnecting.connect(func(attempt: int, total: int):

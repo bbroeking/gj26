@@ -9,6 +9,9 @@ const STONE_GLB := preload("res://models/chartmaker_stone_v2.glb")
 const COMPASS_GLB := preload("res://models/cartographer_compass.glb")
 const CraftingBenchScript = preload("res://scripts/ui/crafting_bench.gd")
 
+const GLOW_BASE := 1.4    # resting energy of the chartmaker stone's glow
+var _glow: OmniLight3D     # the stone's ink-violet glow, pulsed on inscribe
+
 func get_prompt_text() -> String:
 	return "[E] Use the Inscribing Table"
 
@@ -33,9 +36,22 @@ func _ready_interactable() -> void:
 	var glow := OmniLight3D.new()
 	glow.position = Vector3(0.0, 1.5, 0.0)
 	glow.light_color = Color(0.8, 0.65, 1.0)
-	glow.light_energy = 1.4
+	glow.light_energy = GLOW_BASE
 	glow.omni_range = 4.0
 	add_child(glow)
+	_glow = glow
+	add_to_group("inscribing_table")   # so the bench can pulse us on inscribe
+
+# Wayfinding signature — the seal pulse. The stone flares ink-violet when a
+# chart is inscribed, then settles. Called by the bench from craft().
+func pulse_glow() -> void:
+	if _glow == null or not is_instance_valid(_glow):
+		return
+	var tw := create_tween()
+	tw.tween_property(_glow, "light_energy", GLOW_BASE * 2.4, 0.18) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_glow, "light_energy", GLOW_BASE, 0.45) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 
 func interact(_player: Node) -> void:
 	# Spec 42 — the bench replaces the menu panel. Post-tutorial visitors

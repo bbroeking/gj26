@@ -44,6 +44,9 @@ const PATHS := {
 	"lunge":       "res://audio/lunge.mp3",
 	"roll":        "res://audio/roll.mp3",
 	"waystone":    "res://audio/waystone.mp3",
+	# Wayfinding signature — the inscription seal. File deferred (ElevenLabs
+	# spend ungated); play() is a graceful no-op until it lands.
+	"inscribe_seal": "res://audio/inscribe_seal.mp3",
 }
 
 # B8 — one looping music/ambience channel (the town theme). Separate from

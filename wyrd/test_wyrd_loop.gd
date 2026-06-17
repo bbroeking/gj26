@@ -42,6 +42,8 @@ func _init() -> void:
 	_test_discovery()
 	_test_ladders()
 	_test_pack_progression()
+	_test_run_completed_signal()
+	_test_new_game_reset()
 	_test_save_roundtrip()
 	print("--- %d passed, %d failed ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
@@ -750,6 +752,59 @@ func _test_charts_data() -> void:
 	var cost := ChartsData.craft_cost("tier_1", ["hedge_ink", "refined_ink"])
 	_check("tier_1 + 2 inks cost", int(cost.get("hedge_ink", 0)) == 3
 		and int(cost.get("refined_ink", 0)) == 1, str(cost))
+
+# Wayfinding signature — the run_completed contract the town debrief subscribes
+# to. (return_to_town's own emit isn't unit-tested here: it ends in a deferred
+# get_tree().change_scene that's unsafe to fire mid-suite; the emit is one line,
+# verified at the source + by the end-of-feature boot review.)
+func _test_run_completed_signal() -> void:
+	print("[run_completed contract]")
+	var game = load("res://scripts/game.gd").new()
+	game._ready()
+	_check("run_completed signal exists", game.has_signal("run_completed"))
+	var got := {"hit": false, "xp": -1, "n_affixes": -1}
+	game.run_completed.connect(func(chart: Dictionary, xp: int):
+		got.hit = true
+		got.xp = xp
+		got.n_affixes = (chart.get("affixes", []) as Array).size())
+	var chart := {"template_id": "tier_1", "tier": 1, "scope": "hollow",
+		"name": "T1", "seed": 9,
+		"affixes": [{"id": "mineral_vein", "good": true, "resolvedId": "mineral_vein"}]}
+	var xp: int = ChartsData.completion_xp(chart)
+	game.run_completed.emit(chart, xp)
+	_check("run_completed delivers chart+xp to subscriber",
+		got.hit and got.xp == xp and got.n_affixes == 1, str(got))
+	game.free()
+
+# New Game — reset_to_defaults wipes progress to a fresh start. (Safe headless:
+# WYRD_NO_SAVE → persistence_enabled false → SaveGame.clear() is skipped.)
+func _test_new_game_reset() -> void:
+	print("[new game reset]")
+	var game = load("res://scripts/game.gd").new()
+	game._ready()
+	game.trades.wayfinding = {"lv": 9, "xp": 500}
+	game.gold = 200
+	game.add_material("wild_herb", 7)
+	game.charts.append({"template_id": "tier_1", "tier": 1, "scope": "hollow",
+		"name": "T1", "seed": 1, "affixes": []})
+	game.summit_cleared = true
+	game.tutorial_step = 7
+	game.discovered_inks = ["hedge_ink", "ash_ink", "refined_ink"]
+	var old_inv = game.inventory
+	game.reset_to_defaults()
+	_check("reset: trade back to lv1",
+		game.trade_lv() == 1 and int(game.trades.wayfinding.xp) == 0)
+	_check("reset: gold/charts/satchel cleared", int(game.gold) == 0
+		and (game.charts as Array).is_empty()
+		and game.material_count("wild_herb") == 0)
+	_check("reset: flags cleared",
+		not game.summit_cleared and int(game.tutorial_step) == 0)
+	_check("reset: inks back to default", game.discovered_inks == ["hedge_ink"])
+	_check("reset: fresh inventory instance",
+		game.inventory != null and game.inventory != old_inv)
+	_check("reset: default loadout",
+		game.loadout == ["PowerShot", "MultiShot", "BrambleSnare"])
+	game.free()
 
 func _test_game_flow() -> void:
 	print("[game autoload logic]")

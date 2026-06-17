@@ -206,6 +206,14 @@ func craft() -> bool:
 		return false
 	_game.add_chart(chart)
 	_game.notify("Inscribed: %s." % String(chart.get("name", "a chart")))
+	# Wayfinding signature — the seal ritual: the chartmaker stone flares and
+	# a seal-press cue sounds the moment the chart is sealed.
+	var sfx := get_node_or_null("/root/Sfx")
+	if sfx != null:
+		sfx.play("inscribe_seal")
+	var table := get_tree().get_first_node_in_group("inscribing_table")
+	if table != null and table.has_method("pulse_glow"):
+		table.pulse_glow()
 	inks.clear()
 	trophy = ""
 	base_id = ""
@@ -314,8 +322,10 @@ class BenchView extends Control:
 	func _ready() -> void:
 		mouse_filter = Control.MOUSE_FILTER_STOP
 
+	const STAMP_DUR := 0.6   # the inscription seal press — deliberate, ritual
+
 	func stamp() -> void:
-		_stamp_t = 0.25
+		_stamp_t = STAMP_DUR
 		set_process(true)
 
 	func pop(key: String) -> void:
@@ -794,8 +804,14 @@ class BenchView extends Control:
 		_socket_well(_result_rect, bench.base_id != "")
 		_highlight(_result_rect, bench._tutorial_target() == "result")
 		if _stamp_t > 0.0:
-			draw_rect(_result_rect.grow(8.0 * _stamp_t * 4.0),
-				Color(WyrdUi.GOLD, _stamp_t * 2.0), false, 3.0)
+			# The seal press — two gold rings converge inward onto the well and
+			# brighten as they land, like a wax seal pressing down.
+			var st: float = _stamp_t / STAMP_DUR   # 1 (far, faint) → 0 (landed, bold)
+			var land: float = 1.0 - st
+			draw_rect(_result_rect.grow(44.0 * st),
+				Color(WyrdUi.GOLD, 0.85 * land), false, 3.0)
+			draw_rect(_result_rect.grow(22.0 * st),
+				Color(WyrdUi.GOLD, 0.55 * land), false, 2.0)
 		var y := 250.0
 		if bench.base_id == "":
 			draw_string(font, _result_rect.position + Vector2(0, 60),

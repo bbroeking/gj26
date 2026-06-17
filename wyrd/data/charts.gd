@@ -396,6 +396,14 @@ static func craft_cost(template_id: String, ink_ids: Array,
 # Shipped completion formula: tier × 75 + good × 40 + bad × 10.
 # Tyrannical's good twin pays its "+30% chart XP" promise here — the slice
 # has no per-kill XP, so completion is the only honest channel.
+# Display name for a single chart-affix entry ({id, good, ...}): the good
+# twin's name or the bad twin's. "" when the id is unknown.
+static func affix_display_name(a: Dictionary) -> String:
+	var aff: Dictionary = AFFIXES.get(String(a.get("id", "")), {})
+	if aff.is_empty():
+		return ""
+	return String(aff.name) if bool(a.get("good", false)) else String(aff.bad_name)
+
 static func completion_xp(chart: Dictionary) -> int:
 	var tier := int(chart.get("tier", 1))
 	var good := 0
@@ -417,10 +425,9 @@ static func completion_xp(chart: Dictionary) -> int:
 static func chart_label(chart: Dictionary) -> String:
 	var parts: Array = []
 	for a in chart.get("affixes", []):
-		var aff: Dictionary = AFFIXES.get(String(a.get("id", "")), {})
-		if aff.is_empty():
-			continue
-		parts.append(String(aff.name) if bool(a.get("good", false)) else String(aff.bad_name))
+		var nm := affix_display_name(a)
+		if nm != "":
+			parts.append(nm)
 	var label := String(chart.get("name", "Chart"))
 	if not parts.is_empty():
 		label += " — " + ", ".join(parts)

@@ -38,6 +38,9 @@ signal mute_changed(muted: bool)
 signal mastery_choice_ready(level: int)
 signal perks_changed
 signal crafted(station_id: String)   # B5 — station reacts in-world on a successful craft
+# Wayfinding signature — fired when a chart run completes (not abandoned). The
+# town HUD subscribes to debrief the bargain you struck: affixes + XP earned.
+signal run_completed(chart: Dictionary, xp: int)
 
 # Toasts emitted during a scene change land in a HUD that is freed the same
 # frame; buffer them and let the next scene's HUD drain the queue in _ready.
@@ -100,6 +103,39 @@ var persistence_enabled := true
 func save_now() -> void:
 	if persistence_enabled:
 		SaveGame.save(self)
+
+# New Game — wipe progress back to a fresh start and clear the save, so a
+# friend (or a fresh run) isn't stranded by a finished/stuck session. Mirrors
+# the persisted fields exactly; the caller reloads Town.tscn so the player +
+# town pick up the new shared inventory/equipment/ledger. Preferences (muted)
+# are intentionally preserved — this resets PROGRESS, not settings.
+func reset_to_defaults() -> void:
+	trades = {"wayfinding": {"lv": 1, "xp": 0}}
+	materials = {}
+	charts = []
+	gold = 0
+	summit_cleared = false
+	loadout = ["PowerShot", "MultiShot", "BrambleSnare"]
+	chosen_perks = {}
+	seen_hints = {}
+	player_hp = -1
+	active_chart = {}
+	in_dungeon = false
+	tutorial_step = 0
+	discovered_inks = ["hedge_ink"]
+	buffs = {}
+	# Fresh shared objects (the live player rebinds on the town reload).
+	inventory = Inventory.new()
+	equipment = load("res://scripts/equipment.gd").new()
+	ledger = load("res://scripts/ledger.gd").new()
+	if persistence_enabled:
+		SaveGame.clear()
+	# Refresh every listener.
+	materials_changed.emit()
+	charts_changed.emit()
+	gold_changed.emit(gold)
+	perks_changed.emit()
+	tutorial_changed.emit(tutorial_step)
 
 # Quitting the window saves whatever the moment held. Closing mid-run keeps
 # the chart consumed (keystone V1 ruling) — the save reopens in town.
@@ -846,12 +882,37 @@ func return_to_town(player: Node, abandoned: bool = false) -> void:
 		var xp := ChartsData.completion_xp(active_chart)
 		award_xp("carto", xp)
 		notify("Chart complete — %d Wayfinder XP." % xp)
+		# Wayfinding signature — the debrief names the bargain you struck:
+		# which good twins paid out, which bad twins you delved under anyway.
+		# (notify() buffers across the scene change → reads in town.)
+		var goods: Array = []
+		var bads: Array = []
+		var tyrannical := false
+		for a in active_chart.get("affixes", []):
+			var nm := ChartsData.affix_display_name(a)
+			if nm == "":
+				continue
+			if bool(a.get("good", false)):
+				goods.append(nm)
+				if String(a.get("id", "")) == "tyrannical":
+					tyrannical = true
+			else:
+				bads.append(nm)
+		if not goods.is_empty():
+			notify("The chart gave you: %s." % ", ".join(goods))
+		if not bads.is_empty():
+			notify("Its bad twins held: %s." % ", ".join(bads))
+		if tyrannical:
+			notify("Tyrannical foes paid the richer purse.")
 		# The end the whole chain builds toward.
 		if String(active_chart.get("template_id", "")) == "summit" \
 				and not summit_cleared:
 			summit_cleared = true
 			notify("★ The Summit is charted. The Queen's nest stands empty.")
 			notify("Mara will want to hear of this.")
+		# Typed seam for future overlays / co-op exit-debrief. Snapshot the
+		# chart BEFORE it's cleared.
+		run_completed.emit((active_chart as Dictionary).duplicate(true), xp)
 	active_chart = {}
 	in_dungeon = false
 	_returning_from_delve = true   # B7 — the town reads + clears this for its arrival beat
@@ -871,6 +932,27 @@ func return_to_town(player: Node, abandoned: bool = false) -> void:
 # for the level-delta curve (≤−2 easy, ±1 fair, ≥+2 very hard).
 const LEVEL_POWER := 1.25
 
+# Each den's level is tier-derived (enemies scale to it). Single source of
+# truth — run_cfg() and the waystone difficulty preview both read it.
+const DEN_LEVEL_BY_TIER := {1: 3, 2: 8, 3: 13}
+
+func den_level_for_tier(tier: int) -> int:
+	return int(DEN_LEVEL_BY_TIER.get(tier, 3))
+
+# Wayfinding signature — the strategic read BEFORE the delve: how hard is this
+# chart's den vs. your current Wayfinding level? Returns {label, tone}; the
+# waystone panel maps tone → colour. Net difficulty tracks (den_level −
+# player_level) per ADR 0013 (≤−2 easy, ±1 fair, ≥+2 hard).
+func difficulty_band(chart: Dictionary) -> Dictionary:
+	var delta := den_level_for_tier(int(chart.get("tier", 1))) - trade_lv()
+	if delta <= -2:
+		return {"label": "Gentle", "tone": "easy"}
+	elif delta <= 1:
+		return {"label": "Fair", "tone": "fair"}
+	elif delta <= 3:
+		return {"label": "Steep", "tone": "hard"}
+	return {"label": "Deadly", "tone": "deadly"}
+
 # The generation config handed to DungeonGen.generate(). {} when booting
 # World.tscn directly (dev) — which keeps today's defaults, boss included.
 func run_cfg() -> Dictionary:
@@ -880,7 +962,7 @@ func run_cfg() -> Dictionary:
 	var cfg: Dictionary = (t.get("gen", {}) as Dictionary).duplicate()
 	cfg["tier"] = int(active_chart.get("tier", 1))
 	# ADR 0013 — each den carries a level (tier-derived); enemies scale to it.
-	cfg["den_level"] = ({1: 3, 2: 8, 3: 13}).get(int(cfg["tier"]), 3)
+	cfg["den_level"] = den_level_for_tier(int(cfg["tier"]))
 	cfg["scope"] = String(active_chart.get("scope", "crypt"))
 	cfg["affixes"] = active_chart.get("affixes", [])
 	cfg["seed"] = int(active_chart.get("seed", -1))
