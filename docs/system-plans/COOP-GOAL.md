@@ -49,9 +49,10 @@ have guests drive it from snapshots + replay its telegraphs cosmetically (the
 deferred C-3 "boss telegraph host-sync"). Largest change here — boss.gd +
 layout_loader.gd + net_game.gd snapshot batch.
 
-### Phase 3 — Enemy status replication
-Snapshots carry pos+hp only (`net_apply_state(pos, hp)`, combatant.gd:263). Add
-status flags so guest puppet enemies show burn/bleed/snare/marked visuals.
+### Phase 3 — Enemy status replication — ✅ DONE (commit e26bcdc)
+Snapshot extended to `[pos, hp, flags]`; puppet foes mirror the host's active
+status kinds cosmetically (host still owns the DoT). test_coop 10/10; live
+2-instance flows 16 foes under the new format, clean.
 
 ### Phase 4 — Party flow polish
 - Exit/party flow: `_end_notice` is a toast (net_game.gd:321) — add an
