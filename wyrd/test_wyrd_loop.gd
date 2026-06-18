@@ -144,6 +144,15 @@ func _test_tools_and_mute() -> void:
 		if String(it.get("kind_id", "")) == "bogiron_pickaxe":
 			pick = it
 	_check("pickaxe landed in the pack", pick != null)
+	# A2 — the hedgesteel armour ladder has a chest, not just cap + boots.
+	var CD = load("res://data/crafting.gd")
+	var jerkin: Dictionary = CD.recipe("hedgesteel_jerkin_smith")
+	_check("hedgesteel jerkin recipe yields a chest at lv16",
+		not jerkin.is_empty()
+		and String((jerkin.get("yields_item", {}) as Dictionary).get("kind", "")) == "leather_chest"
+		and int(jerkin.get("req_lv", 0)) == 16, str(jerkin))
+	_check("hedgesteel jerkin registered on the forge",
+		((CD.station("forge").get("recipes", []) as Array)).has("hedgesteel_jerkin_smith"))
 	# Bare-handed vs tooled channel time.
 	var bare: float = GatherNode.channel_seconds("ore_rock", game)
 	_check("bare mining at base speed", absf(bare - 1.6) < 0.01, str(bare))

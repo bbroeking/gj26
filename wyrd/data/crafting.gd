@@ -39,7 +39,7 @@ const STATIONS := {
 			"starsilver_pickaxe_smith", "starsilver_axe_smith",
 			"starsilver_band_smith", "starsilver_longbow_smith",
 			"hedgesteel_bar", "hedgesteel_cap_smith", "hedgesteel_boots_smith",
-			"warbow_smith"],
+			"hedgesteel_jerkin_smith", "warbow_smith"],
 	},
 }
 
@@ -252,6 +252,12 @@ const RECIPES := {
 		"inputs": {"hedgesteel_bar": 2},
 		"yields_item": {"kind": "leather_boots", "rarity": "rare"},
 		"desc": "Soled for the deepest hollows. Rolls three affixes.",
+	},
+	"hedgesteel_jerkin_smith": {
+		"name": "Hedgesteel Jerkin", "req_lv": 16, "xp": 80,
+		"inputs": {"hedgesteel_bar": 3, "logs": 1},
+		"yields_item": {"kind": "leather_chest", "rarity": "rare"},
+		"desc": "Hedgesteel scales over oiled leather — the top of the armour ladder. Rolls three affixes.",
 	},
 	"warbow_smith": {
 		"name": "Hedgesteel Warbow", "req_lv": 17, "xp": 100,

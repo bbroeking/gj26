@@ -44,6 +44,7 @@ func _run() -> void:
 	await _t8_blightwalker_on_death()
 	await _t9_warden_heals_ally()
 	await _t10_brute_ring_lifecycle()
+	await _t11_cc_immune_elites()
 	print("--- status + AoE evals: %d PASS, %d FAIL ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
 
@@ -102,6 +103,29 @@ func _t9_warden_heals_ally() -> void:
 	var moved: bool = warden._support_tick(0.1)
 	_check("T9", ally.hp == 7 and not moved,
 		"warden heals adjacent ally 5→%d (moved=%s)" % [ally.hp, str(moved)])
+
+# ---- T11 — CC-immune elites resist a 2nd root/snare in the window ----
+# Data-driven (briarbound 4s, thornshelled 8s) — thornshelled used to be
+# perma-rootable because the gate hardcoded "briarbound".
+func _t11_cc_immune_elites() -> void:
+	var host := Node3D.new()
+	host.name = "T11Host"
+	root.add_child(host)
+	var thorn := _make_enemy(host)
+	thorn.apply_elite("thornshelled")
+	await physics_frame
+	var t1 = thorn.apply_status("root", 3.0, 0, 1.0, 0.0)   # arms immunity
+	var t2 = thorn.apply_status("root", 3.0, 0, 1.0, 0.0)   # within window → refused
+	_check("T11a", t1 != null and t2 == null,
+		"thornshelled: 1st root armed=%s, 2nd refused=%s" % [str(t1 != null), str(t2 == null)])
+	# Regression — briarbound still immune.
+	var bb := _make_enemy(host)
+	bb.apply_elite("briarbound")
+	await physics_frame
+	var b1 = bb.apply_status("snared", 2.0, 0, 0.5, 0.0)
+	var b2 = bb.apply_status("snared", 2.0, 0, 0.5, 0.0)
+	_check("T11b", b1 != null and b2 == null,
+		"briarbound: 1st armed=%s, 2nd refused=%s" % [str(b1 != null), str(b2 == null)])
 
 # ---- T8 — blightwalker elite blights nearby enemies on death ----
 func _t8_blightwalker_on_death() -> void:

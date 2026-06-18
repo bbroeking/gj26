@@ -658,15 +658,18 @@ func apply_status(kind: String, duration: float, dpt: int,
 		slow_factor: float = 1.0, tick_interval: float = 0.0) -> StatusEffect:
 	if dead:
 		return null
-	# Spec 32 — Briarbound elite is CC-immune for `cc_immune_window` seconds
-	# after the FIRST root/snared lands. The first call goes through (and
-	# arms the immunity); subsequent root/snared within the window return
-	# null. Burn/bleed are unaffected.
-	if is_elite and modifier == "briarbound" and (kind == "root" or kind == "snared"):
+	# Spec 32 — a CC-immune elite resists root/snared for `cc_immune_window`
+	# seconds after the FIRST one lands. The first call goes through (and arms
+	# the immunity); subsequent root/snared within the window return null.
+	# Burn/bleed are unaffected. Data-driven: ANY modifier that declares a
+	# `cc_immune_window` qualifies (briarbound 4s, thornshelled 8s) — not just
+	# a hardcoded briarbound (that bug let thornshelled be perma-rooted).
+	if is_elite and (kind == "root" or kind == "snared") \
+			and Elites.MODIFIERS.get(modifier, {}).has("cc_immune_window"):
 		var now: float = float(Time.get_ticks_msec()) / 1000.0
 		if now < _cc_immune_until:
 			return null
-		var window: float = float(Elites.MODIFIERS["briarbound"].get("cc_immune_window", 4.0))
+		var window: float = float(Elites.MODIFIERS[modifier]["cc_immune_window"])
 		_cc_immune_until = now + window
 	var existing: StatusEffect = _statuses.get(kind, null)
 	if existing != null:
