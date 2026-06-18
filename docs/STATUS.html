@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wayfinder — Current State</title>
+<style>
+  :root{
+    --paper:#f3ead3; --paper2:#ece0c2; --ink:#2c2118; --dim:#6d5e49;
+    --terra:#b5491f; --sage:#5d7a4a; --gold:#c79a2e; --blue:#3a5d86;
+    --line:#cBB68f; --line2:#d8c8a3;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    line-height:1.55; font-size:16px;
+  }
+  .wrap{max-width:920px; margin:0 auto; padding:40px 26px 80px}
+  header{border-bottom:3px double var(--line); padding-bottom:18px; margin-bottom:8px}
+  h1{font-size:2.4rem; margin:0 0 4px; letter-spacing:.5px}
+  h1 .sub{color:var(--terra)}
+  .meta{color:var(--dim); font-style:italic}
+  h2{font-size:1.5rem; margin:38px 0 10px; color:var(--ink);
+     border-bottom:1px solid var(--line); padding-bottom:6px}
+  h3{font-size:1.12rem; margin:22px 0 6px; color:var(--terra)}
+  p{margin:.5em 0}
+  code,kbd{background:var(--paper2); border:1px solid var(--line2); border-radius:4px;
+     padding:1px 6px; font-family:"SF Mono",Menlo,Consolas,monospace; font-size:.86em}
+  pre{background:#2c2118; color:#f3ead3; padding:14px 16px; border-radius:8px;
+     overflow:auto; font-size:.84rem; line-height:1.5}
+  pre code{background:none; border:none; color:inherit; padding:0}
+  .card{background:var(--paper2); border:1px solid var(--line); border-radius:10px;
+     padding:16px 20px; margin:14px 0}
+  .tldr{background:#efe6cb; border-left:5px solid var(--terra)}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  @media(max-width:680px){.grid{grid-template-columns:1fr}}
+  table{border-collapse:collapse; width:100%; margin:12px 0; font-size:.95rem}
+  th,td{text-align:left; padding:7px 10px; border-bottom:1px solid var(--line2); vertical-align:top}
+  th{color:var(--dim); font-weight:600; border-bottom:2px solid var(--line)}
+  .ok{color:var(--sage); font-weight:700}
+  .wait{color:var(--gold); font-weight:700}
+  .pill{display:inline-block; font-size:.72rem; font-weight:700; padding:2px 8px;
+     border-radius:20px; text-transform:uppercase; letter-spacing:.4px}
+  .p-done{background:#dcebcf; color:#3c5a2c}
+  .p-wait{background:#f6ecc8; color:#876a14}
+  .p-new{background:#f4d9cc; color:#963314}
+  ul{margin:.4em 0 .6em; padding-left:22px}
+  li{margin:.22em 0}
+  .muted{color:var(--dim)}
+  .keys span{display:inline-block; margin:2px 4px}
+  footer{margin-top:50px; border-top:1px solid var(--line); padding-top:14px;
+     color:var(--dim); font-size:.85rem; font-style:italic}
+  .big{font-size:1.05rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Wayfinder <span class="sub">— Current State</span></h1>
+  <div class="meta">A cozy fairytale dungeon-crawler in Bramblewood · Godot&nbsp;4.6 · as of 18&nbsp;June&nbsp;2026</div>
+</header>
+
+<div class="card tldr">
+  <p class="big"><strong>The game is playable end-to-end, solo or co-op, and the engine is stable.</strong>
+  This session restored a broken build, shipped the Wayfinding "signature" feel,
+  completed co-op (host + friends, including boss fights), and fixed a crash that
+  hit on every host&nbsp;→&nbsp;quit. All six test suites are green.</p>
+  <p class="muted">Work lives on branch <code>feat/system-buildout</code> (23 commits this session, off <code>main</code>, not yet merged — your call).</p>
+</div>
+
+<h2>How to play</h2>
+<pre><code>godot --path wyrd          # launches the game (Metal/Forward+, saves normally)</code></pre>
+<p class="keys"><strong>Keys:</strong>
+  <span><kbd>WASD</kbd> move</span>·
+  <span><kbd>1</kbd>–<kbd>4</kbd>/<kbd>F</kbd> skills</span>·
+  <span><kbd>E</kbd> interact</span>·
+  <span><kbd>Q</kbd> quaff</span>·
+  <span><kbd>G</kbd> grab</span>·
+  <span><kbd>I</kbd> pack</span>·
+  <span><kbd>M</kbd> satchel</span>·
+  <span><kbd>K</kbd> trades</span>·
+  <span><kbd>Space</kbd> roll</span>·
+  <span><kbd>Esc</kbd> the Lantern (co-op)</span>·
+  <span><kbd>F10</kbd> sound (off by default)</span>
+</p>
+<p><strong>The loop:</strong> gather herbs/ore/logs → mix inks &amp; inscribe a
+<em>chart</em> at the bench (its affixes shape the run) → socket it at the
+Waystone → delve the seeded dungeon (combat, elites, a boss) → return with
+loot + XP → level your Wayfinding trade &amp; spend a mastery pick → repeat,
+up to the level-17 cap and the Summit.</p>
+
+<h3>Co-op in 20 seconds</h3>
+<p>Host: <kbd>Esc</kbd> → <em>The Lantern</em> → "Light a fire" → "Copy address"
+→ send it to a friend. They <kbd>Esc</kbd> → paste → "Join." Same network or
+Tailscale; port 7777. Full guide: <code>docs/COOP.md</code>.</p>
+
+<h2>What happened this session</h2>
+<div class="grid">
+  <div class="card">
+    <h3 style="margin-top:0">🛠️ The build was broken — fixed</h3>
+    <p>A parse error in <code>town.gd</code> had made the game <strong>unlaunchable</strong>
+    since the big systems build-out. Fixed, and a new <code>test_boot_smoke</code>
+    suite now compiles every script + loads the scenes so a boot-blocker can't
+    ship green again.</p>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">💥 The crash — found &amp; fixed</h3>
+    <p>"Engine keeps crashing" was an <strong>abort on every host→quit</strong>: the
+    UPnP probe ran a GDScript task that aborted at teardown. Drained it before
+    shutdown + capped the discovery timeout. Proven by revert (crash) vs fix
+    (clean exit).</p>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">✦ The Wayfinding signature</h3>
+    <p>Made the differentiator <em>felt</em>: an <strong>inscription ritual</strong>
+    (the stone flares, a seal presses), a <strong>run debrief</strong> naming the
+    bargain you struck with each affix, a <strong>den-difficulty preview</strong>
+    at the Waystone, and a <strong>New Game</strong> option.</p>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">🤝 Co-op completed</h3>
+    <p>From "connects" to invite-a-friend solid: shared seeded runs, mid-run join,
+    enemy <em>and boss</em> replication, dodgeable boss telegraphs on guests,
+    status visuals, a party HP frame, and clean reconnect/exit flow.</p>
+  </div>
+</div>
+
+<h2>Co-op status</h2>
+<p>The active goal was "co-op works — invite-a-friend solid." Plan + detail in
+<code>docs/system-plans/COOP-GOAL.md</code>.</p>
+<table>
+  <tr><th>Phase</th><th>What</th><th>Status</th></tr>
+  <tr><td>1 — Live windowed test</td><td>Two real windows, same dungeon</td>
+      <td><span class="ok">✔ visual confirmed</span> · <span class="wait">combat eyeball needs you</span></td></tr>
+  <tr><td>2 — Boss host-authority</td><td>Guests see the boss's bar, gates, phase &amp; <em>dodgeable telegraphs</em></td><td><span class="ok">✔ done</span></td></tr>
+  <tr><td>3 — Enemy status sync</td><td>Burn/bleed/snare show on guest foes</td><td><span class="ok">✔ done</span></td></tr>
+  <tr><td>4 — Party-flow polish</td><td>Party HP frame, exit countdown, reconnect banner</td><td><span class="ok">✔ done</span></td></tr>
+  <tr><td>5 — Internet invite</td><td>UPnP unblocked; Tailscale/LAN documented</td><td><span class="ok">✔ done</span></td></tr>
+  <tr><td>— Crash on host→quit</td><td>UPnP teardown abort</td><td><span class="ok">✔ fixed + proven</span></td></tr>
+</table>
+<p class="muted">Verified live: two windowed instances rendered both players in the
+same dungeon with the party HP frame showing both peers. The one thing still
+needing a human: driving a real fight to eyeball damage numbers / arrows / boss
+telegraphs (the captured characters were idle).</p>
+
+<h3>How co-op works (short version)</h3>
+<ul>
+  <li><strong>Listen-server / peer-to-peer.</strong> The host's game <em>is</em> the
+  server (authoritative); friends connect directly over ENet. Tailscale/LAN is
+  just the network path — there's no cloud backend.</li>
+  <li><strong>Deterministic shared runs.</strong> Socketing a chart sends only the
+  <em>seed</em>; every machine rebuilds the identical dungeon locally. No level
+  streaming.</li>
+  <li><strong>Host owns fairness</strong> (enemy AI, damage, loot rolls); guests
+  replay visuals (arrows, numbers, boss telegraphs, status). Each player keeps
+  their own satchel/gold/trades.</li>
+</ul>
+
+<h2>The game's systems</h2>
+<p>The spine is complete and gate-green:</p>
+<div class="grid">
+  <div class="card"><h3 style="margin-top:0">Progression</h3>
+    <ul><li>Mastery tree to the level-17 cap (pick-one perks)</li>
+    <li>Ledger: boss trophies → permanent stats</li>
+    <li>6 uniques, affixes, rare-name composition</li>
+    <li>Hardened save/load</li></ul></div>
+  <div class="card"><h3 style="margin-top:0">Combat</h3>
+    <ul><li>9-skill hotbar, combat-as-one-verb</li>
+    <li>Per-kind AI, chain-aggro, Warden + Brute</li>
+    <li>6 elite modifiers; 3-boss trophy chain → Summit</li>
+    <li>Status effects (burn/bleed/snare/mark)</li></ul></div>
+  <div class="card"><h3 style="margin-top:0">World &amp; craft</h3>
+    <ul><li>Seeded dungeon-gen with per-scope themes</li>
+    <li>Biome palettes; gather tiers (herb/ore/log)</li>
+    <li>Ink-mixing + chart inscription (the differentiator)</li>
+    <li>Economy: vendor gate, chart-case cap</li></ul></div>
+  <div class="card"><h3 style="margin-top:0">UX &amp; meta</h3>
+    <ul><li>HUD: globes, hotbar, status pips, feel.gd juice</li>
+    <li>Inventory: Tetris pack + compare-on-hover tooltip</li>
+    <li>Co-op: host/join, party HUD, reconnect</li>
+    <li>NPC/story, tutorial, town hub</li></ul></div>
+</div>
+
+<h2>Quality gate</h2>
+<p>Six headless suites gate every change — all green:</p>
+<table>
+  <tr><th>Suite</th><th>Result</th><th>Covers</th></tr>
+  <tr><td><code>test_wyrd_loop</code></td><td class="ok">255 ✔</td><td>economy, charts, save, progression</td></tr>
+  <tr><td><code>test_wyrd_dungeon_scene</code></td><td class="ok">25 ✔</td><td>dungeon build + scene wiring</td></tr>
+  <tr><td><code>test_wyrd_transitions</code></td><td class="ok">59 ✔</td><td>town↔dungeon transitions</td></tr>
+  <tr><td><code>test_skills</code></td><td class="ok">28 ✔</td><td>hotbar dispatch, mastery, loadout</td></tr>
+  <tr><td><code>test_boot_smoke</code> <span class="pill p-new">new</span></td><td class="ok">82 ✔</td><td>every script compiles + scenes load</td></tr>
+  <tr><td><code>test_coop</code> <span class="pill p-new">new</span></td><td class="ok">12 ✔</td><td>boss replay, status sync, party HP</td></tr>
+</table>
+
+<h2>What's left — your calls</h2>
+<table>
+  <tr><th>Item</th><th>Status</th><th>Notes</th></tr>
+  <tr><td><strong>Live 2-player combat eyeball</strong></td><td><span class="pill p-wait">needs you</span></td>
+      <td>Play a real session (Tailscale) to see damage numbers / arrows / boss telegraphs in a fight.</td></tr>
+  <tr><td><strong>Merge to <code>main</code></strong></td><td><span class="pill p-wait">your call</span></td>
+      <td>23 commits on <code>feat/system-buildout</code>; boot restored + gate green. I can open a PR or merge.</td></tr>
+  <tr><td><strong>Audio</strong></td><td><span class="pill p-wait">needs approval</span></td>
+      <td>SFX/music keys exist as silent no-ops; generating them needs ~$0.85 ElevenLabs spend approval.</td></tr>
+  <tr><td><strong>Dedicated server on a VM</strong></td><td><span class="pill p-wait">optional build</span></td>
+      <td>Current model is listen-server (host plays). An always-on VM server needs a small <code>WYRD_NET=dedicated</code> mode (server-no-body + leader-driven runs).</td></tr>
+  <tr><td>Town-join toast; HP-bar styling</td><td><span class="muted">minor polish</span></td>
+      <td>Tracked followups; cosmetic.</td></tr>
+</table>
+
+<footer>
+Wayfinder · built with Claude (Anthropic), Meshy (3D), Midjourney (concept art),
+ElevenLabs (SFX). Design history in <code>docs/</code> — specs, ADRs, the world
+bible, and the co-op guide (<code>docs/COOP.md</code>). This snapshot:
+branch <code>feat/system-buildout</code>, 18&nbsp;June&nbsp;2026.
+</footer>
+
+</div>
+</body>
+</html>
