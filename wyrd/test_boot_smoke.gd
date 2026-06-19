@@ -34,7 +34,7 @@ func _initialize() -> void:
 			ok = (res as GDScript).can_instantiate()
 		_check(path, ok, "(failed to compile — parse/compile error)")
 	# Top scenes — load + instantiate, so a broken attached script surfaces.
-	for scene in ["res://scenes/Town.tscn", "res://scenes/World.tscn"]:
+	for scene in ["res://scenes/Main.tscn", "res://scenes/Town.tscn", "res://scenes/World.tscn"]:
 		if ResourceLoader.exists(scene):
 			var ps = load(scene)
 			_check(scene, ps != null and ps is PackedScene and ps.can_instantiate(),
