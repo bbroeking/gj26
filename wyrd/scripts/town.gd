@@ -194,6 +194,10 @@ func _ready() -> void:
 				dlg.open("Mara Linnet, the Wayfinder",
 					["New boots. Good — the yard could use a pair."])
 				add_child(dlg)
+			elif OS.get_environment("WYRD_UI_SHOT") == "credits":
+				add_child(load("res://scripts/ui/credits_menu.gd").new())
+			elif OS.get_environment("WYRD_UI_SHOT") == "options":
+				add_child(load("res://scripts/ui/options_menu.gd").new())
 			else:
 				# "table"/"bench"/anything else — the crafting bench (spec 42).
 				# "bench_staged" pre-fills it for visual iteration.

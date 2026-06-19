@@ -509,7 +509,11 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 	if Input.is_action_just_pressed("ui_cancel"):
-		var menu: CanvasLayer = load("res://scripts/ui/system_menu.gd").new()
+		# Co-op → the Lantern (can't freeze the shared world); solo → Pause.
+		var net := get_node_or_null("/root/NetGame")
+		var menu_path := "res://scripts/ui/system_menu.gd" if (net != null and bool(net.active)) \
+			else "res://scripts/ui/pause_menu.gd"
+		var menu: CanvasLayer = load(menu_path).new()
 		get_tree().current_scene.add_child(menu)
 		return
 	if Input.is_action_just_pressed("fire"):

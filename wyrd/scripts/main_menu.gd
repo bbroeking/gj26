@@ -55,6 +55,8 @@ func _build() -> void:
 	_add_btn(col, "New Game", _on_new_game)
 	_add_btn(col, "Co-op (host / join)", _on_coop)
 	_add_btn(col, "Options", _on_options)
+	_add_btn(col, "Credits", func():
+		add_child(load("res://scripts/ui/credits_menu.gd").new()))
 	_add_btn(col, "Quit", func(): get_tree().quit())
 
 	# Dev: WYRD_SHOT_PATH captures the title then quits (automation — note this
