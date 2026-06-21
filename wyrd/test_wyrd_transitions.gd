@@ -42,7 +42,10 @@ func _run() -> void:
 	# Pre-seen hints: a first-time hint dialog pauses the tree, which would
 	# freeze the parallel forage channels this test runs in Beat 2.
 	game.seen_hints = {"forage_node": true, "ore_rock": true,
-		"log_pile": true, "cookfire": true, "forge": true}
+		"log_pile": true, "cookfire": true, "forge": true,
+		# D14 — suppress the new first-contact hints (not under test here).
+		"shrine": true, "status_bleed": true, "status_slow": true,
+		"affix_reading": true}
 
 	# Boot Town the way the player does.
 	change_scene_to_file("res://scenes/Town.tscn")

@@ -1596,6 +1596,13 @@ func apply_status(kind: String, duration: float, dpt: int,
 		slow_factor: float = 1.0, tick_interval: float = 0.0):
 	if dead:
 		return null
+	# D14 — first time a bleed / movement-lock lands, explain it.
+	var game_h = get_tree().root.get_node_or_null("Game")
+	if game_h != null and game_h.has_method("first_time_hint"):
+		if kind == "bleed":
+			game_h.first_time_hint("status_bleed")
+		elif kind == "snared" or kind == "root":
+			game_h.first_time_hint("status_slow")
 	var existing = _statuses.get(kind, null)
 	if existing != null:
 		# Highest-wins refresh — same rule as Combatant's apply_status.

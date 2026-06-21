@@ -79,6 +79,10 @@ func is_used() -> bool:
 func interact(player: Node) -> void:
 	if _consumed:
 		return
+	# D14 — first-shrine explainer.
+	var game_h := get_tree().root.get_node_or_null("Game")
+	if game_h != null and game_h.has_method("first_time_hint"):
+		game_h.first_time_hint("shrine")
 	var offered := offered_buffs()
 	var modal := ShrineChoiceModalScene.instantiate()
 	var scn := get_tree().current_scene

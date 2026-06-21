@@ -211,6 +211,23 @@ const SKILL_HINTS := {
 		"First brew's the hardest — after that the still does half the work.",
 		"Tonics sit beside your hearth bottles. Quaff with Q when you're hale and it's the tonic you'll taste. They keep a week if you don't shake them too hard.",
 	]],
+	# D14 — first-contact explainers for the systems players hit blind.
+	"shrine": ["Mara Linnet, the Wayfinder", [
+		"A wayshrine. Touch it and choose a boon — they hold until the run ends.",
+		"Some ask a small price for a larger gift. Read each before you pick; the shrine won't ask twice.",
+	]],
+	"status_bleed": ["Mara Linnet, the Wayfinder", [
+		"You're bleeding — vigor drains a little each beat until it fades.",
+		"A Mothmint draught closes scratches as you walk. Keep one on your hip for the deeper hollows.",
+	]],
+	"status_slow": ["Mara Linnet, the Wayfinder", [
+		"Rooted — thorns have your boots. You'll move slow till it lets go.",
+		"A Quickroot tonic shakes off the snare; or just weather it and keep loosing arrows.",
+	]],
+	"affix_reading": ["Mara Linnet, the Wayfinder", [
+		"That chart carries affixes — good twins help you, bad twins bite. The colour tells which.",
+		"Stronger affixes pay more chart XP but harden the den. Read them at the Waystone before you socket.",
+	]],
 }
 
 func first_time_hint(kind: String) -> void:
@@ -218,12 +235,15 @@ func first_time_hint(kind: String) -> void:
 		return
 	seen_hints[kind] = true
 	save_now()
+	# Null-safe for headless / standalone Game (no tree, no current scene): the
+	# hint counts as seen, we just can't pop the dialog.
+	var tree := get_tree()
+	if tree == null or tree.current_scene == null:
+		return
 	var hint: Array = SKILL_HINTS[kind]
 	var dlg: CanvasLayer = load("res://scripts/ui/dialog_panel.gd").new()
 	dlg.open(String(hint[0]), hint[1])
-	var scn := get_tree().current_scene
-	if scn != null:
-		scn.add_child(dlg)
+	tree.current_scene.add_child(dlg)
 
 # ---- tutorial ----
 # Steps: 0 talk · 1 forage 3 herbs · 2 mix ink · 3 inscribe Snug ·
@@ -818,6 +838,9 @@ func add_chart(chart: Dictionary) -> void:
 	charts.append(chart)
 	charts_changed.emit()
 	notify("Inscribed: %s" % ChartsData.chart_label(chart))
+	# D14 — first chart that carries affixes: explain reading the twins.
+	if not (chart.get("affixes", []) as Array).is_empty():
+		first_time_hint("affix_reading")
 	if tutorial_step == 3 and String(chart.get("template_id", "")) == "snug":
 		advance_tutorial()
 	elif tutorial_step == 6 and String(chart.get("template_id", "")) != "snug":

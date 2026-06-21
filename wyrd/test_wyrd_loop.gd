@@ -43,6 +43,7 @@ func _init() -> void:
 	_test_ladders()
 	_test_pack_progression()
 	_test_run_completed_signal()
+	_test_d14_hints()
 	_test_new_game_reset()
 	_test_save_roundtrip()
 	print("--- %d passed, %d failed ---" % [_pass, _fail])
@@ -778,6 +779,23 @@ func _test_charts_data() -> void:
 # to. (return_to_town's own emit isn't unit-tested here: it ends in a deferred
 # get_tree().change_scene that's unsafe to fire mid-suite; the emit is one line,
 # verified at the source + by the end-of-feature boot review.)
+# D14 — contextual first-contact hints (shrine / bleed / slow / affix).
+func _test_d14_hints() -> void:
+	print("[d14 hints]")
+	var game = load("res://scripts/game.gd").new()
+	game._ready()
+	_check("D14 new hint keys exist",
+		game.SKILL_HINTS.has("shrine") and game.SKILL_HINTS.has("status_bleed")
+		and game.SKILL_HINTS.has("status_slow") and game.SKILL_HINTS.has("affix_reading"))
+	game.first_time_hint("shrine")
+	_check("D14 first_time_hint sets seen", bool(game.seen_hints.get("shrine", false)))
+	# add_chart with affixes fires the affix-reading hint.
+	game.add_chart({"template_id": "tier_1", "tier": 1, "scope": "hollow",
+		"name": "T1", "seed": 3, "affixes": [{"id": "mineral_vein", "good": true}]})
+	_check("D14 affix chart fires affix_reading hint",
+		bool(game.seen_hints.get("affix_reading", false)))
+	game.free()
+
 func _test_run_completed_signal() -> void:
 	print("[run_completed contract]")
 	var game = load("res://scripts/game.gd").new()
