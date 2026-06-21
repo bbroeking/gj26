@@ -855,6 +855,12 @@ func _test_game_flow() -> void:
 	var cfg: Dictionary = game.run_cfg()
 	_check("snug cfg grid 28", int(cfg.get("grid", 0)) == 28, str(cfg))
 	_check("snug cfg no boss", String(cfg.get("boss_kind", "x")) == "")
+	# D13 — the sub-objective names the chart while delving, empty in town.
+	game.in_dungeon = true
+	_check("D13 sub-objective names the chart",
+		game.objective_sub() == ChartsData.chart_label(chart), game.objective_sub())
+	game.in_dungeon = false
+	_check("D13 no sub-objective in town", game.objective_sub() == "")
 	game.free()
 
 # B3 — per-kind enemy stats: every kind has damage+speed, and the two

@@ -24,6 +24,7 @@ const Feel = preload("res://data/feel.gd")   # Plan.md B0 — feel tunables
 
 # Wyrd — quest tracker, toast stack, and the Wayfinding readout.
 var _objective: Label
+var _quest_sub: Label         # D13 — chart sub-objective line
 var _quest_plate: Panel
 var _quest_progress: Label
 var _toast_box: VBoxContainer
@@ -204,6 +205,18 @@ func _build_wyrd_overlay() -> void:
 	_objective.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_quest_plate.add_child(_objective)
+	# D13 — sub-objective: names the chart you're delving (terracotta, under the
+	# main line).
+	_quest_sub = Label.new()
+	_quest_sub.add_theme_font_size_override("font_size", 12)
+	_quest_sub.add_theme_color_override("font_color", WyrdUi.TERRACOTTA.darkened(0.05))
+	_quest_sub.anchor_right = 1.0
+	_quest_sub.offset_top = 50
+	_quest_sub.offset_left = 16
+	_quest_sub.offset_right = -16
+	_quest_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_quest_sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_quest_plate.add_child(_quest_sub)
 	_quest_progress = Label.new()
 	_quest_progress.add_theme_font_size_override("font_size", 14)
 	_quest_progress.add_theme_color_override("font_color",
@@ -263,6 +276,11 @@ func _refresh_objective() -> void:
 	var prog := String(game.objective_progress())
 	_quest_progress.text = prog
 	_quest_progress.visible = prog != ""
+	# D13 — the chart sub-objective (delving only).
+	if _quest_sub != null:
+		var sub := String(game.objective_sub())
+		_quest_sub.text = sub
+		_quest_sub.visible = sub != ""
 
 # Bottom-right action bar — Pack (I) and Satchel (M) as clickable parchment
 # buttons, so the systems are discoverable without reading the guide.

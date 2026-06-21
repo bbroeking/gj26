@@ -1021,6 +1021,13 @@ func advance_tutorial() -> void:
 	# before talking to Mara, a Snug inscribed early) — re-check on entry.
 	_tutorial_check_satisfied()
 
+# D13 — the sub-objective line: while delving, names the chart you're inside
+# (its affixes) so the run's bargain stays visible under the main objective.
+func objective_sub() -> String:
+	if in_dungeon and not active_chart.is_empty():
+		return ChartsData.chart_label(active_chart)
+	return ""
+
 func objective_text() -> String:
 	if tutorial_step < 0 or tutorial_step >= TUTORIAL_OBJECTIVES.size():
 		return ""
