@@ -109,6 +109,12 @@ func _test_chain_and_economy() -> void:
 		Drops._roll_tier("combat", 0, 20) == 9, str(Drops._roll_tier("combat", 0, 20)))
 	_check("tier_bonus 8 always rolls magic+ (>=5)",
 		Drops._roll_tier("combat", 0, 8) >= 5, str(Drops._roll_tier("combat", 0, 8)))
+	# D12 — the better kinds gate by depth: a depth-0 den never drops a longbow.
+	var shallow := {}
+	for _i in 60:
+		shallow[Drops._pick_kind(0)] = true
+	_check("longbow gated from depth 0", not shallow.has("longbow"), str(shallow.keys()))
+	_check("copper_ring gated from depth 0", not shallow.has("copper_ring"))
 	game.free()
 
 # Pack-size progression — the satchel grows a row at level milestones (6, 12),

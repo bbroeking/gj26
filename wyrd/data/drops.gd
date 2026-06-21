@@ -32,7 +32,7 @@ static func roll_drop(role: String, depth: int = 0, tier_bonus: int = 0) -> Arra
 			continue
 		var tier := _roll_tier(role, depth, tier_bonus)
 		var rarity := _tier_to_rarity(tier)
-		var kind_id := _pick_kind()
+		var kind_id := _pick_kind(depth)
 		var item := Items.make_item(kind_id, rarity)
 		if not item.is_empty():
 			out.append(item)
@@ -67,6 +67,18 @@ static func droppable_kinds() -> Array:
 		return String(Items.KINDS[id].category) not in ["pickaxe", "axe"] \
 			and String(id) not in ["warbow", "starsilver_band"])
 
-static func _pick_kind() -> String:
-	var ids: Array = droppable_kinds()
+# C11/D12 — the better droppable kinds unlock with depth, so a fresh den drops
+# shortbow + leather and deeper dens start handing out longbows + rings. Loot
+# tiers by depth instead of the same 6-kind pool from lv 1 to 17.
+const KIND_DEPTH_MIN := {
+	"longbow":     4,
+	"copper_ring": 3,
+	"leather_chest": 2,
+}
+
+static func _pick_kind(depth: int = 99) -> String:
+	var ids: Array = droppable_kinds().filter(func(id):
+		return depth >= int(KIND_DEPTH_MIN.get(String(id), 0)))
+	if ids.is_empty():
+		ids = droppable_kinds()
 	return ids[randi() % ids.size()]
