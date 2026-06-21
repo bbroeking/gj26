@@ -26,5 +26,19 @@ func _ready_interactable() -> void:
 	GlbFit.add_ink_outline(mesh)
 
 func interact(_player: Node) -> void:
+	# D15 — first visit, Hod greets you before opening his shelf; after that it's
+	# straight to the wares.
+	var game := get_tree().root.get_node_or_null("Game")
+	if game != null and not bool(game.seen_hints.get("hod_intro", false)):
+		game.seen_hints["hod_intro"] = true
+		game.save_now()
+		var dlg: CanvasLayer = load("res://scripts/ui/dialog_panel.gd").new()
+		dlg.open("Old Hod Tenter", [
+			"Hrm. New face. Hod Tenter — I keep the forge and a shelf of honest stock.",
+			"Bring me ore and I'll smelt it; bring gold and I'll sell what saves a life. Have a look."])
+		get_tree().current_scene.add_child(dlg)
+		dlg.finished.connect(func():
+			get_tree().current_scene.add_child(VendorPanelScript.new()))
+		return
 	var panel := VendorPanelScript.new()
 	get_tree().current_scene.add_child(panel)

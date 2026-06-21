@@ -28,6 +28,25 @@ func _ready_interactable() -> void:
 	GlbFit.add_ink_outline(mesh)
 
 func interact(_player: Node) -> void:
+	# D15 — first visit, Quill greets you (and reacts if you've quaffed a tonic
+	# already) before opening her still; after that it's straight to the shelf.
+	var game := get_tree().root.get_node_or_null("Game")
+	if game != null and not bool(game.seen_hints.get("quill_intro", false)):
+		game.seen_hints["quill_intro"] = true
+		game.save_now()
+		var pages: Array
+		if bool(game.seen_hints.get("tonic_quaffed", false)):
+			pages = ["You've a tonic in you already — good instincts. They hold for a stretch, then fade.",
+				"My still's always brewing. Take what you'll need before the deep hollows."]
+		else:
+			pages = ["Quill, herbalist. I brew tonics — small boons that ride with you a while.",
+				"Quaff one with Q before a delve. Here's the shelf."]
+		var dlg: CanvasLayer = load("res://scripts/ui/dialog_panel.gd").new()
+		dlg.open("Quill, the Herbalist", pages)
+		get_tree().current_scene.add_child(dlg)
+		dlg.finished.connect(func():
+			get_tree().current_scene.add_child(QuillPanelScript.new()))
+		return
 	# Quill's Still — her buy shelf (tonics + herbs), a second vendor beside Hod.
 	# Kit-styled modal that does its own level-gating and modal accounting.
 	var panel: CanvasLayer = QuillPanelScript.new()

@@ -711,6 +711,7 @@ func quaff_buff_draught() -> bool:
 					pl.cleanse_status("root")
 					pl.cleanse_status("snared")
 			notify(String(def.toast))
+			seen_hints["tonic_quaffed"] = true   # D15 — Quill reacts to this
 			save_now()
 			return true
 	return false

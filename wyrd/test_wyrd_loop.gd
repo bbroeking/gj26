@@ -44,6 +44,7 @@ func _init() -> void:
 	_test_pack_progression()
 	_test_run_completed_signal()
 	_test_d14_hints()
+	_test_d15_quaff_flag()
 	_test_new_game_reset()
 	_test_save_roundtrip()
 	print("--- %d passed, %d failed ---" % [_pass, _fail])
@@ -779,6 +780,18 @@ func _test_charts_data() -> void:
 # to. (return_to_town's own emit isn't unit-tested here: it ends in a deferred
 # get_tree().change_scene that's unsafe to fire mid-suite; the emit is one line,
 # verified at the source + by the end-of-feature boot review.)
+# D15 — quaffing a tonic sets the flag Quill reacts to.
+func _test_d15_quaff_flag() -> void:
+	print("[d15 quaff flag]")
+	var game = load("res://scripts/game.gd").new()
+	game._ready()
+	game.add_material("quickroot_tonic", 1)
+	var ok: bool = game.quaff_buff_draught()
+	_check("D15 quaff a tonic → tonic_quaffed flag",
+		ok and bool(game.seen_hints.get("tonic_quaffed", false)),
+		"ok=%s flag=%s" % [str(ok), str(game.seen_hints.get("tonic_quaffed", false))])
+	game.free()
+
 # D14 — contextual first-contact hints (shrine / bleed / slow / affix).
 func _test_d14_hints() -> void:
 	print("[d14 hints]")
