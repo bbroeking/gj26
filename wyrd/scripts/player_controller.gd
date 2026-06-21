@@ -774,6 +774,10 @@ func take_damage(amount: int, from_dir: Vector3) -> void:
 		var soak: int = mini(_ward_hp, amount)
 		_ward_hp -= soak
 		amount -= soak
+		# C8 — bark soaks (ward_absorb) or shatters (ward_break) audibly.
+		var _wsfx := get_node_or_null("/root/Sfx")
+		if _wsfx != null:
+			_wsfx.play("ward_break" if _ward_hp <= 0 else "ward_absorb")
 		if amount <= 0:
 			_iframe_t = IFRAMES_SEC
 			_combat_t = COMBAT_TIMER
@@ -1431,6 +1435,7 @@ func _net_forward_cast(slot: int) -> void:
 # B5-wave2 — Heartwood Ward: a timed absorb pool soaked in take_damage.
 var _ward_hp := 0
 var _ward_t := 0.0
+var _ward_max := 1            # C8 — last applied absorb, for the hotbar arc
 # Spec 45-wilds — Mothmint Mend's fractional heal carry.
 var _regen_accum := 0.0
 
@@ -1442,12 +1447,21 @@ func add_focus(amount: float) -> void:
 
 func apply_ward(amount: int, duration: float) -> void:
 	_ward_hp = amount
+	_ward_max = maxi(1, amount)
 	_ward_t = duration
 	# Bark-brown flash on the mesh sells the skin hardening.
 	if _mesh != null:
 		var tw := create_tween()
 		tw.tween_property(_mesh, "scale", _mesh.scale * 1.08, 0.10)
 		tw.tween_property(_mesh, "scale", _mesh.scale, 0.14)
+
+# C8 — the hotbar ward arc reads these (skill_bar pushes get_ward_frac to the
+# HeartwoodWard slot each frame).
+func get_ward_hp() -> int:
+	return _ward_hp
+
+func get_ward_frac() -> float:
+	return clampf(float(_ward_hp) / float(maxi(1, _ward_max)), 0.0, 1.0)
 
 # Shrine.gd calls this with the picked buff's stat + value (additive).
 func apply_shrine_buff(stat: String, value) -> void:

@@ -50,8 +50,24 @@ func _run() -> void:
 	_test_loadout_swap(game, p)
 	_test_gates(game, p)
 	_test_mastery_choice(game, p)
+	_test_ward(p)
 	print("--- %d passed, %d failed ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
+
+# ---- C8 — Heartwood Ward absorb fraction (drives the hotbar arc) ----
+func _test_ward(p: Node3D) -> void:
+	p.apply_ward(30, 5.0)
+	_check("ward applied → frac 1.0", is_equal_approx(p.get_ward_frac(), 1.0),
+		str(p.get_ward_frac()))
+	p.set("_iframe_t", 0.0)
+	p.take_damage(10, Vector3.ZERO)        # bark soaks 10 → ward 20
+	_check("ward soaks → ward_hp 20, frac ~0.67",
+		p.get_ward_hp() == 20 and absf(p.get_ward_frac() - 0.667) < 0.02,
+		"hp=%d frac=%.2f" % [p.get_ward_hp(), p.get_ward_frac()])
+	p.set("_iframe_t", 0.0)
+	p.take_damage(50, Vector3.ZERO)        # blow exceeds the bark → ward breaks
+	_check("ward breaks → ward_hp 0, frac 0",
+		p.get_ward_hp() == 0 and p.get_ward_frac() == 0.0, "hp=%d" % p.get_ward_hp())
 
 # ---- the _try_skill contract on the default loadout ----
 func _test_dispatch(p: Node3D) -> void:

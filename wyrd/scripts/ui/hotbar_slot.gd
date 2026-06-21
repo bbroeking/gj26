@@ -7,6 +7,7 @@ extends Control
 # render over this _draw. Pure-vector (no texture in _draw — gotcha-safe).
 
 var cd_ratio: float = 0.0      # 1 = just cast (full dark wedge) → 0 = ready
+var ward_frac: float = 0.0     # C8 — Heartwood Ward absorb remaining (0..1)
 var castable: bool = true
 var _flash: float = 0.0        # gold rim pulse, 0..1, on coming off cooldown
 var _seed: int = 7
@@ -25,6 +26,12 @@ func set_state(ratio: float, can_cast: bool) -> void:
 			or _flash > 0.0:
 		_last_ratio = ratio
 		_last_castable = can_cast
+		queue_redraw()
+
+func set_ward(frac: float) -> void:
+	var f := clampf(frac, 0.0, 1.0)
+	if not is_equal_approx(f, ward_frac):
+		ward_frac = f
 		queue_redraw()
 
 func _process(delta: float) -> void:
@@ -55,5 +62,13 @@ func _draw() -> void:
 			var d := h / maxf(absf(dx), absf(dy))
 			pts.append(c + Vector2(dx, dy) * d)
 		draw_colored_polygon(pts, Color(0.10, 0.08, 0.07, 0.52))
+	# C8 — Heartwood Ward absorb arc: a bark-brown ring around the slot, swept
+	# clockwise from 12 o'clock, shrinking as the bark soaks hits.
+	if ward_frac > 0.001:
+		var c := size * 0.5
+		var rad := size.x * 0.5 - 2.5
+		var a0 := -PI * 0.5
+		var a1 := a0 + TAU * ward_frac
+		draw_arc(c, rad, a0, a1, 40, Color(0.46, 0.33, 0.18, 0.95), 4.0, true)
 	if _flash > 0.0:
 		draw_rect(r.grow(-1.5), Color(WyrdUi.GOLD, _flash * 0.85), false, 3.0)

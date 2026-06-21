@@ -47,6 +47,9 @@ const PATHS := {
 	# Wayfinding signature — the inscription seal. File deferred (ElevenLabs
 	# spend ungated); play() is a graceful no-op until it lands.
 	"inscribe_seal": "res://audio/inscribe_seal.mp3",
+	# C8 — Heartwood Ward soak / shatter (deferred audio).
+	"ward_absorb": "res://audio/ward_absorb.mp3",
+	"ward_break":  "res://audio/ward_break.mp3",
 }
 
 # B8 — one looping music/ambience channel (the town theme). Separate from

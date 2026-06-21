@@ -170,6 +170,11 @@ func _process(_delta: float) -> void:
 		var slot: HotbarSlot = _slots[i]
 		var ratio: float = clampf(cd / max(0.05, base_cd), 0.0, 1.0) if on_cd else 0.0
 		slot.set_state(ratio, not (on_cd or no_focus))
+		# C8 — the Heartwood Ward slot shows its remaining absorb as a bark arc.
+		if String(skill.name) == "HeartwoodWard" and _player.has_method("get_ward_frac"):
+			slot.set_ward(_player.get_ward_frac())
+		else:
+			slot.set_ward(0.0)
 
 func _make_slot(i: int, total_w: int, label: String, cost: int) -> Control:
 	# A HotbarSlot draws its own carved face + radial cooldown wedge + ready
