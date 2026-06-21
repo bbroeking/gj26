@@ -27,6 +27,8 @@ const SUFFIXES := {
 	# Phase 5 — affix pool expansion.
 	"of_the_bramble":  {"display": "of the Bramble",     "stat": "crit_mult",          "value_range": Vector2(0.15, 0.40)},
 	"of_swiftness_ii": {"display": "of Greater Swiftness", "stat": "cooldown_reduction", "value_range": Vector2(0.15, 0.30)},
+	# C9 — extra targets your shots pass through (integer; rounded in derived_stats).
+	"of_penetration":  {"display": "of Penetration",     "stat": "bonus_pierce",       "value_range": Vector2(1, 2)},
 }
 
 # Roll n affixes for the given rarity.
@@ -117,4 +119,5 @@ static func format_affix(a: Dictionary) -> String:
 		"cooldown_reduction": return "+%d%% Skill Cooldown Reduction" % int(round(float(v) * 100.0))
 		"gather_speed":       return "+%d%% Gather Speed" % int(round(float(v) * 100.0))
 		"hp_regen":           return "+%d HP per Second" % int(round(float(v)))
+		"bonus_pierce":       return "Shots pierce +%d more" % maxi(1, int(round(float(v))))
 	return "+%s %s" % [str(v), stat]

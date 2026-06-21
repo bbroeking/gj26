@@ -71,7 +71,8 @@ func _spawn_arrow(player: Node, origin: Vector3, dir: Vector3, dmg: int,
 	arrow.crit_mult = float(player.derived_stats.crit_mult_bonus)
 	arrow.skill_type = skill_type
 	arrow.effects = on_hit_effects
-	arrow.pierce_left = pierce
+	# C9 — gear/perks can add extra pierces on top of the skill's base.
+	arrow.pierce_left = pierce + int(player.derived_stats.get("bonus_pierce", 0))
 	arrow.execute_mult = execute_mult
 	arrow.execute_below = execute_below
 	arrow.focal = focal

@@ -51,8 +51,25 @@ func _run() -> void:
 	_test_gates(game, p)
 	_test_mastery_choice(game, p)
 	_test_ward(p)
+	_test_pierce(p)
 	print("--- %d passed, %d failed ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
+
+# ---- C9 — of_penetration affix → bonus_pierce in derived_stats ----
+func _test_pierce(p: Node3D) -> void:
+	var ItemsData = load("res://data/items.gd")
+	var item: Dictionary = ItemsData.make_item("copper_ring", "magic")
+	item.affixes = [{"stat": "bonus_pierce", "value": 2, "side": "suffix",
+		"id": "of_penetration", "display": "of Penetration"}]
+	p.equipment.slots["ring"] = item
+	p._derive_stats()
+	_check("of_penetration → +2 bonus_pierce",
+		int(p.derived_stats.get("bonus_pierce", 0)) == 2,
+		str(p.derived_stats.get("bonus_pierce", -1)))
+	var Affixes = load("res://data/affixes.gd")
+	_check("pierce affix reads cleanly",
+		"pierce" in Affixes.format_affix(item.affixes[0]).to_lower(),
+		Affixes.format_affix(item.affixes[0]))
 
 # ---- C8 — Heartwood Ward absorb fraction (drives the hotbar arc) ----
 func _test_ward(p: Node3D) -> void:

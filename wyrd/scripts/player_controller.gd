@@ -1121,7 +1121,7 @@ func _on_leveled_up(_trade: String, _new_lv: int) -> void:
 func _derive_stats() -> void:
 	var sums := {"hp": 0, "damage": 0, "crit_chance": 0.0,
 		"crit_mult": 0.0, "fire_rate": 0.0, "move_speed": 0.0,
-		"cooldown_reduction": 0.0, "hp_regen": 0.0}
+		"cooldown_reduction": 0.0, "hp_regen": 0.0, "bonus_pierce": 0}
 	# ADR 0013 — gear gives power again (reverses the 0010 freeze): every
 	# equipped item's base_stat + rolled affixes flow into the sums.
 	if equipment != null:
@@ -1172,6 +1172,8 @@ func _derive_stats() -> void:
 		# is still scaled by `fire_rate` via `fire_cooldown` above.
 		"cooldown_reduction": clampf(float(sums.cooldown_reduction), 0.0, CDR_CAP),
 		"hp_regen":            float(sums.hp_regen),
+		# C9 — extra targets pierced (of_penetration affix / iron_tip perk).
+		"bonus_pierce":        int(round(float(sums.get("bonus_pierce", 0)))),
 	}
 	# Apply HP max change — clamp current HP down if max shrunk; don't auto-heal.
 	hp_max = derived_stats.hp_max
