@@ -8,6 +8,10 @@ extends "res://scripts/combatant.gd"
 signal aggroed
 signal phase_changed(phase: int)
 signal boss_hp_changed(cur: int, mx: int)
+# C10 — the Queen of Thorns calls a thorn-guard when cornered (phase 3).
+signal summon_wave(count: int)
+const QUEEN_SUMMON_COUNT := 3
+var _summoned := false
 
 # ---- phase + attack tunables ----
 const PHASE2_FRAC := 0.66          # HP fraction → phase 2
@@ -84,11 +88,19 @@ func reset_fight() -> void:
 	_atk_cd = 1.5
 	_atk_count = 0
 	_phase = 1
+	_summoned = false
 	hp = hp_max
 	if _telegraph_node != null:
 		_telegraph_node.queue_free()
 		_telegraph_node = null
 	boss_hp_changed.emit(hp, hp_max)
+
+# C10 — the Queen's phase-3 thorn-guard: fires once when she's cornered. Called
+# from _tick_ai (host/offline only); the adds spawn host-side in layout_loader.
+func _maybe_summon() -> void:
+	if kind == "hedgemother_queen" and _phase >= 3 and not _summoned:
+		_summoned = true
+		summon_wave.emit(QUEEN_SUMMON_COUNT)
 
 # Cooldown / telegraph length per phase — later phases hit faster with a
 # shorter (more dangerous) wind-up.
@@ -127,6 +139,7 @@ func _tick_ai(delta: float) -> void:
 	if np != _phase:
 		_phase = np
 		phase_changed.emit(_phase)
+		_maybe_summon()        # host/offline only — runs from _tick_ai
 		if _net_broadcasting():
 			_net_boss_phase.rpc(_phase)
 

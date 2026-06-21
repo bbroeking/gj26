@@ -30,6 +30,7 @@ func _run() -> void:
 	await _test_boss_replay()
 	await _test_status_replication()
 	await _test_party_hp_replication()
+	await _test_queen_summon()
 	print("--- coop evals: %d PASS, %d FAIL ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
 
@@ -131,6 +132,42 @@ func _test_status_replication() -> void:
 	hfoe.apply_status("bleed", 5.0, 2, 1.0, 1.0)
 	_check("P3 net_status_flags reports active kinds",
 		"bleed" in hfoe.net_status_flags(), str(hfoe.net_status_flags()))
+
+# C10 — the Queen of Thorns summons a thorn-guard once at phase 3; other bosses
+# never do.
+func _test_queen_summon() -> void:
+	var host := Node3D.new()
+	host.name = "QHost"
+	root.add_child(host)
+	var boss = BossScript.new()
+	boss.name = "NetFoeQ"
+	host.add_child(boss)
+	boss.cache_meshes()
+	boss.setup(200, 0.6, 2.0)
+	boss.kind = "hedgemother_queen"
+	await physics_frame
+	var got := {"n": 0, "count": 0}
+	boss.summon_wave.connect(func(c: int):
+		got.n += 1
+		got.count = c)
+	boss._phase = 3
+	boss._maybe_summon()
+	_check("C10 queen summons at phase 3", got.n == 1 and got.count == 3,
+		"fired=%d count=%d" % [got.n, got.count])
+	boss._maybe_summon()        # one-shot — must not re-fire
+	_check("C10 summon is one-shot", got.n == 1, "fired=%d" % got.n)
+	# A non-queen boss never summons.
+	var boar = BossScript.new()
+	boar.name = "NetFoeB"
+	host.add_child(boar)
+	boar.cache_meshes()
+	boar.setup(200, 0.6, 2.0)
+	boar.kind = "burrow_boar"
+	boar._phase = 3
+	var got2 := {"n": 0}
+	boar.summon_wave.connect(func(_c: int): got2.n += 1)
+	boar._maybe_summon()
+	_check("C10 non-queen never summons", got2.n == 0, "fired=%d" % got2.n)
 
 # Phase 4 — player HP rides the position snapshot so the party frame can read
 # every peer's health. Verify the receive path sets hp, and that the old

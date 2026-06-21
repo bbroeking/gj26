@@ -738,6 +738,8 @@ func _build_boss(boss_room, grid: Array, boss_kind: String = "hedgemother") -> v
 	_gates = _make_arena_gates(boss_room, grid)
 	boss.aggroed.connect(_raise_gates)
 	boss.died.connect(_drop_gates)
+	# C10 — the Queen calls a thorn-guard at phase 3.
+	boss.summon_wave.connect(func(count: int): _spawn_queen_summons(cx, cy, count))
 
 	# Wire the boss bar (spec 17).
 	var bossbar := get_node_or_null("BossBar")
@@ -959,6 +961,18 @@ func _room_floor_tiles(grid: Array, r: Dictionary, entry, exit) -> Array:
 				continue
 			tiles.append(Vector2i(xx, yy))
 	return tiles
+
+# C10 — the Queen's phase-3 thorn-guard: a handful of skeleton adds around her.
+# Host/offline only — dynamically-spawned adds don't ride the seed-build, so
+# co-op guests don't see them yet (noted followup); no desync, just host-side.
+func _spawn_queen_summons(cx: int, cy: int, count: int) -> void:
+	var netb := get_node_or_null("/root/NetGame")
+	if netb != null and bool(netb.active) and not bool(netb.is_host()):
+		return
+	var offsets := [Vector2i(-2, 1), Vector2i(2, 1), Vector2i(0, -2), Vector2i(-2, -1)]
+	for i in mini(count, offsets.size()):
+		var o: Vector2i = offsets[i]
+		_spawn_enemy(900 + i, cx + o.x, cy + o.y, "combat", 9, "skeleton")
 
 func _spawn_enemy(ei: int, tx: int, ty: int, role: String = "combat",
 		depth: int = 0, forced_kind: String = "") -> CharacterBody3D:
