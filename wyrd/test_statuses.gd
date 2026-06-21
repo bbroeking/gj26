@@ -45,6 +45,7 @@ func _run() -> void:
 	await _t9_warden_heals_ally()
 	await _t10_brute_ring_lifecycle()
 	await _t11_cc_immune_elites()
+	await _t12_execute_ring()
 	print("--- status + AoE evals: %d PASS, %d FAIL ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
 
@@ -126,6 +127,29 @@ func _t11_cc_immune_elites() -> void:
 	var b2 = bb.apply_status("snared", 2.0, 0, 0.5, 0.0)
 	_check("T11b", b1 != null and b2 == null,
 		"briarbound: 1st armed=%s, 2nd refused=%s" % [str(b1 != null), str(b2 == null)])
+
+# ---- T12 — C7 execute ring shows/hides as HP crosses 35%, gone on death ----
+func _t12_execute_ring() -> void:
+	var host := Node3D.new()
+	host.name = "T12Host"
+	root.add_child(host)
+	var e := _make_enemy(host)        # setup(100) → hp_max 100
+	await physics_frame
+	# Explicit crit_chance 0 → deterministic damage (no crit roll).
+	e.take_damage(10, Vector3.ZERO, 0.0, 0.0)   # hp 90, 0.90 > 0.35 → no ring
+	_check("T12a no ring above threshold", e._execute_ring == null,
+		"hp=%d ring=%s" % [int(e.hp), str(e._execute_ring != null)])
+	e.take_damage(60, Vector3.ZERO, 0.0, 0.0)   # hp 30, 0.30 < 0.35 → ring
+	_check("T12b ring below threshold",
+		e._execute_ring != null and is_instance_valid(e._execute_ring),
+		"hp=%d ring=%s" % [int(e.hp), str(e._execute_ring != null)])
+	e.hp = 80                          # healed back above → ring clears
+	e._update_execute_ring()
+	_check("T12c ring clears when healed", e._execute_ring == null,
+		"ring=%s" % str(e._execute_ring != null))
+	e.take_damage(500, Vector3.ZERO, 0.0, 0.0)   # dies → frees the ring
+	_check("T12d ring gone on death", e._execute_ring == null and bool(e.dead),
+		"dead=%s ring=%s" % [str(e.dead), str(e._execute_ring != null)])
 
 # ---- T8 — blightwalker elite blights nearby enemies on death ----
 func _t8_blightwalker_on_death() -> void:

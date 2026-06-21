@@ -96,6 +96,11 @@ var _statuses: Dictionary = {}
 # host's snapshot (kind -> visual Node3D). The host owns the real DoT/slow.
 var _net_status_vis: Dictionary = {}
 
+# C7 — Mercy Shot execute cue: an amber ring under a foe low enough that Mercy
+# Shot will finish it (×3 dmg). Mirrors mercy_shot.execute_below.
+const EXECUTE_RING_BELOW := 0.35
+var _execute_ring: MeshInstance3D = null
+
 # Spec 31 — status visual + apply-text palettes.
 const STATUS_COLOR := {
 	"burn":   Color(1.00, 0.55, 0.18),
@@ -240,6 +245,38 @@ func take_damage(amount: int, from_dir: Vector3,
 	HitFeedback.play_hit(self, tier, from_dir)
 	if hp <= 0:
 		_die()
+	else:
+		_update_execute_ring()
+
+# C7 — show/hide the amber execute ring as HP crosses EXECUTE_RING_BELOW. A
+# child of the body so it follows; driven from take_damage (host) and
+# net_apply_state (guests), freed in _clear_all_statuses on death.
+func _update_execute_ring() -> void:
+	var low: bool = not dead and hp_max > 0 \
+		and float(hp) / float(hp_max) < EXECUTE_RING_BELOW
+	if low and _execute_ring == null:
+		var mi := MeshInstance3D.new()
+		var torus := TorusMesh.new()
+		torus.inner_radius = 0.45
+		torus.outer_radius = 0.58
+		mi.mesh = torus
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = Color(0.95, 0.72, 0.22, 0.7)
+		mat.emission_enabled = true
+		mat.emission = Color(1.0, 0.7, 0.2)
+		mat.emission_energy_multiplier = 1.4
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mi.material_override = mat
+		mi.position = Vector3(0.0, 0.12, 0.0)
+		add_child(mi)
+		_execute_ring = mi
+		var tw := mi.create_tween().set_loops()
+		tw.tween_property(mat, "emission_energy_multiplier", 2.6, 0.5).set_trans(Tween.TRANS_SINE)
+		tw.tween_property(mat, "emission_energy_multiplier", 1.0, 0.5).set_trans(Tween.TRANS_SINE)
+	elif not low and _execute_ring != null:
+		if is_instance_valid(_execute_ring):
+			_execute_ring.queue_free()
+		_execute_ring = null
 
 # Phase B — co-op helpers. A puppet is a guest-side mirror of a host
 # enemy: identical (seed-built) body, no AI/physics of its own — it lerps
@@ -276,6 +313,7 @@ func net_apply_state(pos: Vector3, p_hp: int, flags: Array = []) -> void:
 	elif not dead:
 		# Phase 3 — mirror the host's active statuses (cosmetic only).
 		_net_apply_status_vis(flags)
+		_update_execute_ring()   # C7 — guests see the execute cue too
 
 func _physics_process(delta: float) -> void:
 	if dead:
@@ -972,6 +1010,10 @@ func _clear_all_statuses() -> void:
 		if is_instance_valid(v):
 			v.queue_free()
 	_net_status_vis.clear()
+	# C7 — the execute ring dies with the foe.
+	if _execute_ring != null and is_instance_valid(_execute_ring):
+		_execute_ring.queue_free()
+	_execute_ring = null
 
 func _die() -> void:
 	dead = true

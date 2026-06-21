@@ -202,6 +202,10 @@ func _on_area_entered(area: Area3D) -> void:
 					and float(c.get("hp")) / float(c.get("hp_max")) < execute_below:
 				dealt = int(round(float(damage) * execute_mult))
 			c.take_damage(dealt, fwd, crit_chance, crit_mult)
+			# C7 — a Mercy Shot finisher (execute fired AND it killed) gets a
+			# distinct silver-white kill burst, not the warm-gold default.
+			if dealt > damage and bool(c.get("dead")):
+				_spawn_mercy_kill_burst((c as Node3D).global_position)
 			# Spec 32b — on-hit effects are data on the arrow. Each Skill
 			# attached its list before spawn; we iterate and apply. Done
 			# AFTER take_damage so a fatal hit dies cleanly (apply on dead
@@ -382,3 +386,31 @@ func _explode(at: Vector3) -> void:
 	p.global_position = at
 	p.emitting = true
 	p.get_tree().create_timer(1.2).timeout.connect(p.queue_free)
+
+# C7 — the silver-white finisher burst, distinct from the warm-gold kill pop.
+func _spawn_mercy_kill_burst(pos: Vector3) -> void:
+	var mi := MeshInstance3D.new()
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.2
+	torus.outer_radius = 0.34
+	mi.mesh = torus
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.95, 0.97, 1.0, 0.9)
+	mat.emission_enabled = true
+	mat.emission = Color(0.9, 0.95, 1.0)
+	mat.emission_energy_multiplier = 2.2
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mi.material_override = mat
+	mi.position = pos + Vector3(0.0, 0.5, 0.0)
+	var host: Node = get_parent()
+	if host == null:
+		host = get_tree().root
+	host.add_child(mi)
+	var tw := mi.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(mi, "scale", Vector3.ONE * 4.5, 0.35)
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.35)
+	tw.set_parallel(false)
+	tw.tween_callback(func():
+		if is_instance_valid(mi):
+			mi.queue_free())
