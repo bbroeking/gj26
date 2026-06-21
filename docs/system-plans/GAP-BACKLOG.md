@@ -1,5 +1,12 @@
 # Gap backlog — prompts + verification, in build order
 
+> **STATUS: COMPLETE (2026-06-21).** All 15 buildable items shipped + verified +
+> committed (`98e918c`..`3d62df1`), every gate suite green. The "Parked" section
+> below (audio, art, biome GLBs, death-stakes, distribution-tier) still needs you
+> (asset spend / art-gen / a design call). Vetted-moot along the way: HUD
+> multi-trade readout (ADR 0012 = one trade), bark mesh-tint (texture hazard),
+> Rain/Thornburst bleed-motes (deferred VFX polish).
+
 One prompt per gap (from the 2026-06-18 gap audit). Each lands as: code →
 **automated verification** (headless scenario assertion in a gate suite, and a
 windowed screenshot when the gap is visual) → commit → next. Ordered so the
