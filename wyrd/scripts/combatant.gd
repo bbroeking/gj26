@@ -1076,7 +1076,11 @@ func _die() -> void:
 func _spawn_drops() -> void:
 	if net_puppet:
 		return   # the host's drop events carry per-player rolls instead
-	var pile: Array = Drops.roll_drop(role, depth)
+	# C11 — elites with a reward_tier_bonus lift the rarity floor of their drops.
+	var tier_bonus: int = 0
+	if is_elite:
+		tier_bonus = int(Elites.MODIFIERS.get(modifier, {}).get("reward_tier_bonus", 0))
+	var pile: Array = Drops.roll_drop(role, depth, tier_bonus)
 	if pile.is_empty():
 		return
 	# Phase B — co-op loot is instanced per player: the host broadcasts

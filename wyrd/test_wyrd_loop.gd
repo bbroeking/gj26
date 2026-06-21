@@ -103,6 +103,12 @@ func _test_chain_and_economy() -> void:
 	_check("chart case fills to cap",
 		(game.charts as Array).size() == game.CHART_CASE_MAX
 		and game.chart_case_full())
+	# C11 — an elite reward_tier_bonus lifts the drop rarity floor (deterministic).
+	var Drops = load("res://data/drops.gd")
+	_check("tier_bonus 20 floors the roll at tier 9",
+		Drops._roll_tier("combat", 0, 20) == 9, str(Drops._roll_tier("combat", 0, 20)))
+	_check("tier_bonus 8 always rolls magic+ (>=5)",
+		Drops._roll_tier("combat", 0, 8) >= 5, str(Drops._roll_tier("combat", 0, 8)))
 	game.free()
 
 # Pack-size progression — the satchel grows a row at level milestones (6, 12),

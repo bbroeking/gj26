@@ -884,7 +884,8 @@ func _build_enemies(layout: Dictionary) -> int:
 		var elite_idx := -1
 		var elite_modifier: String = ""
 		var elite_kind: String = _pick_kind(table)
-		if role == "combat" and _rng.randf() < float(n) / 8.0:
+		# C11 — deeper dens are eliter: the base chance rises with depth (capped).
+		if role == "combat" and _rng.randf() < minf(0.6, float(n) / 8.0 + float(depth) * 0.02):
 			elite_idx = _rng.randi_range(0, n - 1)
 			elite_modifier = ElitesData.pick_random(_rng)
 		for k in n:
@@ -911,7 +912,7 @@ func _build_enemies(layout: Dictionary) -> int:
 								game.add_material("thorn_essence", 1)
 								game.notify("A thorn essence gleams in the wreckage."))
 				# Retinue — 2–3 same-kind trash within ~2.5m of the elite.
-				var retinue_count := _rng.randi_range(2, 3)
+				var retinue_count := _rng.randi_range(2, 2 + clampi(depth / 3, 0, 3))  # C11 — bigger packs deeper
 				var elite_pos := Vector2(t.x, t.y)
 				var near: Array = []
 				for cand in tiles:

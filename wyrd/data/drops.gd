@@ -23,14 +23,14 @@ const ROLE_TIER_BIAS := {   # added to the base 0-9 roll
 const BOSS_DROP_COUNT := 3   # boss drops several items, always rare+
 
 # Roll the drop pile for an enemy with the given role + depth. May be empty.
-static func roll_drop(role: String, depth: int = 0) -> Array:
+static func roll_drop(role: String, depth: int = 0, tier_bonus: int = 0) -> Array:
 	var out: Array = []
 	var chance: float = ROLE_DROP_CHANCE.get(role, 0.50)
 	var count := BOSS_DROP_COUNT if role == "boss" else 1
 	for _i in count:
 		if randf() > chance:
 			continue
-		var tier := _roll_tier(role, depth)
+		var tier := _roll_tier(role, depth, tier_bonus)
 		var rarity := _tier_to_rarity(tier)
 		var kind_id := _pick_kind()
 		var item := Items.make_item(kind_id, rarity)
@@ -40,9 +40,10 @@ static func roll_drop(role: String, depth: int = 0) -> Array:
 
 # Base roll = min of two d10 → biased toward 0 (most drops are "normal"),
 # then shifted up by role + depth/2. Boss is clamped to ≥8 (rare+).
-static func _roll_tier(role: String, depth: int) -> int:
+static func _roll_tier(role: String, depth: int, tier_bonus: int = 0) -> int:
 	var base: int = mini(randi() % 10, randi() % 10)
-	var bias: int = int(ROLE_TIER_BIAS.get(role, 0)) + (depth / 2)
+	# C11 — an elite modifier's reward_tier_bonus lifts the rarity floor.
+	var bias: int = int(ROLE_TIER_BIAS.get(role, 0)) + (depth / 2) + tier_bonus
 	var tier: int = base + bias
 	if role == "boss" and tier < 8:
 		tier = 8
