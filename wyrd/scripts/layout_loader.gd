@@ -46,6 +46,57 @@ const DECOR_MODEL := {
 	"pottery":     "res://models/dungeon_crypt_pottery_v1.glb",
 	"rug":         "res://models/dungeon_crypt_rug_v1.glb",
 }
+# ---- biome asset sets (scaffold) ----
+# Today every biome reuses the crypt decor GLBs + a palette tint. This registry
+# lets a chart `scope` pick a BIOME that supplies its own decor GLB set (and an
+# optional floor texture); anything a biome doesn't define falls back to the
+# crypt asset, so a biome lights up INCREMENTALLY as its Meshy GLBs land — no
+# dungeon_gen changes needed (the biome reskins the existing decor `kind` slots).
+# Palette tints stay in _apply_biome_palette (keyed by scope) so per-scope colour
+# is unchanged. Mapping is a sensible default; adjust freely (Bog has no scope yet).
+const SCOPE_BIOME := {
+	"crypt": "crypt",
+	"snug": "wood_grove",
+	"hollow": "mineral_seam",
+	"tier_1": "mineral_seam",
+	"briar_maze": "wood_grove",
+	"summit": "summit",
+}
+# Each biome: `decor` maps a crypt decor `kind` → that biome's GLB (empty =
+# fall back to the crypt DECOR_MODEL); `floor_tex` overrides the floor texture
+# (empty = keep the crypt brick). Populate as GLBs arrive — e.g. mineral_seam
+# might map "column" → a timber support, "pottery" → ore rubble, "bones" → a
+# crystal cluster, "sarcophagus" → a mine cart.
+const BIOMES := {
+	"crypt":        {"decor": {}, "floor_tex": "res://textures/crypt/dungeon-crypt-floor-brick-v1.png"},
+	# Mineral Seam — Meshy lowpoly props (2026-06-28). Each reskins a crypt decor
+	# `kind` slot: altar→ore-vein boulder, bones→crystals, sarcophagus→mine cart,
+	# column→timber support, brazier→lantern, pottery→ore rubble, bookshelf→cave
+	# mushrooms. Unmapped kinds (torch_wall/rug/chest) fall back to crypt.
+	"mineral_seam": {"decor": {
+		"altar":       "res://models/biome_mineral_seam_orevein_v1.glb",
+		"bones":       "res://models/biome_mineral_seam_crystals_v1.glb",
+		"sarcophagus": "res://models/biome_mineral_seam_minecart_v1.glb",
+		"column":      "res://models/biome_mineral_seam_timber_v1.glb",
+		"brazier":     "res://models/biome_mineral_seam_lantern_v1.glb",
+		"pottery":     "res://models/biome_mineral_seam_rubble_v1.glb",
+		"bookshelf":   "res://models/biome_mineral_seam_mushrooms_v1.glb",
+	}, "tints": {
+		# Lowpoly Meshy props ship untextured (white). Paint each a single
+		# thematic hue + the ink outline — the same treatment the enemy GLBs get.
+		"altar":       Color(0.58, 0.46, 0.34),   # ore-vein rock — warm stone
+		"bones":       Color(0.52, 0.74, 0.95),   # crystals — cold blue
+		"sarcophagus": Color(0.46, 0.33, 0.22),   # mine cart — wood
+		"column":      Color(0.50, 0.38, 0.26),   # timber — wood
+		"brazier":     Color(0.82, 0.64, 0.30),   # lantern — brass
+		"pottery":     Color(0.53, 0.50, 0.45),   # ore rubble — grey rock
+		"bookshelf":   Color(0.48, 0.64, 0.88),   # cave mushrooms — glow blue
+	}, "floor_tex": ""},
+	"wood_grove":   {"decor": {}, "floor_tex": ""},
+	"bog":          {"decor": {}, "floor_tex": ""},
+	"summit":       {"decor": {}, "floor_tex": ""},
+}
+
 # decor.kind → collider box size, or null for pass-through decor.
 const DECOR_COLLIDER := {
 	"bones":       Vector3(0.8, 0.4, 0.8),
@@ -176,6 +227,9 @@ const BOSS_KINDS := {
 var _floor_mat: StandardMaterial3D
 var _wall_mat: StandardMaterial3D
 var _scope := "crypt"   # chart scope — recolors the biome palette + filters decor
+var _biome_id := "crypt"   # resolved from _scope via SCOPE_BIOME (decor asset set)
+var _biome_decor: Dictionary = {}   # kind → biome GLB override (empty → crypt)
+var _biome_tints: Dictionary = {}   # kind → tint Color for untextured biome props
 var _rng := RandomNumberGenerator.new()
 var _net_foe_idx := 0          # Phase B — deterministic enemy naming
 var net_spawn := Vector3.ZERO  # Phase B — co-op entry spawn for NetGame
@@ -253,6 +307,7 @@ func _ready() -> void:
 	# before _build_grid (which bakes these materials into the tiles).
 	_scope = String(layout.get("scope", "crypt"))
 	_apply_biome_palette(_scope)
+	_resolve_biome()
 	_read_chart_modifiers()
 	_build_grid(layout.grid)
 	_build_floor_collision(layout.grid)
@@ -344,6 +399,23 @@ func _read_chart_modifiers() -> void:
 # Recolour the shared wall/floor materials by chart scope so a hollow / briar
 # run reads as a different place. Albedo tints only (no texture swaps — keeps
 # it crash-safe with the shipped crypt textures); crypt/summit keep defaults.
+# Resolve the decor asset set for the active scope, and apply the biome's floor
+# texture if it defines one (empty → keep the crypt brick). Behaviour-preserving
+# for crypt and for any biome whose GLBs/textures haven't landed yet.
+func _resolve_biome() -> void:
+	_biome_id = String(SCOPE_BIOME.get(_scope, "crypt"))
+	var b: Dictionary = BIOMES.get(_biome_id, {})
+	_biome_decor = b.get("decor", {})
+	_biome_tints = b.get("tints", {})
+	var ftex := String(b.get("floor_tex", ""))
+	if ftex != "" and ResourceLoader.exists(ftex):
+		_floor_mat.albedo_texture = load(ftex)
+
+# The GLB path for a decor `kind` in the active biome: the biome's own override
+# if it has one, else the crypt DECOR_MODEL, else "" (skip).
+func _decor_model(kind: String) -> String:
+	return String(_biome_decor.get(kind, DECOR_MODEL.get(kind, "")))
+
 func _apply_biome_palette(scope: String) -> void:
 	match scope:
 		"hollow", "tier_1":
@@ -581,15 +653,28 @@ func _build_decor(layout: Dictionary) -> void:
 			_build_interactable(ir, d, depths, dungeon_seed)
 			continue
 		var kind := String(d.kind)
-		if not DECOR_MODEL.has(kind):
+		var model_path := _decor_model(kind)
+		if model_path == "":
 			continue
-		# Biome filter — crypt sarcophagi don't belong in a hollow / briar run.
-		if _scope != "crypt" and _scope != "summit" and kind == "sarcophagus":
+		# Biome filter — crypt sarcophagi don't belong in a hollow / briar run,
+		# UNLESS the active biome remaps the sarcophagus slot to its own prop
+		# (e.g. mineral_seam → mine cart).
+		if kind == "sarcophagus" and not _biome_decor.has("sarcophagus") \
+				and _scope != "crypt" and _scope != "summit":
 			continue
-		var packed: PackedScene = load(DECOR_MODEL[kind])
+		var packed: PackedScene = load(model_path)
 		if packed == null:
 			continue
 		var inst: Node3D = packed.instantiate()
+		# Biome props ship untextured (white) — paint them like the enemy GLBs
+		# (single thematic tint + ink outline) so they read as chunky toon, not
+		# flat-grey blobs. Crypt decor keeps its own baked GLB materials.
+		if _biome_decor.has(kind):
+			_unmetal(inst)
+			if _biome_tints.has(kind):
+				_tint(inst, _biome_tints[kind])
+			else:
+				_outline_only(inst)
 		var box = DECOR_COLLIDER.get(kind, null)
 		# Spec 28 — read the orient cardinal placed by dungeon_gen; rotate
 		# the body (or pass-through instance) so wall-edge decor faces the
@@ -1197,7 +1282,7 @@ func _build_empty_throne(layout: Dictionary) -> void:
 	var cy: int = int(boss_room.y) + int(int(boss_room.h) / 2.0) - 2
 	if cy < 1 or cy >= grid.size() - 1 or String(grid[cy][cx]) != "floor":
 		return
-	var packed: PackedScene = load(DECOR_MODEL["sarcophagus"])
+	var packed: PackedScene = load(_decor_model("sarcophagus"))
 	if packed == null:
 		return
 	var inst: Node3D = packed.instantiate()
