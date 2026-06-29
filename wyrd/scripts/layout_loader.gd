@@ -22,6 +22,7 @@ const GatherDefs = preload("res://data/gather.gd")
 const AmbientMotesScript = preload("res://scripts/ambient_motes.gd")
 const SOFT_CIRCLE_TEX = preload("res://assets/vfx/soft_circle.png")
 const VIGNETTE_SHADER = preload("res://shaders/vignette.gdshader")
+const FLOOR_SHADER = preload("res://shaders/toon_ground.gdshader")
 
 # (Per-kind enemy/boss HP moved into ENEMY_KINDS / BOSS_KINDS below.)
 
@@ -210,6 +211,68 @@ const BIOME_GROUND := {
 	"summit":       {"mscale": Vector3(1.0, 0.45, 1.0), "color": Color(0.88, 0.92, 0.98), "size": 0.13, "density": 0.6},
 }
 
+# Per-biome uniforms for the procedural toon-ground shader (spec 50). Keys map
+# 1:1 onto shaders/toon_ground.gdshader uniforms; STRUCTURE differs per biome
+# (hard stone plates vs soft warped dirt/mud vs snow), not just tint. Each biome
+# gets a distinct domain_rotation so no two share a lattice orientation.
+const FLOOR_BIOME := {
+	# Warm candle-lit flagstone — hard cobble plates, deep warm grout.
+	"crypt": {
+		"base_col": Color(0.55, 0.48, 0.40), "accent_col": Color(0.40, 0.34, 0.28),
+		"mortar_col": Color(0.18, 0.14, 0.11),
+		"cell_scale": 0.62, "cell_strength": 0.82, "mortar_width": 0.06,
+		"noise_amt": 0.35, "mottle_scale": 0.07,
+		"snow_blend": 0.0, "wet_blend": 0.0,
+		"base_rough": 0.86, "bevel": 0.50, "vein_glow": 0.0, "sparkle_amt": 0.0,
+		"warp_amount": 0.45, "warp_freq": 0.35, "domain_rotation": 0.30,
+		"rim_amt": 0.25, "rim_tint": 0.40,
+	},
+	# Cool broken rock plates with faintly glowing crystal-blue veins in the cracks.
+	"mineral_seam": {
+		"base_col": Color(0.34, 0.40, 0.48), "accent_col": Color(0.42, 0.72, 0.96),
+		"mortar_col": Color(0.10, 0.14, 0.20),
+		"cell_scale": 0.74, "cell_strength": 0.90, "mortar_width": 0.07,
+		"noise_amt": 0.40, "mottle_scale": 0.06,
+		"snow_blend": 0.0, "wet_blend": 0.15, "puddle_thresh": 0.62,
+		"base_rough": 0.80, "bevel": 0.60, "vein_glow": 0.90, "sparkle_amt": 0.0,
+		"warp_amount": 0.55, "warp_freq": 0.40, "domain_rotation": 0.62,
+		"rim_amt": 0.30, "rim_tint": 0.50,
+	},
+	# Forest soil + leaf litter — soft clumps, no hard grout grid, heavy mottle.
+	"wood_grove": {
+		"base_col": Color(0.30, 0.24, 0.15), "accent_col": Color(0.34, 0.42, 0.19),
+		"mortar_col": Color(0.17, 0.12, 0.08),
+		"cell_scale": 0.95, "cell_strength": 0.25, "mortar_width": 0.12,
+		"noise_amt": 0.85, "mottle_scale": 0.22,
+		"snow_blend": 0.0, "wet_blend": 0.06,
+		"base_rough": 0.95, "bevel": 0.25, "vein_glow": 0.0, "sparkle_amt": 0.0,
+		"warp_amount": 0.75, "warp_freq": 0.40, "domain_rotation": 0.20,
+		"rim_amt": 0.22, "rim_tint": 0.35,
+	},
+	# Murky wet mud with big glossy water pools + cool sky-tinted sheen.
+	"bog": {
+		"base_col": Color(0.22, 0.22, 0.16), "accent_col": Color(0.26, 0.34, 0.22),
+		"mortar_col": Color(0.10, 0.12, 0.10), "wet_tint": Color(0.24, 0.33, 0.30),
+		"cell_scale": 1.10, "cell_strength": 0.30, "mortar_width": 0.10,
+		"noise_amt": 0.70, "mottle_scale": 0.18,
+		"snow_blend": 0.0, "wet_blend": 0.90, "puddle_thresh": 0.42,
+		"base_rough": 0.90, "bevel": 0.20, "vein_glow": 0.0, "sparkle_amt": 0.0,
+		"warp_amount": 0.85, "warp_freq": 0.35, "domain_rotation": 0.45,
+		"rim_amt": 0.28, "rim_tint": 0.45,
+	},
+	# Packed snow over ice — snow fills the cracks, view-dependent sparkle, blue seams.
+	"summit": {
+		"base_col": Color(0.82, 0.86, 0.92), "accent_col": Color(0.70, 0.80, 0.92),
+		"mortar_col": Color(0.55, 0.60, 0.68), "snow_col": Color(0.97, 0.99, 1.0),
+		"cell_scale": 0.85, "cell_strength": 0.35, "mortar_width": 0.08,
+		"noise_amt": 0.50, "mottle_scale": 0.06,
+		"snow_blend": 0.90, "wet_blend": 0.18, "puddle_thresh": 0.60,
+		"base_rough": 0.78, "bevel": 0.30, "vein_glow": 0.0, "sparkle_amt": 2.2,
+		"warp_amount": 0.50, "warp_freq": 0.35, "domain_rotation": 0.66,
+		"rim_amt": 0.32, "rim_tint": 0.55,
+	},
+}
+
 # decor.kind → collider box size, or null for pass-through decor.
 const DECOR_COLLIDER := {
 	"bones":       Vector3(0.8, 0.4, 0.8),
@@ -341,7 +404,7 @@ const BOSS_KINDS := {
 		"hp": 160, "damage": 13, "radius": 1.1, "height": 3.6, "trophy": ""},
 }
 
-var _floor_mat: StandardMaterial3D
+var _floor_mat: ShaderMaterial
 var _wall_mat: StandardMaterial3D
 var _scope := "crypt"   # chart scope — recolors the biome palette + filters decor
 var _biome_id := "crypt"   # resolved from _scope via SCOPE_BIOME (decor asset set)
@@ -384,23 +447,10 @@ func _ready() -> void:
 	else:
 		_rng.randomize()
 
-	# Crypt brick floor — triplanar so the per-tile planes share one continuous
-	# world-projected texture (seam-free) from a single material (cheap). A gentle
-	# warm wash keeps it candle-lit, not morgue-grey.
-	_floor_mat = StandardMaterial3D.new()
-	_floor_mat.albedo_texture = preload(
-		"res://textures/crypt/dungeon-crypt-floor-brick-v1.png")
-	_floor_mat.uv1_triplanar = true
-	_floor_mat.uv1_scale = Vector3(0.34, 0.34, 0.34)
-	_floor_mat.albedo_color = Color(0.84, 0.77, 0.66)
-	_floor_mat.roughness = 0.78
-	# Env-quality: toon diffuse/specular + rim so the ground speaks the same cel
-	# language as the props/enemies (was smooth PBR — the "unfinished" tell).
-	_floor_mat.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
-	_floor_mat.specular_mode = BaseMaterial3D.SPECULAR_TOON
-	_floor_mat.rim_enabled = true
-	_floor_mat.rim = 0.3
-	_floor_mat.rim_tint = 0.4
+	# Floor: a from-first-principles procedural TOON ground shader (spec 50) built
+	# per-biome in _make_floor_material(_biome_id) AFTER _resolve_biome runs, drawn
+	# on ONE merged seamless mesh (_build_floor_mesh). The old per-tile crypt-brick
+	# PlaneMesh is gone — it read as a repeating brick grid in every biome.
 
 	_wall_mat = StandardMaterial3D.new()
 	_wall_mat.albedo_color = Color(0.34, 0.31, 0.28)   # warm crypt stone
@@ -439,10 +489,12 @@ func _ready() -> void:
 	# run reads as a different place, not just a different spawn table. Done
 	# before _build_grid (which bakes these materials into the tiles).
 	_scope = String(layout.get("scope", "crypt"))
-	_apply_biome_palette(_scope)
-	_resolve_biome()
+	_apply_biome_palette(_scope)            # wall palette only now
+	_resolve_biome()                        # sets _biome_id
+	_floor_mat = _make_floor_material(_biome_id)   # procedural toon ground (spec 50)
 	_read_chart_modifiers()
-	_build_grid(layout.grid)
+	_build_grid(layout.grid)                # walls only now
+	_build_floor_mesh(layout.grid)          # one merged seamless floor surface
 	_scatter_ground_cover(layout.grid)
 	_build_floor_collision(layout.grid)
 	_build_navmesh(layout.grid)
@@ -541,9 +593,8 @@ func _resolve_biome() -> void:
 	var b: Dictionary = BIOMES.get(_biome_id, {})
 	_biome_decor = b.get("decor", {})
 	_biome_tints = b.get("tints", {})
-	var ftex := String(b.get("floor_tex", ""))
-	if ftex != "" and ResourceLoader.exists(ftex):
-		_floor_mat.albedo_texture = load(ftex)
+	# Floor look now comes from the procedural shader's per-biome uniforms
+	# (FLOOR_BIOME / _make_floor_material), not a texture swap.
 	_apply_biome_env()
 	_build_ambient_motes()
 	_build_vignette()
@@ -649,22 +700,31 @@ func _make_blob_shadow(radius: float) -> Decal:
 func _decor_model(kind: String) -> String:
 	return String(_biome_decor.get(kind, DECOR_MODEL.get(kind, "")))
 
+# Build the procedural toon-ground ShaderMaterial for a biome (spec 50) and chain
+# the inverted-hull ink shell as next_pass (house convention). On the flat merged
+# slab the hull only inks the floor's OUTER boundary vs walls/void; the interior
+# linework is the shader's grout, by design.
+func _make_floor_material(biome_id: String) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = FLOOR_SHADER
+	var p: Dictionary = FLOOR_BIOME.get(biome_id, FLOOR_BIOME["crypt"])
+	for k in p:
+		m.set_shader_parameter(k, p[k])   # Color → vec4 source_color, float → float
+	m.next_pass = _make_outline_pass()
+	return m
+
+# Wall palette per scope (the floor is the procedural toon-ground shader now).
 func _apply_biome_palette(scope: String) -> void:
 	match scope:
 		"hollow", "tier_1":
-			_floor_mat.albedo_color = Color(0.66, 0.70, 0.55)   # earthy moss-tan
 			_wall_mat.albedo_color = Color(0.28, 0.32, 0.24)     # dark earth
 		"briar_maze":
-			_floor_mat.albedo_color = Color(0.40, 0.48, 0.34)    # green leaf-litter
 			_wall_mat.albedo_color = Color(0.20, 0.26, 0.18)     # deep briar green
 		"snug":
-			_floor_mat.albedo_color = Color(0.80, 0.72, 0.58)    # cellar sandstone
 			_wall_mat.albedo_color = Color(0.44, 0.38, 0.30)     # rough clay
 		"summit":
-			_floor_mat.albedo_color = Color(0.82, 0.86, 0.92)    # snow-pale
 			_wall_mat.albedo_color = Color(0.42, 0.46, 0.52)     # cold grey rock
 		"mire":
-			_floor_mat.albedo_color = Color(0.40, 0.44, 0.34)    # murky wet earth
 			_wall_mat.albedo_color = Color(0.24, 0.28, 0.22)     # dark bog stone
 		_:
 			pass   # crypt keeps the warm stone defaults
@@ -745,19 +805,33 @@ func _build_grid(grid: Array) -> void:
 	for y in grid.size():
 		var row: Array = grid[y]
 		for x in row.size():
-			var kind := String(row[x])
-			if kind == "floor":
-				_place_floor(x, y)
-			elif kind == "wall":
+			if String(row[x]) == "wall":
 				_place_wall(x, y, grid)
 
-func _place_floor(x: int, y: int) -> void:
-	var mesh := PlaneMesh.new()
-	mesh.size = Vector2(1.0, 1.0)
+# ONE merged surface for the whole walkable floor = ONE draw call. The procedural
+# ground shader samples WORLD XZ, so the merged 1x1 quads share one continuous
+# seamless field (no per-tile UV, non-rectangular footprints just work).
+# Collision/navmesh stay their own passes — this is the VISUAL floor only.
+func _build_floor_mesh(grid: Array) -> void:
+	var unit := PlaneMesh.new()
+	unit.size = Vector2(1.0, 1.0)          # XZ plane, +Y normal
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var any := false
+	for y in grid.size():
+		var row: Array = grid[y]
+		for x in row.size():
+			if String(row[x]) == "floor":
+				st.append_from(unit, 0,
+					Transform3D(Basis(), Vector3(x + 0.5, 0.0, y + 0.5)))
+				any = true
+	if not any:
+		return
 	var mi := MeshInstance3D.new()
-	mi.mesh = mesh
+	mi.name = "FloorMerged"
+	mi.mesh = st.commit()
 	mi.material_override = _floor_mat
-	mi.position = Vector3(x + 0.5, 0.0, y + 0.5)
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF   # floor receives, doesn't cast
 	add_child(mi)
 
 # Walls (spec 24) — lowered to 2.5 m so the camera reads over them, and
