@@ -544,6 +544,13 @@ func _apply_biome_env() -> void:
 		env.fog_light_color = e.fog
 		env.fog_density = float(e.fog_density)
 		env.glow_intensity = float(e.glow)
+		# Telephoto FATE lens flattens depth — aerial perspective fades far walls
+		# into the biome fog tint, sun-scatter glows the fog toward the Sun, and a
+		# little height fog hugs the floor (cheap fg/mg/bg separation top-down).
+		env.fog_aerial_perspective = 0.55
+		env.fog_sun_scatter = 0.25
+		env.fog_height = 2.5
+		env.fog_height_density = float(e.fog_density) * 1.4
 		we.environment = env
 	var sun := get_node_or_null("Sun")
 	if sun != null:
@@ -588,6 +595,21 @@ func _build_ambient_motes() -> void:
 	p.draw_pass_1 = qm
 	add_child(p)
 	p.emitting = true
+
+# A soft round contact shadow projected onto the floor under a prop/enemy so it
+# visibly TOUCHES the ground — the #1 top-down "floating sticker" tell. As a
+# child of a moving body it follows it. Texture preloaded (never load in _draw).
+func _make_blob_shadow(radius: float) -> Decal:
+	var d := Decal.new()
+	d.texture_albedo = SOFT_CIRCLE_TEX
+	d.modulate = Color(0.03, 0.04, 0.08)    # near-black, faint cool (matches ambient)
+	d.albedo_mix = 0.58
+	d.size = Vector3(radius * 2.0, 1.2, radius * 2.0)
+	d.position = Vector3(0.0, 0.55, 0.0)
+	d.distance_fade_enabled = true
+	d.distance_fade_begin = 20.0
+	d.distance_fade_length = 6.0
+	return d
 
 # The GLB path for a decor `kind` in the active biome: the biome's own override
 # if it has one, else the crypt DECOR_MODEL, else "" (skip).
@@ -892,6 +914,7 @@ func _build_decor(layout: Dictionary) -> void:
 			col.shape = shape
 			col.position = Vector3(0.0, box.y * 0.5, 0.0)
 			body.add_child(col)
+			body.add_child(_make_blob_shadow(maxf(box.x, box.z) * 0.7))   # grounds the prop
 			add_child(body)
 			if breakable:
 				var bsize: Vector3 = box
@@ -1410,6 +1433,7 @@ func _spawn_character(inst: Node3D, tx: int, ty: int, radius: float, height: flo
 	col.shape = shape
 	col.position = Vector3(0.0, height * 0.5, 0.0)
 	body.add_child(col)
+	body.add_child(_make_blob_shadow(radius * 1.6))   # grounds the foe
 	add_child(body)
 	# Combatant init — caches meshes for the flash, builds the hurtbox.
 	body.cache_meshes()
