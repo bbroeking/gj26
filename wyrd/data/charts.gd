@@ -53,6 +53,16 @@ const TEMPLATES := {
 		"gen": {"room_min": 6, "room_max": 10, "loop_fraction": 0.55,
 			"corridor_ratio_max": 2.4},
 	},
+	# A wetland chart — the Sallow Mire (its own biome: data/layout_loader BIOMES.bog).
+	# Open, looping reed-and-root layout; sits between Hollow and Briar Maze.
+	"mire": {
+		"tier": 2, "name": "Sallow Mire", "req_carto": 12,
+		"desc": "A drowned hollow of reed and root. Open and looping; the fog keeps secrets.",
+		"affix_slots": 2, "ink_slots": 3,
+		"base_cost": {"hedge_ink": 3},
+		"scope": "mire",
+		"gen": {"room_min": 7, "room_max": 12, "loop_fraction": 0.5},
+	},
 	# The endgame: the chart the whole chain builds toward. The Alpha's
 	# fang is the only key; the Queen waits at the bottom.
 	"summit": {
@@ -60,12 +70,12 @@ const TEMPLATES := {
 		"desc": "The final chart — where the first Hedgemother nests. The fang opens the way.",
 		"affix_slots": 0, "ink_slots": 0,
 		"base_cost": {"hedge_ink": 4, "refined_ink": 1, "alpha_fang": 1},
-		"scope": "crypt",
+		"scope": "summit",
 		"gen": {"boss_kind": "hedgemother_queen", "enemy_density": 1.4,
 			"loop_fraction": 0.4},
 	},
 }
-const TEMPLATE_ORDER := ["snug", "tier_1", "hollow", "briar_maze", "summit"]
+const TEMPLATE_ORDER := ["snug", "tier_1", "hollow", "briar_maze", "mire", "summit"]
 
 # ---- affixes (v1 — implemented effects only) ----
 # stability: effective = min(95, base_stab + carto_lv * 0.6 + ink_bonus*100).

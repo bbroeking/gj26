@@ -60,6 +60,7 @@ const SCOPE_BIOME := {
 	"hollow": "mineral_seam",
 	"tier_1": "mineral_seam",
 	"briar_maze": "wood_grove",
+	"mire": "bog",
 	"summit": "summit",
 }
 # Each biome: `decor` maps a crypt decor `kind` → that biome's GLB (empty =
@@ -112,8 +113,46 @@ const BIOMES := {
 		"pottery":     Color(0.46, 0.50, 0.40),   # mossy boulder
 		"bookshelf":   Color(0.80, 0.74, 0.62),   # fairy ring — pale stone
 	}, "floor_tex": ""},
-	"bog":          {"decor": {}, "floor_tex": ""},
-	"summit":       {"decor": {}, "floor_tex": ""},
+	# Sallow Mire — wetland (scope "mire"). altar→gnarled roots, sarcophagus→
+	# sunken log, column→dock post, bones→lily pads, brazier→will-o-wisp,
+	# pottery→mud mound, bookshelf→reeds.
+	"bog":          {"decor": {
+		"altar":       "res://models/biome_bog_roots_v1.glb",
+		"sarcophagus": "res://models/biome_bog_sunkenlog_v1.glb",
+		"column":      "res://models/biome_bog_dockpost_v1.glb",
+		"bones":       "res://models/biome_bog_lilypads_v1.glb",
+		"brazier":     "res://models/biome_bog_wisp_v1.glb",
+		"pottery":     "res://models/biome_bog_mudmound_v1.glb",
+		"bookshelf":   "res://models/biome_bog_reeds_v1.glb",
+	}, "tints": {
+		"altar":       Color(0.40, 0.36, 0.30),   # gnarled roots — grey-brown
+		"sarcophagus": Color(0.34, 0.36, 0.26),   # sunken log — dark moss
+		"column":      Color(0.44, 0.40, 0.32),   # dock post — weathered wood
+		"bones":       Color(0.34, 0.54, 0.30),   # lily pads — green
+		"brazier":     Color(0.60, 0.80, 0.90),   # will-o-wisp — pale glow
+		"pottery":     Color(0.36, 0.30, 0.24),   # mud mound — dark mud
+		"bookshelf":   Color(0.46, 0.52, 0.30),   # reeds — marsh green
+	}, "floor_tex": ""},
+	# Summit — the high white places (endgame chart). altar→standing stone,
+	# sarcophagus→snow drift, column→wind-bent pine, bones→frost shrub,
+	# brazier→ice crystal, pottery→cairn, bookshelf→waystone signpost.
+	"summit":       {"decor": {
+		"altar":       "res://models/biome_summit_standingstone_v1.glb",
+		"sarcophagus": "res://models/biome_summit_snowdrift_v1.glb",
+		"column":      "res://models/biome_summit_pine_v1.glb",
+		"bones":       "res://models/biome_summit_frostshrub_v1.glb",
+		"brazier":     "res://models/biome_summit_icecrystal_v1.glb",
+		"pottery":     "res://models/biome_summit_cairn_v1.glb",
+		"bookshelf":   "res://models/biome_summit_signpost_v1.glb",
+	}, "tints": {
+		"altar":       Color(0.55, 0.55, 0.58),   # standing stone — grey
+		"sarcophagus": Color(0.86, 0.90, 0.96),   # snow drift — white-blue
+		"column":      Color(0.26, 0.40, 0.30),   # pine — dark green
+		"bones":       Color(0.60, 0.70, 0.66),   # frost shrub
+		"brazier":     Color(0.66, 0.84, 1.00),   # ice crystal — pale ice
+		"pottery":     Color(0.52, 0.52, 0.54),   # cairn — grey stone
+		"bookshelf":   Color(0.48, 0.40, 0.30),   # signpost — weathered wood
+	}, "floor_tex": ""},
 }
 
 # decor.kind → collider box size, or null for pass-through decor.
@@ -217,6 +256,10 @@ const SPAWN_TABLES := {
 	"hollow": [["skeleton", 45], ["rat", 20], ["bramble_imp", 20], ["ghost", 15], ["warden", 10]],
 	"briar_maze": [["bramble_imp", 50], ["hedge_sprite", 30], ["skitterling", 20]],
 	"crypt": [["skeleton", 40], ["rat", 25], ["ghost", 20], ["hedge_sprite", 15], ["warden", 10], ["barrow_brute", 8]],
+	# Summit — cold and tough: spectres + heavy brutes, fewer trash.
+	"summit": [["skeleton", 30], ["ghost", 30], ["barrow_brute", 22], ["warden", 18]],
+	# Sallow Mire — wetland: wisps (ghosts), sprites, imps, skitterers.
+	"mire": [["ghost", 32], ["hedge_sprite", 26], ["bramble_imp", 24], ["skitterling", 18]],
 }
 
 # Boss kinds (boss-as-affix). The Hedgemother is rigged; the boar and wolf
@@ -446,8 +489,14 @@ func _apply_biome_palette(scope: String) -> void:
 		"snug":
 			_floor_mat.albedo_color = Color(0.80, 0.72, 0.58)    # cellar sandstone
 			_wall_mat.albedo_color = Color(0.44, 0.38, 0.30)     # rough clay
+		"summit":
+			_floor_mat.albedo_color = Color(0.82, 0.86, 0.92)    # snow-pale
+			_wall_mat.albedo_color = Color(0.42, 0.46, 0.52)     # cold grey rock
+		"mire":
+			_floor_mat.albedo_color = Color(0.40, 0.44, 0.34)    # murky wet earth
+			_wall_mat.albedo_color = Color(0.24, 0.28, 0.22)     # dark bog stone
 		_:
-			pass   # crypt / summit keep the warm stone defaults
+			pass   # crypt keeps the warm stone defaults
 
 func _get_layout() -> Dictionary:
 	if USE_PROCGEN:
