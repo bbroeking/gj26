@@ -21,6 +21,7 @@ const ExitWaystoneScript = preload("res://scripts/exit_waystone.gd")
 const GatherDefs = preload("res://data/gather.gd")
 const AmbientMotesScript = preload("res://scripts/ambient_motes.gd")
 const SOFT_CIRCLE_TEX = preload("res://assets/vfx/soft_circle.png")
+const VIGNETTE_SHADER = preload("res://shaders/vignette.gdshader")
 
 # (Per-kind enemy/boss HP moved into ENEMY_KINDS / BOSS_KINDS below.)
 
@@ -186,12 +187,14 @@ const BIOME_ENV := {
 		"fog_density": 0.024, "glow": 0.85, "sun": Color(0.76, 0.88, 0.80),
 		"mote_color": Color(0.50, 0.88, 0.62), "mote_amount": 44,
 		"mote_gravity": -0.02, "mote_size": 0.09, "mote_emission": 1.5,
+		"vignette": 0.34,
 	},
 	"summit": {
 		"ambient": Color(0.42, 0.50, 0.64), "fog": Color(0.80, 0.86, 0.94),
 		"fog_density": 0.020, "glow": 0.9, "sun": Color(0.90, 0.95, 1.0),
 		"mote_color": Color(0.95, 0.97, 1.0), "mote_amount": 120,
 		"mote_gravity": -0.30, "mote_size": 0.06, "mote_emission": 0.0,
+		"vignette": 0.18,
 	},
 }
 
@@ -543,6 +546,7 @@ func _resolve_biome() -> void:
 		_floor_mat.albedo_texture = load(ftex)
 	_apply_biome_env()
 	_build_ambient_motes()
+	_build_vignette()
 
 # Per-biome lighting + fog mood. Duplicates the WorldEnvironment's Environment
 # (so we never mutate the packed .tscn resource across runs) and tints the Sun.
@@ -608,6 +612,22 @@ func _build_ambient_motes() -> void:
 	p.draw_pass_1 = qm
 	add_child(p)
 	p.emitting = true
+
+# A gentle radial vignette (over the 3D, under the HUD) — pulls the eye to the
+# player at frame center, strength driven per-biome from BIOME_ENV.
+func _build_vignette() -> void:
+	var strength: float = float(BIOME_ENV.get(_biome_id, {}).get("vignette", 0.28))
+	var cl := CanvasLayer.new()
+	cl.layer = 0   # over the 3D viewport, below the HUD (default CanvasLayer = 1)
+	var rect := ColorRect.new()
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var sm := ShaderMaterial.new()
+	sm.shader = VIGNETTE_SHADER
+	sm.set_shader_parameter("strength", strength)
+	rect.material = sm
+	cl.add_child(rect)
+	add_child(cl)
 
 # A soft round contact shadow projected onto the floor under a prop/enemy so it
 # visibly TOUCHES the ground — the #1 top-down "floating sticker" tell. As a
