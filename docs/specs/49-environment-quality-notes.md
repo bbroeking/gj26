@@ -34,14 +34,23 @@ shadow = the amateur tell).
   wisps (bog), falling snow (summit). Mine reads cool, grove warm, summit cold —
   distinct places.
 
+**Batch 3 — grounding + height fog** (commit `960a070`):
+- soft-circle Decal blob contact shadows under enemies/boss/decor/player
+- fog_aerial_perspective + fog_sun_scatter + floor-hugging height fog (per-biome)
+
+**Batch 4 — wayfinding beacon** (commit `e399abf`):
+- exit waystone raises a tall emissive beam (cool-blue, bloomed through fog) +
+  light reach 6→13; abandon stone gets a dim neutral marker
+
+**Batch 5 — ground-cover scatter** (commit `3740dc4`):
+- one per-biome MultiMesh of tiny tinted bits (pebbles/crystal shards/leaf
+  litter/snow) with jitter — breaks the identical-tile read
+
 ## Pending (ranked, from the research synthesis)
-Medium: one-saturation-peak hierarchy (desaturate satellite decor); grounding
-blob/decal contact shadows + baked vertex-AO at wall-floor seam; MultiMesh floor
-+ micro-clutter scatter chunked per room; edge/corner seam dressing + per-biome
-ground-cover carpets; decal grime/cracks/moss layer; lighting-as-wayfinding
-emissive beacons (cool exit / warm boss door); subtle radial vignette shader;
-height-fog + aerial_perspective + sun_scatter refinement; custom 3-band toon
-ramp shader.
+Medium (remaining): one-saturation-peak hierarchy (desaturate satellite decor,
+keep focal saturated); edge/corner seam dressing (clutter against walls); decal
+grime/cracks/moss layer; subtle radial vignette shader; custom 3-band toon ramp
+shader.
 Larger: volumetric fog + god rays + boss-altar FogVolume (quality-gated);
 per-biome 3D LUT grading; depth-scaled interest curve + boss approach vista;
 faked bog-water reflection (single surface, not global SSR).
