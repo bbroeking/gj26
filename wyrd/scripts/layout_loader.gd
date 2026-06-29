@@ -195,6 +195,18 @@ const BIOME_ENV := {
 	},
 }
 
+# Per-biome GROUND COVER — a cheap MultiMesh scatter of tiny chunky bits that
+# breaks the identical-tile read (the #1 procedural-box tell) and signs each
+# biome on the floor. mscale = the bit's shape (flat pebble / tall shard / flat
+# leaf); size = overall; density ~ instances per floor tile; emission>0 glows.
+const BIOME_GROUND := {
+	"crypt":        {"mscale": Vector3(1.0, 0.5, 1.0),  "color": Color(0.55, 0.52, 0.46), "size": 0.14, "density": 0.45},
+	"mineral_seam": {"mscale": Vector3(0.5, 1.3, 0.5),  "color": Color(0.46, 0.64, 0.85), "size": 0.13, "density": 0.45, "emission": 0.7},
+	"wood_grove":   {"mscale": Vector3(1.3, 0.08, 1.3), "color": Color(0.32, 0.46, 0.22), "size": 0.18, "density": 0.7},
+	"bog":          {"mscale": Vector3(1.2, 0.10, 1.2), "color": Color(0.34, 0.50, 0.30), "size": 0.18, "density": 0.7},
+	"summit":       {"mscale": Vector3(1.0, 0.45, 1.0), "color": Color(0.88, 0.92, 0.98), "size": 0.13, "density": 0.6},
+}
+
 # decor.kind → collider box size, or null for pass-through decor.
 const DECOR_COLLIDER := {
 	"bones":       Vector3(0.8, 0.4, 0.8),
@@ -428,6 +440,7 @@ func _ready() -> void:
 	_resolve_biome()
 	_read_chart_modifiers()
 	_build_grid(layout.grid)
+	_scatter_ground_cover(layout.grid)
 	_build_floor_collision(layout.grid)
 	_build_navmesh(layout.grid)
 	_build_kill_plane()
@@ -658,6 +671,56 @@ func _get_layout() -> Dictionary:
 	return parsed
 
 # ---- grid: visual floor planes + wall blocks ----
+# Per-biome ground-cover scatter — ONE MultiMesh of tiny tinted bits across the
+# floor tiles with per-instance rotation + scale + colour jitter, so the grid
+# stops reading as identical tiles and each biome is signed on the ground.
+# Shadow-casting off, no collider, no ink outline — pure cheap dressing.
+func _scatter_ground_cover(grid: Array) -> void:
+	var e: Dictionary = BIOME_GROUND.get(_biome_id, {})
+	if e.is_empty():
+		return
+	var tiles: Array = []
+	for y in grid.size():
+		var row: Array = grid[y]
+		for x in row.size():
+			if String(row[x]) == "floor":
+				tiles.append(Vector2i(x, y))
+	var count: int = clampi(int(tiles.size() * float(e.density)), 0, 600)
+	if count <= 0:
+		return
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	mm.mesh = BoxMesh.new()
+	mm.instance_count = count
+	var base: Color = e.color
+	var msc: Vector3 = e.mscale
+	for i in count:
+		var t: Vector2i = tiles[_rng.randi_range(0, tiles.size() - 1)]
+		var px := float(t.x) + _rng.randf()
+		var pz := float(t.y) + _rng.randf()
+		var s := float(e.size) * _rng.randf_range(0.65, 1.35)
+		var b := Basis().rotated(Vector3.UP, _rng.randf() * TAU).scaled(msc * s)
+		mm.set_instance_transform(i, Transform3D(b,
+			Vector3(px, 0.02 + msc.y * s * 0.5, pz)))
+		var j := _rng.randf_range(-0.07, 0.07)
+		mm.set_instance_color(i, Color(clampf(base.r + j, 0.0, 1.0),
+			clampf(base.g + j, 0.0, 1.0), clampf(base.b + j, 0.0, 1.0)))
+	var mmi := MultiMeshInstance3D.new()
+	mmi.multimesh = mm
+	var mat := StandardMaterial3D.new()
+	mat.vertex_color_use_as_albedo = true
+	mat.roughness = 0.85
+	mat.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
+	var em: float = float(e.get("emission", 0.0))
+	if em > 0.0:
+		mat.emission_enabled = true
+		mat.emission = base
+		mat.emission_energy_multiplier = em
+	mmi.material_override = mat
+	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mmi)
+
 func _build_grid(grid: Array) -> void:
 	for y in grid.size():
 		var row: Array = grid[y]
