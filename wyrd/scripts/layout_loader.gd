@@ -92,7 +92,26 @@ const BIOMES := {
 		"pottery":     Color(0.53, 0.50, 0.45),   # ore rubble — grey rock
 		"bookshelf":   Color(0.48, 0.64, 0.88),   # cave mushrooms — glow blue
 	}, "floor_tex": ""},
-	"wood_grove":   {"decor": {}, "floor_tex": ""},
+	# Wood Grove — Meshy lowpoly props. altar→hollow stump, sarcophagus→fallen
+	# log, column→bramble arch, bones→toadstools, brazier→fern, pottery→mossy
+	# boulder, bookshelf→fairy ring. Tinted + ink-outlined (lowpoly = untextured).
+	"wood_grove":   {"decor": {
+		"altar":       "res://models/biome_wood_grove_stump_v1.glb",
+		"sarcophagus": "res://models/biome_wood_grove_log_v1.glb",
+		"column":      "res://models/biome_wood_grove_bramblearch_v1.glb",
+		"bones":       "res://models/biome_wood_grove_toadstools_v1.glb",
+		"brazier":     "res://models/biome_wood_grove_fern_v1.glb",
+		"pottery":     "res://models/biome_wood_grove_boulder_v1.glb",
+		"bookshelf":   "res://models/biome_wood_grove_fairyring_v1.glb",
+	}, "tints": {
+		"altar":       Color(0.42, 0.30, 0.20),   # hollow stump — bark
+		"sarcophagus": Color(0.40, 0.42, 0.28),   # fallen log — mossy wood
+		"column":      Color(0.26, 0.34, 0.20),   # bramble arch — deep briar
+		"bones":       Color(0.72, 0.28, 0.24),   # toadstools — red cap
+		"brazier":     Color(0.40, 0.60, 0.30),   # fern — fresh green
+		"pottery":     Color(0.46, 0.50, 0.40),   # mossy boulder
+		"bookshelf":   Color(0.80, 0.74, 0.62),   # fairy ring — pale stone
+	}, "floor_tex": ""},
 	"bog":          {"decor": {}, "floor_tex": ""},
 	"summit":       {"decor": {}, "floor_tex": ""},
 }
