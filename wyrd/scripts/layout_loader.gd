@@ -496,6 +496,7 @@ func _ready() -> void:
 	_build_grid(layout.grid)                # walls only now
 	_build_floor_mesh(layout.grid)          # one merged seamless floor surface
 	_scatter_ground_cover(layout.grid)
+	_scatter_seam_dressing(layout.grid)     # rubble softens the wall/floor seam
 	_build_floor_collision(layout.grid)
 	_build_navmesh(layout.grid)
 	_build_kill_plane()
@@ -802,6 +803,73 @@ func _scatter_ground_cover(grid: Array) -> void:
 		mat.emission_enabled = true
 		mat.emission = base
 		mat.emission_energy_multiplier = em
+	mmi.material_override = mat
+	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mmi)
+
+# Edge/corner seam dressing — chunky rubble piled against wall-adjacent floor
+# tiles, offset toward the wall, to soften the hard 90° wall/floor seam (the
+# worst box-dungeon tell). One MultiMesh, shadow off, biome-tinted (darker/greyer
+# than the ground cover). Inner corners (2+ walls) naturally get denser piles.
+func _scatter_seam_dressing(grid: Array) -> void:
+	var e: Dictionary = BIOME_GROUND.get(_biome_id, {})
+	if e.is_empty():
+		return
+	var seams: Array = []
+	const NB := [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)]
+	for y in grid.size():
+		var row: Array = grid[y]
+		for x in row.size():
+			if String(row[x]) != "floor":
+				continue
+			var dir := Vector2.ZERO
+			var touch := false
+			for off in NB:
+				var nx: int = x + off.x
+				var ny: int = y + off.y
+				if ny >= 0 and ny < grid.size() and nx >= 0 and nx < grid[ny].size() \
+						and String(grid[ny][nx]) == "wall":
+					dir += Vector2(off.x, off.y)
+					touch = true
+			if touch:
+				seams.append([x, y, dir])
+	if seams.is_empty():
+		return
+	var per := 2
+	var count: int = mini(seams.size() * per, 700)
+	if count <= 0:
+		return
+	var base: Color = _desat(e.color, 0.7).darkened(0.18)   # rubble = darker, greyer
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	mm.mesh = BoxMesh.new()
+	mm.instance_count = count
+	var msc := Vector3(1.0, 0.6, 1.0)
+	var i := 0
+	for s in seams:
+		var d: Vector2 = s[2]
+		if d.length() > 0.01:
+			d = d.normalized()
+		for _k in per:
+			if i >= count:
+				break
+			var px := float(s[0]) + 0.5 + d.x * 0.36 + _rng.randf_range(-0.18, 0.18)
+			var pz := float(s[1]) + 0.5 + d.y * 0.36 + _rng.randf_range(-0.18, 0.18)
+			var sz := float(e.size) * _rng.randf_range(0.9, 1.8)   # chunkier than ground cover
+			var b := Basis().rotated(Vector3.UP, _rng.randf() * TAU).scaled(msc * sz)
+			mm.set_instance_transform(i, Transform3D(b,
+				Vector3(px, 0.02 + msc.y * sz * 0.5, pz)))
+			var j := _rng.randf_range(-0.06, 0.06)
+			mm.set_instance_color(i, Color(clampf(base.r + j, 0.0, 1.0),
+				clampf(base.g + j, 0.0, 1.0), clampf(base.b + j, 0.0, 1.0)))
+			i += 1
+	var mmi := MultiMeshInstance3D.new()
+	mmi.multimesh = mm
+	var mat := StandardMaterial3D.new()
+	mat.vertex_color_use_as_albedo = true
+	mat.roughness = 0.9
+	mat.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
 	mmi.material_override = mat
 	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mmi)
