@@ -53,12 +53,17 @@ shadow = the amateur tell).
 floor with a procedural worldspace toon-ground shader on one merged mesh — the
 biggest single look upgrade. See `docs/specs/50`.
 
+**Batch 7 — medium polish** (commits `07de424`, `1989376`, `48e79be`):
+- one-saturation-peak hierarchy: dungeon_gen tags each room's focal prop; the
+  focal keeps full biome saturation, satellites desaturate (s*0.6, v*0.92)
+- wall-seam rubble dressing (MultiMesh piled on wall-adjacent tiles)
+- per-biome moss/grime/frost decal patches biased into corners
+
 ## Pending (ranked, from the research synthesis)
-Medium (remaining): one-saturation-peak hierarchy (desaturate satellite decor,
-keep focal saturated); edge/corner seam dressing (clutter against walls); decal
-grime/cracks/moss layer; custom 3-band toon ramp shader (now largely subsumed by
-the floor shader's approach — could extend to walls).
-Larger: volumetric god rays; per-biome 3D LUT grading; boss-approach vista.
+Medium (remaining): custom 3-band toon ramp shader for WALLS (largely subsumed
+by the floor shader's approach — could extend it).
+Larger: volumetric god rays from torches; per-biome 3D LUT grading; depth-scaled
+interest curve + boss-approach vista; faked bog-water reflection.
 Larger: volumetric fog + god rays + boss-altar FogVolume (quality-gated);
 per-biome 3D LUT grading; depth-scaled interest curve + boss approach vista;
 faked bog-water reflection (single surface, not global SSR).
