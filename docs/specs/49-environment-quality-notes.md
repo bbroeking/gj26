@@ -46,11 +46,19 @@ shadow = the amateur tell).
 - one per-biome MultiMesh of tiny tinted bits (pebbles/crystal shards/leaf
   litter/snow) with jitter — breaks the identical-tile read
 
+**Batch 6 — vignette** (commit `9b7a7d9`): per-biome radial edge-darkening
+(canvas shader, over 3D / under HUD).
+
+**Floor rethink** (commit `92efd05`, spec 50): replaced the per-tile brick-grid
+floor with a procedural worldspace toon-ground shader on one merged mesh — the
+biggest single look upgrade. See `docs/specs/50`.
+
 ## Pending (ranked, from the research synthesis)
 Medium (remaining): one-saturation-peak hierarchy (desaturate satellite decor,
 keep focal saturated); edge/corner seam dressing (clutter against walls); decal
-grime/cracks/moss layer; subtle radial vignette shader; custom 3-band toon ramp
-shader.
+grime/cracks/moss layer; custom 3-band toon ramp shader (now largely subsumed by
+the floor shader's approach — could extend to walls).
+Larger: volumetric god rays; per-biome 3D LUT grading; boss-approach vista.
 Larger: volumetric fog + god rays + boss-altar FogVolume (quality-gated);
 per-biome 3D LUT grading; depth-scaled interest curve + boss approach vista;
 faked bog-water reflection (single surface, not global SSR).
