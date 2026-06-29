@@ -21,6 +21,6 @@ shape = SubResource("CapsuleShape_1")
 [node name="HeroLight" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
 light_color = Color(1, 0.93, 0.82, 1)
-light_energy = 1.6
-omni_range = 7.5
-omni_attenuation = 1.5
+light_energy = 1.0
+omni_range = 5.5
+omni_attenuation = 1.7

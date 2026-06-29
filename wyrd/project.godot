@@ -48,4 +48,5 @@ Cursor="*res://scripts/ui/cursor.gd"
 
 environment/defaults/default_clear_color=Color(0.55, 0.6, 0.65, 1)
 anti_aliasing/quality/msaa_3d=2
+anti_aliasing/quality/use_debanding=true
 lights_and_shadows/directional_shadow/soft_shadow_filter_quality=3

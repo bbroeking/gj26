@@ -19,20 +19,23 @@ sky_material = SubResource("Sky_1")
 [sub_resource type="Environment" id="Env_1"]
 background_mode = 2
 sky = SubResource("Sky_2")
-ambient_light_source = 3
-ambient_light_color = Color(0.49, 0.44, 0.40, 1)
-ambient_light_energy = 0.34
+ambient_light_source = 2
+ambient_light_color = Color(0.3, 0.38, 0.52, 1)
+ambient_light_energy = 0.3
 tonemap_mode = 2
 glow_enabled = true
 glow_normalized = true
 glow_intensity = 0.8
-glow_bloom = 0.1
+glow_bloom = 0.0
 glow_hdr_threshold = 1.0
 glow_blend_mode = 2
 ssao_enabled = true
-ssao_intensity = 2.4
+ssao_intensity = 1.2
+ssao_radius = 0.7
+ssao_power = 1.5
+ssao_light_affect = 0.0
 fog_enabled = true
-fog_light_color = Color(0.27, 0.23, 0.22, 1)
+fog_light_color = Color(0.3, 0.26, 0.24, 1)
 fog_density = 0.012
 fog_sky_affect = 0.0
 
@@ -45,8 +48,10 @@ environment = SubResource("Env_1")
 [node name="Sun" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.939693, -0.342020, 0, 0.171010, 0.469846, 0.866025, -0.296198, -0.813798, 0.5, 0, 12, 0)
 light_color = Color(1, 0.92, 0.85, 1)
-light_energy = 0.95
+light_energy = 0.6
+light_angular_distance = 2.0
 shadow_enabled = true
+shadow_normal_bias = 3.0
 
 [node name="Player" parent="." instance=ExtResource("Player_1")]
 

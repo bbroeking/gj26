@@ -338,11 +338,25 @@ func _ready() -> void:
 	_floor_mat.uv1_triplanar = true
 	_floor_mat.uv1_scale = Vector3(0.34, 0.34, 0.34)
 	_floor_mat.albedo_color = Color(0.84, 0.77, 0.66)
-	_floor_mat.roughness = 0.92
+	_floor_mat.roughness = 0.78
+	# Env-quality: toon diffuse/specular + rim so the ground speaks the same cel
+	# language as the props/enemies (was smooth PBR — the "unfinished" tell).
+	_floor_mat.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
+	_floor_mat.specular_mode = BaseMaterial3D.SPECULAR_TOON
+	_floor_mat.rim_enabled = true
+	_floor_mat.rim = 0.3
+	_floor_mat.rim_tint = 0.4
 
 	_wall_mat = StandardMaterial3D.new()
 	_wall_mat.albedo_color = Color(0.34, 0.31, 0.28)   # warm crypt stone
-	_wall_mat.roughness = 0.95
+	_wall_mat.roughness = 0.78
+	_wall_mat.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
+	_wall_mat.specular_mode = BaseMaterial3D.SPECULAR_TOON
+	# Rim brightens grazing edges so dark walls + dark props keep their
+	# silhouette in torchlight (reinforces the ink outline from the lit side).
+	_wall_mat.rim_enabled = true
+	_wall_mat.rim = 0.4
+	_wall_mat.rim_tint = 0.4
 	# Spec 26 follow-up — procedural noise normal map so the box walls
 	# read as carved stone, not flat slabs. (The wall GLBs weren't a real
 	# modular kit — wrong-sized pieces — so they're dropped for walls.)
@@ -353,7 +367,9 @@ func _ready() -> void:
 	var nt := NoiseTexture2D.new()
 	nt.noise = noise
 	nt.as_normal_map = true
-	nt.bump_strength = 5.0
+	# Env-quality: a whisper of normal that survives the toon bands, not realistic
+	# relief — strong normals shatter the clean cel banding into noise (was 5.0).
+	nt.bump_strength = 1.3
 	nt.width = 256
 	nt.height = 256
 	_wall_mat.normal_enabled = true
@@ -816,14 +832,34 @@ func _build_interactable(role: String, d: Dictionary,
 
 # A warm point light at a torch, ~1.6 m up the wall — pools of light in
 # darkness (spec 16).
+const FlickerLightScript = preload("res://scripts/flicker_light.gd")
+
 func _add_torch_light(wx: float, wz: float) -> void:
-	var lamp := OmniLight3D.new()
+	# Tighter falloff + shorter range → a discrete warm POOL (was a broad even
+	# wash); the FlickerLight breathes the energy for living firelight.
+	var lamp: OmniLight3D = FlickerLightScript.new()
 	lamp.position = Vector3(wx, 1.6, wz)
 	lamp.light_color = Color(1.0, 0.74, 0.42)   # warm flame
 	lamp.light_energy = 2.2
-	lamp.omni_range = 7.0
-	lamp.omni_attenuation = 1.4
+	lamp.omni_range = 6.0
+	lamp.omni_attenuation = 2.0
 	add_child(lamp)
+	# A small emissive flame core that crosses the glow HDR threshold (>1.0) so
+	# the fire itself blooms — selective glow makes only the lit things bloom.
+	var core := MeshInstance3D.new()
+	var sm := SphereMesh.new()
+	sm.radius = 0.11
+	sm.height = 0.22
+	core.mesh = sm
+	var cmat := StandardMaterial3D.new()
+	cmat.albedo_color = Color(1.0, 0.82, 0.45)
+	cmat.emission_enabled = true
+	cmat.emission = Color(1.0, 0.72, 0.34)
+	cmat.emission_energy_multiplier = 2.6
+	cmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	core.material_override = cmat
+	core.position = Vector3(wx, 1.62, wz)
+	add_child(core)
 
 # Prefer the Meshy-rigged variant (<name>_rigged.glb) when it exists,
 # else the static _v1 GLB (spec 11 fallback — e.g. the rat never rigged).
