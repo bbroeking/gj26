@@ -852,15 +852,15 @@ static func _dress_rooms(rooms: Array, grid: Array, entry: Dictionary,
 			# Spec 29 — only the focal carries the interact_role; satellites
 			# stay static decor even in role-contract rooms.
 			var ir := role if role in INTERACT_ROLES else ""
-			_apply_rule(focal, r, grid, entry, exit, rng, decor, occupied, ir)
+			_apply_rule(focal, r, grid, entry, exit, rng, decor, occupied, ir, true)
 		for rule in theme.get("satellites", []):
-			_apply_rule(rule, r, grid, entry, exit, rng, decor, occupied, "")
+			_apply_rule(rule, r, grid, entry, exit, rng, decor, occupied, "", false)
 	return decor
 
 static func _apply_rule(rule: Dictionary, r: Dictionary, grid: Array,
 		entry: Dictionary, exit: Dictionary, rng: RandomNumberGenerator,
 		decor: Array, occupied: Dictionary,
-		interact_role: String = "") -> void:
+		interact_role: String = "", is_focal: bool = false) -> void:
 	var n: int = rng.randi_range(int(rule.count[0]), int(rule.count[1]))
 	var tiles: Array = _pattern_tiles(r, String(rule.pattern), n, grid, rng,
 		false, occupied)
@@ -882,6 +882,10 @@ static func _apply_rule(rule: Dictionary, r: Dictionary, grid: Array,
 			continue
 		var d := {"kind": String(rule.kind), "x": int(t.x), "y": int(t.y),
 			"orient": String(t.get("orient", "center"))}
+		# Saturation hierarchy — the room's focal prop stays full-saturation
+		# (the eye's anchor); layout_loader desaturates the satellites.
+		if is_focal:
+			d["focal"] = true
 		# Spec 29 — flag this decor as the interactable focal for a typed room.
 		# layout_loader will swap the static GLB for Chest/Shrine/Hearth.tscn.
 		# Plus carry the room id so the shrine RNG can seed deterministically

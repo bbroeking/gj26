@@ -680,6 +680,11 @@ func _build_vignette() -> void:
 	cl.add_child(rect)
 	add_child(cl)
 
+# Desaturate + slightly darken a tint so a satellite prop recedes behind the
+# room's full-saturation focal (the one-saturation-peak rule).
+func _desat(c: Color, sat_mult: float) -> Color:
+	return Color.from_hsv(c.h, clampf(c.s * sat_mult, 0.0, 1.0), c.v * 0.92, c.a)
+
 # A soft round contact shadow projected onto the floor under a prop/enemy so it
 # visibly TOUCHES the ground — the #1 top-down "floating sticker" tell. As a
 # child of a moving body it follows it. Texture preloaded (never load in _draw).
@@ -1035,7 +1040,13 @@ func _build_decor(layout: Dictionary) -> void:
 		if _biome_decor.has(kind):
 			_unmetal(inst)
 			if _biome_tints.has(kind):
-				_tint(inst, _biome_tints[kind])
+				# Saturation hierarchy: the room's focal prop keeps full
+				# saturation (the eye's anchor); satellites recede so the screen
+				# doesn't read as candy mush (one saturation peak per room).
+				var tcol: Color = _biome_tints[kind]
+				if not bool(d.get("focal", false)):
+					tcol = _desat(tcol, 0.6)
+				_tint(inst, tcol)
 			else:
 				_outline_only(inst)
 		var box = DECOR_COLLIDER.get(kind, null)
