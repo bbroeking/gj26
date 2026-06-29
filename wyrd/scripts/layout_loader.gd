@@ -273,6 +273,16 @@ const FLOOR_BIOME := {
 	},
 }
 
+# Per-biome decal tint — soft moss/grime/frost patches biased into corners +
+# spanning tile boundaries, to add lived-in surface story and break the floor.
+const BIOME_DECAL := {
+	"crypt":        Color(0.16, 0.13, 0.10),   # dark grime
+	"mineral_seam": Color(0.14, 0.22, 0.30),   # dark wet mineral stain
+	"wood_grove":   Color(0.20, 0.34, 0.16),   # moss green
+	"bog":          Color(0.16, 0.30, 0.20),   # algae / moss
+	"summit":       Color(0.82, 0.88, 0.95),   # frost
+}
+
 # decor.kind → collider box size, or null for pass-through decor.
 const DECOR_COLLIDER := {
 	"bones":       Vector3(0.8, 0.4, 0.8),
@@ -497,6 +507,7 @@ func _ready() -> void:
 	_build_floor_mesh(layout.grid)          # one merged seamless floor surface
 	_scatter_ground_cover(layout.grid)
 	_scatter_seam_dressing(layout.grid)     # rubble softens the wall/floor seam
+	_scatter_decals(layout.grid)            # moss/grime patches break the floor + add story
 	_build_floor_collision(layout.grid)
 	_build_navmesh(layout.grid)
 	_build_kill_plane()
@@ -873,6 +884,49 @@ func _scatter_seam_dressing(grid: Array) -> void:
 	mmi.material_override = mat
 	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mmi)
+
+# Soft moss/grime/frost decal patches, biased into wall corners and spanning tile
+# boundaries so they break the floor grid and add lived-in story. Reuses the
+# soft-circle texture; Forward+ clusters decals cheaply. Built with the room
+# (runtime decal creation mid-play can hitch, per Godot forum).
+func _scatter_decals(grid: Array) -> void:
+	var tint: Color = BIOME_DECAL.get(_biome_id, Color(0.16, 0.13, 0.10))
+	var seams: Array = []
+	var floors: Array = []
+	const NB := [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)]
+	for y in grid.size():
+		var row: Array = grid[y]
+		for x in row.size():
+			if String(row[x]) != "floor":
+				continue
+			floors.append(Vector2i(x, y))
+			for off in NB:
+				var nx: int = x + off.x
+				var ny: int = y + off.y
+				if ny >= 0 and ny < grid.size() and nx >= 0 and nx < grid[ny].size() \
+						and String(grid[ny][nx]) == "wall":
+					seams.append(Vector2i(x, y))
+					break
+	if floors.is_empty():
+		return
+	var count: int = clampi(int(floors.size() * 0.10), 4, 28)
+	for _i in count:
+		# 70% biased into corners/edges where grime gathers, else anywhere.
+		var pool: Array = seams if (not seams.is_empty() and _rng.randf() < 0.7) else floors
+		var t: Vector2i = pool[_rng.randi_range(0, pool.size() - 1)]
+		var d := Decal.new()
+		d.texture_albedo = SOFT_CIRCLE_TEX
+		d.modulate = tint
+		d.albedo_mix = _rng.randf_range(0.55, 0.8)
+		var sz := _rng.randf_range(1.3, 2.6)
+		d.size = Vector3(sz, 1.0, sz)
+		d.rotation.y = _rng.randf() * TAU
+		d.position = Vector3(float(t.x) + 0.5 + _rng.randf_range(-0.4, 0.4), 0.5,
+			float(t.y) + 0.5 + _rng.randf_range(-0.4, 0.4))
+		d.distance_fade_enabled = true
+		d.distance_fade_begin = 22.0
+		d.distance_fade_length = 6.0
+		add_child(d)
 
 func _build_grid(grid: Array) -> void:
 	for y in grid.size():
