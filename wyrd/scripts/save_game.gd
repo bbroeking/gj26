@@ -71,6 +71,7 @@ static func save_to(path: String, game: Node) -> bool:
 		"chosen_perks": game.chosen_perks,
 		"ledger": game.ledger.slots if game.ledger != null else {},
 		"discovered_inks": game.discovered_inks,
+		"discovered_enchants": game.discovered_enchants,
 		"seen_hints": game.seen_hints,
 		"tutorial_step": game.tutorial_step,
 		"player_hp": game.player_hp,
@@ -158,6 +159,16 @@ static func _migrate(data: Dictionary) -> Dictionary:
 	# v0 → v1b: seed three base inks for pre-spec-43 saves.
 	if not data.has("discovered_inks"):
 		data["discovered_inks"] = ["hedge_ink", "stoneground_ink", "refined_ink"]
+	# v0 → v1c: backfill the skills-on-items `enchants` array on items from
+	# pre-spec-47 saves. Consumers all read .get("enchants", []) so this is
+	# belt-and-braces, but it keeps the invariant explicit (save policy:
+	# optional field + default → backfill in _migrate, no VERSION bump).
+	for item in (data.get("inventory", []) as Array):
+		if item is Dictionary and not (item as Dictionary).has("enchants"):
+			(item as Dictionary)["enchants"] = []
+	for slot_v in (data.get("equipment", {}) as Dictionary).values():
+		if slot_v is Dictionary and not (slot_v as Dictionary).has("enchants"):
+			(slot_v as Dictionary)["enchants"] = []
 	return data
 
 ## _restore_into — write the decoded+migrated dict back into game state.
@@ -211,6 +222,11 @@ static func _restore_into(data: Dictionary, game: Node) -> void:
 	game.discovered_inks = []
 	for id in data.discovered_inks:
 		game.discovered_inks.append(String(id))
+	# Skills-on-items — discovered rare/unique charms. Optional field (default
+	# []), so old saves load clean without a version bump.
+	game.discovered_enchants = []
+	for id in data.get("discovered_enchants", []):
+		game.discovered_enchants.append(String(id))
 	# Inventory — re-place each item so the grid cells rebuild. Grow the pack to
 	# the loaded level FIRST so items saved in the extra row(s) place correctly.
 	game.inventory = Inventory.new()

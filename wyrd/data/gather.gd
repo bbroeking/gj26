@@ -72,6 +72,15 @@ const MATERIALS := {
 		"desc": "Dense as old oak-heart and twice as stubborn. The deepest veins in the Wolds."},
 	"hedgesteel_bar": {"name": "Hedgesteel Bar", "icon": "▬", "group": "earthen",
 		"desc": "Smelted slow over good logs. Hod calls it honest metal and says no more."},
+	# Enchant reagents — the makings the Charm Table drinks to bind a virtue
+	# into gear (data/enchants.gd). Craftable at the forge/still AND a delving
+	# drop (the two faucets, per the mixed-source design).
+	"glimmerdust":   {"name": "Glimmerdust",   "icon": "✦", "group": "lumen",
+		"desc": "Bright filings caught on cloth. The whetting charms — keen edges, quick fingers — drink it up."},
+	"emberglass":    {"name": "Emberglass",    "icon": "◈", "group": "echo",
+		"desc": "Bog-iron fired to a red glass. The fierce charms are forged on it — fire, blood, the mark."},
+	"dewthread":     {"name": "Dewthread",     "icon": "≈", "group": "verdant",
+		"desc": "Dew-heavy hedge-green, spun fine. The gentle charms — snares, swift soles, steady hearts — take it gladly."},
 	"hedge_ink":     {"name": "Hedge Ink",     "icon": "●", "group": "verdant",
 		"desc": "The everyday charting ink. Mixed from wild herbs."},
 	"stoneground_ink": {"name": "Stoneground Ink", "icon": "◆", "group": "earthen",

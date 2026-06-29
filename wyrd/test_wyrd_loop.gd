@@ -433,9 +433,10 @@ func _test_economy_gate() -> void:
 func _test_alchemy() -> void:
 	print("[alchemy]")
 	var st: Dictionary = CraftingData.station("still")
-	_check("still station exists (Wildcraft, 5 brews)",
+	_check("still station exists (Wildcraft, 5 brews + dewthread reagent)",
 		String(st.get("trade", "")) == "wilds"
-		and (st.get("recipes", []) as Array).size() == 5, str(st))
+		and (st.get("recipes", []) as Array).size() == 6
+		and (st.get("recipes", []) as Array).has("dewthread"), str(st))
 	_check("still has a first-use hint",
 		(load("res://scripts/game.gd").SKILL_HINTS as Dictionary).has("still"))
 	var game = load("res://scripts/game.gd").new()

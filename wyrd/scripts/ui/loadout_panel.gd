@@ -122,6 +122,17 @@ func _ready() -> void:
 		if _game != null and _game.set_loadout(_picks):
 			_close())
 	col.add_child(_apply)
+	# Skills-on-items — the Charm Table sits one step away: charm a bow to GRANT
+	# a skill, then slot it here. Same "prepare your build" moment.
+	var charm := Button.new()
+	WyrdUi.style_kit_button(charm)
+	charm.text = "Charm gear ▸"
+	charm.custom_minimum_size = Vector2(0, 34)
+	charm.pressed.connect(func():
+		var ep: CanvasLayer = load("res://scripts/ui/enchant_panel.gd").new()
+		var host: Node = get_tree().current_scene if get_tree().current_scene != null else self
+		host.add_child(ep))
+	col.add_child(charm)
 	get_node("/root/Game").modal_opened()
 	_render()
 

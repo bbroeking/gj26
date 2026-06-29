@@ -167,8 +167,25 @@ const UNIQUES := {
 # Rarity → affix count. -1 = predefined (read from UNIQUES).
 const N_AFFIXES := {"normal": 0, "magic": 1, "rare": 3, "unique": -1}
 
+# Enchant slot capacity by gear category (the "skills on items" layer; see
+# data/enchants.gd). Capacity is orthogonal to rarity — every item of a
+# category shares the same count. Weapons get two so a bow can carry an
+# on-hit charm AND a skill-granting one; tools take none (combat-stat
+# enchants would do nothing on a pickaxe).
+const ENCHANT_SLOTS_BY_CATEGORY := {
+	"weapon": 2, "helmet": 1, "chest": 1, "boots": 1, "ring": 1,
+	"pickaxe": 0, "axe": 0,
+}
+
 static func kind_ids() -> Array:
 	return KINDS.keys()
+
+# How many enchants a piece of this kind can hold. Read by category so it
+# works for items already sitting in old saves (capacity isn't stored on the
+# item dict — it's a property of the kind).
+static func enchant_slots(kind_id: String) -> int:
+	var cat := String(KINDS.get(kind_id, {}).get("category", ""))
+	return int(ENCHANT_SLOTS_BY_CATEGORY.get(cat, 0))
 
 # Build a concrete item instance for the given kind + rarity. Returns an
 # empty dict for an unknown kind (graceful — the caller logs and skips).
@@ -186,6 +203,10 @@ static func make_item(kind_id: String, rarity: String) -> Dictionary:
 		"base_value": kind.base_value,
 		"rarity": rarity,
 		"affixes": [],
+		# Skills-on-items layer: bound at the Charm Table, swappable, separate
+		# from the (immutable) rolled affixes. Empty at creation; capacity is
+		# enchant_slots(kind_id). Old-save items without the field read as [].
+		"enchants": [],
 		"icon_color": kind.icon_color,
 		"name": String(kind.name),
 	}

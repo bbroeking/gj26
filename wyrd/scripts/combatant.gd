@@ -1080,6 +1080,10 @@ func _spawn_drops() -> void:
 	var tier_bonus: int = 0
 	if is_elite:
 		tier_bonus = int(Elites.MODIFIERS.get(modifier, {}).get("reward_tier_bonus", 0))
+	# Enchant economy — reagents drop to the satchel and elites/bosses teach the
+	# rare/unique charms. Awarded straight to the shared Game (not the per-player
+	# pickup pipe), so it sits ahead of the co-op early-return below.
+	_award_enchant_loot(role, depth, tier_bonus)
 	var pile: Array = Drops.roll_drop(role, depth, tier_bonus)
 	if pile.is_empty():
 		return
@@ -1105,6 +1109,23 @@ func _spawn_drops() -> void:
 		else:
 			get_tree().create_timer(i * 0.08).timeout.connect(
 				_spawn_one_pickup.bind(host, pile[i], center))
+
+# Reagent + charm-discovery payout. Routed to the shared Game satchel /
+# discovered set. Skipped under live co-op for now (reagents aren't instanced
+# per-player yet — they're also craftable at the bench, so no one is gated).
+func _award_enchant_loot(role: String, depth: int, tier_bonus: int) -> void:
+	var game := get_node_or_null("/root/Game")
+	if game == null:
+		return
+	var netd := get_node_or_null("/root/NetGame")
+	if netd != null and bool(netd.active):
+		return
+	var reagents: Dictionary = Drops.roll_reagents(role, depth, tier_bonus)
+	for mid in reagents:
+		game.add_material(String(mid), int(reagents[mid]))
+	for eid in Drops.roll_enchant_discovery(role, depth, tier_bonus):
+		if game.has_method("discover_enchant"):
+			game.discover_enchant(String(eid))
 
 func _spawn_one_pickup(host: Node, it: Dictionary, center: Vector3) -> void:
 	if not is_instance_valid(host):

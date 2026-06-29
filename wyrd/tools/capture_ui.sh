@@ -3,7 +3,7 @@
 # Usage: bash tools/capture_ui.sh   (from wyrd/)
 set -e
 cd "$(dirname "$0")/.."
-for mode in hud pack satchel charts trades dialog vendor cook smith inscribe; do
+for mode in hud pack satchel charts trades dialog vendor cook smith inscribe enchant; do
   rm -f /tmp/wyrd_town.png
   env_mode="$mode"
   [ "$mode" = "inscribe" ] && env_mode="table"   # the else-branch opens the table

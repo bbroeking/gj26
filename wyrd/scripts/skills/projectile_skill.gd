@@ -70,7 +70,12 @@ func _spawn_arrow(player: Node, origin: Vector3, dir: Vector3, dmg: int,
 	arrow.crit_chance = float(player.derived_stats.crit_chance)
 	arrow.crit_mult = float(player.derived_stats.crit_mult_bonus)
 	arrow.skill_type = skill_type
-	arrow.effects = on_hit_effects
+	# Skills-on-items: a bound weapon's on-hit charms ride EVERY shot, stacking
+	# on top of the skill's own on_hit_effects. New array so the skill's shared
+	# on_hit_effects list is never mutated.
+	var enchant_fx: Array = player.get_enchant_hit_effects() \
+		if player.has_method("get_enchant_hit_effects") else []
+	arrow.effects = on_hit_effects if enchant_fx.is_empty() else on_hit_effects + enchant_fx
 	# C9 — gear/perks can add extra pierces on top of the skill's base.
 	arrow.pierce_left = pierce + int(player.derived_stats.get("bonus_pierce", 0))
 	arrow.execute_mult = execute_mult

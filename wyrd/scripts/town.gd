@@ -198,6 +198,21 @@ func _ready() -> void:
 				add_child(load("res://scripts/ui/credits_menu.gd").new())
 			elif OS.get_environment("WYRD_UI_SHOT") == "options":
 				add_child(load("res://scripts/ui/options_menu.gd").new())
+			elif OS.get_environment("WYRD_UI_SHOT") == "enchant":
+				# The Charm Table — stage equipped gear + reagents + a learned
+				# rare charm so every column renders.
+				var items_e = load("res://data/items.gd")
+				if game != null:
+					game.equipment.slots["weapon"] = items_e.make_item("shortbow", "rare")
+					game.equipment.slots["ring"] = items_e.make_item("copper_ring", "magic")
+					var bow_e = game.equipment.slots["weapon"]
+					bow_e.enchants = ["emberbind"]
+					game.add_material("glimmerdust", 6)
+					game.add_material("emberglass", 4)
+					game.add_material("dewthread", 5)
+					game.discover_enchant("galebrand")
+					game.equipment.changed.emit()
+				add_child(load("res://scripts/ui/enchant_panel.gd").new())
 			else:
 				# "table"/"bench"/anything else — the crafting bench (spec 42).
 				# "bench_staged" pre-fills it for visual iteration.

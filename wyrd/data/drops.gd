@@ -5,6 +5,7 @@ extends RefCounted
 # item instances on a death; 27b wires this into combatant._die().
 
 const Items = preload("res://data/items.gd")
+const EnchantDefs = preload("res://data/enchants.gd")
 
 const ROLE_DROP_CHANCE := {
 	"combat":   0.50,
@@ -82,3 +83,51 @@ static func _pick_kind(depth: int = 99) -> String:
 	if ids.is_empty():
 		ids = droppable_kinds()
 	return ids[randi() % ids.size()]
+
+# ---- enchant economy: the delving faucet (the other half of the mixed
+# source — the bench crafts reagents, the dungeon also hands them out, and
+# elites/bosses TEACH the rare/unique charms). Pure rolls; combatant._die
+# routes the results into Game.add_material / Game.discover_enchant. ----
+
+# Common reagents that can drop while delving (the bench crafts these too).
+const REAGENT_POOL := ["glimmerdust", "emberglass", "dewthread"]
+const REAGENT_DROP_CHANCE := {
+	"combat": 0.12, "elite": 0.60, "treasure": 0.45, "shrine": 0.0, "boss": 1.0,
+}
+
+# Roll a small reagent payout for a kill/open. Returns {mat_id: count} (may be
+# empty). Boss kills pour more; deeper dens pour a touch more on top.
+static func roll_reagents(role: String, depth: int = 0, _tier_bonus: int = 0) -> Dictionary:
+	var out: Dictionary = {}
+	if randf() > float(REAGENT_DROP_CHANCE.get(role, 0.0)):
+		return out
+	var n := 1
+	if role == "boss":
+		n = 2 + (depth / 4)
+	elif role == "elite" and randf() < 0.4:
+		n = 2
+	var mid: String = REAGENT_POOL[randi() % REAGENT_POOL.size()]
+	out[mid] = n
+	return out
+
+# Elites can TEACH a rare charm; bosses always teach a unique. Returns enchant
+# ids to add to Game.discovered_enchants (idempotent on the Game side).
+static func roll_enchant_discovery(role: String, _depth: int = 0, _tier_bonus: int = 0) -> Array:
+	var out: Array = []
+	if role == "boss":
+		var uniques: Array = _enchants_of_tier("unique")
+		if not uniques.is_empty():
+			out.append(uniques[randi() % uniques.size()])
+		# A boss also tends to leave a rare in its wake.
+		var rares: Array = _enchants_of_tier("rare")
+		if not rares.is_empty() and randf() < 0.5:
+			out.append(rares[randi() % rares.size()])
+	elif role == "elite" and randf() < 0.35:
+		var rares2: Array = _enchants_of_tier("rare")
+		if not rares2.is_empty():
+			out.append(rares2[randi() % rares2.size()])
+	return out
+
+static func _enchants_of_tier(t: String) -> Array:
+	return (EnchantDefs.ENCHANT_ORDER as Array).filter(func(id):
+		return EnchantDefs.tier(String(id)) == t)

@@ -27,6 +27,7 @@ const CHIBI_HEIGHT := 1.25
 # loadout. Skill modules own their own firing logic; the player just
 # dispatches via `_try_skill(slot)`.
 const BasicShotScript := preload("res://scripts/skills/basic_shot.gd")
+const EnchantDefs := preload("res://data/enchants.gd")
 const PowerShotScript := preload("res://scripts/skills/power_shot.gd")
 const MultiShotScript := preload("res://scripts/skills/multi_shot.gd")
 const BrambleSnareScript := preload("res://scripts/skills/bramble_snare.gd")
@@ -174,6 +175,9 @@ var _hp_regen_accum := 0.0   # fractional HP banked from the hp_regen stat (vigo
 # Spec 32b — the player's current loadout (4 Skill instances). Instantiated
 # in _ready. Slot N reads `skills[N-1]`. F-key fires `skills[0]`.
 var skills: Array = []
+# Skills-on-items: on-hit SkillEffects from bound enchants, rebuilt in
+# _derive_stats and appended to every shot's effects (ProjectileSkill).
+var _enchant_hit_effects: Array = []
 
 func _ready() -> void:
 	add_to_group("player")
@@ -1100,6 +1104,28 @@ func _on_gear_changed() -> void:
 	if sfx != null:
 		sfx.play("equip")
 
+# Skills-on-items: on-hit charms appended to every shot (read by
+# ProjectileSkill._spawn_arrow). Cached in _derive_stats so the per-shot path
+# stays allocation-light.
+func get_enchant_hit_effects() -> Array:
+	return _enchant_hit_effects
+
+# Build a SkillEffect from an enchant's `effect` data dict (data/enchants.gd).
+func _build_hit_effect(fx: Dictionary) -> SkillEffect:
+	match String(fx.get("status", "")):
+		"burn":
+			return SkillEffect.burn(float(fx.get("dur", 2.0)),
+				int(fx.get("dpt", 1)), float(fx.get("interval", 0.5)))
+		"bleed":
+			return SkillEffect.bleed(float(fx.get("dur", 2.5)),
+				int(fx.get("dpt", 1)), float(fx.get("interval", 0.7)))
+		"snared":
+			return SkillEffect.snared(float(fx.get("dur", 1.0)),
+				float(fx.get("slow", 0.7)))
+		"marked":
+			return SkillEffect.marked(float(fx.get("dur", 3.0)))
+	return null
+
 # ADR 0013 — leveling Wayfinding grows base damage/HP, so a level-up must
 # refresh the live combat stats (they otherwise only re-derive on equip/load).
 # Grow current HP by the pool increase so the level is *felt* — but only the
@@ -1124,6 +1150,7 @@ func _derive_stats() -> void:
 		"cooldown_reduction": 0.0, "hp_regen": 0.0, "bonus_pierce": 0}
 	# ADR 0013 — gear gives power again (reverses the 0010 freeze): every
 	# equipped item's base_stat + rolled affixes flow into the sums.
+	var hit_fx: Array = []
 	if equipment != null:
 		for slot in Equipment.SLOT_ORDER:
 			var it = equipment.get_slot(slot)
@@ -1132,6 +1159,22 @@ func _derive_stats() -> void:
 			_add_stat(sums, String(it.get("base_stat", "")), it.get("base_value", 0))
 			for a in it.get("affixes", []):
 				_add_stat(sums, String(a.get("stat", "")), a.get("value", 0))
+			# Skills-on-items: stat charms sum like an affix; on-hit charms are
+			# collected here and ride every shot (ProjectileSkill._spawn_arrow
+			# reads get_enchant_hit_effects). skill_grant charms are handled by
+			# Game.granted_skills / the loadout, not here.
+			for eid in it.get("enchants", []):
+				var edef: Dictionary = EnchantDefs.get_def(String(eid))
+				if edef.is_empty():
+					continue
+				match String(edef.get("kind", "")):
+					"stat":
+						_add_stat(sums, String(edef.get("stat", "")), edef.get("value", 0))
+					"on_hit":
+						var fx = _build_hit_effect(edef.get("effect", {}))
+						if fx != null:
+							hit_fx.append(fx)
+	_enchant_hit_effects = hit_fx
 	for k in shrine_buffs:
 		_add_stat(sums, String(k), shrine_buffs[k])
 	# B7 — Huntcraft perks ride the same sums.
@@ -1485,6 +1528,11 @@ const SKILL_FACTORY := {
 	"HuntersMark": preload("res://scripts/skills/hunters_mark.gd"),
 	"HeartwoodWard": preload("res://scripts/skills/heartwood_ward.gd"),
 	"MercyShot": preload("res://scripts/skills/mercy_shot.gd"),
+	# Skills-on-items: granted ONLY by a bound weapon enchant (not in
+	# Game.SKILL_POOL). Registered here so rebuild_skills can build them when
+	# the player slots a granted skill (Game.available_skills).
+	"Galecall": preload("res://scripts/skills/galecall.gd"),
+	"Wyrdvolley": preload("res://scripts/skills/wyrdvolley.gd"),
 }
 
 func rebuild_skills() -> void:
@@ -1495,8 +1543,15 @@ func rebuild_skills() -> void:
 	skills = [BasicShotScript.new()]
 	for sk in picks:
 		var script = SKILL_FACTORY.get(String(sk))
-		if script != null:
-			skills.append(script.new())
+		if script == null:
+			# A pick with no factory entry (e.g. a skill-grant enchant whose
+			# `grant` name was never registered) must NOT silently shrink the
+			# array — that desyncs slot N from skills[N-1]. Substitute a safe Bow
+			# and log loudly so the mismatch is caught.
+			push_error("rebuild_skills: no SKILL_FACTORY entry for '%s' — falling back to BasicShot" % String(sk))
+			skills.append(BasicShotScript.new())
+			continue
+		skills.append(script.new())
 	# Re-SEED, never just clear — a bare clear() left slots 1-4 unkeyed and
 	# the next cast crashed on _skill_cooldowns[slot] (the frozen-game bug).
 	_skill_cooldowns.clear()

@@ -23,7 +23,8 @@ const STATIONS := {
 		"trade": "wilds",
 		"verb": "Brew",
 		"recipes": ["quickroot_tonic", "clearwater_philter",
-			"crowsfoot_cordial", "mothmint_mend", "stonebreak_tonic"],
+			"crowsfoot_cordial", "mothmint_mend", "stonebreak_tonic",
+			"dewthread"],
 	},
 	"forge": {
 		"title": "Hod's Anvil",
@@ -39,7 +40,8 @@ const STATIONS := {
 			"starsilver_pickaxe_smith", "starsilver_axe_smith",
 			"starsilver_band_smith", "starsilver_longbow_smith",
 			"hedgesteel_bar", "hedgesteel_cap_smith", "hedgesteel_boots_smith",
-			"hedgesteel_jerkin_smith", "warbow_smith"],
+			"hedgesteel_jerkin_smith", "warbow_smith",
+			"emberglass", "glimmerdust"],
 	},
 }
 
@@ -114,6 +116,26 @@ const RECIPES := {
 		"inputs": {"copper_ore": 2},
 		"yields_material": "copper_bar", "yields_n": 1,
 		"desc": "The first bar every smith pours.",
+	},
+	# Enchant reagents (data/enchants.gd). Modest gates so the common charms
+	# are reachable mid-early; the deeper charms still lean on dropped reagents.
+	"dewthread": {
+		"name": "Dewthread", "req_lv": 1, "xp": 14,
+		"inputs": {"wild_herb": 2},
+		"yields_material": "dewthread", "yields_n": 1,
+		"desc": "Dew-heavy hedge-green spun fine. The gentle charms drink it up — the first charm anyone binds.",
+	},
+	"emberglass": {
+		"name": "Emberglass", "req_lv": 3, "xp": 18,
+		"inputs": {"bogiron_bar": 1, "logs": 1},
+		"yields_material": "emberglass", "yields_n": 1,
+		"desc": "Bog-iron fired to a red glass. The fierce charms are forged on it.",
+	},
+	"glimmerdust": {
+		"name": "Glimmerdust", "req_lv": 4, "xp": 20,
+		"inputs": {"copper_bar": 1},
+		"yields_material": "glimmerdust", "yields_n": 2,
+		"desc": "Filed bright off a copper bar and caught on cloth. Two pinches a bar.",
 	},
 	"bogiron_bar": {
 		"name": "Bogiron Bar", "req_lv": 1, "xp": 12,

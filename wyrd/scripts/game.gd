@@ -12,6 +12,8 @@ extends Node
 
 const ChartsData = preload("res://data/charts.gd")
 const GatherDefs = preload("res://data/gather.gd")
+const ItemsData = preload("res://data/items.gd")
+const EnchantDefs = preload("res://data/enchants.gd")
 
 const TOWN_SCENE := "res://scenes/Town.tscn"
 const DUNGEON_SCENE := "res://scenes/World.tscn"
@@ -123,10 +125,12 @@ func reset_to_defaults() -> void:
 	in_dungeon = false
 	tutorial_step = 0
 	discovered_inks = ["hedge_ink"]
+	discovered_enchants = []
 	buffs = {}
 	# Fresh shared objects (the live player rebinds on the town reload).
 	inventory = Inventory.new()
 	equipment = load("res://scripts/equipment.gd").new()
+	_connect_equipment()   # enchant skill-grants: keep the loadout valid on gear swaps
 	ledger = load("res://scripts/ledger.gd").new()
 	if persistence_enabled:
 		SaveGame.clear()
@@ -265,6 +269,7 @@ func _ready() -> void:
 	inventory = Inventory.new()
 	var EquipmentScript = load("res://scripts/equipment.gd")
 	equipment = EquipmentScript.new()
+	_connect_equipment()   # enchant skill-grants: keep the loadout valid on gear swaps
 	ledger = load("res://scripts/ledger.gd").new()   # ADR 0013 — before load_into restores it
 	# Wyrd — restore the last session before anything else reads state.
 	if OS.get_environment("WYRD_NO_SAVE") != "":
@@ -309,16 +314,16 @@ func _ready() -> void:
 		tutorial_step = TUTORIAL_OBJECTIVES.size() - 1
 		get_tree().change_scene_to_file.call_deferred(DUNGEON_SCENE)
 
-# B5 — swap the loadout (validated against the pool; exactly 3, no dupes,
-# every pick's Huntcraft gate met).
+# B5 — swap the loadout. Validated against available_skills() — exactly 3, no
+# dupes, each pick either an unlocked pool skill OR a skill currently GRANTED by
+# a bound weapon enchant (the skills-on-items layer; see available_skills).
 func set_loadout(picks: Array) -> bool:
 	if picks.size() != 3:
 		return false
+	var avail := available_skills()
 	var seen := {}
 	for sk in picks:
-		if not SKILL_POOL.has(String(sk)) or seen.has(sk):
-			return false
-		if not skill_unlocked(String(sk)):
+		if not avail.has(String(sk)) or seen.has(sk):
 			return false
 		seen[sk] = true
 	loadout = picks.duplicate()
@@ -329,6 +334,167 @@ func set_loadout(picks: Array) -> bool:
 			player.rebuild_skills()
 		notify("Loadout set: %s." % ", ".join(picks))
 	return true
+
+# ---- enchants (skills-on-items) ----------------------------------------
+# A charm bound into gear at the Charm Table (data/enchants.gd). Three kinds:
+# `stat` sums into player stats like an affix, `on_hit` rides every shot,
+# `skill_grant` makes a new hotbar skill slottable while the weapon is worn.
+# Source is mixed: common charms are always bindable, rare/unique ones must be
+# DISCOVERED first (drops). Binding is swappable and costs reagents each time.
+
+# Skill names that ONLY exist via a granting enchant (never in the base pool).
+# Registered in player_controller.SKILL_FACTORY so rebuild_skills can build them.
+const GRANT_SKILLS := ["Galecall", "Wyrdvolley"]
+
+# True if the player may bind this charm at all (exists + tier-gated source).
+func enchant_available(id: String) -> bool:
+	if not EnchantDefs.exists(id):
+		return false
+	return EnchantDefs.is_common(id) or discovered_enchants.has(id)
+
+# Every charm the player can currently bind (commons + discovered), in catalogue
+# order — the Charm Table list.
+func known_enchant_ids() -> Array:
+	return (EnchantDefs.ENCHANT_ORDER as Array).filter(func(id):
+		return enchant_available(String(id)))
+
+# Learn a rare/unique charm (idempotent). Called from the drop pipe.
+func discover_enchant(id: String) -> void:
+	if not EnchantDefs.exists(id) or EnchantDefs.is_common(id):
+		return
+	if discovered_enchants.has(id):
+		return
+	discovered_enchants.append(id)
+	notify("You've puzzled out a new charm: %s." % EnchantDefs.display_name(id))
+	save_now()
+
+# Skill names currently granted by bound enchants on EQUIPPED gear.
+func granted_skills() -> Array:
+	var out: Array = []
+	if equipment == null:
+		return out
+	for slot in Equipment.SLOT_ORDER:
+		var it = equipment.get_slot(slot)
+		if it == null:
+			continue
+		for eid in it.get("enchants", []):
+			if EnchantDefs.kind(String(eid)) == "skill_grant":
+				var g := EnchantDefs.granted_skill(String(eid))
+				if g != "" and not out.has(g):
+					out.append(g)
+	return out
+
+# The pool the loadout picker draws from: unlocked base skills + granted skills.
+func available_skills() -> Array:
+	var out: Array = []
+	for sk in SKILL_POOL:
+		if skill_unlocked(String(sk)) and not out.has(sk):
+			out.append(sk)
+	for sk in granted_skills():
+		if not out.has(sk):
+			out.append(sk)
+	return out
+
+# Validate a prospective bind. Returns {"ok": bool, "reason": String}.
+func can_bind_enchant(item: Dictionary, enchant_id: String, replace_index: int = -1) -> Dictionary:
+	if item == null or item.is_empty():
+		return {"ok": false, "reason": "No item."}
+	if not EnchantDefs.exists(enchant_id):
+		return {"ok": false, "reason": "No such charm."}
+	if not enchant_available(enchant_id):
+		return {"ok": false, "reason": "You haven't puzzled that charm out yet."}
+	var cat := String(item.get("category", ""))
+	if not EnchantDefs.allowed_for(enchant_id, cat):
+		return {"ok": false, "reason": "That charm won't take on this."}
+	var cur: Array = item.get("enchants", [])
+	# No binding the same charm twice on one piece (unless we're replacing it).
+	for i in cur.size():
+		if String(cur[i]) == enchant_id and i != replace_index:
+			return {"ok": false, "reason": "Already wears that charm."}
+	if replace_index < 0:
+		var cap := ItemsData.enchant_slots(String(item.get("kind_id", "")))
+		if cur.size() >= cap:
+			return {"ok": false, "reason": "No free charm slot — swap one out first."}
+	elif replace_index >= cur.size():
+		return {"ok": false, "reason": "No charm in that slot to swap."}
+	if not can_afford(EnchantDefs.cost(enchant_id)):
+		return {"ok": false, "reason": "Not enough reagents."}
+	return {"ok": true, "reason": ""}
+
+# Bind a charm into `item` (append, or replace the slot at replace_index).
+# Spends reagents; refreshes stats + the loadout. Returns success.
+func bind_enchant(item: Dictionary, enchant_id: String, replace_index: int = -1) -> bool:
+	var chk := can_bind_enchant(item, enchant_id, replace_index)
+	if not bool(chk.ok):
+		notify(String(chk.reason))
+		return false
+	if not spend_materials(EnchantDefs.cost(enchant_id)):
+		return false   # race guard; can_afford already passed
+	if not item.has("enchants"):
+		item["enchants"] = []
+	if replace_index >= 0:
+		(item["enchants"] as Array)[replace_index] = enchant_id
+	else:
+		(item["enchants"] as Array).append(enchant_id)
+	_refresh_after_enchant(item)
+	notify("Bound %s into the %s." % [EnchantDefs.display_name(enchant_id),
+		String(item.get("name", item.get("kind_name", "gear")))])
+	return true
+
+# Strip the charm in `index` (no reagent refund — the makings are spent).
+func unbind_enchant(item: Dictionary, index: int) -> bool:
+	var cur: Array = item.get("enchants", [])
+	if index < 0 or index >= cur.size():
+		return false
+	var removed := String(cur[index])
+	cur.remove_at(index)
+	_refresh_after_enchant(item)
+	notify("Drew the %s back out." % EnchantDefs.display_name(removed))
+	return true
+
+# Re-derive stats (on-hit/stat charms) + re-validate the loadout (skill-grant
+# charms) + persist. equipment.changed drives the player's _derive_stats and
+# our _sanitize_loadout; we save regardless since inventory items count too.
+func _refresh_after_enchant(_item: Dictionary) -> void:
+	if equipment != null:
+		equipment.changed.emit()
+	else:
+		_sanitize_loadout()
+	save_now()
+
+# Drop any loadout pick that's no longer available (e.g. you unequipped the
+# weapon that granted it), backfilling from the available pool so the hotbar
+# always holds 3 valid skills. Wired to equipment.changed.
+func _sanitize_loadout() -> void:
+	var avail := available_skills()
+	if avail.size() < 3:
+		return   # degenerate (never happens — 3 base skills are level 1)
+	var new_lo: Array = []
+	var changed := false
+	for sk in loadout:
+		if avail.has(String(sk)) and not new_lo.has(sk):
+			new_lo.append(sk)
+		else:
+			changed = true
+	for sk in avail:
+		if new_lo.size() >= 3:
+			break
+		if not new_lo.has(sk):
+			new_lo.append(sk)
+			changed = true
+	if changed and new_lo.size() == 3:
+		loadout = new_lo
+		save_now()
+		if is_inside_tree():
+			var player := local_player()
+			if player != null and player.has_method("rebuild_skills"):
+				player.rebuild_skills()
+
+# Connect equipment.changed → loadout sanitize (idempotent; re-called after the
+# equipment object is replaced on reset/new-game).
+func _connect_equipment() -> void:
+	if equipment != null and not equipment.changed.is_connected(_sanitize_loadout):
+		equipment.changed.connect(_sanitize_loadout)
 
 # Spec 38 — master mute. One bus flip silences the SFX pool and the music
 # channel together; the state rides the save like any other preference.
@@ -734,6 +900,9 @@ func mix_ink(ink_id: String) -> bool:
 # found by trying combinations in the bench pot.
 
 var discovered_inks: Array = ["hedge_ink"]
+# Rare/unique charms the player has puzzled out (commons are always bindable;
+# see enchant_available). Persisted alongside discovered_inks.
+var discovered_enchants: Array = []
 
 func ink_discovered(ink_id: String) -> bool:
 	return discovered_inks.has(ink_id)
