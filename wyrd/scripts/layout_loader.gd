@@ -19,6 +19,8 @@ const BreakableScript = preload("res://scripts/breakable.gd")
 const GatherNodeScript = preload("res://scripts/gather_node.gd")
 const ExitWaystoneScript = preload("res://scripts/exit_waystone.gd")
 const GatherDefs = preload("res://data/gather.gd")
+const AmbientMotesScript = preload("res://scripts/ambient_motes.gd")
+const SOFT_CIRCLE_TEX = preload("res://assets/vfx/soft_circle.png")
 
 # (Per-kind enemy/boss HP moved into ENEMY_KINDS / BOSS_KINDS below.)
 
@@ -153,6 +155,44 @@ const BIOMES := {
 		"pottery":     Color(0.52, 0.52, 0.54),   # cairn — grey stone
 		"bookshelf":   Color(0.48, 0.40, 0.30),   # signpost — weathered wood
 	}, "floor_tex": ""},
+}
+
+# Per-biome ENVIRONMENT mood — lighting + fog + airborne motes, the thing that
+# actually sells "a different place" at FATE distance (vs just recolored bricks).
+# Applied in _resolve_biome by duplicating the WorldEnvironment + tinting the Sun.
+# ambient = cool fill hue · fog = distance-tint · sun = key hue · mote_* = the
+# signature airborne particle (emission>0 → it blooms via the glow).
+const BIOME_ENV := {
+	"crypt": {
+		"ambient": Color(0.30, 0.34, 0.46), "fog": Color(0.34, 0.28, 0.24),
+		"fog_density": 0.012, "glow": 0.8, "sun": Color(1.0, 0.92, 0.85),
+		"mote_color": Color(0.72, 0.66, 0.58), "mote_amount": 55,
+		"mote_gravity": -0.04, "mote_size": 0.06, "mote_emission": 0.0,
+	},
+	"mineral_seam": {
+		"ambient": Color(0.24, 0.40, 0.54), "fog": Color(0.28, 0.36, 0.44),
+		"fog_density": 0.014, "glow": 0.9, "sun": Color(0.86, 0.92, 1.0),
+		"mote_color": Color(0.60, 0.82, 1.0), "mote_amount": 70,
+		"mote_gravity": 0.0, "mote_size": 0.05, "mote_emission": 1.4,
+	},
+	"wood_grove": {
+		"ambient": Color(0.30, 0.42, 0.32), "fog": Color(0.40, 0.44, 0.30),
+		"fog_density": 0.009, "glow": 0.85, "sun": Color(1.0, 0.96, 0.76),
+		"mote_color": Color(1.0, 0.86, 0.42), "mote_amount": 48,
+		"mote_gravity": 0.05, "mote_size": 0.07, "mote_emission": 2.2,
+	},
+	"bog": {
+		"ambient": Color(0.24, 0.40, 0.40), "fog": Color(0.26, 0.36, 0.30),
+		"fog_density": 0.024, "glow": 0.85, "sun": Color(0.76, 0.88, 0.80),
+		"mote_color": Color(0.50, 0.88, 0.62), "mote_amount": 44,
+		"mote_gravity": -0.02, "mote_size": 0.09, "mote_emission": 1.5,
+	},
+	"summit": {
+		"ambient": Color(0.42, 0.50, 0.64), "fog": Color(0.80, 0.86, 0.94),
+		"fog_density": 0.020, "glow": 0.9, "sun": Color(0.90, 0.95, 1.0),
+		"mote_color": Color(0.95, 0.97, 1.0), "mote_amount": 120,
+		"mote_gravity": -0.30, "mote_size": 0.06, "mote_emission": 0.0,
+	},
 }
 
 # decor.kind → collider box size, or null for pass-through decor.
@@ -488,6 +528,66 @@ func _resolve_biome() -> void:
 	var ftex := String(b.get("floor_tex", ""))
 	if ftex != "" and ResourceLoader.exists(ftex):
 		_floor_mat.albedo_texture = load(ftex)
+	_apply_biome_env()
+	_build_ambient_motes()
+
+# Per-biome lighting + fog mood. Duplicates the WorldEnvironment's Environment
+# (so we never mutate the packed .tscn resource across runs) and tints the Sun.
+func _apply_biome_env() -> void:
+	var e: Dictionary = BIOME_ENV.get(_biome_id, {})
+	if e.is_empty():
+		return
+	var we := get_node_or_null("WorldEnvironment")
+	if we != null and we.environment != null:
+		var env: Environment = we.environment.duplicate()   # shallow → keeps the Sky
+		env.ambient_light_color = e.ambient
+		env.fog_light_color = e.fog
+		env.fog_density = float(e.fog_density)
+		env.glow_intensity = float(e.glow)
+		we.environment = env
+	var sun := get_node_or_null("Sun")
+	if sun != null:
+		sun.light_color = e.sun
+
+# One camera-following emitter of the biome's signature airborne mote.
+func _build_ambient_motes() -> void:
+	var e: Dictionary = BIOME_ENV.get(_biome_id, {})
+	if not e.has("mote_amount"):
+		return
+	var p: GPUParticles3D = AmbientMotesScript.new()
+	p.amount = int(e.mote_amount)
+	p.lifetime = 9.0
+	p.preprocess = 5.0          # pre-fill the box so it isn't empty on entry
+	p.local_coords = false
+	var pm := ParticleProcessMaterial.new()
+	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	pm.emission_box_extents = Vector3(8.0, 4.5, 8.0)
+	pm.gravity = Vector3(0.0, float(e.mote_gravity), 0.0)
+	pm.direction = Vector3(0.2, 0.1, 0.1)
+	pm.spread = 80.0
+	pm.initial_velocity_min = 0.04
+	pm.initial_velocity_max = 0.22
+	pm.scale_min = 0.6
+	pm.scale_max = 1.3
+	pm.color = e.mote_color
+	p.process_material = pm
+	var qm := QuadMesh.new()
+	qm.size = Vector2(float(e.mote_size), float(e.mote_size))
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = e.mote_color
+	mat.albedo_texture = SOFT_CIRCLE_TEX
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	var em: float = float(e.get("mote_emission", 0.0))
+	if em > 0.0:
+		mat.emission_enabled = true
+		mat.emission = e.mote_color
+		mat.emission_energy_multiplier = em
+	qm.material = mat
+	p.draw_pass_1 = qm
+	add_child(p)
+	p.emitting = true
 
 # The GLB path for a decor `kind` in the active biome: the biome's own override
 # if it has one, else the crypt DECOR_MODEL, else "" (skip).
