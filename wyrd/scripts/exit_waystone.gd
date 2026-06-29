@@ -36,11 +36,33 @@ func _ready_interactable() -> void:
 	add_child(cairn)
 	GlbFit.normalize_height(cairn, 1.8)
 	GlbFit.add_ink_outline(cairn)
+	# Wayfinding beacon — a procedural dungeon has no memorized layout, so the
+	# exit must out-signal the room the instant a sightline opens. A tall emissive
+	# beam blooms through the depth fog: bright cool-blue for the real exit, dim
+	# neutral for the abandon/return stone so it doesn't compete for attention.
+	var beacon: Color = Color(0.55, 0.78, 1.0) if not abandoning \
+		else Color(0.72, 0.68, 0.58)
+	var beam := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.16
+	cyl.bottom_radius = 0.30
+	cyl.height = 5.0
+	beam.mesh = cyl
+	beam.position = Vector3(0.0, 2.6, 0.0)
+	var bmat := StandardMaterial3D.new()
+	bmat.albedo_color = Color(beacon.r, beacon.g, beacon.b, 0.35)
+	bmat.emission_enabled = true
+	bmat.emission = beacon
+	bmat.emission_energy_multiplier = 2.8 if not abandoning else 1.1
+	bmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	bmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	beam.material_override = bmat
+	add_child(beam)
 	var glow := OmniLight3D.new()
 	glow.position = Vector3(0.0, 1.4, 0.0)
-	glow.light_color = Color(0.55, 0.75, 1.0)
-	glow.light_energy = 2.2
-	glow.omni_range = 6.0
+	glow.light_color = beacon
+	glow.light_energy = 2.4 if not abandoning else 1.2
+	glow.omni_range = 13.0 if not abandoning else 7.0   # the exit reads across a corridor
 	add_child(glow)
 
 func is_used() -> bool:
