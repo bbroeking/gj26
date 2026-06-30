@@ -108,6 +108,9 @@ var _tex_cache := {}
 
 func _ready() -> void:
 	visible = false
+	# Process while the tree is paused — opening the pack pauses the world
+	# (modal_opened), and the panel still needs input to take Esc/clicks.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	mouse_filter = MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	# Preload every texture _draw needs — a CompressedTexture2D whose first
@@ -139,10 +142,10 @@ func toggle() -> void:
 # toggle naturally).
 func open_tab(t: int) -> void:
 	if visible and _tab == t:
-		visible = false
+		_set_open(false)
 	else:
 		_tab = t
-		visible = true
+		_set_open(true)
 		_update_layout()
 		queue_redraw()
 	# Spec 27f — UI open/close SFX (no-op until the file is generated).
@@ -150,8 +153,42 @@ func open_tab(t: int) -> void:
 	if sfx != null:
 		sfx.play("inv_open")
 
+# Single source of truth for open/closed: drives visibility AND registers the
+# pack as a modal so the world pauses (solo) and Esc routes to us, not the
+# pause menu. _modal_on guards against double counting on tab-switches.
+var _modal_on := false
+
+func _set_open(on: bool) -> void:
+	if on == _modal_on:
+		visible = on
+		return
+	var game := get_node_or_null("/root/Game")
+	if on:
+		if game != null:
+			game.modal_opened()
+	else:
+		# Return a dragged item to where it came from before we close.
+		if _held_item != null:
+			_snap_back()
+			_held_item = null
+		if game != null:
+			game.modal_closed()
+	_modal_on = on
+	visible = on
+
+func _close_pack() -> void:
+	if visible:
+		_set_open(false)
+		queue_redraw()
+
 func _input(event: InputEvent) -> void:
 	if not visible:
+		return
+	# Esc dismisses the pack (and is consumed so it never reaches the player's
+	# pause-menu handler — the old bug stacked Pause on top of the open pack).
+	if event.is_action_pressed("ui_cancel"):
+		_close_pack()
+		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_R and _held_item != null:
@@ -160,6 +197,12 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
+				# Click on the dim area outside the window closes the pack —
+				# unless mid-drag, where the click is a place/drop action.
+				if _held_item == null and not _win_rect().has_point(event.position):
+					_close_pack()
+					get_viewport().set_input_as_handled()
+					return
 				for i in TABS.size():
 					if _tab_rect(i).has_point(event.position):
 						_tab = i

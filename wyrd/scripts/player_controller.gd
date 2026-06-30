@@ -513,6 +513,11 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 	if Input.is_action_just_pressed("ui_cancel"):
+		# A UI panel (pack, charm table, vendor…) owns Esc while open — let it
+		# dismiss itself instead of stacking the pause menu on top of it.
+		var g := get_node_or_null("/root/Game")
+		if g != null and int(g.modal_count) > 0:
+			return
 		# Co-op → the Lantern (can't freeze the shared world); solo → Pause.
 		var net := get_node_or_null("/root/NetGame")
 		var menu_path := "res://scripts/ui/system_menu.gd" if (net != null and bool(net.active)) \
