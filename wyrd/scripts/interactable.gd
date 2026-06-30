@@ -73,6 +73,25 @@ func _ready() -> void:
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	bob.tween_property(mark, "position:y", mark.position.y, 0.9) \
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	# A solid blocking body so the player bumps into the object instead of walking
+	# through it. The Area3D above is only a sensor (for the prompt); this is the
+	# physical footprint, on LAYER_WORLD (1) like walls/decor. Sized smaller than
+	# the detection sphere so the prompt still triggers before the player stops.
+	# Subclasses tune via get_solid_radius()/get_solid_height(); 0 = stay passable.
+	var sr := get_solid_radius()
+	if sr > 0.0:
+		var solid := StaticBody3D.new()
+		solid.name = "Solid"
+		solid.collision_layer = 1          # LAYER_WORLD
+		solid.collision_mask = 0
+		var solid_shape := CylinderShape3D.new()
+		solid_shape.radius = sr
+		solid_shape.height = get_solid_height()
+		var scol := CollisionShape3D.new()
+		scol.shape = solid_shape
+		scol.position = Vector3(0.0, get_solid_height() * 0.5, 0.0)
+		solid.add_child(scol)
+		add_child(solid)
 	# Subclass hook for unique setup (GLB + glow + other meshes).
 	_ready_interactable()
 
@@ -109,6 +128,15 @@ func get_prompt_color() -> Color:
 
 func get_collision_radius() -> float:
 	return 1.0
+
+# The solid (blocking) footprint, distinct from the detection sphere above.
+# Default suits a person-sized prop (station, NPC, gather node). Override to
+# resize, or return 0.0 to keep the object walk-through (e.g. a flat ground note).
+func get_solid_radius() -> float:
+	return 0.55
+
+func get_solid_height() -> float:
+	return 1.6
 
 func get_collision_offset() -> Vector3:
 	return Vector3(0.0, 0.5, 0.0)
