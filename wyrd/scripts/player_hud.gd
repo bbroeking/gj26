@@ -254,6 +254,19 @@ func _refresh_objective() -> void:
 		var short := sub.split(" — ")[0] if sub.contains(" — ") else sub
 		_quest_sub.text = ("◆ " + short) if short != "" else ""
 		_quest_sub.visible = short != ""
+	# Spec 53 — content-hug: size the chip to the wrapped objective + sub instead
+	# of a fixed 96px box (kills the dead-teal pool under a single-line objective).
+	_fit_quest_plate()
+
+# Resize the quest chip to its content. Deferred a frame so the objective Label
+# has wrapped and get_line_count() is accurate — so it never clips the text.
+func _fit_quest_plate() -> void:
+	await get_tree().process_frame
+	if _quest_plate == null or not is_instance_valid(_quest_plate):
+		return
+	var lines: int = maxi(1, _objective.get_line_count())
+	var h: float = 26.0 + float(lines) * 19.0 + (22.0 if _quest_sub.visible else 10.0)
+	_quest_plate.offset_bottom = _quest_plate.offset_top + h
 
 # Bottom-right action bar — Pack (I) and Satchel (M) as clickable parchment
 # buttons, so the systems are discoverable without reading the guide.

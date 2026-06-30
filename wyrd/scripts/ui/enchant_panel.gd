@@ -30,12 +30,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 95
 	_game = get_tree().root.get_node_or_null("Game")
-	var bg := ColorRect.new()
-	bg.color = Color(0, 0, 0, 0.55)
-	bg.anchor_right = 1.0
-	bg.anchor_bottom = 1.0
-	bg.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(bg)
+	WyrdUi.make_backdrop(self, _close)   # spec 53 — one scrim + click-outside dismiss
 	_panel = Panel.new()
 	WyrdUi.style_panel(_panel)
 	_panel.anchor_left = 0.5
@@ -289,8 +284,8 @@ class _Card extends Control:
 		var font: Font = WyrdUi.font_body()
 		if font == null:
 			font = get_theme_default_font()
-		var ink: Color = WyrdUi.INK if _enabled else Color(0.50, 0.43, 0.34)
-		var dim: Color = WyrdUi.INK_MID if _enabled else Color(0.56, 0.49, 0.40)
+		var ink: Color = WyrdUi.INK if _enabled else WyrdUi.DISABLED_INK
+		var dim: Color = WyrdUi.INK_MID if _enabled else WyrdUi.DISABLED_DIM
 		# A painted charm icon if one exists (drop-in), else a tier swatch.
 		var tx := 30.0
 		if _tex != null:

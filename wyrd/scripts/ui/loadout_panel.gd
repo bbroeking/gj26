@@ -59,12 +59,7 @@ func _ready() -> void:
 			_tex_cache[String(path)] = load(String(path))
 	_picks = (_game.loadout as Array).duplicate() if _game != null \
 		else ["PowerShot", "MultiShot", "BrambleSnare"]
-	var bg := ColorRect.new()
-	bg.color = Color(0, 0, 0, 0.55)
-	bg.anchor_right = 1.0
-	bg.anchor_bottom = 1.0
-	bg.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(bg)
+	WyrdUi.make_backdrop(self, _close)   # spec 53 — one scrim + click-outside dismiss
 	_panel = Panel.new()
 	WyrdUi.style_panel(_panel)
 	_panel.anchor_left = 0.5
@@ -238,11 +233,15 @@ class _SkillCard extends Control:
 			draw_rect(r.grow(-1.5), Color(WyrdUi.KIT_PLATE, 0.45))
 		elif _hover:
 			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.12))
+		# Spec 53 — ONE selection language: a gold ring on the whole card (matches
+		# the Charm Table), not a sage ring on the icon + a ✓ prefix.
+		if _picked:
+			draw_rect(r.grow(-1.5), WyrdUi.GOLD, false, 2.0)
 		var font: Font = WyrdUi.font_body()
 		if font == null:
 			font = get_theme_default_font()
-		var ink: Color = WyrdUi.INK if not _locked else Color(0.50, 0.43, 0.34)
-		var dim: Color = WyrdUi.INK_MID if not _locked else Color(0.56, 0.49, 0.40)
+		var ink: Color = WyrdUi.INK if not _locked else WyrdUi.DISABLED_INK
+		var dim: Color = WyrdUi.INK_MID if not _locked else WyrdUi.DISABLED_DIM
 		# --- icon plate on the left ---
 		var ir := Rect2(Vector2(9.0, (size.y - ICON_W) * 0.5),
 			Vector2(ICON_W, ICON_W))
@@ -252,13 +251,9 @@ class _SkillCard extends Control:
 			if _locked:
 				mod.a = 0.5
 			draw_texture_rect(_tex, ir.grow(-4.0), false, mod)
-		# picked = sage ring around the icon (WyrdUi selection language)
-		if _picked:
-			draw_rect(ir, WyrdUi.SAGE.darkened(0.08), false, 2.5)
 		# --- name + focus tag ---
 		var tx := ir.end.x + 12.0
-		var mark := "✓ " if _picked else ""
-		draw_string(font, Vector2(tx, 22.0), mark + _name,
+		draw_string(font, Vector2(tx, 22.0), _name,
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 92.0, 16, ink)
 		if _locked:
 			# padlock glyph + the gate, right-aligned

@@ -28,12 +28,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 90
 	_game = get_tree().root.get_node_or_null("Game")
-	var bg := ColorRect.new()
-	bg.color = Color(0.0, 0.0, 0.0, 0.50)
-	bg.anchor_right = 1.0
-	bg.anchor_bottom = 1.0
-	bg.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(bg)
+	WyrdUi.make_backdrop(self, _close)   # spec 53 — one scrim + click-outside dismiss
 	_panel = Panel.new()
 	WyrdUi.style_panel(_panel)
 	_panel.anchor_left = 0.5
@@ -103,8 +98,11 @@ func _ready() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		get_node("/root/Game").modal_closed()
-		queue_free()
+		_close()
+
+func _close() -> void:
+	get_node("/root/Game").modal_closed()
+	queue_free()
 
 func _render() -> void:
 	if _game == null:

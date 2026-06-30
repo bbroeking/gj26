@@ -266,19 +266,15 @@ func _make_draught_slot(idx: int, total_w: int) -> HotbarSlot:
 	s.offset_bottom = -ROW_BOTTOM + SLOT_SIZE
 	s.mouse_filter = Control.MOUSE_FILTER_STOP
 	s.tooltip_text = "Draughts — drink to heal (Q). At full vigor it sips a buff."
-	# ♨ glyph (default font — IM Fell lacks U+2668).
-	var gl := Label.new()
-	gl.name = "Glyph"
-	gl.text = DRAUGHT_GLYPH
-	gl.add_theme_font_size_override("font_size", 30)
-	gl.add_theme_color_override("font_color", WyrdUi.INK)
-	gl.anchor_right = 1.0
-	gl.offset_top = 4
-	gl.offset_bottom = 44
-	gl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	gl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	s.add_child(gl)
-	s.move_child(gl, 0)
+	# Spec 53 — a painted-vector draught vial via WyrdUi.draw_ink_bottle, retiring
+	# the ♨ Unicode glyph that fell back to a system font among painted icons.
+	var vial := _DraughtIcon.new()
+	vial.name = "Glyph"
+	vial.anchor_right = 1.0
+	vial.anchor_bottom = 1.0
+	vial.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	s.add_child(vial)
+	s.move_child(vial, 0)
 	# "Q" key hint, top-left, GOLD so it reads as a different verb than 1-4.
 	var kb := Label.new()
 	kb.name = "Keybind"
@@ -332,3 +328,12 @@ func _refresh_draught(_arg = null) -> void:
 		c.text = "×%d" % n
 	# ratio 0 → no cooldown wedge; castable=false dims the carved face at 0.
 	_draught_slot.set_state(0.0, n > 0)
+
+
+# Spec 53 — the draught slot's icon: a ruby healing vial drawn through the kit's
+# ink-bottle primitive (glass body + gold edge + cork), so the fifth hotbar slot
+# carries crafted vector art like its four painted neighbours instead of a glyph.
+class _DraughtIcon extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_ink_bottle(self, size * 0.5 + Vector2(0.0, 3.0),
+			size.y * 0.60, Color(0.74, 0.26, 0.24))

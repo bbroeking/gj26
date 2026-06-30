@@ -27,10 +27,15 @@ was missing. Six systemic root causes, almost all in `WyrdUi`:
   crafting bench, craft list, and vendor onto Enamel tokens — killed the
   parchment wash, fixed the invisible cream-on-pale icon chips, tiered the
   recipe meta line, tokenized rarity. The whole UI now reads as one dark skin.
-- **Tier 3 — Shared components:** one `CardRow` + a modal scaffold factory →
-  rebuild enchant / loadout / quill / vendor from one component.
-- **Tier 4 — HUD finish:** content-hug chip height, run-meta icons + hierarchy,
-  painted draught icon, paper-doll with a figure.
+- **Tier 3 — Shared scaffolding (D24 ✓):** `make_backdrop` factory (one SCRIM +
+  click-outside dismiss) routed through all 5 modals; selection affordance
+  unified to the gold-ring-on-card language (loadout matched to the Charm
+  Table); DISABLED_INK/DIM tokens. (A full 4-panel `CardRow` rebuild was scoped
+  out as a larger/riskier refactor for modest post-Tier-1/2 payoff — deferred.)
+- **Tier 4 — HUD finish (D24 ✓):** content-hug quest chip (sized to the wrapped
+  objective via get_line_count — kills the dead-teal pool); a painted-vector
+  ruby draught vial (draw_ink_bottle) retiring the ♨ glyph. (Run-meta rich
+  hierarchy + paper-doll figure deferred — both want art/RichText, low ROI now.)
 
 ## Tier 1 — what shipped (D22)
 `wyrd_ui.gd`: `SIZE_DISPLAY/TITLE/SECTION/BODY/LABEL/CAPTION/MICRO` type scale;

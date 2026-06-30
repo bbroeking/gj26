@@ -59,6 +59,12 @@ const SPACE_4 := 16
 const SPACE_5 := 24
 const SPACE_6 := 32
 
+# Spec 53 Tier 3 — modal + disabled tokens (callers used to improvise these:
+# scrim alpha drifted 0.45–0.55, disabled inks were hardcoded per card).
+const SCRIM := Color(0.0, 0.0, 0.0, 0.55)        # one modal backdrop darkness
+const DISABLED_INK := Color(0.46, 0.52, 0.46)    # primary text on a washed card
+const DISABLED_DIM := Color(0.40, 0.46, 0.41)    # secondary text on a washed card
+
 # Spec 39 — pale carved wood frame (Midjourney, docs/ui-refs/mj_panel_wood.png).
 # Verified by tools/check_ninepatch.py (center std 9.6, margin spread 12%).
 const PANEL_TEX_PATH := "res://assets/ui/panel_frame_v2_9p.png"
@@ -121,6 +127,24 @@ static func style_keyhint(l: Label) -> void:
 	l.add_theme_color_override("font_color", INK)
 	l.add_theme_color_override("font_outline_color", Color(0.06, 0.05, 0.04))
 	l.add_theme_constant_override("outline_size", 4)
+
+# Spec 53 Tier 3 — the one modal backdrop. A full-rect SCRIM that dims the world
+# AND dismisses on a click outside the panel (clicking the scrim calls on_dismiss).
+# Every modal builds its scrim through here so the darkness + dismiss gesture are
+# identical, and click-outside-to-close stops being a per-panel afterthought.
+static func make_backdrop(host: Node, on_dismiss: Callable) -> ColorRect:
+	var bg := ColorRect.new()
+	bg.color = SCRIM
+	bg.anchor_right = 1.0
+	bg.anchor_bottom = 1.0
+	bg.mouse_filter = Control.MOUSE_FILTER_STOP
+	if on_dismiss.is_valid():
+		bg.gui_input.connect(func(e: InputEvent):
+			if e is InputEventMouseButton and e.pressed \
+					and e.button_index == MOUSE_BUTTON_LEFT:
+				on_dismiss.call())
+	host.add_child(bg)
+	return bg
 
 static func _set_font(c: Control, f: Font) -> void:
 	if f != null:
