@@ -1305,12 +1305,46 @@ func _resolve_model(base_path: String) -> String:
 var _gates: Array = []                  # arena-seal wall blocks
 var _boss_body: CharacterBody3D = null  # Wyrd — exit waystone waits on her death
 
+# Boss-approach vista — the boss den is the run's lit CLIMAX. A warm-amber
+# beacon pokes above the arena gates so the player sees the den glow through the
+# fog on approach (warm boss vs the cool exit beacon), and a strong warm light
+# charges the arena brighter than the dim run-up corridors (interest-curve
+# release). Only boss dens get it.
+func _build_boss_vista(cx: int, cy: int) -> void:
+	var pos := Vector3(cx + 0.5, 0.0, cy + 0.5)
+	var amber := Color(1.0, 0.66, 0.32)
+	var lamp := OmniLight3D.new()
+	lamp.position = pos + Vector3(0.0, 2.0, 0.0)
+	lamp.light_color = amber
+	lamp.light_energy = 2.6
+	lamp.omni_range = 14.0
+	lamp.omni_attenuation = 1.3
+	lamp.light_volumetric_fog_energy = 2.0
+	add_child(lamp)
+	var beam := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.10
+	cyl.bottom_radius = 0.42
+	cyl.height = 6.0
+	beam.mesh = cyl
+	beam.position = pos + Vector3(0.0, 3.2, 0.0)
+	var bmat := StandardMaterial3D.new()
+	bmat.albedo_color = Color(amber.r, amber.g, amber.b, 0.30)
+	bmat.emission_enabled = true
+	bmat.emission = amber
+	bmat.emission_energy_multiplier = 3.0
+	bmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	bmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	beam.material_override = bmat
+	add_child(beam)
+
 func _build_boss(boss_room, grid: Array, boss_kind: String = "hedgemother") -> void:
 	if boss_room == null:
 		return
 	var def: Dictionary = BOSS_KINDS.get(boss_kind, BOSS_KINDS["hedgemother"])
 	var cx: int = int(boss_room.x) + int(int(boss_room.w) / 2.0)
 	var cy: int = int(boss_room.y) + int(int(boss_room.h) / 2.0)
+	_build_boss_vista(cx, cy)
 	var model := _resolve_model(String(def.model))
 	var packed: PackedScene = load(model)
 	if packed == null:
