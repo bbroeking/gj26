@@ -631,6 +631,17 @@ func _apply_biome_env() -> void:
 		env.fog_sun_scatter = 0.25
 		env.fog_height = 2.5
 		env.fog_height_density = float(e.fog_density) * 1.4
+		# Volumetric fog — TRUE light shafts: the warm torches + Sun carve visible
+		# god rays through it (the most cinematic atmosphere upgrade, and the one
+		# genuinely non-cheap env feature). Moderate density stays readable;
+		# forward anisotropy makes the scattering directional (shafts, not haze);
+		# temporal reprojection denoises the froxels (the project has no TAA).
+		env.volumetric_fog_enabled = true
+		env.volumetric_fog_density = clampf(float(e.fog_density) * 2.2, 0.018, 0.055)
+		env.volumetric_fog_albedo = e.fog
+		env.volumetric_fog_anisotropy = 0.5
+		env.volumetric_fog_length = 48.0
+		env.volumetric_fog_temporal_reprojection_enabled = true
 		we.environment = env
 	var sun := get_node_or_null("Sun")
 	if sun != null:
@@ -1256,6 +1267,7 @@ func _add_torch_light(wx: float, wz: float) -> void:
 	lamp.light_energy = 2.2
 	lamp.omni_range = 6.0
 	lamp.omni_attenuation = 2.0
+	lamp.light_volumetric_fog_energy = 1.6      # the torch glows a warm pool in the fog
 	add_child(lamp)
 	# A small emissive flame core that crosses the glow HDR threshold (>1.0) so
 	# the fire itself blooms — selective glow makes only the lit things bloom.

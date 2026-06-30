@@ -50,6 +50,7 @@ transform = Transform3D(0.939693, -0.342020, 0, 0.171010, 0.469846, 0.866025, -0
 light_color = Color(1, 0.92, 0.85, 1)
 light_energy = 0.6
 light_angular_distance = 2.0
+light_volumetric_fog_energy = 1.0
 shadow_enabled = true
 shadow_normal_bias = 3.0
 
