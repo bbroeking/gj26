@@ -505,6 +505,7 @@ func _ready() -> void:
 	_read_chart_modifiers()
 	_build_grid(layout.grid)                # walls only now
 	_build_floor_mesh(layout.grid)          # one merged seamless floor surface
+	_build_bog_reflection(layout.grid)      # interior reflection for the wet bog pools
 	_scatter_ground_cover(layout.grid)
 	_scatter_seam_dressing(layout.grid)     # rubble softens the wall/floor seam
 	_scatter_decals(layout.grid)            # moss/grime patches break the floor + add story
@@ -945,6 +946,36 @@ func _scatter_decals(grid: Array) -> void:
 		d.distance_fade_begin = 22.0
 		d.distance_fade_length = 6.0
 		add_child(d)
+
+# Faked bog-water reflection — the procedural floor's wet pools are glossy
+# (roughness 0.12), but in an enclosed cave they'd mirror the bright procedural
+# SKY (wrong). One Interior ReflectionProbe over the play area gives the pools a
+# dark cavern reflection instead — cheap, art-directed, NOT global SSR. Bog only.
+func _build_bog_reflection(grid: Array) -> void:
+	if _biome_id != "bog":
+		return
+	var minx := 1.0e9
+	var maxx := -1.0e9
+	var minz := 1.0e9
+	var maxz := -1.0e9
+	for y in grid.size():
+		var row: Array = grid[y]
+		for x in row.size():
+			if String(row[x]) == "floor":
+				minx = minf(minx, float(x))
+				maxx = maxf(maxx, float(x))
+				minz = minf(minz, float(y))
+				maxz = maxf(maxz, float(y))
+	if maxx < minx:
+		return
+	var rp := ReflectionProbe.new()
+	rp.position = Vector3((minx + maxx) * 0.5 + 0.5, 2.5, (minz + maxz) * 0.5 + 0.5)
+	rp.size = Vector3((maxx - minx) + 8.0, 8.0, (maxz - minz) + 8.0)
+	rp.interior = true                                  # don't blend the sky into a cave
+	rp.update_mode = ReflectionProbe.UPDATE_ONCE        # bake once at load
+	rp.ambient_mode = ReflectionProbe.AMBIENT_DISABLED  # reflection only; ambient is ours
+	rp.max_distance = 64.0
+	add_child(rp)
 
 func _build_grid(grid: Array) -> void:
 	for y in grid.size():
