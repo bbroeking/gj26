@@ -54,7 +54,7 @@ func _ready() -> void:
 	_hp_globe.liquid = Color(0.70, 0.18, 0.14)
 	_place_globe(_hp_globe, -258.0)
 	_focus_globe = GlobeGauge.new()
-	_focus_globe.liquid = Color(0.20, 0.42, 0.62)
+	_focus_globe.liquid = WyrdUi.FOCUS   # spec 53 — on-palette teal-cyan, not mana-blue
 	_place_globe(_focus_globe, 258.0)
 	_hp_globe.update_to(1.0, "30/30", "")
 	_focus_globe.update_to(1.0, "50/50", "")
@@ -323,10 +323,7 @@ func _build_action_bar() -> void:
 		# Key-hint, top-left (neutral cream + dark outline, like the hotbar).
 		var kb := Label.new()
 		kb.text = spec[1]
-		kb.add_theme_font_size_override("font_size", 12)
-		kb.add_theme_color_override("font_color", WyrdUi.INK)
-		kb.add_theme_color_override("font_outline_color", Color(0.06, 0.05, 0.04))
-		kb.add_theme_constant_override("outline_size", 4)
+		WyrdUi.style_keyhint(kb)   # spec 53 — same badge as the hotbar
 		kb.position = Vector2(5, 2)
 		kb.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		b.add_child(kb)
@@ -741,17 +738,12 @@ class QuestScrollArt extends Control:
 	func _draw() -> void:
 		if size.x < 2.0 or size.y < 2.0:
 			return
-		# Faint parchment grain across the inner face (inset off the wood frame).
+		# Spec 53 — editorial restraint for the compact chip: the flourish rule
+		# crossed the objective baseline and the wax seal fought the corners, so
+		# both are dropped. A whisper of grain is the only dressing; the "✦ Quest"
+		# eyebrow carries the mark.
 		var inner := Rect2(Vector2(18, 16), size - Vector2(36, 32))
 		WyrdUi.draw_parchment_grain(self, inner, 23)
-		# Flourish centred under the QUEST header (header sits ~y 11–28).
-		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 30.0), 120.0)
-		# A small wax seal up top-left, clear of the wood frame — the scroll's
-		# signature read (same motif as WyrdUi.draw_scroll's seal).
-		var sc := Vector2(28.0, 24.0)
-		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
-		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
-		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
 
 
 # Spec 52 — a top-down compass arrow that points at the run's descent target.

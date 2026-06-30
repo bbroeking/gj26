@@ -27,6 +27,38 @@ const PARCH_DIM := INK_MID
 const GREEN := SAGE
 const RUST := TERRACOTTA
 
+# Spec 53 (taste pass) — palette-correct semantic colors that callers used to
+# improvise off-palette (Focus was stock mana-blue; "magic" rarity was a cold
+# SaaS blue). Focus is a luminous teal-cyan, the cool twin to HP's warm ember.
+const FOCUS := Color(0.34, 0.74, 0.78)      # luminous teal-cyan — Focus/mana
+const NUMERIC := Color(0.71, 0.83, 0.74)    # cool cream — costs / counts on dark
+# One rarity ramp for the whole game (pack, loot beam, vendor, tooltips).
+const RARITY := {
+	"normal": INK_MID,
+	"magic": Color(0.45, 0.72, 0.82),       # sky-teal, in-palette (not corporate blue)
+	"rare": GOLD,
+	"unique": TERRACOTTA,
+}
+
+# Spec 53 — TYPE SCALE. Seven named sizes with intent; every call site routes
+# through these instead of reaching for a raw 10-24 literal. Reserved hero sizes
+# (40/56/72) stay inline for full-screen moments only.
+const SIZE_DISPLAY := 30      # screen / level-up titles
+const SIZE_TITLE := 22        # panel mastheads
+const SIZE_SECTION := 17      # section headers
+const SIZE_BODY := 14         # default body copy
+const SIZE_LABEL := 13        # labels, costs, numbers
+const SIZE_CAPTION := 12      # sub-lines, captions
+const SIZE_MICRO := 11        # eyebrows, key-hints
+
+# Spec 53 — SPACING SCALE. A 4/8 rhythm so edges align across panels.
+const SPACE_1 := 4
+const SPACE_2 := 8
+const SPACE_3 := 12
+const SPACE_4 := 16
+const SPACE_5 := 24
+const SPACE_6 := 32
+
 # Spec 39 — pale carved wood frame (Midjourney, docs/ui-refs/mj_panel_wood.png).
 # Verified by tools/check_ninepatch.py (center std 9.6, margin spread 12%).
 const PANEL_TEX_PATH := "res://assets/ui/panel_frame_v2_9p.png"
@@ -72,6 +104,23 @@ static func font_header() -> Font:
 
 static func font_hand() -> Font:
 	return load(FONT_HAND_PATH) if ResourceLoader.exists(FONT_HAND_PATH) else null
+
+# Spec 53 — the single highest-leverage taste fix: make IM Fell English the
+# project default so every Label / draw_string that doesn't override its font
+# stops falling back to the engine's Open-Sans. Called once at boot (Game._ready).
+static func apply_defaults() -> void:
+	var f := font_body()
+	if f != null:
+		ThemeDB.fallback_font = f
+		ThemeDB.fallback_font_size = SIZE_BODY
+
+# Spec 53 — ONE keybind-badge treatment (was terracotta / gold / ink across the
+# three slot families). Cream micro-caps with a dark halo, reads on any plate.
+static func style_keyhint(l: Label) -> void:
+	l.add_theme_font_size_override("font_size", SIZE_MICRO)
+	l.add_theme_color_override("font_color", INK)
+	l.add_theme_color_override("font_outline_color", Color(0.06, 0.05, 0.04))
+	l.add_theme_constant_override("outline_size", 4)
 
 static func _set_font(c: Control, f: Font) -> void:
 	if f != null:
@@ -254,22 +303,22 @@ static func mark_selected(b: Button, selected: bool) -> void:
 
 static func style_title(l: Label) -> void:
 	_set_font(l, font_header())
-	l.add_theme_font_size_override("font_size", 30)
+	l.add_theme_font_size_override("font_size", SIZE_DISPLAY)
 	l.add_theme_color_override("font_color", GOLD)
 
 static func style_section(l: Label) -> void:
 	_set_font(l, font_header())
-	l.add_theme_font_size_override("font_size", 17)
+	l.add_theme_font_size_override("font_size", SIZE_SECTION)
 	l.add_theme_color_override("font_color", GOLD)
 
-static func style_body(l: Label, size: int = 13) -> void:
-	# Clean default font for body text (usability pass) — IM Fell stays on
-	# titles and section headers only.
-	l.add_theme_font_size_override("font_size", size + 1)
+static func style_body(l: Label, size: int = SIZE_BODY) -> void:
+	# Body copy inherits the project default face (IM Fell, set by apply_defaults)
+	# — spec 53 removed the silent +1 fudge so the token IS the rendered size.
+	l.add_theme_font_size_override("font_size", size)
 	l.add_theme_color_override("font_color", INK)
 
-static func style_dim(l: Label, size: int = 12) -> void:
-	l.add_theme_font_size_override("font_size", size + 1)
+static func style_dim(l: Label, size: int = SIZE_LABEL) -> void:
+	l.add_theme_font_size_override("font_size", size)
 	l.add_theme_color_override("font_color", INK_MID)
 
 # ---- spec 44: drawn-detail primitives (the UI detail pass) ----

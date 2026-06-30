@@ -265,6 +265,9 @@ const TUTORIAL_OBJECTIVES := [
 var tutorial_step := 0
 
 func _ready() -> void:
+	# Spec 53 — make IM Fell English the project default face before any UI builds,
+	# so unstyled Labels stop rendering the engine's Open-Sans.
+	WyrdUi.apply_defaults()
 	# Inventory/Equipment classes come from the existing spec-27 scripts.
 	inventory = Inventory.new()
 	var EquipmentScript = load("res://scripts/equipment.gd")

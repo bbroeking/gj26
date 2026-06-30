@@ -206,14 +206,11 @@ func _make_slot(i: int, total_w: int, label: String, cost: int) -> Control:
 	s.offset_right = x + SLOT_SIZE
 	s.offset_top = -ROW_BOTTOM
 	s.offset_bottom = -ROW_BOTTOM + SLOT_SIZE
-	# Keybind label (top-left).
+	# Keybind label (top-left) — spec 53: one shared badge treatment.
 	var kb := Label.new()
 	kb.name = "Keybind"
 	kb.text = str(i + 1)
-	kb.add_theme_font_size_override("font_size", 14)
-	kb.add_theme_color_override("font_color", WyrdUi.TERRACOTTA)
-	kb.add_theme_color_override("font_outline_color", Color(0.97, 0.93, 0.82))
-	kb.add_theme_constant_override("outline_size", 4)
+	WyrdUi.style_keyhint(kb)
 	kb.position = Vector2(6, 3)
 	kb.size = Vector2(20, 18)
 	s.add_child(kb)
@@ -237,9 +234,9 @@ func _make_slot(i: int, total_w: int, label: String, cost: int) -> Control:
 		var c := Label.new()
 		c.name = "Cost"
 		c.text = "%d" % cost
-		c.add_theme_font_size_override("font_size", 13)
-		c.add_theme_color_override("font_color", Color(0.32, 0.44, 0.50))
-		c.add_theme_color_override("font_outline_color", Color(0.97, 0.93, 0.82))
+		c.add_theme_font_size_override("font_size", WyrdUi.SIZE_LABEL)
+		c.add_theme_color_override("font_color", WyrdUi.NUMERIC)
+		c.add_theme_color_override("font_outline_color", Color(0.06, 0.05, 0.04))
 		c.add_theme_constant_override("outline_size", 4)
 		c.anchor_left = 1.0
 		c.anchor_right = 1.0
@@ -286,19 +283,16 @@ func _make_draught_slot(idx: int, total_w: int) -> HotbarSlot:
 	var kb := Label.new()
 	kb.name = "Keybind"
 	kb.text = "Q"
-	kb.add_theme_font_size_override("font_size", 14)
-	kb.add_theme_color_override("font_color", WyrdUi.GOLD)
-	kb.add_theme_color_override("font_outline_color", Color(0.06, 0.05, 0.04))
-	kb.add_theme_constant_override("outline_size", 4)
+	WyrdUi.style_keyhint(kb)   # spec 53 — same badge as the skill slots
 	kb.position = Vector2(6, 3)
 	kb.size = Vector2(20, 18)
 	s.add_child(kb)
 	# Count, bottom-right (mirrors the Cost label).
 	var c := Label.new()
 	c.name = "Count"
-	c.add_theme_font_size_override("font_size", 13)
-	c.add_theme_color_override("font_color", Color(0.32, 0.44, 0.50))
-	c.add_theme_color_override("font_outline_color", Color(0.97, 0.93, 0.82))
+	c.add_theme_font_size_override("font_size", WyrdUi.SIZE_LABEL)
+	c.add_theme_color_override("font_color", WyrdUi.NUMERIC)
+	c.add_theme_color_override("font_outline_color", Color(0.06, 0.05, 0.04))
 	c.add_theme_constant_override("outline_size", 4)
 	c.anchor_left = 1.0
 	c.anchor_right = 1.0
