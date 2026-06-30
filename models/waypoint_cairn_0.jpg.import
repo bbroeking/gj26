@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dbpw3uluetw8l"
-path="res://.godot/imported/prop_market_stall_v1_0.jpg-aa443545a73b443ece94ffccb348a324.ctex"
+uid="uid://cova6owh5e1xo"
+path="res://.godot/imported/waypoint_cairn_0.jpg-b260c7cb9b2f7ba99ddf58c6dc8482e7.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "0f0f794acfd7e7a5ef5e82994ac1456b"
+"md5": "afc0989ce48d6fa58e5ef41d64d3d590"
 }
 
 [deps]
 
-source_file="res://models/prop_market_stall_v1_0.jpg"
-dest_files=["res://.godot/imported/prop_market_stall_v1_0.jpg-aa443545a73b443ece94ffccb348a324.ctex"]
+source_file="res://models/waypoint_cairn_0.jpg"
+dest_files=["res://.godot/imported/waypoint_cairn_0.jpg-b260c7cb9b2f7ba99ddf58c6dc8482e7.ctex"]
 
 [params]
 

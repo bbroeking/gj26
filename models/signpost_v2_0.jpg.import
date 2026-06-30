@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dbpw3uluetw8l"
-path="res://.godot/imported/prop_market_stall_v1_0.jpg-aa443545a73b443ece94ffccb348a324.ctex"
+uid="uid://d1i0r1lk8p5ob"
+path="res://.godot/imported/signpost_v2_0.jpg-2fad55d8815313f01888cec526dd86ad.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "0f0f794acfd7e7a5ef5e82994ac1456b"
+"md5": "40ba573336bce9a414c9911e9c9c83cf"
 }
 
 [deps]
 
-source_file="res://models/prop_market_stall_v1_0.jpg"
-dest_files=["res://.godot/imported/prop_market_stall_v1_0.jpg-aa443545a73b443ece94ffccb348a324.ctex"]
+source_file="res://models/signpost_v2_0.jpg"
+dest_files=["res://.godot/imported/signpost_v2_0.jpg-2fad55d8815313f01888cec526dd86ad.ctex"]
 
 [params]
 

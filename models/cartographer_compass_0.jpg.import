@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dbpw3uluetw8l"
-path="res://.godot/imported/prop_market_stall_v1_0.jpg-aa443545a73b443ece94ffccb348a324.ctex"
+uid="uid://ck0jnqa53hph6"
+path="res://.godot/imported/cartographer_compass_0.jpg-ef0e0c97ff5010f955a66efc071668be.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "0f0f794acfd7e7a5ef5e82994ac1456b"
+"md5": "24aaa67021682c2f13df54514a33c201"
 }
 
 [deps]
 
-source_file="res://models/prop_market_stall_v1_0.jpg"
-dest_files=["res://.godot/imported/prop_market_stall_v1_0.jpg-aa443545a73b443ece94ffccb348a324.ctex"]
+source_file="res://models/cartographer_compass_0.jpg"
+dest_files=["res://.godot/imported/cartographer_compass_0.jpg-ef0e0c97ff5010f955a66efc071668be.ctex"]
 
 [params]
 

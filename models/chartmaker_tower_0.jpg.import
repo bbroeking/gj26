@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dbpw3uluetw8l"
-path="res://.godot/imported/prop_market_stall_v1_0.jpg-aa443545a73b443ece94ffccb348a324.ctex"
+uid="uid://cpiyvnmgsasay"
+path="res://.godot/imported/chartmaker_tower_0.jpg-1973a1844c0c452a05cf5747be45e3ce.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "0f0f794acfd7e7a5ef5e82994ac1456b"
+"md5": "7439d935e8c9ddae5a50e547b6dadbcc"
 }
 
 [deps]
 
-source_file="res://models/prop_market_stall_v1_0.jpg"
-dest_files=["res://.godot/imported/prop_market_stall_v1_0.jpg-aa443545a73b443ece94ffccb348a324.ctex"]
+source_file="res://models/chartmaker_tower_0.jpg"
+dest_files=["res://.godot/imported/chartmaker_tower_0.jpg-1973a1844c0c452a05cf5747be45e3ce.ctex"]
 
 [params]
 
