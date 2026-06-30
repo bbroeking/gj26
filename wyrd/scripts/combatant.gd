@@ -37,9 +37,9 @@ const ATTACK_RANGE := 1.8
 const RANGED_RANGE := 8.0            # Phase 3 — ranged enemies fire from afar
 const RANGED_MIN := 4.0              # ...but keep this standoff — point-blank orbs are undodgeable
 const ENEMY_DAMAGE := 5
-const ATTACK_COOLDOWN := 1.5
+const ATTACK_COOLDOWN := 1.25  # playtest: enemies fire a little faster
 const TELEGRAPH_SEC := 0.35
-const MOVE_SPEED := 1.8        # dialled down with the player (spec 23 tuning)
+const MOVE_SPEED := 2.2        # playtest: a little quicker on their feet (still well under player run 4.0)
 const CHASE_REPATH := 0.25     # re-target the nav path 4×/sec
 
 signal died
@@ -67,7 +67,7 @@ var depth := 0
 var burst_on_death := false
 # Phase 3 — ranged attack (a ghost lobs slow spectral orbs you strafe around).
 var is_ranged := false
-var proj_speed := 9.0
+var proj_speed := 10.5   # playtest: orbs travel a little faster (still dodgeable; player dash 11.0)
 var proj_damage := 5
 var _aim_dir := Vector3.FORWARD
 var _ranged_tele: Node3D = null
