@@ -59,11 +59,20 @@ biggest single look upgrade. See `docs/specs/50`.
 - wall-seam rubble dressing (MultiMesh piled on wall-adjacent tiles)
 - per-biome moss/grime/frost decal patches biased into corners
 
-## Pending (ranked, from the research synthesis)
-Medium (remaining): custom 3-band toon ramp shader for WALLS (largely subsumed
-by the floor shader's approach — could extend it).
-Larger: volumetric god rays from torches; per-biome 3D LUT grading; depth-scaled
-interest curve + boss-approach vista; faked bog-water reflection.
+**Batch 8 — larger tier** (commits `8ab113d`, `4b3d28b`, `5fe98b1`, `5981796`):
+- volumetric fog + torch/Sun god rays (per-biome density/albedo, light shafts)
+- per-biome post-tonemap color grade (saturation/contrast re-pops the cels)
+- boss-approach vista (warm-amber beacon + climax light at the boss den)
+- faked bog-water reflection (interior ReflectionProbe for the glossy pools)
+
+## Pending (genuinely remaining)
+- Authored Texture3D LUTs per biome (art-time; the adjustment grade + per-biome
+  lighting already carry most of the mood).
+- Depth-scaled per-room torch gradient + boss approach-corridor bias (a
+  deliberate level-design change to dungeon_gen).
+- Custom 3-band toon ramp shader extended to WALLS.
+All low-priority / deliberate; the research's quick-win + medium + larger tiers
+are implemented.
 Larger: volumetric fog + god rays + boss-altar FogVolume (quality-gated);
 per-biome 3D LUT grading; depth-scaled interest curve + boss approach vista;
 faked bog-water reflection (single surface, not global SSR).
