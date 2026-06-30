@@ -188,14 +188,14 @@ const BIOME_ENV := {
 		"fog_density": 0.024, "glow": 0.85, "sun": Color(0.76, 0.88, 0.80),
 		"mote_color": Color(0.50, 0.88, 0.62), "mote_amount": 44,
 		"mote_gravity": -0.02, "mote_size": 0.09, "mote_emission": 1.5,
-		"vignette": 0.34,
+		"vignette": 0.34, "sat": 1.18, "contrast": 1.06,
 	},
 	"summit": {
 		"ambient": Color(0.42, 0.50, 0.64), "fog": Color(0.80, 0.86, 0.94),
 		"fog_density": 0.020, "glow": 0.9, "sun": Color(0.90, 0.95, 1.0),
 		"mote_color": Color(0.95, 0.97, 1.0), "mote_amount": 120,
 		"mote_gravity": -0.30, "mote_size": 0.06, "mote_emission": 0.0,
-		"vignette": 0.18,
+		"vignette": 0.18, "sat": 1.06, "contrast": 1.04,
 	},
 }
 
@@ -642,6 +642,13 @@ func _apply_biome_env() -> void:
 		env.volumetric_fog_anisotropy = 0.5
 		env.volumetric_fog_length = 48.0
 		env.volumetric_fog_temporal_reprojection_enabled = true
+		# Color grade — a gentle saturation+contrast lift applied AFTER tonemap, so
+		# it re-pops the cels Filmic mutes WITHOUT disturbing the glow HDR threshold
+		# (Godot adjustments run post-tonemap). Kept gentle (sat ≤ 1.2) so it
+		# doesn't reintroduce the wash. Per-biome where the mood wants it.
+		env.adjustment_enabled = true
+		env.adjustment_saturation = float(e.get("sat", 1.12))
+		env.adjustment_contrast = float(e.get("contrast", 1.05))
 		we.environment = env
 	var sun := get_node_or_null("Sun")
 	if sun != null:
