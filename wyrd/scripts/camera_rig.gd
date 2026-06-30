@@ -34,7 +34,7 @@ const PITCH_DEFAULT := 38.0        # FATE's low 3/4 — silhouettes, not rooftop
 const ZOOM_MIN := 8.0
 const ZOOM_MAX := 22.0
 const ZOOM_STEP := 2.0
-const ZOOM_DEFAULT := 14.0
+const ZOOM_DEFAULT := 16.5         # playtest: pulled back so zones feel less cramped
 const ZOOM_LERP := 10.0
 const TARGET_HEIGHT := 1.0         # look at the player's mid-height
 # ============================================================

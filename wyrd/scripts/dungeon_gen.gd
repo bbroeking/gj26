@@ -21,10 +21,10 @@ const GatherDefs = preload("res://data/gather.gd")
 # Spec 29 — bump grid + rooms together so several rooms fit in the camera
 #           frustum (Diablo pattern: the frame shows multiple rooms, not one).
 const GRID := 48
-const ROOM_MIN := 8
+const ROOM_MIN := 9                   # playtest: a touch larger so rooms breathe
 const ROOM_MAX := 14
 const ROOM_TRIES := 90
-const CORRIDOR_HALF := 1              # corridors carve 3 tiles wide (centre ±1)
+const CORRIDOR_HALF := 2              # corridors carve 5 tiles wide (centre ±2) — less funneled
 const DECOR_KINDS := ["bones", "torch_wall", "bookshelf"]
 
 const LOOP_EDGE_FRACTION := 0.32      # non-MST Delaunay edges re-added —

@@ -1010,9 +1010,10 @@ func _build_floor_mesh(grid: Array) -> void:
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF   # floor receives, doesn't cast
 	add_child(mi)
 
-# Walls (spec 24) — lowered to 2.5 m so the camera reads over them, and
-# built from the modular crypt wall GLBs instead of a flat box.
-const WALL_HEIGHT := 2.5
+# Walls (spec 24) — raised to 3.6 m so zones read as enclosed rooms, not a
+# low-walled topographic maze (playtest: "zones feel tight"). Camera-occlusion
+# fade (group "wall") keeps the near walls from blocking the view.
+const WALL_HEIGHT := 3.6
 
 const WALL_GLB := {
 	"straight":    preload("res://models/dungeon_crypt_wall-straight_v1.glb"),
