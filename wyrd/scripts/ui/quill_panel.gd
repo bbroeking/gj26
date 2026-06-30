@@ -189,7 +189,7 @@ class _QuillCard extends Control:
 		# icon plate
 		var ir := Rect2(Vector2(9.0, (size.y - ICON_W) * 0.5),
 			Vector2(ICON_W, ICON_W))
-		WyrdUi.draw_well(self, ir, Color(0.95, 0.91, 0.80))
+		WyrdUi.draw_well(self, ir)
 		var font := get_theme_default_font()
 		if _glyph != "":
 			var glyph_col: Color = WyrdUi.INK_MID if _locked else WyrdUi.INK

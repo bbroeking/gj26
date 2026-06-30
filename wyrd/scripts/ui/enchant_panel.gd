@@ -296,7 +296,7 @@ class _Card extends Control:
 		if _tex != null:
 			var iw := 40.0
 			var ir := Rect2(Vector2(8.0, (size.y - iw) * 0.5), Vector2(iw, iw))
-			WyrdUi.draw_well(self, ir, Color(0.95, 0.91, 0.80))
+			WyrdUi.draw_well(self, ir)
 			draw_texture_rect(_tex, ir.grow(-3.0), false,
 				Color.WHITE if _enabled else Color(1.0, 1.0, 1.0, 0.5))
 			tx = ir.end.x + 10.0

@@ -115,7 +115,7 @@ func _refresh_mute() -> void:
 	var muted: bool = game != null and bool(game.get("muted"))
 	_mute_lbl.text = "MUTED · F10" if muted else "F10 mutes"
 	_mute_lbl.add_theme_color_override("font_color",
-		WyrdUi.TERRACOTTA if muted else Color(0.36, 0.29, 0.22, 0.8))
+		WyrdUi.TERRACOTTA if muted else Color(0.62, 0.69, 0.61, 0.8))
 
 # Draught counter under the meters — what Q will drink.
 var _draught_lbl: Label = null
@@ -166,6 +166,7 @@ func _build_wyrd_overlay() -> void:
 		sb.texture_margin_right = WyrdUi.BUTTON_MARGIN
 		sb.texture_margin_top = WyrdUi.BUTTON_MARGIN
 		sb.texture_margin_bottom = WyrdUi.BUTTON_MARGIN
+		sb.modulate_color = WyrdUi.PANEL_MOD   # spec 51 — darken to match the skin
 		_quest_plate.add_theme_stylebox_override("panel", sb)
 	else:
 		_quest_plate.add_theme_stylebox_override("panel", WyrdUi.chip_stylebox())
@@ -190,7 +191,7 @@ func _build_wyrd_overlay() -> void:
 	if hf != null:
 		qhdr.add_theme_font_override("font", hf)
 	qhdr.add_theme_font_size_override("font_size", 14)
-	qhdr.add_theme_color_override("font_color", WyrdUi.TERRACOTTA)
+	qhdr.add_theme_color_override("font_color", WyrdUi.GOLD)
 	qhdr.anchor_right = 1.0
 	qhdr.offset_top = 11
 	qhdr.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -219,8 +220,7 @@ func _build_wyrd_overlay() -> void:
 	_quest_plate.add_child(_quest_sub)
 	_quest_progress = Label.new()
 	_quest_progress.add_theme_font_size_override("font_size", 14)
-	_quest_progress.add_theme_color_override("font_color",
-		WyrdUi.SAGE.darkened(0.2))
+	_quest_progress.add_theme_color_override("font_color", WyrdUi.SAGE)
 	_quest_progress.anchor_right = 1.0
 	_quest_progress.anchor_top = 1.0
 	_quest_progress.anchor_bottom = 1.0
@@ -402,9 +402,9 @@ func _build_coop_hud() -> void:
 	# PanelContainer auto-sizes to the VBox; style it with a parchment box
 	# (WyrdUi.style_panel only accepts a plain Panel).
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.93, 0.88, 0.74, 0.85)
+	sb.bg_color = Color(0.075, 0.231, 0.212, 0.92)
 	sb.set_border_width_all(2)
-	sb.border_color = Color(0.42, 0.34, 0.25)
+	sb.border_color = WyrdUi.GOLD
 	sb.set_corner_radius_all(4)
 	sb.set_content_margin_all(8)
 	_party_panel.add_theme_stylebox_override("panel", sb)
@@ -593,7 +593,7 @@ class GlobeGauge extends Control:
 	var status := ""
 	const R := 40.0
 
-	const RING_WOOD := Color(0.85, 0.74, 0.52)   # pale carved honey
+	const RING_WOOD := Color(0.890, 0.722, 0.361)   # gilded carved frame
 	const RING_EDGE := Color(0.26, 0.19, 0.13)
 	var _t := 0.0                                # animation clock (low-warn pulse)
 
@@ -619,7 +619,7 @@ class GlobeGauge extends Control:
 		for i in 4:
 			var a := PI * 0.25 + float(i) * PI * 0.5
 			var np := c + Vector2(cos(a), sin(a)) * (R + 8.0)
-			WyrdUi.draw_round_well(self, np, 8.0, Color(0.93, 0.88, 0.74))
+			WyrdUi.draw_round_well(self, np, 8.0, WyrdUi.KIT_PLATE)
 		# --- glass orb ---
 		draw_circle(c, R, Color(0.12, 0.10, 0.09))
 		if frac > 0.003:

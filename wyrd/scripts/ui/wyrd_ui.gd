@@ -8,12 +8,18 @@ extends RefCounted
 # go missing everything degrades to the old flat-ink look.
 
 # UI bible palette (docs/UI_BIBLE.md).
-const INK := Color("3a2c20")             # sepia ink — body text on parchment
-const INK_MID := Color("6b574a")         # secondary / hints
-const TERRACOTTA := Color("b14c33")      # titles / accents / danger
-const SAGE := Color("6f8a3f")            # good twin / fresh
-const GOLD := Color("b58637")            # burnished gold highlights
-const CREAM := Color("f3e6cb")
+# Spec 51 — DARK skin (was bright parchment, which floated over the dark dungeon).
+# Light-on-dark: INK is now warm CREAM body text; panels darken via PANEL_MOD/
+# BTN_MOD modulating the carved-wood ninepatch into deep enamel-teal, with
+# leaf-gold (GOLD) filigree on edges/titles. (Direction: Storybook Enamel Night,
+# spec 51 — picked over Dark Carved Walnut. Replaces the pale-parchment HUD that
+# floated over the dark dungeon.)
+const INK := Color(0.937, 0.906, 0.812)  # warm cream — body text on dark panels
+const INK_MID := Color(0.624, 0.690, 0.612)  # sage-grey — secondary / hints
+const TERRACOTTA := Color(0.835, 0.416, 0.271)  # ember — titles / accents / danger
+const SAGE := Color(0.651, 0.761, 0.392)  # good twin / fresh
+const GOLD := Color(0.890, 0.722, 0.361)  # leaf-gold filigree
+const CREAM := Color(0.953, 0.902, 0.796)
 
 # Back-compat aliases (earlier panels reference these names).
 const PARCHMENT := INK                   # body text color ON parchment
@@ -39,8 +45,18 @@ static func panel_stylebox() -> StyleBoxTexture:
 	sb.texture_margin_top = PANEL_MARGIN_T
 	sb.texture_margin_right = PANEL_MARGIN_R
 	sb.texture_margin_bottom = PANEL_MARGIN_B
+	sb.modulate_color = PANEL_MOD   # spec 51 — darken the pale wood into the skin
 	return sb
 const BUTTON_MARGIN := 18.0
+
+# Spec 51 — modulate tints that recolour the carved-wood ninepatch (panels +
+# buttons) into the dark skin, no new art. Swap these to change skin direction.
+const PANEL_MOD := Color(0.22, 0.49, 0.47)          # enamel-teal frame tint
+const BTN_MOD := Color(0.22, 0.49, 0.47)
+const BTN_MOD_HOVER := Color(0.30, 0.64, 0.60)
+const BTN_MOD_PRESS := Color(0.15, 0.36, 0.34)
+const BTN_MOD_DISABLED := Color(0.20, 0.34, 0.32, 0.5)
+const SELECT_MOD := Color(0.34, 0.64, 0.42)         # selected-row glow
 
 # UI bible fonts: IM Fell English (body), IM Fell English SC (headers),
 # Caveat (hand-jotted notes — toasts, costs, margin scribbles).
@@ -74,9 +90,9 @@ static func style_hud_label(l: Label, size: int = 16,
 # rounded watercolor fill + an ink label. Returns {root, fill, label};
 # drive it with set_meter(parts, ratio).
 # Spec 41 — kit tokens (the Claude Design 'Wayfinder UI Kit' page).
-const KIT_PLATE := Color(0.93, 0.88, 0.74)   # parchment plate
-const KIT_WELL := Color(0.80, 0.72, 0.58)    # recessed well / trough
-const KIT_EDGE := Color(0.26, 0.19, 0.13)    # ink edge
+const KIT_PLATE := Color(0.075, 0.231, 0.212)  # deep enamel face
+const KIT_WELL := Color(0.043, 0.149, 0.137)   # recessed groove / trough
+const KIT_EDGE := Color(0.890, 0.722, 0.361)   # gold filigree edge
 
 # Parchment chip — the kit's smallest container (toasts, hints, counters).
 static func chip_stylebox(bg := KIT_PLATE) -> StyleBoxFlat:
@@ -104,14 +120,14 @@ static func style_chip(l: Label, size: int = 14) -> void:
 static func style_kit_button(b: Button) -> void:
 	b.add_theme_font_size_override("font_size", 15)
 	b.add_theme_color_override("font_color", INK)
-	b.add_theme_color_override("font_hover_color", TERRACOTTA)
-	b.add_theme_color_override("font_pressed_color", TERRACOTTA)
+	b.add_theme_color_override("font_hover_color", GOLD)
+	b.add_theme_color_override("font_pressed_color", GOLD)
 	# Use the painted wood button plate so kit buttons read as carved objects
 	# (HUD action bar + craft/vendor/loadout rows), not flat parchment chips.
 	if ResourceLoader.exists(BUTTON_TEX_PATH):
-		b.add_theme_stylebox_override("normal", _btn_tex(Color.WHITE))
-		b.add_theme_stylebox_override("hover", _btn_tex(Color(1.06, 1.03, 0.95)))
-		b.add_theme_stylebox_override("pressed", _btn_tex(Color(0.88, 0.84, 0.76)))
+		b.add_theme_stylebox_override("normal", _btn_tex(BTN_MOD))
+		b.add_theme_stylebox_override("hover", _btn_tex(BTN_MOD_HOVER))
+		b.add_theme_stylebox_override("pressed", _btn_tex(BTN_MOD_PRESS))
 	else:
 		b.add_theme_stylebox_override("normal", chip_stylebox())
 		b.add_theme_stylebox_override("hover", chip_stylebox(KIT_PLATE.lightened(0.06)))
@@ -141,6 +157,8 @@ static func make_meter(width: float, height: float, fill_color: Color) -> Dictio
 	_set_font(label, font_header())
 	label.add_theme_font_size_override("font_size", int(height * 0.52))
 	label.add_theme_color_override("font_color", INK)
+	label.add_theme_constant_override("outline_size", 4)
+	label.add_theme_color_override("font_outline_color", KIT_WELL)
 	label.anchor_right = 1.0
 	label.anchor_bottom = 1.0
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -160,8 +178,8 @@ static func style_panel(p: Panel) -> void:
 		p.add_theme_stylebox_override("panel", sb)
 		return
 	var fb := StyleBoxFlat.new()
-	fb.bg_color = Color(0.135, 0.110, 0.085, 0.97)
-	fb.border_color = Color(0.58, 0.47, 0.30)
+	fb.bg_color = Color(0.075, 0.231, 0.212, 0.97)
+	fb.border_color = GOLD
 	fb.set_border_width_all(2)
 	fb.set_corner_radius_all(8)
 	fb.set_content_margin_all(10)
@@ -171,14 +189,14 @@ static func style_button(b: Button) -> void:
 	# Buttons are read, not admired — clean default font (usability pass).
 	b.add_theme_font_size_override("font_size", 15)
 	b.add_theme_color_override("font_color", INK)
-	b.add_theme_color_override("font_hover_color", TERRACOTTA)
-	b.add_theme_color_override("font_pressed_color", TERRACOTTA)
+	b.add_theme_color_override("font_hover_color", GOLD)
+	b.add_theme_color_override("font_pressed_color", GOLD)
 	b.add_theme_color_override("font_disabled_color", Color(INK_MID, 0.55))
 	if ResourceLoader.exists(BUTTON_TEX_PATH):
-		b.add_theme_stylebox_override("normal", _btn_tex(Color.WHITE))
-		b.add_theme_stylebox_override("hover", _btn_tex(Color(1.05, 1.02, 0.94)))
-		b.add_theme_stylebox_override("pressed", _btn_tex(Color(0.90, 0.86, 0.78)))
-		b.add_theme_stylebox_override("disabled", _btn_tex(Color(1.0, 1.0, 1.0, 0.45)))
+		b.add_theme_stylebox_override("normal", _btn_tex(BTN_MOD))
+		b.add_theme_stylebox_override("hover", _btn_tex(BTN_MOD_HOVER))
+		b.add_theme_stylebox_override("pressed", _btn_tex(BTN_MOD_PRESS))
+		b.add_theme_stylebox_override("disabled", _btn_tex(BTN_MOD_DISABLED))
 	else:
 		b.add_theme_stylebox_override("normal", _btn_flat(Color(0.20, 0.165, 0.125)))
 		b.add_theme_stylebox_override("hover", _btn_flat(Color(0.26, 0.215, 0.16)))
@@ -223,10 +241,10 @@ static func mark_selected(b: Button, selected: bool) -> void:
 	if not selected:
 		return
 	if ResourceLoader.exists(BUTTON_TEX_PATH):
-		var sb := _btn_tex(Color(0.94, 1.0, 0.88))
+		var sb := _btn_tex(SELECT_MOD)
 		b.add_theme_stylebox_override("normal", sb)
 		b.add_theme_stylebox_override("hover", sb)
-		b.add_theme_color_override("font_color", SAGE.darkened(0.25))
+		b.add_theme_color_override("font_color", GOLD)
 	else:
 		var fb := _btn_flat(Color(0.28, 0.23, 0.15))
 		fb.border_color = GOLD
@@ -237,12 +255,12 @@ static func mark_selected(b: Button, selected: bool) -> void:
 static func style_title(l: Label) -> void:
 	_set_font(l, font_header())
 	l.add_theme_font_size_override("font_size", 30)
-	l.add_theme_color_override("font_color", TERRACOTTA)
+	l.add_theme_color_override("font_color", GOLD)
 
 static func style_section(l: Label) -> void:
 	_set_font(l, font_header())
 	l.add_theme_font_size_override("font_size", 17)
-	l.add_theme_color_override("font_color", TERRACOTTA)
+	l.add_theme_color_override("font_color", GOLD)
 
 static func style_body(l: Label, size: int = 13) -> void:
 	# Clean default font for body text (usability pass) — IM Fell stays on
@@ -306,7 +324,7 @@ static func draw_round_well(c: CanvasItem, center: Vector2, radius: float,
 # A carved button face: plate, light top bevel, dark bottom bevel, inner
 # pinstripe. Callers draw their own label on top.
 static func draw_carved_button(c: CanvasItem, r: Rect2, enabled := true) -> void:
-	c.draw_rect(r, KIT_PLATE if enabled else Color(0.84, 0.78, 0.65))
+	c.draw_rect(r, KIT_PLATE if enabled else Color(0.20, 0.34, 0.32))
 	c.draw_rect(Rect2(r.position + Vector2(2.0, 2.0),
 		Vector2(r.size.x - 4.0, 2.0)), Color(1.0, 1.0, 0.93, 0.55))
 	c.draw_rect(Rect2(r.position + Vector2(2.0, r.size.y - 4.0),

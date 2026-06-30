@@ -260,7 +260,7 @@ class _VendorCard extends Control:
 		# --- icon plate on the left ---
 		var ir := Rect2(Vector2(9.0, (size.y - ICON_W) * 0.5),
 			Vector2(ICON_W, ICON_W))
-		WyrdUi.draw_well(self, ir, Color(0.95, 0.91, 0.80))
+		WyrdUi.draw_well(self, ir)
 		if _rarity != "normal":
 			# faint rarity glow inside the plate (pickup language)
 			for i in 2:
