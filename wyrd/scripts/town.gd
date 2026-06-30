@@ -481,6 +481,7 @@ func _spawn_regrow_motes(origin: Vector3) -> void:
 		var mat := StandardMaterial3D.new()
 		mat.albedo_color = Color(0.42, 0.72, 0.35)
 		mat.roughness = 1.0
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA   # so the fade renders
 		mi.mesh = sm
 		mi.material_override = mat
 		mi.position = origin + Vector3(
@@ -489,7 +490,8 @@ func _spawn_regrow_motes(origin: Vector3) -> void:
 		var t := create_tween()
 		t.tween_property(mi, "position:y", origin.y + 0.8, 0.4) \
 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		t.parallel().tween_property(mi, "modulate:a", 0.0, 0.35).set_delay(0.1)
+		# Fade via the 3D material's albedo alpha — MeshInstance3D has no modulate.
+		t.parallel().tween_property(mat, "albedo_color:a", 0.0, 0.35).set_delay(0.1)
 		t.chain().tween_callback(mi.queue_free)
 
 # Living Atlas board: update emissive energy to reflect Wayfinding level
