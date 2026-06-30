@@ -97,12 +97,8 @@ var _cursor_cell: Vector2i = Vector2i(-1, -1)
 var _cursor_slot: String = ""
 var _cursor_screen: Vector2 = Vector2.ZERO
 
-const RARITY_COLOR := {
-	"normal": Color(0.48, 0.40, 0.30),   # quiet ink — normals don't shout
-	"magic":  Color(0.25, 0.42, 0.75),
-	"rare":   Color(0.82, 0.62, 0.12),
-	"unique": Color(0.80, 0.38, 0.10),
-}
+# Rarity colors route through WyrdUi.RARITY — one ramp for the whole game
+# (pack / loot beam / vendor / tooltip). No local override.
 
 var _tex_cache := {}
 
@@ -394,10 +390,13 @@ func _draw() -> void:
 		# load() hits the resource cache, so this is safe inside _draw.
 		WyrdUi.panel_stylebox().draw(get_canvas_item(), win)
 	else:
-		draw_rect(win, Color(0.93, 0.88, 0.76, 0.97))
-	# Warm parchment wash over the frame's pale page so the window never
-	# reads as bare white.
-	draw_rect(win.grow(-26), Color(0.91, 0.85, 0.70, 0.45))
+		draw_rect(win, Color(WyrdUi.KIT_PLATE, 0.97))
+	# Enamel Night — a deep recessed page fills the frame opening so the whole
+	# window reads as one dark enamel surface (no parchment wash re-lighting it).
+	draw_rect(Rect2(win.position + Vector2(WyrdUi.PANEL_MARGIN_L, WyrdUi.PANEL_MARGIN_T),
+		win.size - Vector2(WyrdUi.PANEL_MARGIN_L + WyrdUi.PANEL_MARGIN_R,
+			WyrdUi.PANEL_MARGIN_T + WyrdUi.PANEL_MARGIN_B)),
+		WyrdUi.KIT_WELL)
 	var hdr_font: Font = WyrdUi.font_header()
 	if hdr_font == null:
 		hdr_font = get_theme_default_font()
@@ -427,8 +426,8 @@ func _draw() -> void:
 			_tab_scroll[_tab] = max_s
 			queue_redraw()
 	draw_string(hdr_font, win.position + Vector2(52, 58),
-		"Adventurer's Pack", HORIZONTAL_ALIGNMENT_LEFT, win.size.x - 104, 24,
-		WyrdUi.TERRACOTTA)
+		"Adventurer's Pack", HORIZONTAL_ALIGNMENT_LEFT, win.size.x - 104,
+		WyrdUi.SIZE_DISPLAY, WyrdUi.GOLD)
 	_draw_tabs(win)
 	if _tab == 0:
 		# Gold readout lives with the paper-doll — Gear tab only, else it
@@ -437,38 +436,32 @@ func _draw() -> void:
 		if game != null:
 			draw_string(hdr_font, doll_origin + Vector2(-6, 364),
 				"%d gold" % int(game.gold), HORIZONTAL_ALIGNMENT_CENTER,
-				172.0, 16, WyrdUi.GOLD)
+				172.0, WyrdUi.SIZE_SECTION, WyrdUi.GOLD)
 		_draw_slots()
 		_draw_grid()
 		if _held_item != null:
 			_draw_held()
 		draw_string(hint_font, grid_origin + Vector2(0, _rows() * CELL + 30),
 			"I close · R rotate · right-click quick-equips",
-			HORIZONTAL_ALIGNMENT_CENTER, COLS * CELL, 13, WyrdUi.INK_MID)
+			HORIZONTAL_ALIGNMENT_CENTER, COLS * CELL, WyrdUi.SIZE_LABEL, WyrdUi.INK_MID)
 		# Hover tooltip — drawn last so it sits on top of everything.
 		_draw_tooltip()
 
 func _draw_grid() -> void:
 	var grid_size := Vector2(COLS * CELL, _rows() * CELL)
-	# Recessed well behind the cells (Diablo's sunken-grid read).
-	draw_rect(Rect2(grid_origin - Vector2(6, 6), grid_size + Vector2(12, 12)),
-		Color(0.72, 0.64, 0.50, 0.85))
+	# Recessed enamel well behind the cells (Diablo's sunken-grid read).
+	WyrdUi.draw_well(self,
+		Rect2(grid_origin - Vector2(6, 6), grid_size + Vector2(12, 12)))
 	for y in _rows():
 		for x in COLS:
 			var r := Rect2(grid_origin + Vector2(x * CELL, y * CELL),
 				Vector2(CELL, CELL))
-			draw_rect(r.grow(-1), Color(0.84, 0.77, 0.62))
-			# Inner shadow: dark top/left, light bottom/right → sunken cell.
-			draw_line(r.position + Vector2(1, 1),
-				r.position + Vector2(CELL - 1, 1), Color(0.45, 0.37, 0.27, 0.7), 2.0)
-			draw_line(r.position + Vector2(1, 1),
-				r.position + Vector2(1, CELL - 1), Color(0.45, 0.37, 0.27, 0.7), 2.0)
-			draw_line(r.position + Vector2(1, CELL - 1),
-				r.position + Vector2(CELL - 1, CELL - 1),
-				Color(0.97, 0.93, 0.82, 0.8), 1.5)
-			draw_line(r.position + Vector2(CELL - 1, 1),
-				r.position + Vector2(CELL - 1, CELL - 1),
-				Color(0.97, 0.93, 0.82, 0.8), 1.5)
+			# Raised enamel tile; the 1px gap shows the well as a grid line.
+			draw_rect(r.grow(-1), WyrdUi.KIT_PLATE)
+			# Top light lip + a dark groove border (no bespoke sepia bevels).
+			draw_rect(Rect2(r.position + Vector2(2, 1), Vector2(CELL - 4, 1.5)),
+				Color(0.18, 0.34, 0.32))
+			draw_rect(r.grow(-1), Color(0.03, 0.10, 0.09), false, 1.0)
 	if inventory != null:
 		for it in inventory.items:
 			_draw_item_in_grid(it)
@@ -484,17 +477,12 @@ func _draw_slots() -> void:
 	if hdr2 == null:
 		hdr2 = font
 	draw_string(hdr2, _slot_top("pickaxe") + Vector2(0, -10), "Trade Tools",
-		HORIZONTAL_ALIGNMENT_LEFT, 160.0, 14, WyrdUi.INK)
+		HORIZONTAL_ALIGNMENT_LEFT, 160.0, WyrdUi.SIZE_BODY, WyrdUi.INK)
 	for name in SLOT_OFFSET:
 		var top := _slot_top(String(name))
 		var r := Rect2(top, Vector2(SLOT_SIZE, SLOT_SIZE))
-		# Recessed slot well.
-		draw_rect(r, Color(0.80, 0.72, 0.58))
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(SLOT_SIZE - 1, 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(1, SLOT_SIZE - 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+		# Recessed enamel slot well — gold-edged socket.
+		WyrdUi.draw_well(self, r)
 		var it = equipment.get_slot(String(name))
 		if it != null:
 			_draw_item_rect_scaled(it, top + Vector2(6, 6),
@@ -503,7 +491,7 @@ func _draw_slots() -> void:
 			# Empty slot — name ghosted in the well, Diablo-style.
 			draw_string(font, top + Vector2(0, SLOT_SIZE * 0.5 + 5),
 				String(name).capitalize(), HORIZONTAL_ALIGNMENT_CENTER,
-				SLOT_SIZE, 12, Color(0.50, 0.42, 0.32, 0.85))
+				SLOT_SIZE, WyrdUi.SIZE_CAPTION, Color(WyrdUi.INK_MID, 0.85))
 
 func _draw_item_in_grid(it: Dictionary) -> void:
 	var rotated: bool = it.get("rotated", false)
@@ -514,7 +502,7 @@ func _draw_item_in_grid(it: Dictionary) -> void:
 
 func _draw_item_rect_scaled(it: Dictionary, top: Vector2, size: Vector2, ghost: bool) -> void:
 	var r := Rect2(top, size)
-	var rc: Color = RARITY_COLOR.get(String(it.rarity), Color.WHITE)
+	var rc: Color = WyrdUi.RARITY.get(String(it.rarity), WyrdUi.INK_MID)
 	# Rarity glow behind magic+ items (Diablo's pickup language).
 	if String(it.rarity) != "normal" and not ghost:
 		for i in 3:
@@ -524,8 +512,8 @@ func _draw_item_rect_scaled(it: Dictionary, top: Vector2, size: Vector2, ghost: 
 	var tex_path := String(ICON_TEX.get(String(it.get("kind_id", "")), ""))
 	var tex: Texture2D = _cached_tex(tex_path)
 	if tex != null:
-		# Parchment plate under the painted icon.
-		var plate := Color(0.95, 0.91, 0.80)
+		# Enamel plate under the painted icon.
+		var plate := WyrdUi.KIT_PLATE
 		if ghost:
 			plate.a = 0.55
 		draw_rect(r, plate)
@@ -553,23 +541,23 @@ func _hovered_item():
 	return null
 
 func _tooltip_lines(item: Dictionary) -> Array:
-	var rc: Color = RARITY_COLOR.get(String(item.rarity), Color.WHITE)
+	var rc: Color = WyrdUi.RARITY.get(String(item.rarity), WyrdUi.INK_MID)
 	var lines: Array = []
-	lines.append({"text": String(item.name), "color": rc, "size": 14})
+	lines.append({"text": String(item.name), "color": rc, "size": WyrdUi.SIZE_BODY})
 	lines.append({
 		"text": "%s %s" % [String(item.rarity).capitalize(),
 			String(item.category).capitalize()],
-		"color": Color(0.42, 0.36, 0.30), "size": 11})
-	lines.append({"text": "", "color": Color.WHITE, "size": 11})
+		"color": WyrdUi.INK_MID, "size": WyrdUi.SIZE_MICRO})
+	lines.append({"text": "", "color": WyrdUi.INK, "size": WyrdUi.SIZE_MICRO})
 	var base_stat := String(item.get("base_stat", ""))
 	if base_stat != "":
 		var base_aff := {"stat": base_stat, "value": item.get("base_value", 0),
 			"side": "base", "display": "Base", "id": "base"}
 		lines.append({"text": Affixes.format_affix(base_aff),
-			"color": Color(0.23, 0.17, 0.13), "size": 12})
+			"color": WyrdUi.INK, "size": WyrdUi.SIZE_CAPTION})
 	for a in item.get("affixes", []):
 		lines.append({"text": Affixes.format_affix(a),
-			"color": Color(0.30, 0.42, 0.50), "size": 12})
+			"color": WyrdUi.SAGE, "size": WyrdUi.SIZE_CAPTION})
 	# Spec items-affixes Task 9 — compare-on-hover. Hovering a *pack* item
 	# (grid, not the slot itself) appends the stat swing vs. the gear you'd
 	# swap out. Slot hovers are the equipped item already, so they're skipped.
@@ -617,14 +605,14 @@ func _compare_lines(item: Dictionary, equipped: Dictionary, cat: String) -> Arra
 		var up: bool = d > 0.0
 		rows.append({
 			"text": ("▲ " if up else "▼ ") + ("+" if up else "−") + ftxt.substr(1),
-			"color": Color(0.20, 0.52, 0.24) if up else WyrdUi.TERRACOTTA,
-			"size": 12})
+			"color": WyrdUi.SAGE if up else WyrdUi.TERRACOTTA,
+			"size": WyrdUi.SIZE_CAPTION})
 	if rows.is_empty():
 		return []
 	var out: Array = [
-		{"text": "", "color": Color.WHITE, "size": 11},
+		{"text": "", "color": WyrdUi.INK, "size": WyrdUi.SIZE_MICRO},
 		{"text": "vs. equipped %s" % cat.capitalize(),
-			"color": Color(0.42, 0.36, 0.30), "size": 10},
+			"color": WyrdUi.INK_MID, "size": WyrdUi.SIZE_MICRO},
 	]
 	out.append_array(rows)
 	return out
@@ -651,13 +639,13 @@ func _draw_tooltip() -> void:
 		pos.x = 0
 	if pos.y < 0:
 		pos.y = 0
-	draw_rect(Rect2(pos, Vector2(w, h)), Color(0.93, 0.88, 0.76, 0.97))
+	draw_rect(Rect2(pos, Vector2(w, h)), Color(WyrdUi.KIT_PLATE, 0.97))
 	# Rarity-coloured left stripe (4 px wide, full tooltip height).
-	var rc_accent: Color = RARITY_COLOR.get(String(item.get("rarity", "normal")),
-		Color(0.48, 0.40, 0.30))
+	var rc_accent: Color = WyrdUi.RARITY.get(String(item.get("rarity", "normal")),
+		WyrdUi.INK_MID)
 	draw_rect(Rect2(pos, Vector2(stripe_w, h)), rc_accent)
 	draw_rect(Rect2(pos, Vector2(w, h)),
-		Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+		WyrdUi.KIT_EDGE, false, 2.0)
 	var font: Font = WyrdUi.font_body()
 	if font == null:
 		font = get_theme_default_font()
@@ -703,15 +691,15 @@ func _draw_tabs(win: Rect2) -> void:
 	for i in TABS.size():
 		var r := _tab_rect(i)
 		var active := i == _tab
-		# Spec 40 — text-only plates; active = brighter + terracotta underline.
-		draw_rect(r, Color(0.95, 0.91, 0.80) if active else Color(0.85, 0.78, 0.64))
-		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 1.5)
+		# Spec 40 — enamel plates; active = brighter face + gold underline.
+		draw_rect(r, WyrdUi.KIT_PLATE.lightened(0.10) if active else WyrdUi.KIT_PLATE)
+		draw_rect(r, WyrdUi.KIT_EDGE, false, 1.5)
 		if active:
 			draw_line(r.position + Vector2(2, r.size.y - 2),
 				r.position + Vector2(r.size.x - 2, r.size.y - 2),
-				WyrdUi.TERRACOTTA, 3.0)
+				WyrdUi.GOLD, 3.0)
 		draw_string(font, r.position + Vector2(0, 22), String(TABS[i]),
-			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16,
+			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, WyrdUi.SIZE_SECTION,
 			WyrdUi.INK if active else WyrdUi.INK_MID)
 
 # ---- Spec 45 followup: drawn-page scrolling (Satchel / Charts / Trades) ----
@@ -769,7 +757,7 @@ func _draw_page_masks(win: Rect2, view: Rect2) -> void:
 func _draw_page_patch(win: Rect2, r: Rect2) -> void:
 	var tex: Texture2D = _cached_tex(WyrdUi.PANEL_TEX_PATH)
 	if tex == null:
-		draw_rect(r, Color(0.93, 0.88, 0.76, 1.0))
+		draw_rect(r, WyrdUi.KIT_WELL)
 	else:
 		# Same mapping the stylebox uses: window centre -> texture centre.
 		var dst := Rect2(
@@ -786,8 +774,8 @@ func _draw_page_patch(win: Rect2, r: Rect2) -> void:
 		draw_texture_rect_region(tex, r,
 			Rect2(src.position + (r.position - dst.position) * px_ratio,
 				r.size * px_ratio))
-	# Re-apply the warm wash the page carries (drawn at win.grow(-26)).
-	draw_rect(r, Color(0.91, 0.85, 0.70, 0.45))
+	# Re-paint the deep enamel page face the band masks sit on.
+	draw_rect(r, WyrdUi.KIT_WELL)
 
 # A slim sage runner along the right edge marks the place in the page, and
 # the footer carries the hint — both only when there is more to read.
@@ -808,7 +796,7 @@ func _draw_scroll_marker(win: Rect2, view: Rect2, font: Font) -> void:
 	draw_rect(thumb, Color(WyrdUi.KIT_EDGE, 0.7), false, 1.0)
 	draw_string(font, Vector2(view.position.x, view.end.y + 34.0),
 		"scroll to read on · I close", HORIZONTAL_ALIGNMENT_CENTER,
-		view.size.x, 13, WyrdUi.INK_MID)
+		view.size.x, WyrdUi.SIZE_LABEL, WyrdUi.INK_MID)
 
 func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> void:
 	var game := get_tree().root.get_node_or_null("Game")
@@ -820,7 +808,7 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 	if (game.materials as Dictionary).is_empty():
 		draw_string(font, Vector2(x, y),
 			"Empty. The yard's herb patches regrow — start there.",
-			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
+			HORIZONTAL_ALIGNMENT_LEFT, w, WyrdUi.SIZE_BODY, WyrdUi.INK_MID)
 		_tab_content_h[1] = 0.0
 		return
 	# Slice C — each material rides a list-row plate: an ink-disc holding its
@@ -833,24 +821,24 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
 			# glyph disc on the left
 			var dc := Vector2(row.position.x + 19.0, row.position.y + 15.0)
-			WyrdUi.draw_round_well(self, dc, 11.0, Color(0.88, 0.81, 0.66))
+			WyrdUi.draw_round_well(self, dc, 11.0)
 			draw_string(font, Vector2(dc.x - 11.0, dc.y + 6.0),
 				String(def.get("icon", "·")), HORIZONTAL_ALIGNMENT_CENTER,
-				22.0, 14, WyrdUi.INK)
+				22.0, WyrdUi.SIZE_BODY, WyrdUi.INK)
 			draw_string(font, Vector2(x + 28.0, y + 1.0),
 				String(def.get("name", id)),
-				HORIZONTAL_ALIGNMENT_LEFT, w - 110.0, 17, WyrdUi.INK)
+				HORIZONTAL_ALIGNMENT_LEFT, w - 110.0, WyrdUi.SIZE_SECTION, WyrdUi.INK)
 			draw_string(font, Vector2(x + w - 78.0, y + 1.0),
 				"× %d" % int(game.materials[id]),
-				HORIZONTAL_ALIGNMENT_RIGHT, 70.0, 17, WyrdUi.TERRACOTTA)
+				HORIZONTAL_ALIGNMENT_RIGHT, 70.0, WyrdUi.SIZE_SECTION, WyrdUi.NUMERIC)
 		y += 34.0
 		var desc := String(def.get("desc", ""))
 		if desc != "":
 			var dh: float = font.get_multiline_string_size(desc,
-				HORIZONTAL_ALIGNMENT_LEFT, w - 30, 14).y
+				HORIZONTAL_ALIGNMENT_LEFT, w - 30, WyrdUi.SIZE_BODY).y
 			if _span_visible(y - 13.0, y + dh, scroll, view):
 				draw_multiline_string(font, Vector2(x + 30, y), desc,
-					HORIZONTAL_ALIGNMENT_LEFT, w - 30, 14, -1, Color(0.30, 0.24, 0.19))
+					HORIZONTAL_ALIGNMENT_LEFT, w - 30, WyrdUi.SIZE_BODY, -1, WyrdUi.INK_MID)
 			y += dh + 4.0
 		y += 10.0
 	_tab_content_h[1] = y - view.position.y
@@ -865,7 +853,7 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 	if (game.charts as Array).is_empty():
 		draw_string(font, Vector2(x, y),
 			"No charts inscribed. The Inscribing Table awaits.",
-			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
+			HORIZONTAL_ALIGNMENT_LEFT, w, WyrdUi.SIZE_BODY, WyrdUi.INK_MID)
 		_tab_content_h[2] = 0.0
 		return
 	# Slice C — each chart rides a list-row plate led with a drawn scroll
@@ -879,7 +867,7 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 				row.position.y + 5.0), Vector2(24.0, 22.0)))
 			draw_string(font, Vector2(x + 30.0, y + 1.0),
 				ChartsData.chart_label(chart),
-				HORIZONTAL_ALIGNMENT_LEFT, w - 36.0, 17, WyrdUi.INK)
+				HORIZONTAL_ALIGNMENT_LEFT, w - 36.0, WyrdUi.SIZE_SECTION, WyrdUi.INK)
 		y += 36.0
 		for a in chart.get("affixes", []):
 			var aff: Dictionary = ChartsData.AFFIXES.get(String(a.get("id", "")), {})
@@ -889,7 +877,7 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 				var good: bool = bool(a.get("good", false))
 				draw_string(font, Vector2(x + 30, y),
 					("✓ " + String(aff.name)) if good else ("✗ " + String(aff.bad_name)),
-					HORIZONTAL_ALIGNMENT_LEFT, w - 30, 13,
+					HORIZONTAL_ALIGNMENT_LEFT, w - 30, WyrdUi.SIZE_LABEL,
 					WyrdUi.SAGE.darkened(0.2) if good else WyrdUi.TERRACOTTA)
 			y += 20.0
 		y += 10.0
@@ -933,33 +921,33 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 		if _span_visible(y - 14.0, y + 58.0, scroll, view):
 			if i > 0:
 				draw_line(Vector2(x, y - 12.0), Vector2(x + w, y - 12.0),
-					Color(0.52, 0.42, 0.30, 0.45), 1.5)
-			# --- emblem (60px disc, double ink ring — spec 40) ---
+					Color(WyrdUi.KIT_EDGE, 0.45), 1.5)
+			# --- emblem (60px disc, gold ring — spec 40) ---
 			var ec := Vector2(x + 26.0, y + 30.0)
 			draw_circle(ec, 26.0, (row.color as Color))
-			draw_arc(ec, 26.0, 0, TAU, 48, Color(0.25, 0.18, 0.12), 2.5, true)
-			draw_arc(ec, 21.0, 0, TAU, 48, Color(0.97, 0.93, 0.82, 0.55), 1.2, true)
+			draw_arc(ec, 26.0, 0, TAU, 48, WyrdUi.KIT_EDGE, 2.5, true)
+			draw_arc(ec, 21.0, 0, TAU, 48, Color(0.18, 0.34, 0.32), 1.2, true)
 			draw_string(hdr, Vector2(ec.x - 26.0, ec.y + 8.0), String(row.glyph),
-				HORIZONTAL_ALIGNMENT_CENTER, 52.0, 22, Color(0.98, 0.95, 0.86))
-			# --- name + level (ink, per the design — terracotta is title-only) ---
+				HORIZONTAL_ALIGNMENT_CENTER, 52.0, WyrdUi.SIZE_TITLE, WyrdUi.INK)
+			# --- name + level (cream body — gold/terracotta are title-only) ---
 			draw_string(hdr, Vector2(cx, y + 18.0), String(row.name),
-				HORIZONTAL_ALIGNMENT_LEFT, w - 78.0, 21, WyrdUi.INK)
+				HORIZONTAL_ALIGNMENT_LEFT, w - 78.0, WyrdUi.SIZE_TITLE, WyrdUi.INK)
 			draw_string(hdr, Vector2(cx, y + 20.0), "Lv %d" % lv,
-				HORIZONTAL_ALIGNMENT_RIGHT, w - 78.0, 16, WyrdUi.INK)
+				HORIZONTAL_ALIGNMENT_RIGHT, w - 78.0, WyrdUi.SIZE_SECTION, WyrdUi.INK)
 			# --- xp bar ---
 			var xp: int = int(game.trades[key].xp)
 			var lo: int = game.xp_for_level(lv)
 			var hi: int = game.xp_for_level(lv + 1)
 			var frac := clampf(float(xp - lo) / float(max(1, hi - lo)), 0.0, 1.0)
 			var bar := Rect2(Vector2(cx, y + 26.0), Vector2(w * 0.56, 12.0))
-			draw_rect(bar, Color(0.80, 0.72, 0.58))
+			draw_rect(bar, WyrdUi.KIT_WELL)
 			draw_rect(Rect2(bar.position + Vector2(1, 1),
 				Vector2((bar.size.x - 2.0) * frac, bar.size.y - 2.0)),
 				(row.color as Color).lightened(0.12))
-			draw_rect(bar, Color(0.42, 0.34, 0.25, 0.9), false, 1.5)
+			draw_rect(bar, WyrdUi.KIT_EDGE, false, 1.5)
 			draw_string(font, Vector2(bar.end.x + 10.0, y + 37.0),
 				"%d / %d xp" % [xp, hi],
-				HORIZONTAL_ALIGNMENT_LEFT, 120.0, 13, Color(0.30, 0.24, 0.19))
+				HORIZONTAL_ALIGNMENT_LEFT, 120.0, WyrdUi.SIZE_LABEL, WyrdUi.NUMERIC)
 		# --- the mastery ladder (level 1→17): every perk, locked or earned ---
 		var perks: Array = (game.PERKS as Dictionary).get(key, []).duplicate()
 		perks.sort_custom(func(a, b): return int(a.lv) < int(b.lv))
@@ -973,10 +961,10 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 		var sy := y + 72.0
 		if _span_visible(sy - 18.0, sy + 4.0, scroll, view):
 			draw_string(hdr, Vector2(cx, sy), "Masteries",
-				HORIZONTAL_ALIGNMENT_LEFT, w - 78.0, 18, WyrdUi.TERRACOTTA)
+				HORIZONTAL_ALIGNMENT_LEFT, w - 78.0, WyrdUi.SIZE_SECTION, WyrdUi.TERRACOTTA)
 			draw_string(font, Vector2(cx, sy),
 				"%d / %d earned" % [earned, perks.size()],
-				HORIZONTAL_ALIGNMENT_RIGHT, w - 78.0, 13, Color(0.40, 0.34, 0.27))
+				HORIZONTAL_ALIGNMENT_RIGHT, w - 78.0, WyrdUi.SIZE_LABEL, WyrdUi.INK_MID)
 		# cards march down a spine in the left gutter; the disc lights when earned
 		var lx := x + 18.0
 		var card_x := x + 42.0
@@ -992,26 +980,26 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 				# spine segment (left gutter — cards sit to its right, never cover it)
 				draw_line(Vector2(lx, cardy - CARD_GAP),
 					Vector2(lx, cardy + CARD_H + CARD_GAP),
-					Color(0.55, 0.62, 0.40, 0.65), 3.0)
+					Color(WyrdUi.SAGE, 0.55), 3.0)
 				var cr := Rect2(Vector2(card_x, cardy), Vector2(card_w, CARD_H))
 				if ok:
-					draw_rect(cr, Color(0.93, 0.88, 0.74))
+					draw_rect(cr, WyrdUi.KIT_PLATE)
 					draw_rect(cr, WyrdUi.SAGE.darkened(0.12), false, 2.0)
 				else:
-					draw_rect(cr, Color(0.78, 0.72, 0.60, 0.85))
-					draw_rect(cr, Color(0.50, 0.42, 0.32, 0.7), false, 1.5)
+					draw_rect(cr, Color(0.20, 0.34, 0.32))
+					draw_rect(cr, Color(WyrdUi.KIT_EDGE, 0.4), false, 1.5)
 				# node disc on the spine
 				var dc := Vector2(lx, cardy + CARD_H * 0.5)
 				draw_circle(dc, 12.0, WyrdUi.SAGE.darkened(0.05) if ok \
-					else Color(0.62, 0.55, 0.45))
-				draw_arc(dc, 12.0, 0.0, TAU, 24, Color(0.25, 0.18, 0.12), 1.5, true)
+					else Color(0.20, 0.34, 0.32))
+				draw_arc(dc, 12.0, 0.0, TAU, 24, WyrdUi.KIT_EDGE, 1.5, true)
 				draw_string(hdr, Vector2(dc.x - 12.0, dc.y + 6.0),
-					"❖" if ok else "⚿", HORIZONTAL_ALIGNMENT_CENTER, 24.0, 13,
-					Color(0.97, 0.95, 0.86) if ok else Color(0.86, 0.81, 0.73))
+					"❖" if ok else "⚿", HORIZONTAL_ALIGNMENT_CENTER, 24.0, WyrdUi.SIZE_LABEL,
+					WyrdUi.INK if ok else WyrdUi.INK_MID)
 				# name + state tag
 				draw_string(hdr, Vector2(cr.position.x + 12.0, cardy + 23.0),
-					String(p.name), HORIZONTAL_ALIGNMENT_LEFT, card_w - 96.0, 16,
-					WyrdUi.INK if ok else Color(0.44, 0.38, 0.31))
+					String(p.name), HORIZONTAL_ALIGNMENT_LEFT, card_w - 96.0, WyrdUi.SIZE_SECTION,
+					WyrdUi.INK if ok else WyrdUi.INK_MID)
 				# State tag: chosen/earned · an open choice tier · a passed-over
 				# pick · or still level-locked.
 				var tag := "✓ earned"
@@ -1020,19 +1008,19 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 					if (game.MASTERY_CHOICE_LVS as Array).has(pl) and lv >= pl:
 						if game.tier_chosen(pl):
 							tag = "passed"
-							tag_col = Color(0.55, 0.42, 0.32)
+							tag_col = WyrdUi.INK_MID
 						else:
 							tag = "choose (K)"
 							tag_col = WyrdUi.GOLD.darkened(0.1)
 					else:
 						tag = "Lv %d" % pl
-						tag_col = Color(0.50, 0.42, 0.32)
+						tag_col = WyrdUi.INK_MID
 				draw_string(font, Vector2(cr.position.x, cardy + 21.0),
-					tag, HORIZONTAL_ALIGNMENT_RIGHT, card_w - 12.0, 13, tag_col)
+					tag, HORIZONTAL_ALIGNMENT_RIGHT, card_w - 12.0, WyrdUi.SIZE_LABEL, tag_col)
 				# description (up to two lines)
 				draw_multiline_string(font, Vector2(cr.position.x + 12.0, cardy + 41.0),
-					String(p.desc), HORIZONTAL_ALIGNMENT_LEFT, card_w - 24.0, 12, 2,
-					Color(0.34, 0.28, 0.22) if ok else Color(0.52, 0.46, 0.39))
+					String(p.desc), HORIZONTAL_ALIGNMENT_LEFT, card_w - 24.0, WyrdUi.SIZE_CAPTION, 2,
+					WyrdUi.INK_MID if ok else Color(WyrdUi.INK_MID, 0.6))
 			cardy += CARD_H + CARD_GAP
 		y = cardy + 12.0
 	_tab_content_h[3] = y - view.position.y

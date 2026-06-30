@@ -115,57 +115,89 @@ func _render() -> void:
 	for rid in st.get("recipes", []):
 		var rec: Dictionary = CraftingDefs.recipe(String(rid))
 		var locked: bool = lv < int(rec.get("req_lv", 1))
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 10)
+		var afford: bool = _game != null and _game.can_afford(rec.inputs)
+		# Spec C → Enamel — every recipe rides a carved list-row card (KIT_PLATE
+		# face + KIT_EDGE) like the vendor shelf, not a flat spreadsheet line.
+		# Accent stripe = state: TERRACOTTA locked, SAGE craftable, INK_MID short.
+		var accent: Color = WyrdUi.TERRACOTTA if locked \
+			else (WyrdUi.SAGE if afford else WyrdUi.INK_MID)
+		var row := _RecipeRow.new()
+		row.accent = accent
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_theme_constant_override("margin_left", 8)
+		row.add_theme_constant_override("margin_right", 8)
+		row.add_theme_constant_override("margin_top", 6)
+		row.add_theme_constant_override("margin_bottom", 6)
+		var hb := HBoxContainer.new()
+		hb.add_theme_constant_override("separation", 10)
+		row.add_child(hb)
 
-		# Spec 44 — a painted icon chip in front of every recipe row.
-		var chip := Label.new()
-		chip.text = _recipe_glyph(rec)
-		chip.custom_minimum_size = Vector2(36, 36)
-		chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		chip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		chip.add_theme_font_size_override("font_size", 17)
-		chip.add_theme_color_override("font_color",
-			WyrdUi.INK if not locked else WyrdUi.INK_MID)
-		chip.add_theme_stylebox_override("normal",
-			WyrdUi.chip_stylebox(_recipe_tint(rec, locked)))
-		row.add_child(chip)
+		# Spec 44 → Enamel — the icon chip is a dark recessed WELL with a BRIGHT
+		# glyph on top (the old pale chip + cream glyph rendered as a blank square).
+		var chip := _ChipWell.new()
+		chip.glyph = _recipe_glyph(rec)
+		chip.col = _recipe_glyph_color(rec, locked)
+		chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		hb.add_child(chip)
 
 		var info := VBoxContainer.new()
 		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		info.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		info.add_theme_constant_override("separation", 2)
 		var name_lbl := Label.new()
 		if locked:
 			name_lbl.text = "%s — %s %d" % [String(rec.name),
 				_game.TRADE_NAMES.get(trade, trade) if _game != null else trade,
 				int(rec.req_lv)]
-			WyrdUi.style_dim(name_lbl, 14)
+			WyrdUi.style_dim(name_lbl, WyrdUi.SIZE_BODY)
 		else:
 			name_lbl.text = String(rec.name)
-			WyrdUi.style_body(name_lbl, 14)
+			WyrdUi.style_body(name_lbl, WyrdUi.SIZE_BODY)
 		info.add_child(name_lbl)
+		# Tier 1 — cost: the actionable line, NUMERIC cream (counts/haves).
 		var cost_parts: Array = []
 		for id in rec.inputs:
 			var have: int = 0 if _game == null else _game.material_count(String(id))
 			cost_parts.append("%d× %s (%d)" % [int(rec.inputs[id]),
 				GatherDefs.material_name(String(id)), have])
-		var detail := Label.new()
-		detail.text = "%s  ·  %d xp  ·  %s" % [" + ".join(cost_parts),
-			int(rec.get("xp", 0)), String(rec.get("desc", ""))]
-		WyrdUi.style_dim(detail, 12)
-		detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		info.add_child(detail)
-		row.add_child(info)
+		var cost_lbl := Label.new()
+		cost_lbl.text = " + ".join(cost_parts)
+		cost_lbl.add_theme_font_size_override("font_size", WyrdUi.SIZE_LABEL)
+		cost_lbl.add_theme_color_override("font_color", WyrdUi.NUMERIC)
+		cost_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		info.add_child(cost_lbl)
+		# Tier 2 + 3 — xp (SAGE, fresh) then flavor (INK_MID, quietest): three
+		# distinct weights, not one dim middot run-on.
+		var meta := HBoxContainer.new()
+		meta.add_theme_constant_override("separation", 8)
+		var xp_lbl := Label.new()
+		xp_lbl.text = "+%d xp" % int(rec.get("xp", 0))
+		xp_lbl.add_theme_font_size_override("font_size", WyrdUi.SIZE_CAPTION)
+		xp_lbl.add_theme_color_override("font_color", WyrdUi.SAGE)
+		meta.add_child(xp_lbl)
+		var flavor := String(rec.get("desc", ""))
+		if flavor != "":
+			var fl := Label.new()
+			fl.text = flavor
+			fl.add_theme_font_size_override("font_size", WyrdUi.SIZE_CAPTION)
+			fl.add_theme_color_override("font_color", WyrdUi.INK_MID)
+			fl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			fl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			meta.add_child(fl)
+		info.add_child(meta)
+		hb.add_child(info)
 
 		var b := Button.new()
 		WyrdUi.style_kit_button(b)
 		b.text = String(st.get("verb", "Craft"))
 		b.custom_minimum_size = Vector2(96, 40)
-		b.disabled = locked or _game == null or not _game.can_afford(rec.inputs)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.disabled = locked or _game == null or not afford
 		var rid_s := String(rid)
 		b.pressed.connect(func():
 			if _game != null and _game.craft(station_id, rid_s):
 				_render())
-		row.add_child(b)
+		hb.add_child(b)
 		_recipe_box.add_child(row)
 
 	if _game == null:
@@ -187,24 +219,26 @@ func _recipe_glyph(rec: Dictionary) -> String:
 		return "◎"
 	return "▣"
 
-func _recipe_tint(rec: Dictionary, locked: bool) -> Color:
+# Enamel — the BRIGHT glyph color drawn ON the dark chip well (was a pale chip
+# fill behind a cream glyph = invisible). The well carries the recess; the glyph
+# carries the read. Materials tint by group (SAGE/GOLD/cream); gear by rarity.
+func _recipe_glyph_color(rec: Dictionary, locked: bool) -> Color:
 	if locked:
-		return Color(0.85, 0.80, 0.68)
+		return WyrdUi.INK_MID
 	if rec.has("yields_material"):
 		var mid := String(rec.yields_material)
 		var group := String((GatherDefs.MATERIALS.get(mid, {}) as Dictionary)
 			.get("group", ""))
 		match group:
-			"verdant": return Color(0.82, 0.87, 0.68)
-			"earthen": return Color(0.85, 0.80, 0.70)
-			"lumen":   return Color(0.92, 0.90, 0.78)
-		return WyrdUi.KIT_PLATE
+			"verdant": return WyrdUi.SAGE
+			"earthen": return WyrdUi.GOLD
+			"lumen":   return WyrdUi.INK
+		return WyrdUi.INK
 	var rarity := String((rec.get("yields_item", {}) as Dictionary)
 		.get("rarity", "normal"))
-	match rarity:
-		"magic": return Color(0.78, 0.83, 0.90)
-		"rare":  return Color(0.93, 0.86, 0.62)
-	return Color(0.88, 0.83, 0.72)
+	if rarity == "normal":
+		return WyrdUi.INK
+	return WyrdUi.RARITY.get(rarity, WyrdUi.INK)
 
 func _render_satchel() -> void:
 	var parts: Array = []
@@ -212,3 +246,38 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# ---- drawn row primitives (Enamel Night) ----
+# The recipe row rides a carved list-row card so the forge reads as a shelf of
+# cards (like Hod's Counter), not a flat spreadsheet. A MarginContainer that
+# paints the KIT_PLATE + KIT_EDGE plate behind its laid-out content.
+class _RecipeRow extends MarginContainer:
+	var accent: Color = WyrdUi.INK_MID
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_RESIZED:
+			queue_redraw()
+
+	func _draw() -> void:
+		WyrdUi.draw_list_row(self, Rect2(Vector2.ZERO, size), accent)
+
+
+# The glyph chip: a dark recessed round well with a BRIGHT glyph on top — like
+# the vendor's readable wells (the old pale chip + cream glyph was invisible).
+class _ChipWell extends Control:
+	var glyph := ""
+	var col: Color = WyrdUi.INK
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(36, 36)
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_RESIZED:
+			queue_redraw()
+
+	func _draw() -> void:
+		var c := size * 0.5
+		WyrdUi.draw_round_well(self, c, minf(size.x, size.y) * 0.5 - 1.0)
+		draw_string(get_theme_default_font(), Vector2(0.0, c.y + 6.0), glyph,
+			HORIZONTAL_ALIGNMENT_CENTER, size.x, WyrdUi.SIZE_SECTION, col)

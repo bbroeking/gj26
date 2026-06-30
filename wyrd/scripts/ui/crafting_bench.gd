@@ -300,11 +300,20 @@ class BenchView extends Control:
 	var _odds_rows: Array = []      # {rect, affix_id} for odds tooltips
 	var _codex_rects: Array = []    # spec 45 — {rect, id} for known recipes
 
-	const EDGE := Color(0.26, 0.19, 0.13)
-	const WELL := Color(0.80, 0.72, 0.58)
-	const PLATE := Color(0.93, 0.88, 0.74)
-	const TXT := Color(0.20, 0.15, 0.11)
-	const DIM := Color(0.42, 0.35, 0.28)
+	# Spec 51 — Enamel Night: the old light-parchment ramp now aliases the
+	# shared WyrdUi tokens so every row / label / tooltip / pot edge reads on
+	# the dark teal frame instead of as a bright tan island.
+	const EDGE := WyrdUi.KIT_EDGE      # gold filigree edge (was sepia brown)
+	const WELL := WyrdUi.KIT_WELL      # recessed enamel groove (was tan)
+	const PLATE := WyrdUi.KIT_PLATE    # raised enamel face (was cream)
+	const TXT := WyrdUi.INK            # warm cream primary text (was near-black)
+	const DIM := WyrdUi.INK_MID        # sage-grey secondary text (was sepia)
+	# Dark text for the few LIGHT vector elements we keep (the cream chart
+	# scroll), where cream INK would vanish — ink on parchment stays dark.
+	const SCROLL_INK := Color(0.09, 0.16, 0.14)
+	const SCROLL_DIM := Color(0.31, 0.40, 0.36)
+	# Inner carved shadow lines (sockets / diamond) — near-black enamel, not brown.
+	const INNER_SHADOW := Color(0.03, 0.10, 0.09)
 	# Spec 44 — each ink's bottle color (drawn bottles replace text glyphs).
 	const INK_TINT := {
 		"hedge_ink": Color(0.42, 0.55, 0.30),
@@ -525,14 +534,13 @@ class BenchView extends Control:
 			font = get_theme_default_font()
 		if hdr == null:
 			hdr = font
-		# Spec 44 — parchment grain over the working face (vector, no tex).
-		WyrdUi.draw_parchment_grain(self,
-			Rect2(Vector2(46, 72), size - Vector2(92, 124)))
+		# Spec 51 — no parchment wash: the dark teal ninepatch frame IS the
+		# working surface; the sockets/cards below carve into it.
 		draw_string(hdr, Vector2(54, 56), "The Inscribing Table",
-			HORIZONTAL_ALIGNMENT_LEFT, 400, 24, WyrdUi.TERRACOTTA)
+			HORIZONTAL_ALIGNMENT_LEFT, 400, WyrdUi.SIZE_TITLE, WyrdUi.TERRACOTTA)
 		WyrdUi.draw_flourish(self, Vector2(146, 66), 180.0)
 		draw_string(font, Vector2(size.x - 180, 56), "Esc — close",
-			HORIZONTAL_ALIGNMENT_RIGHT, 130, 12, DIM)
+			HORIZONTAL_ALIGNMENT_RIGHT, 130, WyrdUi.SIZE_CAPTION, DIM)
 		_odds_rows.clear()
 		_draw_tray(hdr, font)
 		_draw_bench(hdr, font)
@@ -545,7 +553,7 @@ class BenchView extends Control:
 			draw_rect(r, EDGE, false, 2.0)
 			draw_string(font, r.position + Vector2(0, 19),
 				_short_name(String(bench._held.id)),
-				HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 12, TXT)
+				HORIZONTAL_ALIGNMENT_CENTER, r.size.x, WyrdUi.SIZE_CAPTION, TXT)
 
 	func _short_name(id: String) -> String:
 		if ChartsData.TEMPLATES.has(id):
@@ -554,17 +562,17 @@ class BenchView extends Control:
 
 	func _tray_section(hdr: Font, x: float, y: float, label: String) -> float:
 		draw_string(hdr, Vector2(x, y), label,
-			HORIZONTAL_ALIGNMENT_LEFT, 200, 13, WyrdUi.INK)
+			HORIZONTAL_ALIGNMENT_LEFT, 200, WyrdUi.SIZE_LABEL, WyrdUi.INK)
 		WyrdUi.draw_flourish(self, Vector2(x + 106.0, y + 7.0), 204.0)
 		return y + 8.0
 
 	func _tray_row(font: Font, x: float, y: float, kind: String, id: String,
 			label: String, ok: bool) -> float:
 		var r := Rect2(Vector2(x, y), Vector2(212, 26))
-		draw_rect(r, PLATE if ok else Color(0.85, 0.79, 0.66))
+		draw_rect(r, PLATE if ok else WELL)
 		# Spec 44 — top bevel light + a painted roundel on the left.
 		draw_rect(Rect2(r.position + Vector2(1.0, 1.0),
-			Vector2(r.size.x - 2.0, 1.5)), Color(1, 1, 0.93, 0.4))
+			Vector2(r.size.x - 2.0, 1.5)), Color(0.18, 0.34, 0.32, 0.4))
 		draw_rect(r, EDGE if ok else Color(EDGE, 0.4), false, 1.5)
 		var cc := r.position + Vector2(14.0, 13.0)
 		if kind == "ink":
@@ -574,13 +582,13 @@ class BenchView extends Control:
 			WyrdUi.draw_scroll(self, Rect2(cc - Vector2(9.0, 7.0),
 				Vector2(18.0, 14.0)), false)
 		else:
-			draw_circle(cc, 9.0, WELL if ok else Color(0.78, 0.72, 0.60))
+			draw_circle(cc, 9.0, WELL if ok else INNER_SHADOW)
 			draw_arc(cc, 9.0, 0, TAU, 20, Color(EDGE, 0.6), 1.0, true)
 			draw_string(font, Vector2(r.position.x + 6.0, r.position.y + 18.0),
 				GatherDefs.material_icon(id), HORIZONTAL_ALIGNMENT_CENTER,
-				17, 11, TXT if ok else DIM)
+				17, WyrdUi.SIZE_MICRO, TXT if ok else DIM)
 		draw_string(font, r.position + Vector2(28.0, 18.0), label,
-			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 34.0, 12,
+			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 34.0, WyrdUi.SIZE_CAPTION,
 			TXT if ok else DIM)
 		_tray_rows.append({"rect": r, "kind": kind, "id": id, "ok": ok})
 		return y + 30.0
@@ -639,7 +647,7 @@ class BenchView extends Control:
 		var target: String = bench._tutorial_target()
 		var bx := 320.0
 		draw_string(hdr, Vector2(bx, 92), "Bench",
-			HORIZONTAL_ALIGNMENT_LEFT, 200, 14, WyrdUi.INK)
+			HORIZONTAL_ALIGNMENT_LEFT, 200, WyrdUi.SIZE_BODY, WyrdUi.INK)
 		WyrdUi.draw_flourish(self, Vector2(bx + 130.0, 88.0), 200.0)
 		# Base socket.
 		_base_rect = Rect2(Vector2(bx + 40, 116), Vector2(180, 96))
@@ -650,17 +658,17 @@ class BenchView extends Control:
 		if bench.base_id == "":
 			draw_string(font, _base_rect.position + Vector2(0, 52),
 				"chart base", HORIZONTAL_ALIGNMENT_CENTER,
-				_base_rect.size.x, 13, DIM)
+				_base_rect.size.x, WyrdUi.SIZE_LABEL, DIM)
 		else:
 			# Spec 44 — the placed base reads as a rolled chart, not a label.
 			var t: Dictionary = bench.template()
 			WyrdUi.draw_scroll(self, _base_rect.grow(-8.0), false)
 			draw_string(hdr, _base_rect.position + Vector2(0, 44),
 				String(t.name), HORIZONTAL_ALIGNMENT_CENTER,
-				_base_rect.size.x, 17, TXT)
+				_base_rect.size.x, WyrdUi.SIZE_SECTION, SCROLL_INK)
 			draw_string(font, _base_rect.position + Vector2(0, 68),
 				"Tier %d · click to clear" % int(t.tier),
-				HORIZONTAL_ALIGNMENT_CENTER, _base_rect.size.x, 11, DIM)
+				HORIZONTAL_ALIGNMENT_CENTER, _base_rect.size.x, WyrdUi.SIZE_MICRO, SCROLL_DIM)
 		# Ink sockets (revealed by the base).
 		_ink_rects.clear()
 		var slots: int = bench.ink_slots()
@@ -681,7 +689,7 @@ class BenchView extends Control:
 		if bench.base_id != "" and slots == 0:
 			draw_string(font, Vector2(bx + 40, 268),
 				"This chart takes no ink.", HORIZONTAL_ALIGNMENT_LEFT,
-				240, 12, DIM)
+				240, WyrdUi.SIZE_CAPTION, DIM)
 		# Trophy socket (diamond) — only when affixes can roll.
 		if bench.affix_slots() > 0:
 			_trophy_rect = Rect2(Vector2(bx + 250, 236), Vector2(52, 52))
@@ -693,7 +701,7 @@ class BenchView extends Control:
 			var inner := PackedVector2Array([c + Vector2(0, -24), c + Vector2(24, 0),
 				c + Vector2(0, 24), c + Vector2(-24, 0)])
 			draw_polyline(inner + PackedVector2Array([inner[0]]),
-				Color(EDGE, 0.30), 1.0, true)
+				INNER_SHADOW, 1.0, true)
 			draw_line(c + Vector2(0, -27), c + Vector2(-27, 0), Color(0, 0, 0, 0.15), 3.0)
 			draw_polyline(pts + PackedVector2Array([pts[0]]), EDGE, 2.0, true)
 			if bench.trophy != "":
@@ -701,11 +709,11 @@ class BenchView extends Control:
 			if bench.trophy != "":
 				draw_string(font, _trophy_rect.position + Vector2(0, 32),
 					GatherDefs.material_icon(bench.trophy),
-					HORIZONTAL_ALIGNMENT_CENTER, _trophy_rect.size.x, 16, TXT)
+					HORIZONTAL_ALIGNMENT_CENTER, _trophy_rect.size.x, WyrdUi.SIZE_SECTION, TXT)
 			else:
 				draw_string(font, Vector2(_trophy_rect.position.x - 14,
 					_trophy_rect.end.y + 16), "trophy",
-					HORIZONTAL_ALIGNMENT_CENTER, 80, 11, DIM)
+					HORIZONTAL_ALIGNMENT_CENTER, 80, WyrdUi.SIZE_MICRO, DIM)
 		else:
 			_trophy_rect = Rect2()
 		# Mixing pot — spec 44: a proper copper belly with lit rim, side
@@ -744,19 +752,19 @@ class BenchView extends Control:
 			pot_label += "%s×%d " % [GatherDefs.material_icon(String(id)),
 				int(bench.pot[id])]
 		draw_string(font, Vector2(_pot_rect.position.x, px.y + 2.0), pot_label.strip_edges(),
-			HORIZONTAL_ALIGNMENT_CENTER, _pot_rect.size.x, 17,
-			Color(0.97, 0.93, 0.82))
+			HORIZONTAL_ALIGNMENT_CENTER, _pot_rect.size.x, WyrdUi.SIZE_SECTION,
+			WyrdUi.INK)
 		# Spec 43 — Try the Mix: the deliberate experiment, beside the pot.
 		_try_rect = Rect2(Vector2(bx + 230, 376), Vector2(112, 40))
 		var can_try: bool = not bench.pot.is_empty()
 		WyrdUi.draw_carved_button(self, _try_rect, can_try)
 		draw_string(hdr, _try_rect.position + Vector2(0, 26), "Try the Mix",
-			HORIZONTAL_ALIGNMENT_CENTER, _try_rect.size.x, 13,
+			HORIZONTAL_ALIGNMENT_CENTER, _try_rect.size.x, WyrdUi.SIZE_LABEL,
 			WyrdUi.INK if can_try else DIM)
 		# Spec 43 — the codex: every pot recipe, in its discovery state.
 		var cy := 462.0
 		draw_string(hdr, Vector2(bx, cy), "Codex", HORIZONTAL_ALIGNMENT_LEFT,
-			200, 13, WyrdUi.INK)
+			200, WyrdUi.SIZE_LABEL, WyrdUi.INK)
 		cy += 16.0
 		_codex_rects.clear()
 		for rid in GatherDefs.INK_RECIPE_ORDER:
@@ -786,19 +794,19 @@ class BenchView extends Control:
 				WyrdUi.draw_ink_bottle(self, Vector2(bx + 6.0, cy + 7.0), 13.0,
 					INK_TINT.get(String(rid), Color(0.4, 0.4, 0.4)))
 				draw_string(font, Vector2(bx + 16.0, cy + 11.0), line,
-					HORIZONTAL_ALIGNMENT_LEFT, 314, 11, col)
+					HORIZONTAL_ALIGNMENT_LEFT, 314, WyrdUi.SIZE_MICRO, col)
 				# Spec 45-carto — Practiced Measures: a known row is a button.
 				_codex_rects.append({"rect": Rect2(Vector2(bx, cy),
 					Vector2(330.0, 15.0)), "id": String(rid)})
 			else:
 				draw_string(font, Vector2(bx, cy + 11.0), line,
-					HORIZONTAL_ALIGNMENT_LEFT, 330, 11, col)
+					HORIZONTAL_ALIGNMENT_LEFT, 330, WyrdUi.SIZE_MICRO, col)
 			cy += 15.0
 
 	func _draw_result(hdr: Font, font: Font) -> void:
 		var rx := 660.0
 		draw_string(hdr, Vector2(rx, 92), "Result",
-			HORIZONTAL_ALIGNMENT_LEFT, 200, 14, WyrdUi.INK)
+			HORIZONTAL_ALIGNMENT_LEFT, 200, WyrdUi.SIZE_BODY, WyrdUi.INK)
 		WyrdUi.draw_flourish(self, Vector2(rx + 130.0, 88.0), 160.0)
 		_result_rect = Rect2(Vector2(rx, 116), Vector2(216, 110))
 		_socket_well(_result_rect, bench.base_id != "")
@@ -816,15 +824,15 @@ class BenchView extends Control:
 		if bench.base_id == "":
 			draw_string(font, _result_rect.position + Vector2(0, 60),
 				"place a base", HORIZONTAL_ALIGNMENT_CENTER,
-				_result_rect.size.x, 13, DIM)
+				_result_rect.size.x, WyrdUi.SIZE_LABEL, DIM)
 			return
 		var t: Dictionary = bench.template()
 		draw_string(hdr, _result_rect.position + Vector2(0, 48),
 			String(t.name), HORIZONTAL_ALIGNMENT_CENTER,
-			_result_rect.size.x, 20, TXT)
+			_result_rect.size.x, WyrdUi.SIZE_TITLE, TXT)
 		draw_string(font, _result_rect.position + Vector2(0, 72),
 			String(t.get("desc", "")), HORIZONTAL_ALIGNMENT_CENTER,
-			_result_rect.size.x, 11, DIM)
+			_result_rect.size.x, WyrdUi.SIZE_MICRO, DIM)
 		# Odds (same math as before: weights + stability).
 		if bench.affix_slots() > 0:
 			var weights: Dictionary = ChartsData.compute_weights(int(t.tier), bench.inks,
@@ -839,7 +847,7 @@ class BenchView extends Control:
 					"%s — %d%% · good %d%%" % [
 						String(ChartsData.AFFIXES[id].name),
 						roundi(weights[id]), stab],
-					HORIZONTAL_ALIGNMENT_LEFT, 220, 13, TXT)
+					HORIZONTAL_ALIGNMENT_LEFT, 220, WyrdUi.SIZE_LABEL, TXT)
 				_odds_rows.append({"rect": Rect2(Vector2(rx, y - 14), Vector2(220, 18)),
 					"id": String(id)})
 				y += 19.0
@@ -848,11 +856,11 @@ class BenchView extends Control:
 					ChartsData.TROPHY_TO_AFFIX[bench.trophy]]
 				draw_string(font, Vector2(rx, y),
 					"★ %s — certain" % String(den.name),
-					HORIZONTAL_ALIGNMENT_LEFT, 220, 12, WyrdUi.GOLD.darkened(0.15))
+					HORIZONTAL_ALIGNMENT_LEFT, 220, WyrdUi.SIZE_CAPTION, WyrdUi.GOLD.darkened(0.15))
 				y += 19.0
 		else:
 			draw_string(font, Vector2(rx, y), "A clean run — no affixes.",
-				HORIZONTAL_ALIGNMENT_LEFT, 220, 13, DIM)
+				HORIZONTAL_ALIGNMENT_LEFT, 220, WyrdUi.SIZE_LABEL, DIM)
 			y += 19.0
 		# Cost + craft button.
 		var cost: Dictionary = ChartsData.craft_cost(bench.base_id,
@@ -864,14 +872,14 @@ class BenchView extends Control:
 			var enough: bool = have >= int(cost[id])
 			draw_string(font, Vector2(rx, y), "%d× %s  (have %d)" % [
 				int(cost[id]), GatherDefs.material_name(String(id)), have],
-				HORIZONTAL_ALIGNMENT_LEFT, 220, 13,
-				TXT if enough else WyrdUi.TERRACOTTA)
+				HORIZONTAL_ALIGNMENT_LEFT, 220, WyrdUi.SIZE_LABEL,
+				WyrdUi.NUMERIC if enough else WyrdUi.TERRACOTTA)
 			y += 18.0
 		_craft_rect = Rect2(Vector2(rx, size.y - 92), Vector2(216, 40))
 		var can: bool = bench._game != null and bench._game.can_afford(cost)
 		WyrdUi.draw_carved_button(self, _craft_rect, can)
 		draw_string(hdr, _craft_rect.position + Vector2(0, 27), "Craft",
-			HORIZONTAL_ALIGNMENT_CENTER, _craft_rect.size.x, 17,
+			HORIZONTAL_ALIGNMENT_CENTER, _craft_rect.size.x, WyrdUi.SIZE_SECTION,
 			WyrdUi.INK if can else DIM)
 		# Spec 44 — a wax seal waits beside the verb when a base is set.
 		if bench.base_id != "":
@@ -888,16 +896,16 @@ class BenchView extends Control:
 		var w := 0.0
 		for ln in lines:
 			w = maxf(w, font.get_string_size(ln, HORIZONTAL_ALIGNMENT_LEFT,
-				-1, 13).x)
+				-1, WyrdUi.SIZE_LABEL).x)
 		var box := Rect2(_tip_at + Vector2(16, 12),
 			Vector2(w + 20.0, 12.0 + 19.0 * lines.size()))
 		# Keep it on the panel.
 		box.position.x = minf(box.position.x, size.x - box.size.x - 8.0)
 		box.position.y = minf(box.position.y, size.y - box.size.y - 8.0)
-		draw_rect(box, Color(0.97, 0.93, 0.80, 0.97))
+		draw_rect(box, Color(WyrdUi.KIT_PLATE, 0.97))
 		draw_rect(box, EDGE, false, 2.0)
 		var ty := box.position.y + 17.0
 		for ln in lines:
 			draw_string(font, Vector2(box.position.x + 10.0, ty), ln,
-				HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 20.0, 13, TXT)
+				HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 20.0, WyrdUi.SIZE_LABEL, TXT)
 			ty += 19.0

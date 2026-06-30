@@ -23,9 +23,10 @@ was missing. Six systemic root causes, almost all in `WyrdUi`:
 - **Tier 1 — Foundation (D22 ✓):** default font, type scale, spacing scale,
   FOCUS / RARITY / NUMERIC tokens, `style_keyhint`, kill the `+1` fudge, fix the
   HUD flourish collision, route Focus + keybinds + costs through tokens.
-- **Tier 2 — Unify the skin:** migrate Pack (inventory_panel), crafting bench,
-  and the craft list onto Enamel tokens — kill the parchment wash, fix the
-  invisible cream-on-pale icon chips, tier the recipe meta line, tokenize rarity.
+- **Tier 2 — Unify the skin (D23 ✓):** migrated Pack (inventory_panel),
+  crafting bench, craft list, and vendor onto Enamel tokens — killed the
+  parchment wash, fixed the invisible cream-on-pale icon chips, tiered the
+  recipe meta line, tokenized rarity. The whole UI now reads as one dark skin.
 - **Tier 3 — Shared components:** one `CardRow` + a modal scaffold factory →
   rebuild enchant / loadout / quill / vendor from one component.
 - **Tier 4 — HUD finish:** content-hug chip height, run-meta icons + hierarchy,

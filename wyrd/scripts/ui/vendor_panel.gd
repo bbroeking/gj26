@@ -21,13 +21,8 @@ const ICON_TEX := {
 	"copper_ring": "res://assets/ui/items/copper_ring.png",
 }
 
-# Rarity tints — lifted from inventory_panel.gd so cards glow the same.
-const RARITY_COLOR := {
-	"normal": Color(0.48, 0.40, 0.30),   # quiet ink — normals don't shout
-	"magic":  Color(0.25, 0.42, 0.75),
-	"rare":   Color(0.82, 0.62, 0.12),
-	"unique": Color(0.80, 0.38, 0.10),
-}
+# Rarity tints route through the one game-wide ramp (WyrdUi.RARITY) so the
+# counter glows the same as the pack, loot beam, and tooltips.
 
 var _game: Node
 var _panel: Panel
@@ -75,7 +70,7 @@ func _ready() -> void:
 	_panel.add_child(sub)
 
 	_gold_lbl = Label.new()
-	WyrdUi.style_chip(_gold_lbl, 15)
+	WyrdUi.style_chip(_gold_lbl, WyrdUi.SIZE_SECTION)
 	_gold_lbl.add_theme_color_override("font_color", WyrdUi.GOLD)
 	_gold_lbl.anchor_left = 1.0
 	_gold_lbl.anchor_right = 1.0
@@ -158,7 +153,7 @@ func _render() -> void:
 	for item in items:
 		var it: Dictionary = item
 		var rarity := String(it.get("rarity", "normal"))
-		var rc: Color = RARITY_COLOR.get(rarity, WyrdUi.INK_MID)
+		var rc: Color = WyrdUi.RARITY.get(rarity, WyrdUi.INK_MID)
 		var path := String(ICON_TEX.get(String(it.get("kind_id", "")), ""))
 		var card := _VendorCard.new()
 		card.setup_sell(String(it.get("name", "?")), EconomyData.sell_value(it),
@@ -205,7 +200,7 @@ class _VendorCard extends Control:
 	var _price_red := false        # unaffordable buy → red price
 	var _sub := ""                 # right-side note (e.g. "have 3")
 	var _rarity := "normal"
-	var _rc: Color = Color(0.48, 0.40, 0.30)   # rarity tint (handed in)
+	var _rc: Color = WyrdUi.INK_MID            # rarity tint (handed in)
 	var _tex: Texture2D = null     # painted item icon (sell), else null
 	var _glyph := ""               # material glyph (buy)
 	var _hover := false
@@ -256,7 +251,7 @@ class _VendorCard extends Control:
 		var accent: Color = _rc if _rarity != "normal" else WyrdUi.INK_MID
 		WyrdUi.draw_list_row(self, r, accent)
 		if _hover:
-			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.10))
+			draw_rect(r.grow(-1.5), Color(WyrdUi.GOLD, 0.10))
 		# --- icon plate on the left ---
 		var ir := Rect2(Vector2(9.0, (size.y - ICON_W) * 0.5),
 			Vector2(ICON_W, ICON_W))
@@ -272,7 +267,8 @@ class _VendorCard extends Control:
 			draw_texture_rect(_tex, ir.grow(-4.0), false)
 		elif _glyph != "":
 			draw_string(font, ir.position + Vector2(0, ICON_W * 0.5 + 6.0),
-				_glyph, HORIZONTAL_ALIGNMENT_CENTER, ICON_W, 18, WyrdUi.INK)
+				_glyph, HORIZONTAL_ALIGNMENT_CENTER, ICON_W, WyrdUi.SIZE_SECTION,
+				WyrdUi.INK)
 		# rarity ring around the icon plate
 		if _rarity != "normal":
 			draw_rect(ir, _rc, false, 2.0)
@@ -280,11 +276,11 @@ class _VendorCard extends Control:
 		var tx := ir.end.x + 12.0
 		var name_col: Color = _rc if _rarity != "normal" else WyrdUi.INK
 		draw_string(font, Vector2(tx, size.y * 0.5 - 2.0), _name,
-			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 86.0, 16, name_col)
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 86.0, WyrdUi.SIZE_SECTION, name_col)
 		if _sub != "":
 			draw_string(font, Vector2(tx, size.y * 0.5 + 16.0), _sub,
-				HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 86.0, 12, WyrdUi.INK_MID)
+				HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 86.0, WyrdUi.SIZE_CAPTION, WyrdUi.INK_MID)
 		# --- price (gold, right-aligned; red when unaffordable on buy) ---
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
-			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, WyrdUi.SIZE_SECTION, price_col)
