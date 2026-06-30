@@ -36,7 +36,6 @@ var _last_toast_time := 0.0
 var _hp_globe: GlobeGauge = null
 var _focus_globe: GlobeGauge = null
 var _pip_row: StatusPipRow = null      # active-status drain-arc pips above HP
-var _mute_lbl: Label = null
 # Slice B — a radial hurt-vignette: transparent center darkening to a
 # terracotta rim, flashed on the player taking damage (richer than the flat
 # full-screen red _flash). A TextureRect fed by a radial GradientTexture2D —
@@ -91,31 +90,11 @@ func _place_globe(g: GlobeGauge, cx: float) -> void:
 
 # Spec 38 — the mute state, by the Focus globe. F10 flips it.
 func _build_mute_indicator() -> void:
-	_mute_lbl = Label.new()
-	_mute_lbl.anchor_left = 0.5
-	_mute_lbl.anchor_right = 0.5
-	_mute_lbl.anchor_top = 1.0
-	_mute_lbl.anchor_bottom = 1.0
-	_mute_lbl.offset_left = 140
-	_mute_lbl.offset_right = 300
-	_mute_lbl.offset_top = -22
-	_mute_lbl.offset_bottom = -4
-	_mute_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	WyrdUi.style_chip(_mute_lbl, 12)
-	add_child(_mute_lbl)
+	# Spec 52 (Direction A) — no always-on mute label cluttering the HUD; mute
+	# is surfaced only as a transient toast when the player toggles it (F10).
 	var game := get_tree().root.get_node_or_null("Game")
 	if game != null and game.has_signal("mute_changed"):
-		game.mute_changed.connect(func(_m): _refresh_mute())
-	_refresh_mute()
-
-func _refresh_mute() -> void:
-	if _mute_lbl == null:
-		return
-	var game := get_tree().root.get_node_or_null("Game")
-	var muted: bool = game != null and bool(game.get("muted"))
-	_mute_lbl.text = "MUTED · F10" if muted else "F10 mutes"
-	_mute_lbl.add_theme_color_override("font_color",
-		WyrdUi.TERRACOTTA if muted else Color(0.62, 0.69, 0.61, 0.8))
+		game.mute_changed.connect(func(m): show_toast("♪  Muted" if m else "♪  Sound on"))
 
 # Draught counter under the meters — what Q will drink.
 var _draught_lbl: Label = null
@@ -170,12 +149,14 @@ func _build_wyrd_overlay() -> void:
 		_quest_plate.add_theme_stylebox_override("panel", sb)
 	else:
 		_quest_plate.add_theme_stylebox_override("panel", WyrdUi.chip_stylebox())
-	_quest_plate.anchor_left = 0.5
-	_quest_plate.anchor_right = 0.5
-	_quest_plate.offset_left = -260
-	_quest_plate.offset_right = 260
-	_quest_plate.offset_top = 10
-	_quest_plate.offset_bottom = 92
+	# Spec 52 (Direction A) — a compact objective chip pinned top-LEFT, not a
+	# 520px banner centred over the world. One line + an affix sub-line.
+	_quest_plate.anchor_left = 0.0
+	_quest_plate.anchor_right = 0.0
+	_quest_plate.offset_left = 16
+	_quest_plate.offset_right = 360
+	_quest_plate.offset_top = 12
+	_quest_plate.offset_bottom = 108
 	add_child(_quest_plate)
 	# Drawn scroll dressing — added first so it sits behind the text. Fills the
 	# plate; redraws on resize. The _draw-on-Control pattern is proven in this
@@ -190,43 +171,49 @@ func _build_wyrd_overlay() -> void:
 	var hf := WyrdUi.font_header()
 	if hf != null:
 		qhdr.add_theme_font_override("font", hf)
-	qhdr.add_theme_font_size_override("font_size", 14)
+	qhdr.add_theme_font_size_override("font_size", 11)
 	qhdr.add_theme_color_override("font_color", WyrdUi.GOLD)
+	qhdr.offset_left = 16
 	qhdr.anchor_right = 1.0
-	qhdr.offset_top = 11
-	qhdr.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	qhdr.offset_top = 9
+	qhdr.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_quest_plate.add_child(qhdr)
+	# Progress counter rides the top-right corner of the chip, beside the eyebrow.
+	_quest_progress = Label.new()
+	_quest_progress.add_theme_font_size_override("font_size", 12)
+	_quest_progress.add_theme_color_override("font_color", WyrdUi.SAGE)
+	_quest_progress.anchor_right = 1.0
+	_quest_progress.offset_left = -110
+	_quest_progress.offset_right = -14
+	_quest_progress.offset_top = 9
+	_quest_progress.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_quest_plate.add_child(_quest_progress)
 	_objective = Label.new()
-	_objective.add_theme_font_size_override("font_size", 16)
+	_objective.add_theme_font_size_override("font_size", 14)
 	_objective.add_theme_color_override("font_color", WyrdUi.INK)
 	_objective.anchor_right = 1.0
 	_objective.offset_top = 26
 	_objective.offset_left = 16
-	_objective.offset_right = -16
-	_objective.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_objective.offset_right = -14
+	_objective.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_quest_plate.add_child(_objective)
-	# D13 — sub-objective: names the chart you're delving (terracotta, under the
-	# main line).
+	# D13 — sub-objective: names the chart / affixes you're delving. Bottom-
+	# anchored so a wrapped 2-line objective can never collide with it (spec 52).
 	_quest_sub = Label.new()
-	_quest_sub.add_theme_font_size_override("font_size", 12)
-	_quest_sub.add_theme_color_override("font_color", WyrdUi.TERRACOTTA.darkened(0.05))
+	_quest_sub.add_theme_font_size_override("font_size", 11)
+	_quest_sub.add_theme_color_override("font_color", WyrdUi.SAGE.darkened(0.05))
 	_quest_sub.anchor_right = 1.0
-	_quest_sub.offset_top = 50
+	_quest_sub.anchor_top = 1.0
+	_quest_sub.anchor_bottom = 1.0
+	_quest_sub.offset_top = -26
+	_quest_sub.offset_bottom = -7
 	_quest_sub.offset_left = 16
-	_quest_sub.offset_right = -16
-	_quest_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_quest_sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_quest_sub.offset_right = -14
+	_quest_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_quest_sub.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_quest_sub.clip_text = true
 	_quest_plate.add_child(_quest_sub)
-	_quest_progress = Label.new()
-	_quest_progress.add_theme_font_size_override("font_size", 14)
-	_quest_progress.add_theme_color_override("font_color", WyrdUi.SAGE)
-	_quest_progress.anchor_right = 1.0
-	_quest_progress.anchor_top = 1.0
-	_quest_progress.anchor_bottom = 1.0
-	_quest_progress.offset_top = -26
-	_quest_progress.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_quest_plate.add_child(_quest_progress)
 	_build_action_bar()
 	_toast_box = VBoxContainer.new()
 	_toast_box.anchor_left = 0.5
@@ -237,15 +224,18 @@ func _build_wyrd_overlay() -> void:
 	_toast_box.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_toast_box.alignment = BoxContainer.ALIGNMENT_END
 	add_child(_toast_box)
+	# Spec 52 (Direction A) — run-meta plaque, top-RIGHT (was bottom-right).
 	_skills_lbl = Label.new()
 	WyrdUi.style_chip(_skills_lbl, 13)
 	_skills_lbl.anchor_left = 1.0
 	_skills_lbl.anchor_right = 1.0
-	_skills_lbl.anchor_top = 1.0
-	_skills_lbl.anchor_bottom = 1.0
-	_skills_lbl.offset_left = -330
-	_skills_lbl.offset_right = -10
-	_skills_lbl.offset_top = -26
+	_skills_lbl.anchor_top = 0.0
+	_skills_lbl.anchor_bottom = 0.0
+	_skills_lbl.offset_left = -260
+	_skills_lbl.offset_right = -16
+	_skills_lbl.offset_top = 12
+	_skills_lbl.offset_bottom = 42
+	_skills_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	add_child(_skills_lbl)
 	var game := get_tree().root.get_node_or_null("Game")
 	if game != null:
@@ -276,11 +266,14 @@ func _refresh_objective() -> void:
 	var prog := String(game.objective_progress())
 	_quest_progress.text = prog
 	_quest_progress.visible = prog != ""
-	# D13 — the chart sub-objective (delving only).
+	# D13 — the chart sub-objective (delving only). Spec 52: the compact chip
+	# shows just the chart NAME (the part before the "—"); the full affix list is
+	# too long for one line. A diamond prefixes it to echo the affix-icon mockup.
 	if _quest_sub != null:
 		var sub := String(game.objective_sub())
-		_quest_sub.text = sub
-		_quest_sub.visible = sub != ""
+		var short := sub.split(" — ")[0] if sub.contains(" — ") else sub
+		_quest_sub.text = ("◆ " + short) if short != "" else ""
+		_quest_sub.visible = short != ""
 
 # Bottom-right action bar — Pack (I) and Satchel (M) as clickable parchment
 # buttons, so the systems are discoverable without reading the guide.
