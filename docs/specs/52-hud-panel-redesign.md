@@ -34,18 +34,21 @@ relevant.
 ```
 
 ### Build passes
-1. **Layout reorg** (this pass): objective → compact one-line chip top-LEFT with
-   affix sub-line; run-meta (gold · Wayfinding, later + Depth) → a clean plaque
-   top-RIGHT; remove the always-on mute label, show mute only as a transient
-   toast on F10.
-2. **Vitals + bar**: slim the GlobeGauge orbs (lighter nest ornament), add the
-   draught as a real **Q-slot** on the hotbar instead of a floating "♨ ×N · Q"
-   chip.
-3. **Pack buttons**: Gear/Satchel/Trades as icon buttons in the Enamel kit
-   (bottom-right), matching the hotbar language.
-4. **Compass**: a small arrow at the objective chip that points toward the
-   descent/exit waystone in world space (projected through camera yaw); hidden
-   when there's no target. Closes the orientation gap.
+1. **Layout reorg** (D20 ✓): objective → compact chip top-LEFT; run-meta plaque
+   top-RIGHT; always-on mute removed → transient toast.
+2. **Vitals + bar** (D21 ✓): GlobeGauge orbs slimmed (R 40→36, the thick wood
+   ring + 4 bramble pegs replaced by a teal rim + gold pinstripe); draught is now
+   a real **Q-slot** appended to the hotbar (♨ + GOLD "Q" + ×N count from the
+   full DRAUGHT_ORDER, dimmed at 0, click-to-drink). Globes pushed to ±258 to
+   clear the wider 5-slot tray.
+3. **Pack buttons** (D21 ✓): Gear/Satchel/Trades are 50px Enamel icon buttons —
+   painted icon medallion, top-left key-hint, trade-color underline tab (was
+   carried by the text), word moved to the tooltip.
+4. **Compass** (D21 ✓): a CompassArrow Control just right of the chip resolves
+   its target each frame (live exit/descent waystone via the `abandoning`
+   duck-type, else the live boss arena), projects (target−player) through the
+   camera ground basis to a screen heading, eases it, draws a gold arrow on a
+   teal disc. Hidden in town + on arrival.
 
 ## Panel redesign (follow-on)
 The Gear/Satchel pack + crafting bench: flip to Enamel teal (user-approved) AND

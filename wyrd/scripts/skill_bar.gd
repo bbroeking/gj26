@@ -16,6 +16,10 @@ const ROW_BOTTOM := 114           # pixels from the bottom of the viewport
 # rescan of the global class cache.
 const HotbarSlot := preload("res://scripts/ui/hotbar_slot.gd")
 const HotbarTray := preload("res://scripts/ui/hotbar_tray.gd")
+# Spec 52 — the draught (heal) Q-slot rides the end of the bar; ♨ uses the
+# default font (IM Fell tofus U+2668). Count sums every drinkable draught.
+const CraftingDefs := preload("res://data/crafting.gd")
+const DRAUGHT_GLYPH := "♨"
 
 # Short labels for each Skill class name — covers all nine B5 skills.
 const SKILL_LABEL := {
@@ -65,6 +69,7 @@ const SKILL_DESC := {
 var _player: Node = null
 var _slots: Array = []           # 4 HotbarSlot nodes — built on bind
 var _plate: Control = null       # spec 38 — the carved tray under the row
+var _draught_slot: HotbarSlot = null   # spec 52 — the Q draught slot (NOT in _slots)
 
 func _ready() -> void:
 	layer = 50
@@ -82,7 +87,10 @@ func bind_to_player(p: Node) -> void:
 		_plate = null
 	if _player == null or _player.get("skills") == null:
 		return
-	var total_w := 4 * SLOT_SIZE + 3 * SLOT_GAP
+	# Spec 52 — the row is the skill slots PLUS a trailing draught (Q) slot, so
+	# the tray + slot x-math budget for n_skills + 1 slots and stay centred.
+	var n_skills: int = mini(4, _player.skills.size())
+	var total_w := (n_skills + 1) * SLOT_SIZE + n_skills * SLOT_GAP
 	# One carved wooden plank under the whole row (HotbarTray._draw), so the
 	# slots read as a single crafted piece instead of a flat engine panel.
 	var plate := HotbarTray.new()
@@ -98,9 +106,7 @@ func bind_to_player(p: Node) -> void:
 	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(plate)
 	_plate = plate
-	for i in 4:
-		if i >= _player.skills.size():
-			break
+	for i in n_skills:
 		var skill = _player.skills[i]
 		var label: String = SKILL_LABEL.get(skill.name, skill.name.substr(0, 3))
 		var slot := _make_slot(i, total_w, label, int(skill.cost))
@@ -151,6 +157,15 @@ func bind_to_player(p: Node) -> void:
 				nm.offset_bottom = SLOT_SIZE - 8
 		_slots.append(slot)
 		add_child(slot)
+	# Spec 52 — the trailing draught (Q) slot. Kept out of _slots so _process's
+	# skills[i] indexing never touches it.
+	_draught_slot = _make_draught_slot(n_skills, total_w)
+	add_child(_draught_slot)
+	var game := get_tree().root.get_node_or_null("Game")
+	if game != null and game.has_signal("materials_changed") \
+			and not game.materials_changed.is_connected(_refresh_draught):
+		game.materials_changed.connect(_refresh_draught)
+	_refresh_draught()
 
 func _process(_delta: float) -> void:
 	if _player == null or not is_instance_valid(_player):
@@ -236,3 +251,90 @@ func _make_slot(i: int, total_w: int, label: String, cost: int) -> Control:
 		c.offset_bottom = -2
 		s.add_child(c)
 	return s
+
+# Spec 52 — the draught (heal) slot at the end of the bar: ♨ glyph, ×N count,
+# a GOLD "Q" hint, dimmed when empty. Mirrors _make_slot's geometry but is wired
+# to the draught count, not a skill, and never enters _slots.
+func _make_draught_slot(idx: int, total_w: int) -> HotbarSlot:
+	var s := HotbarSlot.new()
+	s.name = "DraughtSlot"
+	s.anchor_left = 0.5
+	s.anchor_right = 0.5
+	s.anchor_top = 1.0
+	s.anchor_bottom = 1.0
+	var x := -total_w / 2.0 + idx * (SLOT_SIZE + SLOT_GAP)
+	s.offset_left = x
+	s.offset_right = x + SLOT_SIZE
+	s.offset_top = -ROW_BOTTOM
+	s.offset_bottom = -ROW_BOTTOM + SLOT_SIZE
+	s.mouse_filter = Control.MOUSE_FILTER_STOP
+	s.tooltip_text = "Draughts — drink to heal (Q). At full vigor it sips a buff."
+	# ♨ glyph (default font — IM Fell lacks U+2668).
+	var gl := Label.new()
+	gl.name = "Glyph"
+	gl.text = DRAUGHT_GLYPH
+	gl.add_theme_font_size_override("font_size", 30)
+	gl.add_theme_color_override("font_color", WyrdUi.INK)
+	gl.anchor_right = 1.0
+	gl.offset_top = 4
+	gl.offset_bottom = 44
+	gl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	gl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	s.add_child(gl)
+	s.move_child(gl, 0)
+	# "Q" key hint, top-left, GOLD so it reads as a different verb than 1-4.
+	var kb := Label.new()
+	kb.name = "Keybind"
+	kb.text = "Q"
+	kb.add_theme_font_size_override("font_size", 14)
+	kb.add_theme_color_override("font_color", WyrdUi.GOLD)
+	kb.add_theme_color_override("font_outline_color", Color(0.06, 0.05, 0.04))
+	kb.add_theme_constant_override("outline_size", 4)
+	kb.position = Vector2(6, 3)
+	kb.size = Vector2(20, 18)
+	s.add_child(kb)
+	# Count, bottom-right (mirrors the Cost label).
+	var c := Label.new()
+	c.name = "Count"
+	c.add_theme_font_size_override("font_size", 13)
+	c.add_theme_color_override("font_color", Color(0.32, 0.44, 0.50))
+	c.add_theme_color_override("font_outline_color", Color(0.97, 0.93, 0.82))
+	c.add_theme_constant_override("outline_size", 4)
+	c.anchor_left = 1.0
+	c.anchor_right = 1.0
+	c.anchor_top = 1.0
+	c.anchor_bottom = 1.0
+	c.offset_left = -26
+	c.offset_top = -18
+	c.offset_right = -2
+	c.offset_bottom = -2
+	c.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	s.add_child(c)
+	# Click also drinks (keyboard Q is the primary path; player_controller owns it).
+	s.gui_input.connect(func(ev: InputEvent):
+		if ev is InputEventMouseButton and ev.pressed \
+				and ev.button_index == MOUSE_BUTTON_LEFT:
+			var g := get_tree().root.get_node_or_null("Game")
+			var pl: Node = g.local_player() if g != null else null
+			if pl != null and pl.has_method("_quaff"):
+				pl.call("_quaff"))
+	return s
+
+func _draught_count() -> int:
+	var g := get_tree().root.get_node_or_null("Game")
+	if g == null:
+		return 0
+	var n := 0
+	for id in CraftingDefs.DRAUGHT_ORDER:
+		n += int(g.material_count(String(id)))
+	return n
+
+func _refresh_draught(_arg = null) -> void:
+	if _draught_slot == null or not is_instance_valid(_draught_slot):
+		return
+	var n := _draught_count()
+	var c := _draught_slot.get_node_or_null("Count") as Label
+	if c != null:
+		c.text = "×%d" % n
+	# ratio 0 → no cooldown wedge; castable=false dims the carved face at 0.
+	_draught_slot.set_state(0.0, n > 0)

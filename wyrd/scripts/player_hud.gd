@@ -26,6 +26,7 @@ const Feel = preload("res://data/feel.gd")   # Plan.md B0 — feel tunables
 var _objective: Label
 var _quest_sub: Label         # D13 — chart sub-objective line
 var _quest_plate: Panel
+var _compass: CompassArrow = null      # spec 52 — points at the descent/exit
 var _quest_progress: Label
 var _toast_box: VBoxContainer
 var _skills_lbl: Label
@@ -51,10 +52,10 @@ func _ready() -> void:
 	$FocusRoot.visible = false
 	_hp_globe = GlobeGauge.new()
 	_hp_globe.liquid = Color(0.70, 0.18, 0.14)
-	_place_globe(_hp_globe, -220.0)
+	_place_globe(_hp_globe, -258.0)
 	_focus_globe = GlobeGauge.new()
 	_focus_globe.liquid = Color(0.20, 0.42, 0.62)
-	_place_globe(_focus_globe, 220.0)
+	_place_globe(_focus_globe, 258.0)
 	_hp_globe.update_to(1.0, "30/30", "")
 	_focus_globe.update_to(1.0, "50/50", "")
 	# Status pip row — drain-arc pips above the HP globe (system-status-effects).
@@ -63,14 +64,13 @@ func _ready() -> void:
 	_pip_row.anchor_right = 0.5
 	_pip_row.anchor_top = 1.0
 	_pip_row.anchor_bottom = 1.0
-	_pip_row.offset_left = -286
-	_pip_row.offset_right = -154
+	_pip_row.offset_left = -324
+	_pip_row.offset_right = -192
 	_pip_row.offset_top = -176
 	_pip_row.offset_bottom = -154
 	_pip_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_pip_row)
 	_build_hurt_vignette()
-	_build_draught_chip()
 	_build_mute_indicator()
 	_build_wyrd_overlay()
 	_build_coop_hud()
@@ -95,37 +95,6 @@ func _build_mute_indicator() -> void:
 	var game := get_tree().root.get_node_or_null("Game")
 	if game != null and game.has_signal("mute_changed"):
 		game.mute_changed.connect(func(m): show_toast("♪  Muted" if m else "♪  Sound on"))
-
-# Draught counter under the meters — what Q will drink.
-var _draught_lbl: Label = null
-
-func _build_draught_chip() -> void:
-	_draught_lbl = Label.new()
-	_draught_lbl.anchor_left = 0.5
-	_draught_lbl.anchor_right = 0.5
-	_draught_lbl.anchor_top = 1.0
-	_draught_lbl.anchor_bottom = 1.0
-	_draught_lbl.offset_left = -300
-	_draught_lbl.offset_right = -140
-	_draught_lbl.offset_top = -22
-	_draught_lbl.offset_bottom = -4
-	_draught_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	WyrdUi.style_chip(_draught_lbl, 13)
-	add_child(_draught_lbl)
-	var game := get_tree().root.get_node_or_null("Game")
-	if game != null:
-		game.materials_changed.connect(_refresh_draughts)
-	_refresh_draughts()
-
-func _refresh_draughts() -> void:
-	if _draught_lbl == null:
-		return
-	var game := get_tree().root.get_node_or_null("Game")
-	if game == null:
-		return
-	var n: int = int(game.material_count("hearth_draught")) \
-		+ int(game.material_count("deep_draught"))
-	_draught_lbl.text = "" if n == 0 else "♨ ×%d · Q" % n
 
 # ---- Wyrd overlay: objective + toasts + skill levels ----
 func _build_wyrd_overlay() -> void:
@@ -214,6 +183,17 @@ func _build_wyrd_overlay() -> void:
 	_quest_sub.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_quest_sub.clip_text = true
 	_quest_plate.add_child(_quest_sub)
+	# Spec 52 — a compass arrow just right of the objective chip, pointing at the
+	# descent/exit. Self-resolves its target each frame; hides in town.
+	_compass = CompassArrow.new()
+	_compass.anchor_left = 0.0
+	_compass.anchor_top = 0.0
+	_compass.offset_left = 368
+	_compass.offset_top = 14
+	_compass.offset_right = 368 + 48
+	_compass.offset_bottom = 14 + 48
+	_compass.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_compass)
 	_build_action_bar()
 	_toast_box = VBoxContainer.new()
 	_toast_box.anchor_left = 0.5
@@ -278,37 +258,91 @@ func _refresh_objective() -> void:
 # Bottom-right action bar — Pack (I) and Satchel (M) as clickable parchment
 # buttons, so the systems are discoverable without reading the guide.
 func _build_action_bar() -> void:
+	# Spec 52 (Direction A) — Gear/Satchel/Trades as compact icon buttons in the
+	# Enamel kit, matching the hotbar's visual language. The word moves to the
+	# tooltip; the key-hint sits top-left; the trade color rides a thin underline.
 	var bar := HBoxContainer.new()
 	bar.anchor_left = 1.0
 	bar.anchor_right = 1.0
 	bar.anchor_top = 1.0
 	bar.anchor_bottom = 1.0
-	bar.offset_left = -360
-	bar.offset_top = -96
+	# 3 × 50 + 2 × 8 sep = 166 wide, 50 tall; pinned bottom-right.
+	bar.offset_left = -182
+	bar.offset_top = -110
 	bar.offset_right = -16
-	bar.offset_bottom = -56
+	bar.offset_bottom = -60
 	bar.add_theme_constant_override("separation", 8)
 	add_child(bar)
+	var fallback := {"gear": "⚔", "satchel": "❖", "trades": "✎"}
 	for spec in [["Gear", "I", "toggle_inventory", "gear"],
 			["Satchel", "M", "toggle_satchel", "satchel"],
 			["Trades", "K", "toggle_trades", "trades"]]:
 		var b := Button.new()
 		WyrdUi.style_kit_button(b)
-		# Carry the trade-color language: Gear terracotta, Satchel sage, Trades gold.
+		b.text = ""
+		b.tooltip_text = "%s  (%s)" % [spec[0], spec[1]]
+		b.custom_minimum_size = Vector2(50, 50)
+		b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		# Trade-color language: Gear terracotta, Satchel sage, Trades gold — now
+		# carried by a thin underline tab, not the (removed) button text.
 		var accent: Color = WyrdUi.TERRACOTTA
 		if spec[3] == "satchel":
 			accent = WyrdUi.SAGE
 		elif spec[3] == "trades":
 			accent = WyrdUi.GOLD
-		b.add_theme_color_override("font_color", accent.darkened(0.12))
-		b.add_theme_color_override("font_hover_color", accent)
-		b.text = "%s (%s)" % [spec[0], spec[1]]
+		# Icon — a child TextureRect (mirrors the hotbar slot icons exactly).
 		var icon_path := "res://assets/ui/icons/%s.png" % spec[3]
 		if ResourceLoader.exists(icon_path):
-			b.icon = load(icon_path)
-			b.add_theme_constant_override("icon_max_width", 22)
-			b.expand_icon = false
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var tr := TextureRect.new()
+			tr.texture = load(icon_path)
+			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			tr.anchor_right = 1.0
+			tr.anchor_bottom = 1.0
+			tr.offset_left = 8
+			tr.offset_top = 8
+			tr.offset_right = -8
+			tr.offset_bottom = -8
+			tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			b.add_child(tr)
+		else:
+			var gl := Label.new()
+			gl.text = String(fallback.get(spec[3], "?"))
+			var hdr := WyrdUi.font_header()
+			if hdr != null:
+				gl.add_theme_font_override("font", hdr)
+			gl.add_theme_font_size_override("font_size", 22)
+			gl.add_theme_color_override("font_color", WyrdUi.INK)
+			gl.anchor_right = 1.0
+			gl.anchor_bottom = 1.0
+			gl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			gl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			gl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			b.add_child(gl)
+		# Key-hint, top-left (neutral cream + dark outline, like the hotbar).
+		var kb := Label.new()
+		kb.text = spec[1]
+		kb.add_theme_font_size_override("font_size", 12)
+		kb.add_theme_color_override("font_color", WyrdUi.INK)
+		kb.add_theme_color_override("font_outline_color", Color(0.06, 0.05, 0.04))
+		kb.add_theme_constant_override("outline_size", 4)
+		kb.position = Vector2(5, 2)
+		kb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(kb)
+		# Trade-color accent underline along the bottom edge.
+		var underline := ColorRect.new()
+		underline.color = accent
+		underline.anchor_left = 0.0
+		underline.anchor_right = 1.0
+		underline.anchor_top = 1.0
+		underline.anchor_bottom = 1.0
+		underline.offset_left = 7
+		underline.offset_right = -7
+		underline.offset_top = -6
+		underline.offset_bottom = -3
+		underline.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(underline)
 		var method: String = spec[2]
 		b.pressed.connect(func():
 			# Spec 46 — route HUD buttons to the LOCAL player in co-op.
@@ -584,10 +618,10 @@ class GlobeGauge extends Control:
 	var liquid := Color(0.70, 0.18, 0.14)
 	var label := ""
 	var status := ""
-	const R := 40.0
+	const R := 36.0                                 # spec 52 — slimmer enamel gauge
 
-	const RING_WOOD := Color(0.890, 0.722, 0.361)   # gilded carved frame
-	const RING_EDGE := Color(0.26, 0.19, 0.13)
+	const RING_WOOD := Color(0.890, 0.722, 0.361)   # gold pinstripe
+	const RING_BEZEL := Color(0.075, 0.231, 0.212)  # KIT_PLATE deep-teal enamel
 	var _t := 0.0                                # animation clock (low-warn pulse)
 
 	func update_to(p_frac: float, p_label: String, p_status: String) -> void:
@@ -605,14 +639,10 @@ class GlobeGauge extends Control:
 
 	func _draw() -> void:
 		var c := size * 0.5
-		# --- carved wood-ring (spec 41 gate: kit variant A) ---
-		draw_arc(c, R + 8.0, 0, TAU, 64, RING_WOOD, 14.0, true)
-		draw_arc(c, R + 15.0, 0, TAU, 64, RING_EDGE, 2.5, true)
-		draw_arc(c, R + 1.5, 0, TAU, 64, RING_EDGE, 2.0, true)
-		for i in 4:
-			var a := PI * 0.25 + float(i) * PI * 0.5
-			var np := c + Vector2(cos(a), sin(a)) * (R + 8.0)
-			WyrdUi.draw_round_well(self, np, 8.0, WyrdUi.KIT_PLATE)
+		# --- slim enamel bezel (spec 52 Dir-A): teal rim + gold pinstripe,
+		#     no thick wood ring, no bramble pegs ---
+		draw_arc(c, R + 2.0, 0, TAU, 56, RING_BEZEL, 3.0, true)
+		draw_arc(c, R + 4.5, 0, TAU, 56, RING_WOOD, 2.0, true)
 		# --- glass orb ---
 		draw_circle(c, R, Color(0.12, 0.10, 0.09))
 		if frac > 0.003:
@@ -645,14 +675,14 @@ class GlobeGauge extends Control:
 			Color(1, 1, 1, 0.55))
 		draw_circle(c + Vector2(-R * 0.06, -R * 0.55), R * 0.08,
 			Color(1, 1, 1, 0.40))
-		# Ink rim.
-		draw_arc(c, R, 0, TAU, 64, Color(0.20, 0.14, 0.10), 3.5, true)
+		# Slim ink rim, teal-tinted to belong to the enamel skin.
+		draw_arc(c, R, 0, TAU, 56, Color(0.05, 0.14, 0.13), 2.0, true)
 		# Low-resource danger pulse — a breathing rim in the liquid's own hue
 		# so a near-empty HP/Focus globe pulls the eye.
 		if frac < 0.30:
 			var pulse := 0.30 + 0.40 * (0.5 + 0.5 * sin(_t * 6.5))
-			draw_arc(c, R + 4.0, 0, TAU, 64,
-				Color(liquid.lightened(0.15), pulse), 3.0, true)
+			draw_arc(c, R + 3.0, 0, TAU, 56,
+				Color(liquid.lightened(0.15), pulse), 2.5, true)
 		# --- numbers ---
 		var f := get_theme_default_font()
 		draw_string_outline(f, Vector2(0, c.y + 5), label,
@@ -722,3 +752,64 @@ class QuestScrollArt extends Control:
 		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
 		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
 		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+
+# Spec 52 — a top-down compass arrow that points at the run's descent target.
+# Self-contained: resolves target, player, and camera each frame in _process.
+# Target = the live exit/descent waystone (not the abandon stone), else the live
+# boss arena. Hidden in town and on arrival. Duck-typed (the "abandoning"
+# property) so it never references the ExitWaystone class_name (headless cache).
+class CompassArrow extends Control:
+	const REACHED_DIST := 1.6
+	var _dir := Vector2.UP
+
+	func _process(dt: float) -> void:
+		var target := _resolve_target()
+		var cam := get_viewport().get_camera_3d()
+		var game := get_node_or_null("/root/Game")
+		var player: Node3D = game.local_player() if game != null else null
+		if target == null or cam == null or player == null:
+			visible = false
+			return
+		var d: Vector3 = target.global_position - player.global_position
+		d.y = 0.0
+		if d.length() < REACHED_DIST:
+			visible = false
+			return
+		# Camera GROUND basis (pitch flattened) → a top-down compass read.
+		var f: Vector3 = -cam.global_basis.z
+		f.y = 0.0
+		f = f.normalized()
+		var r: Vector3 = cam.global_basis.x
+		r.y = 0.0
+		r = r.normalized()
+		var want := Vector2(d.dot(r), -d.dot(f)).normalized()   # y-down screen
+		_dir = _dir.slerp(want, clampf(8.0 * dt, 0.0, 1.0))
+		visible = true
+		queue_redraw()
+
+	# The descent target: the live exit/descent stone, else the live boss arena.
+	func _resolve_target() -> Node3D:
+		var tree := get_tree()
+		if tree == null:
+			return null
+		for n in tree.get_nodes_in_group("interactable"):
+			var ab = n.get("abandoning")       # only the waystones carry this
+			if ab != null and not bool(ab) and n.has_method("is_used") \
+					and not n.is_used():
+				return n
+		for e in tree.get_nodes_in_group("enemy"):
+			if String(e.get("role")) == "boss" and not bool(e.get("dead")):
+				return e
+		return null
+
+	func _draw() -> void:
+		var c := size * 0.5
+		var perp := Vector2(-_dir.y, _dir.x)
+		var tip := c + _dir * 18.0
+		var bl := c - _dir * 9.0 + perp * 9.0
+		var br := c - _dir * 9.0 - perp * 9.0
+		WyrdUi.draw_round_well(self, c, 22.0, WyrdUi.KIT_PLATE)
+		draw_colored_polygon(PackedVector2Array([tip, bl, br]), WyrdUi.GOLD)
+		draw_polyline(PackedVector2Array([tip, bl, br, tip]),
+			WyrdUi.KIT_EDGE, 1.5, true)
