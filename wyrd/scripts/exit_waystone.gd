@@ -36,28 +36,31 @@ func _ready_interactable() -> void:
 	add_child(cairn)
 	GlbFit.normalize_height(cairn, 1.8)
 	GlbFit.add_ink_outline(cairn)
-	# Wayfinding beacon — a procedural dungeon has no memorized layout, so the
-	# exit must out-signal the room the instant a sightline opens. A tall emissive
-	# beam blooms through the depth fog: bright cool-blue for the real exit, dim
-	# neutral for the abandon/return stone so it doesn't compete for attention.
+	# Wayfinding beacon — the REAL exit raises a cool-blue beam so it out-signals
+	# the room when a sightline opens. ADDITIVE blend so it only ADDS glow through
+	# the fog — never darkens behind it into a murky band. The abandon/return stone
+	# gets NO beam (just a dim light) so it doesn't compete or muddy the view.
 	var beacon: Color = Color(0.55, 0.78, 1.0) if not abandoning \
 		else Color(0.72, 0.68, 0.58)
-	var beam := MeshInstance3D.new()
-	var cyl := CylinderMesh.new()
-	cyl.top_radius = 0.16
-	cyl.bottom_radius = 0.30
-	cyl.height = 5.0
-	beam.mesh = cyl
-	beam.position = Vector3(0.0, 2.6, 0.0)
-	var bmat := StandardMaterial3D.new()
-	bmat.albedo_color = Color(beacon.r, beacon.g, beacon.b, 0.35)
-	bmat.emission_enabled = true
-	bmat.emission = beacon
-	bmat.emission_energy_multiplier = 2.8 if not abandoning else 1.1
-	bmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	bmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	beam.material_override = bmat
-	add_child(beam)
+	if not abandoning:
+		var beam := MeshInstance3D.new()
+		var cyl := CylinderMesh.new()
+		cyl.top_radius = 0.10
+		cyl.bottom_radius = 0.22
+		cyl.height = 5.5
+		beam.mesh = cyl
+		beam.position = Vector3(0.0, 2.8, 0.0)
+		var bmat := StandardMaterial3D.new()
+		bmat.albedo_color = Color(0.55, 0.78, 1.0, 0.6)
+		bmat.emission_enabled = true
+		bmat.emission = Color(0.55, 0.78, 1.0)
+		bmat.emission_energy_multiplier = 1.6
+		bmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		bmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		bmat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD   # glow, never darken
+		bmat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		beam.material_override = bmat
+		add_child(beam)
 	var glow := OmniLight3D.new()
 	glow.position = Vector3(0.0, 1.4, 0.0)
 	glow.light_color = beacon

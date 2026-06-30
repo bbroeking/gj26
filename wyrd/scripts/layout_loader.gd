@@ -1360,12 +1360,14 @@ func _build_boss_vista(cx: int, cy: int) -> void:
 	beam.mesh = cyl
 	beam.position = pos + Vector3(0.0, 3.2, 0.0)
 	var bmat := StandardMaterial3D.new()
-	bmat.albedo_color = Color(amber.r, amber.g, amber.b, 0.30)
+	bmat.albedo_color = Color(amber.r, amber.g, amber.b, 0.6)
 	bmat.emission_enabled = true
 	bmat.emission = amber
-	bmat.emission_energy_multiplier = 3.0
+	bmat.emission_energy_multiplier = 1.8
 	bmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	bmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	bmat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD   # glow, never darken
+	bmat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	beam.material_override = bmat
 	add_child(beam)
 
