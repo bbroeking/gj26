@@ -120,6 +120,27 @@ var _roll_cd := 0.0
 var _fire_buffer := 0.0
 var _fire_recoil := 0.0       # back-lean on the mesh after a shot
 
+# Animation-feel tunables (defaults = shipped values). Overridable per capture
+# via env vars so option variants can be filmed without editing code — see
+# _read_anim_env(). Gameplay is unaffected when the env vars are unset.
+var _arc_up := 0.24           # bow rise on the draw (picked: S1 "balanced")
+var _arc_fwd := 0.32          # bow reach-forward on the draw
+var _shot_recoil := -0.6      # mesh back-lean on a shot (read by projectile_skill)
+var _roll_hop := 0.88         # somersault hop height (picked: R3 "big tumble")
+var _roll_dust_n := 18        # roll dust particle count
+
+func _read_anim_env() -> void:
+	if OS.get_environment("ARC_UP") != "":
+		_arc_up = float(OS.get_environment("ARC_UP"))
+	if OS.get_environment("ARC_FWD") != "":
+		_arc_fwd = float(OS.get_environment("ARC_FWD"))
+	if OS.get_environment("RECOIL") != "":
+		_shot_recoil = float(OS.get_environment("RECOIL"))
+	if OS.get_environment("ROLL_HOP") != "":
+		_roll_hop = float(OS.get_environment("ROLL_HOP"))
+	if OS.get_environment("ROLL_DUST") != "":
+		_roll_dust_n = int(OS.get_environment("ROLL_DUST"))
+
 var hp := PLAYER_HP
 var hp_max := PLAYER_HP
 var dead := false
@@ -181,6 +202,7 @@ var _enchant_hit_effects: Array = []
 
 func _ready() -> void:
 	add_to_group("player")
+	_read_anim_env()   # dev: per-capture animation-feel overrides (no-op if unset)
 	# Spec 46 Phase A — in a co-op session only the authority's machine
 	# simulates this body; everyone else's copy is a synced puppet.
 	var net := get_node_or_null("/root/NetGame")
@@ -626,7 +648,7 @@ func _physics_process(delta: float) -> void:
 		if _move == Move.ROLL:
 			var prog := 1.0 - _burst_t / ROLL_TIME
 			_mesh.rotation.x = prog * TAU
-			_mesh.position.y = sin(prog * PI) * 0.55
+			_mesh.position.y = sin(prog * PI) * _roll_hop
 		else:
 			_mesh.position.y = 0.0
 			_fire_recoil = lerpf(_fire_recoil, 0.0, 9.0 * delta)
@@ -681,7 +703,7 @@ func _spawn_roll_dust() -> void:
 	if host == null:
 		return
 	var p := GPUParticles3D.new()
-	p.amount = 14
+	p.amount = _roll_dust_n
 	p.lifetime = 0.5
 	p.one_shot = true
 	p.explosiveness = 0.9
@@ -750,8 +772,8 @@ func _update_bow() -> void:
 		# On the draw the bow arcs UP + forward toward the aim so the shot reads
 		# from the top-down camera (a small side-lift was near-invisible there).
 		_bow.global_position = _bow_socket.global_position \
-			+ right * 0.12 + Vector3(0.0, 0.06 + 0.24 * draw, 0.0) \
-			+ fwd * (0.05 + 0.32 * draw)
+			+ right * 0.12 + Vector3(0.0, 0.06 + _arc_up * draw, 0.0) \
+			+ fwd * (0.05 + _arc_fwd * draw)
 		var look := Basis.looking_at(fwd, Vector3.UP) * Basis.from_euler(
 			Vector3(deg_to_rad(BOW_ROT_DEG.x), deg_to_rad(BOW_ROT_DEG.y),
 				deg_to_rad(BOW_ROT_DEG.z)))

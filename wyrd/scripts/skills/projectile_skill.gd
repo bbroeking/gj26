@@ -52,7 +52,11 @@ func fire(player: Node) -> void:
 			var rotated := dir.rotated(Vector3.UP, angle).normalized()
 			_spawn_arrow(player, origin, rotated, dmg, i == center_i)
 	if player.has_method("apply_recoil"):
-		player.apply_recoil(recoil_amount)
+		# Prefer the player's tunable recoil (lets capture variants override it).
+		var r: float = recoil_amount
+		if player.get("_shot_recoil") != null:
+			r = float(player.get("_shot_recoil"))
+		player.apply_recoil(r)
 	if player.has_method("bow_pop"):
 		player.bow_pop(bow_pop_mult)
 	var sfx = player.get_node_or_null("/root/Sfx")
