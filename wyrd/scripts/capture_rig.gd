@@ -34,6 +34,8 @@ const ABILITIES := [
 	{"slug": "powershot",   "kind": "skill",  "slot": 2},
 	{"slug": "multishot",   "kind": "skill",  "slot": 3},
 	{"slug": "snare",       "kind": "skill",  "slot": 4},
+	# Movement (dev-only, not a showcase clip): the dodge roll.
+	{"slug": "roll",        "kind": "roll"},
 	# The four statuses — applied to the rooted dummy, manually ticked so
 	# the visual + flash + damage numbers play out without needing the
 	# dummy's _physics_process enabled.
@@ -195,7 +197,11 @@ func _ready() -> void:
 	get_tree().quit()
 
 func _capture_all_abilities() -> void:
+	# Dev: CAP_ONLY=<slug> captures just that one clip for fast iteration.
+	var only := OS.get_environment("CAP_ONLY")
 	for ability in ABILITIES:
+		if only != "" and String(ability.slug) != only:
+			continue
 		await _capture_one(ability)
 
 func _capture_one(ability: Dictionary) -> void:
@@ -234,6 +240,7 @@ func _capture_one(ability: Dictionary) -> void:
 	# 90-frame clip; they only differ in the setup + fire stages.
 	match kind:
 		"skill":  await _capture_skill(slug, ability)
+		"roll":   await _capture_roll(slug)
 		"status": await _capture_status(slug, ability)
 		"elite":  await _capture_elite(slug, ability)
 		"boss":   await _capture_boss(slug, ability)
@@ -274,6 +281,20 @@ func _capture_skill(slug: String, ability: Dictionary) -> void:
 		_player.focus -= float(_player.skills[slot - 1].cost)
 	for i in POST_FIRE_FRAMES:
 		_keep_dummy_fresh()
+		await RenderingServer.frame_post_draw
+		_save_frame(slug, frame_n)
+		frame_n += 1
+
+# Roll clip (dev): idle, then trigger a forward dodge roll and film the tumble.
+func _capture_roll(slug: String) -> void:
+	var frame_n := 0
+	for i in 8:
+		await RenderingServer.frame_post_draw
+		_save_frame(slug, frame_n)
+		frame_n += 1
+	if _player.has_method("_start_burst"):
+		_player._start_burst(2, Vector3(0.0, 0.0, 1.0))   # 2 = Move.ROLL, forward
+	for i in 48:
 		await RenderingServer.frame_post_draw
 		_save_frame(slug, frame_n)
 		frame_n += 1

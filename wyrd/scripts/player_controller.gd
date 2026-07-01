@@ -69,7 +69,7 @@ const FIRE_COOLDOWN := 0.28         # spec 26 — snappier cadence
 const BOW_DRAW_TIME := 0.22         # Phase 4 — arm draw-and-loose duration on a shot
 const ARROW_SPAWN_FWD := 0.3
 const INPUT_BUFFER_SEC := 0.15
-const BOW_SCALE := 0.5
+const BOW_SCALE := 0.9
 const BOW_ROT_DEG := Vector3(90.0, 0.0, 0.0)  # upright in the grip
 
 # ---- survival (spec 15) ----
@@ -661,6 +661,7 @@ func _start_burst(m: Move, dir: Vector3) -> void:
 		var sfx_r := get_node_or_null("/root/Sfx")
 		if sfx_r != null:
 			sfx_r.play("roll")
+		_spawn_roll_dust()   # kick up dust so the dodge reads + has weight
 	_move = m
 	_burst_dir = dir.normalized() if dir.length() > 0.1 else _facing_dir()
 	if m == Move.DASH:
@@ -670,6 +671,53 @@ func _start_burst(m: Move, dir: Vector3) -> void:
 		_burst_t = ROLL_TIME
 		_roll_cd = ROLL_COOLDOWN
 		_iframe_t = maxf(_iframe_t, ROLL_IFRAMES)
+
+const TEX_DUST := preload("res://assets/vfx/soft_circle.png")
+
+# A quick low dust puff at the feet on a roll — sells the burst + gives the
+# dodge weight so it reads from the top-down camera, not just a bare tumble.
+func _spawn_roll_dust() -> void:
+	var host := get_parent()
+	if host == null:
+		return
+	var p := GPUParticles3D.new()
+	p.amount = 14
+	p.lifetime = 0.5
+	p.one_shot = true
+	p.explosiveness = 0.9
+	p.local_coords = false
+	var pm := ParticleProcessMaterial.new()
+	pm.direction = Vector3(0.0, 0.3, 0.0)
+	pm.spread = 85.0
+	pm.flatness = 0.75                     # hug the ground plane
+	pm.initial_velocity_min = 1.2
+	pm.initial_velocity_max = 3.2
+	pm.gravity = Vector3(0.0, -2.0, 0.0)
+	pm.scale_min = 0.6
+	pm.scale_max = 1.3
+	var dust := Color(0.74, 0.68, 0.56)
+	pm.color = dust
+	var grad := Gradient.new()
+	grad.set_color(0, Color(dust.r, dust.g, dust.b, 0.7))
+	grad.set_color(1, Color(dust.r, dust.g, dust.b, 0.0))
+	var ramp := GradientTexture1D.new()
+	ramp.gradient = grad
+	pm.color_ramp = ramp
+	p.process_material = pm
+	var qm := QuadMesh.new()
+	qm.size = Vector2(0.38, 0.38)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = dust
+	mat.albedo_texture = TEX_DUST
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	qm.material = mat
+	p.draw_pass_1 = qm
+	host.add_child(p)
+	p.global_position = global_position + Vector3(0.0, 0.1, 0.0)
+	p.emitting = true
+	get_tree().create_timer(0.9).timeout.connect(p.queue_free)
 
 # Play the clip for the movement state (crossfaded).
 func _play_anim(state: String) -> void:
@@ -699,9 +747,11 @@ func _update_bow() -> void:
 		var right := Vector3(fwd.z, 0.0, -fwd.x)
 		var draw := clampf(absf(_fire_recoil) / 0.2, 0.0, 1.0)
 		# Anchored at the hand; eased just clear of the hood's silhouette.
+		# On the draw the bow arcs UP + forward toward the aim so the shot reads
+		# from the top-down camera (a small side-lift was near-invisible there).
 		_bow.global_position = _bow_socket.global_position \
-			+ right * 0.12 + Vector3(0.0, 0.06, 0.0) \
-			+ fwd * (0.05 + 0.12 * draw)
+			+ right * 0.12 + Vector3(0.0, 0.06 + 0.24 * draw, 0.0) \
+			+ fwd * (0.05 + 0.32 * draw)
 		var look := Basis.looking_at(fwd, Vector3.UP) * Basis.from_euler(
 			Vector3(deg_to_rad(BOW_ROT_DEG.x), deg_to_rad(BOW_ROT_DEG.y),
 				deg_to_rad(BOW_ROT_DEG.z)))
