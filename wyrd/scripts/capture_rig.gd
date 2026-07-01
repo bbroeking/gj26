@@ -69,13 +69,18 @@ const DUMMY_POS_OFFAXIS := Vector3(2.2, 0, 5.0)
 
 func _ready() -> void:
 	print("[capture] capture rig booting")
-	# Install autoloads the headless harness usually skips.
-	var hs: Node = HitstopScript.new()
-	hs.name = "Hitstop"
-	get_tree().root.add_child(hs)
-	var sx: Node = SfxScript.new()
-	sx.name = "Sfx"
-	get_tree().root.add_child(sx)
+	# Install the autoloads the harness may skip — but only if they aren't
+	# already present (they load as real autoloads when run as a scene), and
+	# deferred so root isn't mid-setup ("Parent node is busy" otherwise).
+	var root := get_tree().root
+	if root.get_node_or_null("Hitstop") == null:
+		var hs: Node = HitstopScript.new()
+		hs.name = "Hitstop"
+		root.add_child.call_deferred(hs)
+	if root.get_node_or_null("Sfx") == null:
+		var sx: Node = SfxScript.new()
+		sx.name = "Sfx"
+		root.add_child.call_deferred(sx)
 	# Ambient light (without the dungeon's WorldEnvironment the scene is dark).
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-55, -30, 0)
@@ -416,7 +421,13 @@ func _keep_dummy_fresh() -> void:
 	_dummy.scale = _dummy._base_scale
 
 func _save_frame(slug: String, idx: int) -> void:
-	var img := get_viewport().get_texture().get_image()
+	# Grab AFTER the GPU has drawn this frame, else the viewport texture is
+	# empty and get_image() returns null (0 frames written).
+	await RenderingServer.frame_post_draw
+	var tex := get_viewport().get_texture()
+	if tex == null:
+		return
+	var img := tex.get_image()
 	if img == null:
 		return
 	var path := "user://captures/%s/%04d.png" % [slug, idx]

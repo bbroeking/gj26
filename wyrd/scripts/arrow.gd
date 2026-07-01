@@ -122,58 +122,89 @@ func _ready() -> void:
 		scale = scale * 2.5 * POWER_SCALE_MIN
 		_power_base_scale = scale
 
-# Bright unshaded capsule along travel + a world-space particle trail.
+# Unshaded emissive material helper (crisp glow, no lighting).
+static func _emat(col: Color, energy: float) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = col
+	m.emission_enabled = true
+	m.emission = col
+	m.emission_energy_multiplier = energy
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	return m
+
+# A crisp fletched arrow (shaft + cone head + fletching) glowing in the variant
+# colour, plus a thin world-space particle streak. Points down local -Z (travel).
+# Was a fat glowing capsule + oversized trail that read as a fuzzy blob.
 func _build_visual() -> void:
 	var col: Color = _variant.color
-	# Spec-34: outer arrows in a fan desaturate by lerping toward gray + drop
-	# emission so the center stays the focal point (Beardilocks "Hot Point").
+	# Spec-34: outer arrows in a fan desaturate toward gray + drop emission so
+	# the center stays the focal point (Beardilocks "Hot Point").
 	if not focal:
 		var gray: float = (col.r + col.g + col.b) / 3.0
 		col = col.lerp(Color(gray, gray, gray), 0.30)
-	var mi := MeshInstance3D.new()
-	mi.name = "Bolt"
-	var cap := CapsuleMesh.new()
-	cap.height = _variant.len * (1.0 if focal else 0.85)
-	cap.radius = _variant.rad * (1.0 if focal else 0.85)
-	mi.mesh = cap
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = col
-	mat.emission_enabled = true
-	mat.emission = col
-	mat.emission_energy_multiplier = 4.0 if focal else 2.4
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mi.material_override = mat
-	mi.rotation_degrees = Vector3(90, 0, 0)
-	add_child(mi)
-
+	var alen: float = _variant.len * (1.0 if focal else 0.85)   # shaft length
+	var arad: float = _variant.rad * (1.0 if focal else 0.85)   # visual thickness
+	var emit: float = 3.6 if focal else 2.2
+	var bolt := Node3D.new()
+	bolt.name = "Bolt"
+	add_child(bolt)
+	# Shaft — a thin cylinder lying along Z.
+	var shaft := MeshInstance3D.new()
+	var sc := CylinderMesh.new()
+	sc.top_radius = arad * 0.30
+	sc.bottom_radius = arad * 0.30
+	sc.height = alen
+	shaft.mesh = sc
+	shaft.material_override = _emat(col, emit * 0.7)
+	shaft.rotation_degrees = Vector3(90, 0, 0)
+	bolt.add_child(shaft)
+	# Head — a cone pointing forward (-Z), white-hot so the tip leads the eye.
+	var head := MeshInstance3D.new()
+	var hc := CylinderMesh.new()
+	hc.top_radius = 0.0
+	hc.bottom_radius = arad * 0.85
+	hc.height = alen * 0.42
+	head.mesh = hc
+	head.material_override = _emat(col.lerp(Color(1, 1, 1), 0.55), emit * 1.3)
+	head.rotation_degrees = Vector3(-90, 0, 0)
+	head.position = Vector3(0, 0, -alen * 0.5 - alen * 0.21)
+	bolt.add_child(head)
+	# Fletching — two crossed fins at the tail (+Z).
+	for i in 2:
+		var fin := MeshInstance3D.new()
+		var q := QuadMesh.new()
+		q.size = Vector2(arad * 2.6, alen * 0.34)
+		fin.mesh = q
+		var fmat := _emat(col, emit * 0.8)
+		fmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		fmat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		fin.material_override = fmat
+		fin.rotation_degrees = Vector3(90, 90 * i, 0)
+		fin.position = Vector3(0, 0, alen * 0.40)
+		bolt.add_child(fin)
+	# A thin, tight particle streak (was ~0.95-unit blobs).
 	var p := GPUParticles3D.new()
 	p.name = "Trail"
-	p.amount = int(_variant.trail_n)
-	p.lifetime = _variant.trail_life
+	p.amount = int(_variant.trail_n) / 2
+	p.lifetime = _variant.trail_life * 0.8
 	p.local_coords = false
-
 	var pm := ParticleProcessMaterial.new()
-	pm.direction = Vector3(0, 1, 0)
-	pm.spread = 18.0
-	pm.initial_velocity_min = 0.1
-	pm.initial_velocity_max = 0.6
+	pm.direction = Vector3(0, 0, 1)          # trail streams out the tail
+	pm.spread = 6.0
+	pm.initial_velocity_min = 0.0
+	pm.initial_velocity_max = 0.3
 	pm.gravity = Vector3.ZERO
-	pm.scale_min = 0.55
-	pm.scale_max = 1.0
+	pm.scale_min = 0.4
+	pm.scale_max = 0.9
 	pm.color = col
 	var grad := Gradient.new()
-	grad.set_color(0, Color(col.r, col.g, col.b, 1.0))
+	grad.set_color(0, Color(col.r, col.g, col.b, 0.9))
 	grad.set_color(1, Color(col.r, col.g, col.b, 0.0))
 	var ramp := GradientTexture1D.new()
 	ramp.gradient = grad
 	pm.color_ramp = ramp
 	p.process_material = pm
-
-	# Spec-34: trail now uses VFX.soft_particle_mesh — a textured billboard
-	# QuadMesh with soft-circle alpha falloff (replaces the BoxMesh cube).
-	# Emission stays at 1.5 (dimmer than head 4.0) so the head wins focal.
-	var ts: float = _variant.trail_size
-	p.draw_pass_1 = _soft_particle(ts * 10.5, col, 1.5)   # 3x bumped from 3.5
+	p.draw_pass_1 = _soft_particle(_variant.trail_size * 2.2, col, 2.2)
 	add_child(p)
 	p.emitting = true
 
@@ -315,7 +346,7 @@ func _spawn_power_aoe_burst(at: Vector3) -> void:
 	p.process_material = pm
 	# Spec-34: ember textured billboard particles, white hot core fading
 	# through orange to red at the edge (ember.png texture).
-	p.draw_pass_1 = _soft_particle(1.65, ember, 3.8, TEX_EMBER)  # 3x bumped from 0.55
+	p.draw_pass_1 = _soft_particle(0.6, ember, 3.8, TEX_EMBER)   # was 1.65 — crisp embers
 	host.add_child(p)
 	p.global_position = at
 	p.emitting = true
@@ -352,26 +383,54 @@ func _spawn_power_aoe_burst(at: Vector3) -> void:
 	tw.tween_property(rmat, "emission_energy_multiplier", 0.0, 0.40)
 	tw.chain().tween_callback(ring.queue_free)
 
+# A quick bright flash billboard that pops then vanishes — the "hit pop".
+static func _spawn_flash(host: Node, at: Vector3, col: Color, size: float) -> void:
+	var mi := MeshInstance3D.new()
+	var q := QuadMesh.new()
+	q.size = Vector2(size, size)
+	mi.mesh = q
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(col.lerp(Color(1, 1, 1), 0.4), 1.0)
+	mat.albedo_texture = TEX_SOFT_CIRCLE
+	mat.emission_enabled = true
+	mat.emission = col
+	mat.emission_energy_multiplier = 5.0
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	mi.material_override = mat
+	host.add_child(mi)
+	mi.global_position = at
+	mi.scale = Vector3.ONE * 0.3
+	var tw := mi.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(mi, "scale", Vector3.ONE * 1.5, 0.11) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.14)
+	tw.chain().tween_callback(mi.queue_free)
+
+# Impact — a crisp spark burst + a bright flash pop. Was a cloud of huge
+# 1.5-unit fuzzy balls that read as a blob, not a hit.
 func _explode(at: Vector3) -> void:
 	var host := get_parent()
 	if host == null:
 		return
 	var col: Color = _variant.color
+	_spawn_flash(host, at, col, 0.85)
 	var p := GPUParticles3D.new()
-	p.amount = 30
-	p.lifetime = 0.5
+	p.amount = 22
+	p.lifetime = 0.35
 	p.one_shot = true
 	p.explosiveness = 1.0
 	p.local_coords = false
-
 	var pm := ParticleProcessMaterial.new()
 	pm.direction = Vector3(0, 1, 0)
 	pm.spread = 180.0
-	pm.initial_velocity_min = 3.0
-	pm.initial_velocity_max = 7.0
-	pm.gravity = Vector3.ZERO
-	pm.scale_min = 0.7
-	pm.scale_max = 1.5
+	pm.initial_velocity_min = 3.5
+	pm.initial_velocity_max = 8.5
+	pm.gravity = Vector3(0, -6.0, 0)
+	pm.scale_min = 0.5
+	pm.scale_max = 1.1
 	pm.color = col
 	var grad := Gradient.new()
 	grad.set_color(0, Color(col.r, col.g, col.b, 1.0))
@@ -380,12 +439,11 @@ func _explode(at: Vector3) -> void:
 	ramp.gradient = grad
 	pm.color_ramp = ramp
 	p.process_material = pm
-	# Spec-34: textured billboard particles for the impact burst.
-	p.draw_pass_1 = _soft_particle(1.5, col, 3.5)         # 3x bumped from 0.5
+	p.draw_pass_1 = _soft_particle(0.42, col, 3.2)       # was 1.5 — crisp sparks
 	host.add_child(p)
 	p.global_position = at
 	p.emitting = true
-	p.get_tree().create_timer(1.2).timeout.connect(p.queue_free)
+	p.get_tree().create_timer(0.9).timeout.connect(p.queue_free)
 
 # C7 — the silver-white finisher burst, distinct from the warm-gold kill pop.
 func _spawn_mercy_kill_burst(pos: Vector3) -> void:
