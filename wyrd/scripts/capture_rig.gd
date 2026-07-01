@@ -422,9 +422,10 @@ func _keep_dummy_fresh() -> void:
 
 func _save_frame(slug: String, idx: int) -> void:
 	# Grab AFTER the GPU has drawn this frame, else the viewport texture is
-	# empty and get_image() returns null (0 frames written).
+	# empty and get_image() returns null (0 frames written). Grab the root
+	# Window's texture (the reliable path — get_viewport() gave empty images).
 	await RenderingServer.frame_post_draw
-	var tex := get_viewport().get_texture()
+	var tex := get_tree().root.get_texture()
 	if tex == null:
 		return
 	var img := tex.get_image()
