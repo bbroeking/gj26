@@ -119,6 +119,10 @@ func _ready() -> void:
 			_tex_cache[String(path)] = load(String(path))
 	if ResourceLoader.exists(WyrdUi.PANEL_TEX_PATH):
 		_tex_cache[WyrdUi.PANEL_TEX_PATH] = load(WyrdUi.PANEL_TEX_PATH)
+	# Maple frame texture — preload so panel_stylebox()'s load() inside _draw hits
+	# the cache (never a first-load, which white-rects; memory gotcha).
+	if ResourceLoader.exists(WyrdUi.MAPLE_PANEL):
+		_tex_cache[WyrdUi.MAPLE_PANEL] = load(WyrdUi.MAPLE_PANEL)
 
 func _cached_tex(path: String) -> Texture2D:
 	return _tex_cache.get(path, null)
@@ -391,12 +395,13 @@ func _draw() -> void:
 		WyrdUi.panel_stylebox().draw(get_canvas_item(), win)
 	else:
 		draw_rect(win, Color(WyrdUi.KIT_PLATE, 0.97))
-	# Enamel Night — a deep recessed page fills the frame opening so the whole
-	# window reads as one dark enamel surface (no parchment wash re-lighting it).
-	draw_rect(Rect2(win.position + Vector2(WyrdUi.PANEL_MARGIN_L, WyrdUi.PANEL_MARGIN_T),
-		win.size - Vector2(WyrdUi.PANEL_MARGIN_L + WyrdUi.PANEL_MARGIN_R,
-			WyrdUi.PANEL_MARGIN_T + WyrdUi.PANEL_MARGIN_B)),
-		WyrdUi.KIT_WELL)
+	# Enamel Night drew a deep recessed dark page here; the maple cream panel
+	# already fills its opening with cream, so this is skipped when maple's on.
+	if not WyrdUi.has_maple():
+		draw_rect(Rect2(win.position + Vector2(WyrdUi.PANEL_MARGIN_L, WyrdUi.PANEL_MARGIN_T),
+			win.size - Vector2(WyrdUi.PANEL_MARGIN_L + WyrdUi.PANEL_MARGIN_R,
+				WyrdUi.PANEL_MARGIN_T + WyrdUi.PANEL_MARGIN_B)),
+			WyrdUi.KIT_WELL)
 	var hdr_font: Font = WyrdUi.font_header()
 	if hdr_font == null:
 		hdr_font = get_theme_default_font()
@@ -443,25 +448,31 @@ func _draw() -> void:
 			_draw_held()
 		draw_string(hint_font, grid_origin + Vector2(0, _rows() * CELL + 30),
 			"I close · R rotate · right-click quick-equips",
-			HORIZONTAL_ALIGNMENT_CENTER, COLS * CELL, WyrdUi.SIZE_LABEL, WyrdUi.INK_MID)
+			HORIZONTAL_ALIGNMENT_CENTER, COLS * CELL, WyrdUi.SIZE_LABEL,
+			WyrdUi.MAPLE_WOOD_D if WyrdUi.has_maple() else WyrdUi.INK_MID)
 		# Hover tooltip — drawn last so it sits on top of everything.
 		_draw_tooltip()
 
 func _draw_grid() -> void:
 	var grid_size := Vector2(COLS * CELL, _rows() * CELL)
-	# Recessed enamel well behind the cells (Diablo's sunken-grid read).
-	WyrdUi.draw_well(self,
-		Rect2(grid_origin - Vector2(6, 6), grid_size + Vector2(12, 12)))
+	var maple := WyrdUi.has_maple()
+	if not maple:
+		# Recessed enamel well behind the cells (Diablo's sunken-grid read).
+		WyrdUi.draw_well(self,
+			Rect2(grid_origin - Vector2(6, 6), grid_size + Vector2(12, 12)))
 	for y in _rows():
 		for x in COLS:
 			var r := Rect2(grid_origin + Vector2(x * CELL, y * CELL),
 				Vector2(CELL, CELL))
-			# Raised enamel tile; the 1px gap shows the well as a grid line.
-			draw_rect(r.grow(-1), WyrdUi.KIT_PLATE)
-			# Top light lip + a dark groove border (no bespoke sepia bevels).
-			draw_rect(Rect2(r.position + Vector2(2, 1), Vector2(CELL - 4, 1.5)),
-				Color(0.18, 0.34, 0.32))
-			draw_rect(r.grow(-1), Color(0.03, 0.10, 0.09), false, 1.0)
+			if maple:
+				# Each cell is its own glossy jade slot.
+				WyrdUi.draw_well(self, r.grow(-2.0))
+			else:
+				# Raised enamel tile; the 1px gap shows the well as a grid line.
+				draw_rect(r.grow(-1), WyrdUi.KIT_PLATE)
+				draw_rect(Rect2(r.position + Vector2(2, 1), Vector2(CELL - 4, 1.5)),
+					Color(0.18, 0.34, 0.32))
+				draw_rect(r.grow(-1), Color(0.03, 0.10, 0.09), false, 1.0)
 	if inventory != null:
 		for it in inventory.items:
 			_draw_item_in_grid(it)
@@ -477,7 +488,8 @@ func _draw_slots() -> void:
 	if hdr2 == null:
 		hdr2 = font
 	draw_string(hdr2, _slot_top("pickaxe") + Vector2(0, -10), "Trade Tools",
-		HORIZONTAL_ALIGNMENT_LEFT, 160.0, WyrdUi.SIZE_BODY, WyrdUi.INK)
+		HORIZONTAL_ALIGNMENT_LEFT, 160.0, WyrdUi.SIZE_BODY,
+		WyrdUi.MAPLE_WOOD_D if WyrdUi.has_maple() else WyrdUi.INK)
 	for name in SLOT_OFFSET:
 		var top := _slot_top(String(name))
 		var r := Rect2(top, Vector2(SLOT_SIZE, SLOT_SIZE))
@@ -488,10 +500,12 @@ func _draw_slots() -> void:
 			_draw_item_rect_scaled(it, top + Vector2(6, 6),
 				Vector2(SLOT_SIZE - 12, SLOT_SIZE - 12), false)
 		else:
-			# Empty slot — name ghosted in the well, Diablo-style.
+			# Empty slot — name ghosted in the well.
 			draw_string(font, top + Vector2(0, SLOT_SIZE * 0.5 + 5),
 				String(name).capitalize(), HORIZONTAL_ALIGNMENT_CENTER,
-				SLOT_SIZE, WyrdUi.SIZE_CAPTION, Color(WyrdUi.INK_MID, 0.85))
+				SLOT_SIZE, WyrdUi.SIZE_CAPTION,
+				Color(WyrdUi.MAPLE_WOOD_D, 0.7) if WyrdUi.has_maple() \
+					else Color(WyrdUi.INK_MID, 0.85))
 
 func _draw_item_in_grid(it: Dictionary) -> void:
 	var rotated: bool = it.get("rotated", false)
@@ -512,11 +526,12 @@ func _draw_item_rect_scaled(it: Dictionary, top: Vector2, size: Vector2, ghost: 
 	var tex_path := String(ICON_TEX.get(String(it.get("kind_id", "")), ""))
 	var tex: Texture2D = _cached_tex(tex_path)
 	if tex != null:
-		# Enamel plate under the painted icon.
-		var plate := WyrdUi.KIT_PLATE
-		if ghost:
-			plate.a = 0.55
-		draw_rect(r, plate)
+		# Enamel plate under the painted icon (maple slots already are jade).
+		if not WyrdUi.has_maple():
+			var plate := WyrdUi.KIT_PLATE
+			if ghost:
+				plate.a = 0.55
+			draw_rect(r, plate)
 		var mod := Color.WHITE
 		if ghost:
 			mod.a = 0.6

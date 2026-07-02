@@ -77,6 +77,10 @@ const PANEL_MARGIN := 40.0               # max side — for symmetric-inset math
 
 # The one place panel styleboxes come from (spec 39 consolidation).
 static func panel_stylebox() -> StyleBoxTexture:
+	# 2026-07-02 — code-drawn panel frames become the MapleStory cream+wood panel
+	# when the maple kit is present (ripples to inventory, vendor, craft, enchant…).
+	if has_maple():
+		return maple_panel_stylebox()
 	var sb := StyleBoxTexture.new()
 	sb.texture = load(PANEL_TEX_PATH)
 	sb.texture_margin_left = PANEL_MARGIN_L
@@ -95,6 +99,79 @@ const BTN_MOD_HOVER := Color(0.30, 0.64, 0.60)
 const BTN_MOD_PRESS := Color(0.15, 0.36, 0.34)
 const BTN_MOD_DISABLED := Color(0.20, 0.34, 0.32, 0.5)
 const SELECT_MOD := Color(0.34, 0.64, 0.42)         # selected-row glow
+
+# 2026-07-01 taste pass (user: "too many hard edges — softer, pudgy, playful").
+# Buttons drop the sharp carved-wood plate for a PUDGY rounded enamel pill: a big
+# corner radius, a soft drop shadow so it floats, a warm-light top sheen, and a
+# gentle gold rim. One helper (soft_button_box) so every button family softens
+# together. Warmer/lighter enamel than the frame tint, to read playful.
+const BTN_SOFT := Color(0.118, 0.333, 0.310)
+const BTN_SOFT_HOVER := Color(0.176, 0.435, 0.404)
+const BTN_SOFT_PRESS := Color(0.086, 0.247, 0.231)
+const BTN_SOFT_DISABLED := Color(0.145, 0.267, 0.251, 0.55)
+const BTN_RADIUS := 20                               # pudgy corner radius
+
+# MapleStory-tone kit (2026-07-01) — glossy painted 9-patch art generated in the
+# palette of the user-picked reference maple_B_4 (tools/gen_maple_ui.gd): a green
+# candy pill button, a cream-and-wood panel, a glossy jade slot. Buttons/panels
+# use these when present; the soft-flat styleboxes above stay as the fallback.
+const MAPLE_BTN := "res://assets/ui/maple/button_9p.png"
+const MAPLE_PANEL := "res://assets/ui/maple/panel_9p.png"
+const MAPLE_SLOT := "res://assets/ui/maple/slot_9p.png"
+const MAPLE_INK := Color(0.99, 0.97, 0.91)       # button label — cream
+const MAPLE_INK_DARK := Color(0.22, 0.14, 0.08)  # text outline / dark ink on cream
+# Maple palette (matches the generated kit / maple_B_4) — for code-drawn HUD
+# pieces (hotbar tray, orbs, compass) so they belong to the same skin.
+const MAPLE_WOOD := Color(0.55, 0.37, 0.22)
+const MAPLE_WOOD_D := Color(0.29, 0.17, 0.12)
+const MAPLE_WOOD_L := Color(0.75, 0.58, 0.39)
+const MAPLE_CREAM := Color(0.957, 0.878, 0.690)
+const MAPLE_CREAM_D := Color(0.84, 0.75, 0.57)
+const MAPLE_JADE := Color(0.31, 0.71, 0.59)
+const MAPLE_JADE_HI := Color(0.61, 0.885, 0.825)
+const MAPLE_JADE_D := Color(0.165, 0.47, 0.41)
+const MAPLE_GREEN := Color(0.47, 0.71, 0.29)
+
+# A candy-pill button stylebox from the generated art, tinted per state.
+static func maple_button(mod: Color) -> StyleBoxTexture:
+	var sb := StyleBoxTexture.new()
+	sb.texture = load(MAPLE_BTN)
+	sb.texture_margin_left = 30.0
+	sb.texture_margin_right = 30.0
+	sb.texture_margin_top = 20.0
+	sb.texture_margin_bottom = 22.0
+	sb.content_margin_left = 18.0
+	sb.content_margin_right = 18.0
+	sb.content_margin_top = 7.0
+	sb.content_margin_bottom = 9.0
+	sb.modulate_color = mod
+	return sb
+
+# True once the generated maple kit exists — gates every maple-vs-fallback branch.
+static func has_maple() -> bool:
+	return ResourceLoader.exists(MAPLE_BTN)
+
+# The cream-and-wood panel from the generated art (9-patch; ~15px wood frame
+# holds at any panel size). Used for the framed modals (dialogue, menu plate).
+static func maple_panel_stylebox() -> StyleBoxTexture:
+	var sb := StyleBoxTexture.new()
+	sb.texture = load(MAPLE_PANEL)
+	sb.texture_margin_left = 42.0
+	sb.texture_margin_right = 42.0
+	sb.texture_margin_top = 42.0
+	sb.texture_margin_bottom = 42.0
+	sb.set_content_margin_all(30.0)
+	return sb
+
+# The glossy jade slot from the generated art (9-patch; item icons draw on top).
+static func maple_slot_stylebox() -> StyleBoxTexture:
+	var sb := StyleBoxTexture.new()
+	sb.texture = load(MAPLE_SLOT)
+	sb.texture_margin_left = 20.0
+	sb.texture_margin_right = 20.0
+	sb.texture_margin_top = 20.0
+	sb.texture_margin_bottom = 20.0
+	return sb
 
 # UI bible fonts: IM Fell English (body), IM Fell English SC (headers),
 # Caveat (hand-jotted notes — toasts, costs, margin scribbles).
@@ -173,11 +250,13 @@ static func chip_stylebox(bg := KIT_PLATE) -> StyleBoxFlat:
 	sb.bg_color = bg
 	sb.border_color = KIT_EDGE
 	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(4)
+	sb.set_corner_radius_all(12)      # 2026-07-01 — rounder, softer chips
+	sb.corner_detail = 8
+	sb.anti_aliasing = true
 	# Spec 44 — a soft under-shadow so chips and buttons sit ON the
 	# parchment instead of floating flat in it.
 	sb.shadow_color = Color(0, 0, 0, 0.16)
-	sb.shadow_size = 2
+	sb.shadow_size = 3
 	sb.shadow_offset = Vector2(0, 2)
 	sb.content_margin_left = 10.0
 	sb.content_margin_right = 10.0
@@ -190,21 +269,61 @@ static func style_chip(l: Label, size: int = 14) -> void:
 	l.add_theme_color_override("font_color", INK)
 	l.add_theme_font_size_override("font_size", size)
 
+# The one pudgy-button factory (2026-07-01 taste pass). A rounded enamel pill
+# with a soft drop shadow (floats), a gold rim, and — via expand margins + a
+# large radius — a puffy, playful read. `press` sinks the shadow so the button
+# feels pushed. Every button family routes through here so they soften together.
+static func soft_button_box(bg: Color, pressed := false) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.set_corner_radius_all(BTN_RADIUS)
+	sb.corner_detail = 10
+	sb.anti_aliasing = true
+	sb.anti_aliasing_size = 1.0
+	sb.set_border_width_all(2)
+	sb.border_color = Color(GOLD, 0.5 if pressed else 0.62)
+	# Soft under-shadow so the pill sits ON the surface, not cut into it.
+	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.14 if pressed else 0.30)
+	sb.shadow_size = 3 if pressed else 7
+	sb.shadow_offset = Vector2(0, 1 if pressed else 3)
+	sb.content_margin_left = 16.0
+	sb.content_margin_right = 16.0
+	sb.content_margin_top = 8.0
+	sb.content_margin_bottom = 8.0
+	# Puff the fill a hair past its box for the pudgy bulge.
+	sb.expand_margin_left = 1.0
+	sb.expand_margin_right = 1.0
+	sb.expand_margin_top = 1.0 if not pressed else 0.0
+	sb.expand_margin_bottom = 3.0 if not pressed else 0.0
+	return sb
+
+# The MapleStory candy-pill theme: cream OUTLINED label (reads on the green
+# gradient) + the glossy button art in four states. Shared by both button styles.
+static func _maple_button_theme(b: Button) -> void:
+	b.add_theme_color_override("font_color", MAPLE_INK)
+	b.add_theme_color_override("font_hover_color", Color(1, 1, 1))
+	b.add_theme_color_override("font_pressed_color", MAPLE_INK)
+	b.add_theme_color_override("font_disabled_color", Color(MAPLE_INK, 0.6))
+	b.add_theme_color_override("font_outline_color", MAPLE_INK_DARK)
+	b.add_theme_constant_override("outline_size", 5)
+	b.add_theme_stylebox_override("normal", maple_button(Color.WHITE))
+	b.add_theme_stylebox_override("hover", maple_button(Color(1.12, 1.12, 1.10)))
+	b.add_theme_stylebox_override("pressed", maple_button(Color(0.86, 0.90, 0.84)))
+	b.add_theme_stylebox_override("disabled", maple_button(Color(0.72, 0.74, 0.70, 0.7)))
+
 static func style_kit_button(b: Button) -> void:
 	b.add_theme_font_size_override("font_size", 15)
+	if has_maple():
+		_maple_button_theme(b)
+		return
 	b.add_theme_color_override("font_color", INK)
 	b.add_theme_color_override("font_hover_color", GOLD)
 	b.add_theme_color_override("font_pressed_color", GOLD)
-	# Use the painted wood button plate so kit buttons read as carved objects
-	# (HUD action bar + craft/vendor/loadout rows), not flat parchment chips.
-	if ResourceLoader.exists(BUTTON_TEX_PATH):
-		b.add_theme_stylebox_override("normal", _btn_tex(BTN_MOD))
-		b.add_theme_stylebox_override("hover", _btn_tex(BTN_MOD_HOVER))
-		b.add_theme_stylebox_override("pressed", _btn_tex(BTN_MOD_PRESS))
-	else:
-		b.add_theme_stylebox_override("normal", chip_stylebox())
-		b.add_theme_stylebox_override("hover", chip_stylebox(KIT_PLATE.lightened(0.06)))
-		b.add_theme_stylebox_override("pressed", chip_stylebox(KIT_WELL))
+	# Pudgy rounded enamel pills (the carved-wood plate read too hard).
+	b.add_theme_stylebox_override("normal", soft_button_box(BTN_SOFT))
+	b.add_theme_stylebox_override("hover", soft_button_box(BTN_SOFT_HOVER))
+	b.add_theme_stylebox_override("pressed", soft_button_box(BTN_SOFT_PRESS, true))
+	b.add_theme_stylebox_override("disabled", soft_button_box(BTN_SOFT_DISABLED))
 
 static func make_meter(width: float, height: float, fill_color: Color) -> Dictionary:
 	var root := Panel.new()
@@ -260,26 +379,33 @@ static func style_panel(p: Panel) -> void:
 
 static func style_button(b: Button) -> void:
 	# Buttons are read, not admired — clean default font (usability pass).
+	# 2026-07-01 — same pudgy rounded pill as style_kit_button, so the menu,
+	# dialogue choices, and panel actions all share the soft, playful read.
 	b.add_theme_font_size_override("font_size", 15)
+	if has_maple():
+		_maple_button_theme(b)
+		var mf := StyleBoxFlat.new()
+		mf.draw_center = false
+		mf.border_color = GOLD
+		mf.set_border_width_all(2)
+		mf.set_corner_radius_all(BTN_RADIUS + 4)
+		mf.corner_detail = 10
+		b.add_theme_stylebox_override("focus", mf)
+		return
 	b.add_theme_color_override("font_color", INK)
 	b.add_theme_color_override("font_hover_color", GOLD)
 	b.add_theme_color_override("font_pressed_color", GOLD)
 	b.add_theme_color_override("font_disabled_color", Color(INK_MID, 0.55))
-	if ResourceLoader.exists(BUTTON_TEX_PATH):
-		b.add_theme_stylebox_override("normal", _btn_tex(BTN_MOD))
-		b.add_theme_stylebox_override("hover", _btn_tex(BTN_MOD_HOVER))
-		b.add_theme_stylebox_override("pressed", _btn_tex(BTN_MOD_PRESS))
-		b.add_theme_stylebox_override("disabled", _btn_tex(BTN_MOD_DISABLED))
-	else:
-		b.add_theme_stylebox_override("normal", _btn_flat(Color(0.20, 0.165, 0.125)))
-		b.add_theme_stylebox_override("hover", _btn_flat(Color(0.26, 0.215, 0.16)))
-		b.add_theme_stylebox_override("pressed", _btn_flat(Color(0.165, 0.135, 0.10)))
-		b.add_theme_stylebox_override("disabled", _btn_flat(Color(0.155, 0.13, 0.105, 0.6)))
+	b.add_theme_stylebox_override("normal", soft_button_box(BTN_SOFT))
+	b.add_theme_stylebox_override("hover", soft_button_box(BTN_SOFT_HOVER))
+	b.add_theme_stylebox_override("pressed", soft_button_box(BTN_SOFT_PRESS, true))
+	b.add_theme_stylebox_override("disabled", soft_button_box(BTN_SOFT_DISABLED))
 	var focus := StyleBoxFlat.new()
 	focus.draw_center = false
 	focus.border_color = GOLD
-	focus.set_border_width_all(1)
-	focus.set_corner_radius_all(6)
+	focus.set_border_width_all(2)
+	focus.set_corner_radius_all(BTN_RADIUS + 2)
+	focus.corner_detail = 10
 	b.add_theme_stylebox_override("focus", focus)
 
 static func _btn_tex(mod: Color) -> StyleBoxTexture:
@@ -313,17 +439,22 @@ static func _btn_flat(bg: Color) -> StyleBoxFlat:
 static func mark_selected(b: Button, selected: bool) -> void:
 	if not selected:
 		return
-	if ResourceLoader.exists(BUTTON_TEX_PATH):
-		var sb := _btn_tex(SELECT_MOD)
-		b.add_theme_stylebox_override("normal", sb)
-		b.add_theme_stylebox_override("hover", sb)
-		b.add_theme_color_override("font_color", GOLD)
-	else:
-		var fb := _btn_flat(Color(0.28, 0.23, 0.15))
-		fb.border_color = GOLD
-		fb.set_border_width_all(2)
-		b.add_theme_stylebox_override("normal", fb)
-		b.add_theme_stylebox_override("hover", fb)
+	if has_maple():
+		# Warm gold-tinted candy pill = "this one's chosen".
+		b.add_theme_stylebox_override("normal", maple_button(Color(1.16, 1.02, 0.70)))
+		b.add_theme_stylebox_override("hover", maple_button(Color(1.22, 1.08, 0.76)))
+		b.add_theme_color_override("font_color", MAPLE_INK)
+		return
+	# Soft sage-enamel pill with a full gold rim — the "this one's chosen" read.
+	var sb := soft_button_box(Color(0.176, 0.404, 0.290))
+	sb.border_color = GOLD
+	sb.set_border_width_all(3)
+	var sb2 := soft_button_box(Color(0.204, 0.451, 0.325))
+	sb2.border_color = GOLD
+	sb2.set_border_width_all(3)
+	b.add_theme_stylebox_override("normal", sb)
+	b.add_theme_stylebox_override("hover", sb2)
+	b.add_theme_color_override("font_color", GOLD)
 
 static func style_title(l: Label) -> void:
 	_set_font(l, font_header())
@@ -372,6 +503,23 @@ static func draw_list_row(c: CanvasItem, r: Rect2, accent: Color) -> void:
 # A recessed rectangular well: stepped inner shadow top-left, light lip
 # bottom — the socket reads as carved INTO the bench, not painted on.
 static func draw_well(c: CanvasItem, r: Rect2, fill := KIT_WELL) -> void:
+	# Maple: a glossy jade slot (only the DEFAULT recessed wells — i.e. item /
+	# gear slots; callers passing a custom fill keep the carved-enamel well).
+	if has_maple() and fill == KIT_WELL:
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = MAPLE_JADE
+		sb.set_corner_radius_all(mini(12, int(minf(r.size.x, r.size.y) * 0.26)))
+		sb.corner_detail = 8
+		sb.anti_aliasing = true
+		sb.set_border_width_all(3)
+		sb.border_color = MAPLE_WOOD
+		c.draw_style_box(sb, r)
+		var m := minf(r.size.x, r.size.y)
+		c.draw_circle(r.position + Vector2(r.size.x * 0.5, r.size.y * 0.30),
+			m * 0.32, Color(MAPLE_JADE_HI, 0.32))
+		c.draw_circle(r.position + Vector2(r.size.x * 0.30, r.size.y * 0.26),
+			m * 0.11, Color(1, 1, 1, 0.45))
+		return
 	c.draw_rect(r, fill)
 	for i in 3:
 		var a := 0.16 - 0.05 * float(i)

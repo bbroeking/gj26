@@ -152,6 +152,8 @@ func _ready() -> void:
 				game.add_material("hedge_ink", 3)
 				game.add_material("bogiron_ore", 2)
 				game.add_material("thorn_essence", 1)
+				game.add_material("hearth_draught", 3)
+				game.add_material("quickroot_tonic", 2)
 			if OS.get_environment("WYRD_UI_SHOT") == "trades":
 				var player2: Node = game.local_player()
 				if player2 != null:
@@ -192,8 +194,13 @@ func _ready() -> void:
 			elif OS.get_environment("WYRD_UI_SHOT") == "dialog":
 				var dlg: CanvasLayer = load("res://scripts/ui/dialog_panel.gd").new()
 				dlg.open("Mara Linnet, the Wayfinder",
-					["New boots. Good — the yard could use a pair."])
+					["New boots — good. The yard's paths won't walk themselves, and "
+					+ "the deeper dens don't forgive soft soles. Inscribe a chart when "
+					+ "you're ready and I'll read what the brambles have to say."],
+					null, ["Tell me about charts.", "Not just yet."])
 				add_child(dlg)
+			elif OS.get_environment("WYRD_UI_SHOT") == "loadout":
+				add_child(load("res://scripts/ui/loadout_panel.gd").new())
 			elif OS.get_environment("WYRD_UI_SHOT") == "credits":
 				add_child(load("res://scripts/ui/credits_menu.gd").new())
 			elif OS.get_environment("WYRD_UI_SHOT") == "options":

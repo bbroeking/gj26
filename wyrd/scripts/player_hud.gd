@@ -50,24 +50,36 @@ func _ready() -> void:
 	# Wyrd UI overhaul — the tscn ColorRect bars become parchment meters.
 	$HPRoot.visible = false
 	$FocusRoot.visible = false
+	# Spec 54 — a slim carved border framed the play window (HUD "A"). The
+	# MapleStory pick (C_2) is borderless — a clean scene with a bottom cluster —
+	# so the frame is dropped when the maple kit is present.
+	if not WyrdUi.has_maple():
+		_build_hud_frame()
+	# Maple (hud2_cradle_3): ONE wide cream+wood cradle tray spanning the whole
+	# bottom cluster, drawn behind the orbs + (skill_bar's) round slots so they
+	# read as a single low row. Added before the orbs so they sit on top of it.
+	if WyrdUi.has_maple():
+		_build_cluster_tray()
+	# The HP/Focus orbs flank the hotbar as the round end-slots of that tray.
 	_hp_globe = GlobeGauge.new()
 	_hp_globe.liquid = Color(0.70, 0.18, 0.14)
-	_place_globe(_hp_globe, -258.0)
+	_place_globe(_hp_globe, -1)
 	_focus_globe = GlobeGauge.new()
 	_focus_globe.liquid = WyrdUi.FOCUS   # spec 53 — on-palette teal-cyan, not mana-blue
-	_place_globe(_focus_globe, 258.0)
+	_place_globe(_focus_globe, 1)
 	_hp_globe.update_to(1.0, "30/30", "")
 	_focus_globe.update_to(1.0, "50/50", "")
 	# Status pip row — drain-arc pips above the HP globe (system-status-effects).
+	# Status pips ride just above the HP orb (which now flanks the hotbar cluster).
 	_pip_row = StatusPipRow.new()
 	_pip_row.anchor_left = 0.5
 	_pip_row.anchor_right = 0.5
 	_pip_row.anchor_top = 1.0
 	_pip_row.anchor_bottom = 1.0
-	_pip_row.offset_left = -324
-	_pip_row.offset_right = -192
-	_pip_row.offset_top = -176
-	_pip_row.offset_bottom = -154
+	_pip_row.offset_left = -GLOBE_FLANK - GLOBE_BOX * 0.5
+	_pip_row.offset_right = -GLOBE_FLANK + GLOBE_BOX * 0.5
+	_pip_row.offset_top = -180
+	_pip_row.offset_bottom = -158
 	_pip_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_pip_row)
 	_build_hurt_vignette()
@@ -75,18 +87,44 @@ func _ready() -> void:
 	_build_wyrd_overlay()
 	_build_coop_hud()
 
-# A globe flanking the bottom-center skill bar at ±cx.
-func _place_globe(g: GlobeGauge, cx: float) -> void:
+# A globe FLANKING the bottom-centre hotbar cluster (2026-07-01 — user: "bring
+# the circles in"): side -1 = left of the tray, +1 = right. One fused bottom
+# cluster instead of orbs marooned in the far corners.
+const GLOBE_BOX := 132.0
+const GLOBE_FLANK := 262.0     # distance from screen centre to each orb centre
+func _place_globe(g: GlobeGauge, side: int) -> void:
 	g.anchor_left = 0.5
 	g.anchor_right = 0.5
 	g.anchor_top = 1.0
 	g.anchor_bottom = 1.0
-	g.offset_left = cx - 66
-	g.offset_right = cx + 66
-	g.offset_top = -148
-	g.offset_bottom = -16
+	var cx := GLOBE_FLANK * float(side)
+	g.offset_left = cx - GLOBE_BOX * 0.5
+	g.offset_right = cx + GLOBE_BOX * 0.5
+	g.offset_top = -146
+	g.offset_bottom = -14
 	g.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(g)
+
+# HUD "A" — the slim carved border. Full-rect, behind every widget, click-through.
+func _build_hud_frame() -> void:
+	var frame := HudFrame.new()
+	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(frame)
+
+# The maple cradle tray — one wide cream+wood pill spanning the bottom cluster.
+func _build_cluster_tray() -> void:
+	var tray := ClusterTray.new()
+	tray.anchor_left = 0.5
+	tray.anchor_right = 0.5
+	tray.anchor_top = 1.0
+	tray.anchor_bottom = 1.0
+	tray.offset_left = -348.0
+	tray.offset_right = 348.0
+	tray.offset_top = -142.0
+	tray.offset_bottom = -20.0
+	tray.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(tray)
 
 # Spec 38 — the mute state, by the Focus globe. F10 flips it.
 func _build_mute_indicator() -> void:
@@ -107,17 +145,28 @@ func _build_wyrd_overlay() -> void:
 	# 18px margins) is the right scale for a ~90px banner — panel_frame's
 	# ~37/40px margins would crush a plate this short — so it's the primary,
 	# with the chip stylebox as the only fallback.
-	if ResourceLoader.exists(WyrdUi.BUTTON_TEX_PATH):
-		var sb := StyleBoxTexture.new()
-		sb.texture = load(WyrdUi.BUTTON_TEX_PATH)
-		sb.texture_margin_left = WyrdUi.BUTTON_MARGIN
-		sb.texture_margin_right = WyrdUi.BUTTON_MARGIN
-		sb.texture_margin_top = WyrdUi.BUTTON_MARGIN
-		sb.texture_margin_bottom = WyrdUi.BUTTON_MARGIN
-		sb.modulate_color = WyrdUi.PANEL_MOD   # spec 51 — darken to match the skin
-		_quest_plate.add_theme_stylebox_override("panel", sb)
+	# 2026-07-01 — a rounded card. MapleStory: cream with a wood frame (text goes
+	# dark so it reads on cream); else the soft enamel card (cream text).
+	var maple := WyrdUi.has_maple()
+	var q_hdr_col: Color = WyrdUi.MAPLE_WOOD_D if maple else WyrdUi.GOLD
+	var q_body_col: Color = WyrdUi.MAPLE_INK_DARK if maple else WyrdUi.INK
+	var q_prog_col: Color = Color(0.28, 0.48, 0.20) if maple else WyrdUi.SAGE
+	var sb := StyleBoxFlat.new()
+	sb.set_corner_radius_all(18)
+	sb.corner_detail = 10
+	sb.anti_aliasing = true
+	if maple:
+		sb.bg_color = WyrdUi.MAPLE_CREAM
+		sb.set_border_width_all(5)
+		sb.border_color = WyrdUi.MAPLE_WOOD
 	else:
-		_quest_plate.add_theme_stylebox_override("panel", WyrdUi.chip_stylebox())
+		sb.bg_color = Color(WyrdUi.KIT_PLATE, 0.90)
+		sb.set_border_width_all(2)
+		sb.border_color = Color(WyrdUi.GOLD, 0.55)
+	sb.shadow_color = Color(0, 0, 0, 0.28)
+	sb.shadow_size = 6
+	sb.shadow_offset = Vector2(0, 3)
+	_quest_plate.add_theme_stylebox_override("panel", sb)
 	# Spec 52 (Direction A) — a compact objective chip pinned top-LEFT, not a
 	# 520px banner centred over the world. One line + an affix sub-line.
 	_quest_plate.anchor_left = 0.0
@@ -141,7 +190,7 @@ func _build_wyrd_overlay() -> void:
 	if hf != null:
 		qhdr.add_theme_font_override("font", hf)
 	qhdr.add_theme_font_size_override("font_size", 11)
-	qhdr.add_theme_color_override("font_color", WyrdUi.GOLD)
+	qhdr.add_theme_color_override("font_color", q_hdr_col)
 	qhdr.offset_left = 16
 	qhdr.anchor_right = 1.0
 	qhdr.offset_top = 9
@@ -150,7 +199,7 @@ func _build_wyrd_overlay() -> void:
 	# Progress counter rides the top-right corner of the chip, beside the eyebrow.
 	_quest_progress = Label.new()
 	_quest_progress.add_theme_font_size_override("font_size", 12)
-	_quest_progress.add_theme_color_override("font_color", WyrdUi.SAGE)
+	_quest_progress.add_theme_color_override("font_color", q_prog_col)
 	_quest_progress.anchor_right = 1.0
 	_quest_progress.offset_left = -110
 	_quest_progress.offset_right = -14
@@ -159,7 +208,7 @@ func _build_wyrd_overlay() -> void:
 	_quest_plate.add_child(_quest_progress)
 	_objective = Label.new()
 	_objective.add_theme_font_size_override("font_size", 14)
-	_objective.add_theme_color_override("font_color", WyrdUi.INK)
+	_objective.add_theme_color_override("font_color", q_body_col)
 	_objective.anchor_right = 1.0
 	_objective.offset_top = 26
 	_objective.offset_left = 16
@@ -171,7 +220,7 @@ func _build_wyrd_overlay() -> void:
 	# anchored so a wrapped 2-line objective can never collide with it (spec 52).
 	_quest_sub = Label.new()
 	_quest_sub.add_theme_font_size_override("font_size", 11)
-	_quest_sub.add_theme_color_override("font_color", WyrdUi.SAGE.darkened(0.05))
+	_quest_sub.add_theme_color_override("font_color", q_prog_col)
 	_quest_sub.anchor_right = 1.0
 	_quest_sub.anchor_top = 1.0
 	_quest_sub.anchor_bottom = 1.0
@@ -275,15 +324,17 @@ func _build_action_bar() -> void:
 	# Enamel kit, matching the hotbar's visual language. The word moves to the
 	# tooltip; the key-hint sits top-left; the trade color rides a thin underline.
 	var bar := HBoxContainer.new()
+	# HUD "A" — the menu affordances group top-RIGHT under the run-meta readout,
+	# so the bottom edge stays clean (orbs + centred hotbar only).
 	bar.anchor_left = 1.0
 	bar.anchor_right = 1.0
-	bar.anchor_top = 1.0
-	bar.anchor_bottom = 1.0
-	# 3 × 50 + 2 × 8 sep = 166 wide, 50 tall; pinned bottom-right.
+	bar.anchor_top = 0.0
+	bar.anchor_bottom = 0.0
+	# 3 × 50 + 2 × 8 sep = 166 wide, 50 tall; pinned top-right below the plaque.
 	bar.offset_left = -182
-	bar.offset_top = -110
+	bar.offset_top = 50
 	bar.offset_right = -16
-	bar.offset_bottom = -60
+	bar.offset_bottom = 100
 	bar.add_theme_constant_override("separation", 8)
 	add_child(bar)
 	var fallback := {"gear": "⚔", "satchel": "❖", "trades": "✎"}
@@ -618,6 +669,116 @@ func update_pips(pips: Array) -> void:
 		_pip_row.set_statuses(pips)
 
 
+# The maple cradle tray (hud2_cradle_3) — one wide cream pill with a chunky
+# wood-brown frame + gold seam, its round ends cradling the HP/Focus orbs while
+# the round skill slots sit along its belly. Pure StyleBoxFlat draws; sits behind
+# the orbs (added first) and under skill_bar's slots (higher layer).
+class ClusterTray extends Control:
+	func _ready() -> void:
+		resized.connect(queue_redraw)
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		var rad := int(size.y * 0.5)
+		# soft drop shadow
+		var sh := StyleBoxFlat.new()
+		sh.bg_color = Color(0, 0, 0, 0.22)
+		sh.set_corner_radius_all(rad)
+		sh.anti_aliasing = true
+		draw_style_box(sh, Rect2(r.position + Vector2(0, 6), r.size))
+		# cream pill with a chunky wood-brown frame
+		var pill := StyleBoxFlat.new()
+		pill.bg_color = WyrdUi.MAPLE_CREAM
+		pill.set_corner_radius_all(rad)
+		pill.corner_detail = 12
+		pill.anti_aliasing = true
+		pill.set_border_width_all(8)
+		pill.border_color = WyrdUi.MAPLE_WOOD
+		draw_style_box(pill, r)
+		# gold inner seam
+		var seam := StyleBoxFlat.new()
+		seam.draw_center = false
+		seam.set_border_width_all(2)
+		seam.border_color = Color(WyrdUi.GOLD, 0.5)
+		seam.set_corner_radius_all(maxi(2, rad - 8))
+		seam.corner_detail = 12
+		seam.anti_aliasing = true
+		draw_style_box(seam, r.grow(-8.0))
+		# a soft warm top lip along the straight middle
+		draw_rect(Rect2(r.position + Vector2(size.y * 0.6, 8.0),
+			Vector2(maxf(0.0, r.size.x - size.y * 1.2), 2.0)), Color(1, 1, 0.94, 0.4))
+
+
+# HUD "A" (user-picked, 2026-07-01) — a slim carved enamel + leaf-gold border
+# hugging the viewport, with gilded brackets at the four corners, so the whole
+# screen reads as one framed play window. Pure vector _draw (no textures —
+# white-rect gotcha); redraws only on resize. Behind every widget, mouse-ignored,
+# so it frames the play area without costing a single pixel of interaction.
+class HudFrame extends Control:
+	func _ready() -> void:
+		resized.connect(queue_redraw)
+
+	func _draw() -> void:
+		var w := size.x
+		var h := size.y
+		if w < 8.0 or h < 8.0:
+			return
+		var m := 7.0            # inset from the very edge
+		var band := 10.0        # enamel band thickness
+		var gold := WyrdUi.KIT_EDGE
+		var teal := WyrdUi.KIT_PLATE
+		var outer := Rect2(m, m, w - 2.0 * m, h - 2.0 * m)
+		# A ROUNDED enamel border (soft, not a hard box). draw_center = false so
+		# only the band paints and the world reads through the middle.
+		var enamel := StyleBoxFlat.new()
+		enamel.draw_center = false
+		enamel.set_border_width_all(int(band))
+		enamel.border_color = Color(teal, 0.68)
+		enamel.set_corner_radius_all(30)
+		enamel.corner_detail = 12
+		enamel.anti_aliasing = true
+		draw_style_box(enamel, outer)
+		# Gold hairlines hugging the outer edge and the inner play window.
+		_ring(outer, 30, Color(gold, 0.85), 1.5)
+		_ring(outer.grow(-band), 22, Color(gold, 0.5), 1.0)
+		# Soft fiddlehead-swirl flourishes tucked into each corner.
+		_swirl(outer.position, 1.0, 1.0)
+		_swirl(Vector2(outer.end.x, outer.position.y), -1.0, 1.0)
+		_swirl(Vector2(outer.position.x, outer.end.y), 1.0, -1.0)
+		_swirl(outer.end, -1.0, -1.0)
+
+	# A rounded rectangular outline (hollow stylebox) — the soft frame's hairlines.
+	func _ring(r: Rect2, radius: int, col: Color, width: float) -> void:
+		var sb := StyleBoxFlat.new()
+		sb.draw_center = false
+		sb.set_border_width_all(int(width))
+		sb.border_color = col
+		sb.set_corner_radius_all(radius)
+		sb.corner_detail = 12
+		sb.anti_aliasing = true
+		draw_style_box(sb, r)
+
+	# A gilded fiddlehead curl tucked into a corner (replaces the hard bracket).
+	# Canonical shape authored for the top-left; (sx, sy) mirror it to the others.
+	func _swirl(p: Vector2, sx: float, sy: float) -> void:
+		var gold := WyrdUi.GOLD
+		var core := p + Vector2(30.0 * sx, 30.0 * sy)   # curl eye sits inboard
+		var pts := PackedVector2Array()
+		var steps := 52
+		for i in steps + 1:
+			var t := float(i) / float(steps)            # 0 outer tail → 1 inner eye
+			var ang := lerpf(-PI * 0.78, PI * 1.15, t)  # ~1.9 turns, opening at the corner
+			var rad := lerpf(24.0, 2.5, t)              # spiral inward
+			pts.append(core + Vector2(cos(ang) * rad * sx, sin(ang) * rad * sy))
+		draw_polyline(pts, Color(gold, 0.9), 2.5, true)
+		draw_circle(pts[pts.size() - 1], 2.2, Color(gold, 0.9))
+		# Gentle gilded runs curving a little way along each edge from the curl.
+		draw_line(p + Vector2(8.0 * sx, 0.0), p + Vector2(46.0 * sx, 0.0),
+			Color(gold, 0.5), 2.0)
+		draw_line(p + Vector2(0.0, 8.0 * sy), p + Vector2(0.0, 46.0 * sy),
+			Color(gold, 0.5), 2.0)
+
+
 # Spec 38 style pass — a potion orb in a bramble nest (Midjourney ref
 # docs/ui-refs/mj_hud_bramble.png): glassy liquid with a hard specular,
 # cradled by jittered twig rings with leaf + berry knots. All painted in
@@ -649,10 +810,16 @@ class GlobeGauge extends Control:
 
 	func _draw() -> void:
 		var c := size * 0.5
-		# --- slim enamel bezel (spec 52 Dir-A): teal rim + gold pinstripe,
-		#     no thick wood ring, no bramble pegs ---
-		draw_arc(c, R + 2.0, 0, TAU, 56, RING_BEZEL, 3.0, true)
-		draw_arc(c, R + 4.5, 0, TAU, 56, RING_WOOD, 2.0, true)
+		if WyrdUi.has_maple():
+			# MapleStory orb: a chunky wood ring with a gold inner seam + shadow.
+			draw_circle(c + Vector2(0, 3), R + 9.0, Color(0, 0, 0, 0.20))
+			draw_arc(c, R + 6.0, 0, TAU, 64, WyrdUi.MAPLE_WOOD_D, 9.0, true)
+			draw_arc(c, R + 5.0, 0, TAU, 64, WyrdUi.MAPLE_WOOD, 6.0, true)
+			draw_arc(c, R + 1.5, 0, TAU, 64, Color(WyrdUi.GOLD, 0.85), 2.0, true)
+		else:
+			# --- slim enamel bezel (spec 52 Dir-A): teal rim + gold pinstripe ---
+			draw_arc(c, R + 2.0, 0, TAU, 56, RING_BEZEL, 3.0, true)
+			draw_arc(c, R + 4.5, 0, TAU, 56, RING_WOOD, 2.0, true)
 		# --- glass orb ---
 		draw_circle(c, R, Color(0.12, 0.10, 0.09))
 		if frac > 0.003:

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="referrer" content="no-referrer">
+<title>Wayfinder — compact HUD picks</title>
+<style>
+  :root{ --gold:#e3b85c; --cream:#efe7ce; --sage:#a6c264; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#0b1b18; color:var(--cream);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; padding:0 0 120px; }
+  header{ position:sticky; top:0; z-index:5; background:linear-gradient(#0b1b18,#0b1b18ee);
+    padding:18px 28px; border-bottom:1px solid #24463f; }
+  h1{ margin:0; font-size:22px; color:var(--gold); }
+  header p{ margin:4px 0 0; color:#9fb3a6; font-size:13px; }
+  section{ padding:22px 28px 4px; }
+  h2{ font-size:16px; color:var(--gold); border-bottom:1px solid #24463f; padding-bottom:8px; margin:0 0 16px; }
+  h2 span{ color:#9fb3a6; font-size:13px; font-weight:400; }
+  .grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  .card{ position:relative; border-radius:16px; overflow:hidden; cursor:pointer;
+    border:3px solid transparent; background:#12241f; aspect-ratio:16/9; transition:.12s; }
+  .card img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .card:hover{ transform:translateY(-2px); }
+  .card .tag{ position:absolute; left:8px; top:8px; background:#000a; color:var(--cream);
+    font-size:11px; padding:2px 7px; border-radius:8px; }
+  .card.sel{ border-color:var(--gold); box-shadow:0 0 0 2px var(--gold) inset; }
+  .card .check{ position:absolute; right:8px; top:8px; width:26px; height:26px; border-radius:50%;
+    background:var(--gold); color:#12241f; font-weight:700; display:none; align-items:center;
+    justify-content:center; font-size:16px; }
+  .card.sel .check{ display:flex; }
+  footer{ position:fixed; left:0; right:0; bottom:0; background:#0d241fe8; backdrop-filter:blur(6px);
+    border-top:1px solid var(--gold); padding:14px 28px; display:flex; gap:16px; align-items:center; }
+  footer .picks{ flex:1; font-family:ui-monospace,monospace; font-size:13px; color:var(--sage); min-height:20px; }
+  button{ background:var(--gold); color:#12241f; border:0; border-radius:12px; padding:10px 18px;
+    font-weight:700; cursor:pointer; font-size:14px; }
+  button.ghost{ background:transparent; color:var(--cream); border:1px solid #3a5a52; }
+  .count{ color:var(--gold); font-weight:700; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Wayfinder — pick the compact HUD direction</h1>
+  <p>Smaller footprint · orbs fused beside the hotbar · flowing, not blocky. Click your favourite(s),
+     hit <b>Copy picks</b>, and paste them back — I'll build the HUD to match.</p>
+</header>
+<div id="app"></div>
+<footer>
+  <div class="picks" id="picks">No picks yet.</div>
+  <span class="count" id="count">0 selected</span>
+  <button class="ghost" onclick="clearAll()">Clear</button>
+  <button onclick="copyPicks()">Copy picks</button>
+</footer>
+<script>
+const SETS = [
+  {key:"cradle",   label:"Twin-Orb Cradle Tray", note:"orbs cradled onto the two ends of one small scalloped tray"},
+  {key:"bubble",   label:"Floating Bubble Arc",  note:"frameless curved rail of candy-bubble slots, orbs tucked in the ends"},
+  {key:"crescent", label:"Hornbell Crescent",    note:"a shallow upturned-smile banner, orbs riding the horns"},
+  {key:"satchel",  label:"Wayfarer's Satchel-Strap", note:"diegetic leather strap, potion orbs clipped beside a skill pouch"},
+];
+const sel = new Set(JSON.parse(localStorage.getItem("wf_hud_picks")||"[]"));
+const app = document.getElementById("app");
+for (const s of SETS){
+  const sec = document.createElement("section");
+  sec.innerHTML = `<h2>${s.label} &nbsp;<span>${s.note}</span></h2>`;
+  const g = document.createElement("div"); g.className="grid";
+  for (let n=1;n<=4;n++){
+    const id = `${s.key}_${n}`;
+    const c = document.createElement("div"); c.className="card"; c.dataset.id=id;
+    if (sel.has(id)) c.classList.add("sel");
+    c.innerHTML = `<img loading="lazy" src="hud2_${s.key}_${n}.webp?v=1">
+      <span class="tag">${id}</span><span class="check">✓</span>`;
+    c.onclick = ()=>{ c.classList.toggle("sel"); c.classList.contains("sel")?sel.add(id):sel.delete(id); save(); };
+    g.appendChild(c);
+  }
+  sec.appendChild(g); app.appendChild(sec);
+}
+function save(){ localStorage.setItem("wf_hud_picks", JSON.stringify([...sel])); render(); }
+function render(){
+  const arr=[...sel];
+  document.getElementById("picks").textContent = arr.length? arr.join(", ") : "No picks yet.";
+  document.getElementById("count").textContent = arr.length+" selected";
+}
+function clearAll(){ sel.clear(); document.querySelectorAll(".card.sel").forEach(c=>c.classList.remove("sel")); save(); }
+function copyPicks(){ navigator.clipboard.writeText([...sel].join(", ")); }
+render();
+</script>
+</body>
+</html>

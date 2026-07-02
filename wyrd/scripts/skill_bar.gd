@@ -91,21 +91,23 @@ func bind_to_player(p: Node) -> void:
 	# the tray + slot x-math budget for n_skills + 1 slots and stay centred.
 	var n_skills: int = mini(4, _player.skills.size())
 	var total_w := (n_skills + 1) * SLOT_SIZE + n_skills * SLOT_GAP
-	# One carved wooden plank under the whole row (HotbarTray._draw), so the
-	# slots read as a single crafted piece instead of a flat engine panel.
-	var plate := HotbarTray.new()
-	plate.name = "Plate"
-	plate.anchor_left = 0.5
-	plate.anchor_right = 0.5
-	plate.anchor_top = 1.0
-	plate.anchor_bottom = 1.0
-	plate.offset_left = -total_w / 2.0 - 14
-	plate.offset_right = total_w / 2.0 + 14
-	plate.offset_top = -ROW_BOTTOM - 12
-	plate.offset_bottom = -ROW_BOTTOM + SLOT_SIZE + 12
-	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(plate)
-	_plate = plate
+	# One carved plank under the row. 2026-07-01 — with the maple kit, PlayerHUD
+	# draws ONE wide cradle tray spanning the orbs + slots as a single cluster
+	# (hud2_cradle_3), so skill_bar skips its own plate to avoid a double tray.
+	if not WyrdUi.has_maple():
+		var plate := HotbarTray.new()
+		plate.name = "Plate"
+		plate.anchor_left = 0.5
+		plate.anchor_right = 0.5
+		plate.anchor_top = 1.0
+		plate.anchor_bottom = 1.0
+		plate.offset_left = -total_w / 2.0 - 14
+		plate.offset_right = total_w / 2.0 + 14
+		plate.offset_top = -ROW_BOTTOM - 12
+		plate.offset_bottom = -ROW_BOTTOM + SLOT_SIZE + 12
+		plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(plate)
+		_plate = plate
 	for i in n_skills:
 		var skill = _player.skills[i]
 		var label: String = SKILL_LABEL.get(skill.name, skill.name.substr(0, 3))
@@ -122,10 +124,12 @@ func bind_to_player(p: Node) -> void:
 			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			tr.anchor_right = 1.0
 			tr.anchor_bottom = 1.0
-			tr.offset_left = 8
-			tr.offset_top = 8
-			tr.offset_right = -8
-			tr.offset_bottom = -8
+			# Inset so the glossy jade slot frames the icon (maple), not covered.
+			var pad := 13 if WyrdUi.has_maple() else 8
+			tr.offset_left = pad
+			tr.offset_top = pad
+			tr.offset_right = -pad
+			tr.offset_bottom = -pad
 			tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			slot.add_child(tr)
 			slot.move_child(tr, 0)   # under the keybind/cost labels

@@ -169,6 +169,25 @@ const SKILL_REQS := {"HuntersMark": 4, "HeartwoodWard": 7, "MercyShot": 9}
 func skill_unlocked(sk: String) -> bool:
 	return trade_lv(SKILL) >= int(SKILL_REQS.get(sk, 1))
 var loadout: Array = ["PowerShot", "MultiShot", "BrambleSnare"]
+# 2026-07-02 — a pinned quick-use consumable for the Q slot, set by dragging a
+# draught from the bag onto the Spell Book's Q slot. "" = auto (drink the best
+# available, the legacy behaviour).
+var quick_item: String = ""
+signal quick_item_changed
+
+# Pin a bag consumable to the Q slot (or "" to clear back to auto). Validates it
+# is a known draught the recipe book carries.
+func set_quick_item(id: String) -> bool:
+	if id != "" and not (CraftingDefs.DRAUGHT_ORDER.has(id) \
+			or CraftingDefs.BUFF_DRAUGHT_ORDER.has(id)):
+		return false
+	quick_item = id
+	save_now()
+	quick_item_changed.emit()
+	if is_inside_tree():
+		notify("Quick-use set: %s." % GatherDefs.material_name(id) if id != "" \
+			else "Quick-use cleared.")
+	return true
 # ADR 0012 mastery — perk_id -> true for the ONE perk the player chose at each
 # multi-perk tier. Single-perk tiers (lv 2/3/12) auto-grant and never appear here.
 var chosen_perks: Dictionary = {}
@@ -823,6 +842,13 @@ func gather_bonus(kind: String) -> int:
 # ---- draughts (the sustain verb) ----
 # Smallest sufficient bottle first; returns the heal amount (0 = none had).
 func quaff_draught() -> int:
+	# Prefer the pinned quick-use draught when it's a healing one you still own.
+	if quick_item != "" and CraftingDefs.DRAUGHT_ORDER.has(quick_item) \
+			and material_count(quick_item) > 0:
+		spend_materials({quick_item: 1})
+		notify("You quaff a %s." % GatherDefs.material_name(quick_item))
+		save_now()
+		return int(CraftingDefs.DRAUGHTS[quick_item])
 	for id in CraftingDefs.DRAUGHT_ORDER:
 		if material_count(String(id)) > 0:
 			spend_materials({id: 1})

@@ -1,10 +1,11 @@
 extends Control
 
-# A carved storybook hotbar slot. Draws its own face (carved button + recessed
-# icon well + parchment grain), a true RADIAL cooldown wedge (square-clamped so
-# it never bulges past the slot), and a gold ready-flash when a skill comes off
-# cooldown. The icon/glyph/keybind/cost are children added by skill_bar.gd and
-# render over this _draw. Pure-vector (no texture in _draw — gotcha-safe).
+# A hotbar slot. MapleStory (2026-07-01): a ROUND glossy jade slot in a wood
+# ring — the same round family as the HP/Focus orbs, so the whole bottom row
+# reads as one cluster (references: hud2_cradle_3 et al). Falls back to the
+# carved-enamel square slot when the maple kit is absent. Draws a radial cooldown
+# wedge + a Heartwood-Ward arc + a gold ready-flash; the icon/keybind/cost are
+# children rendered over this _draw. Pure-vector (gotcha-safe).
 
 var cd_ratio: float = 0.0      # 1 = just cast (full dark wedge) → 0 = ready
 var ward_frac: float = 0.0     # C8 — Heartwood Ward absorb remaining (0..1)
@@ -13,9 +14,11 @@ var _flash: float = 0.0        # gold rim pulse, 0..1, on coming off cooldown
 var _seed: int = 7
 var _last_ratio: float = -1.0
 var _last_castable: bool = true
+var _maple: bool = false
 
 func _ready() -> void:
 	_seed = int(position.x) ^ 0x2b3c
+	_maple = WyrdUi.has_maple()
 
 func set_state(ratio: float, can_cast: bool) -> void:
 	if cd_ratio > 0.001 and ratio <= 0.001:
@@ -41,34 +44,72 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var r := Rect2(Vector2.ZERO, size)
+	if _maple:
+		_draw_round(r)
+		return
+	# --- fallback: carved-enamel square slot ---
 	WyrdUi.draw_carved_button(self, r, castable)
 	WyrdUi.draw_well(self, r.grow(-7.0), WyrdUi.KIT_PLATE.lightened(0.05))
 	WyrdUi.draw_parchment_grain(self, r, _seed)
-	# Radial cooldown wedge — a square-clamped pie from 12 o'clock clockwise,
-	# shrinking as the skill cools. Vertices ride the slot's own edge so it
-	# reads as the slot face darkening, with no overshoot into the gaps.
+	_draw_cd_square()
+	_draw_ward_flash(r)
+
+# MapleStory round jade slot + a circular cooldown sector.
+func _draw_round(r: Rect2) -> void:
+	var c := size * 0.5
+	var rad := minf(size.x, size.y) * 0.5 - 3.0
+	# soft drop shadow
+	draw_circle(c + Vector2(0, 2.5), rad + 5.0, Color(0, 0, 0, 0.18))
+	# chunky wood ring + gold seam
+	draw_arc(c, rad + 3.0, 0, TAU, 44, WyrdUi.MAPLE_WOOD_D, 6.0, true)
+	draw_arc(c, rad + 2.0, 0, TAU, 44, WyrdUi.MAPLE_WOOD, 4.0, true)
+	# glossy jade well: base fill, upper gloss, hard specular
+	var base: Color = WyrdUi.MAPLE_JADE if castable else WyrdUi.MAPLE_JADE_D.darkened(0.1)
+	draw_circle(c, rad, base)
+	draw_circle(c + Vector2(0, rad * 0.55), rad * 0.7, WyrdUi.MAPLE_JADE_D.lerp(base, 0.4))
+	draw_circle(c - Vector2(0, rad * 0.34), rad * 0.62, Color(WyrdUi.MAPLE_JADE_HI, 0.45))
+	draw_circle(c - Vector2(rad * 0.26, rad * 0.40), rad * 0.20, Color(1, 1, 1, 0.55))
+	draw_arc(c, rad, 0, TAU, 44, Color(WyrdUi.GOLD, 0.7), 1.5, true)
+	# circular cooldown sector from 12 o'clock
 	if cd_ratio > 0.001:
-		var c := size * 0.5
-		var h := size.x * 0.5
 		var a0 := -PI * 0.5
 		var a1 := a0 + TAU * clampf(cd_ratio, 0.0, 1.0)
-		var pts := PackedVector2Array()
-		pts.append(c)
+		var pts := PackedVector2Array([c])
 		var steps := 40
 		for i in steps + 1:
 			var a := lerpf(a0, a1, float(i) / float(steps))
-			var dx := cos(a)
-			var dy := sin(a)
-			var d := h / maxf(absf(dx), absf(dy))
-			pts.append(c + Vector2(dx, dy) * d)
-		draw_colored_polygon(pts, Color(0.10, 0.08, 0.07, 0.52))
-	# C8 — Heartwood Ward absorb arc: a bark-brown ring around the slot, swept
-	# clockwise from 12 o'clock, shrinking as the bark soaks hits.
+			pts.append(c + Vector2(cos(a), sin(a)) * rad)
+		draw_colored_polygon(pts, Color(0.06, 0.05, 0.04, 0.55))
+	if ward_frac > 0.001:
+		var a0w := -PI * 0.5
+		draw_arc(c, rad - 1.0, a0w, a0w + TAU * ward_frac, 40,
+			Color(0.46, 0.33, 0.18, 0.95), 4.0, true)
+	if _flash > 0.0:
+		draw_arc(c, rad + 1.0, 0, TAU, 44, Color(WyrdUi.GOLD, _flash * 0.9), 3.0, true)
+
+func _draw_cd_square() -> void:
+	if cd_ratio <= 0.001:
+		return
+	var c := size * 0.5
+	var h := size.x * 0.5
+	var a0 := -PI * 0.5
+	var a1 := a0 + TAU * clampf(cd_ratio, 0.0, 1.0)
+	var pts := PackedVector2Array([c])
+	var steps := 40
+	for i in steps + 1:
+		var a := lerpf(a0, a1, float(i) / float(steps))
+		var dx := cos(a)
+		var dy := sin(a)
+		var d := h / maxf(absf(dx), absf(dy))
+		pts.append(c + Vector2(dx, dy) * d)
+	draw_colored_polygon(pts, Color(0.10, 0.08, 0.07, 0.52))
+
+func _draw_ward_flash(r: Rect2) -> void:
 	if ward_frac > 0.001:
 		var c := size * 0.5
 		var rad := size.x * 0.5 - 2.5
 		var a0 := -PI * 0.5
-		var a1 := a0 + TAU * ward_frac
-		draw_arc(c, rad, a0, a1, 40, Color(0.46, 0.33, 0.18, 0.95), 4.0, true)
+		draw_arc(c, rad, a0, a0 + TAU * ward_frac, 40,
+			Color(0.46, 0.33, 0.18, 0.95), 4.0, true)
 	if _flash > 0.0:
 		draw_rect(r.grow(-1.5), Color(WyrdUi.GOLD, _flash * 0.85), false, 3.0)

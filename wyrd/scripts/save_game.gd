@@ -68,6 +68,7 @@ static func save_to(path: String, game: Node) -> bool:
 		"summit_cleared": game.summit_cleared,
 		"muted": game.muted,
 		"loadout": game.loadout,
+		"quick_item": game.quick_item,
 		"chosen_perks": game.chosen_perks,
 		"ledger": game.ledger.slots if game.ledger != null else {},
 		"discovered_inks": game.discovered_inks,
@@ -199,6 +200,7 @@ static func _restore_into(data: Dictionary, game: Node) -> void:
 	var lo: Array = data.get("loadout", [])
 	if lo.size() == 3:
 		game.loadout = lo
+	game.quick_item = String(data.get("quick_item", ""))
 	game.summit_cleared = bool(data.get("summit_cleared", false))
 	# ADR 0012 mastery picks. Old saves (pre-mastery) auto-grant the first
 	# perk at each choice tier already reached, so no perk is silently lost;
