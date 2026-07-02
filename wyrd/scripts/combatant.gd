@@ -101,14 +101,8 @@ var _net_status_vis: Dictionary = {}
 const EXECUTE_RING_BELOW := 0.35
 var _execute_ring: MeshInstance3D = null
 
-# Spec 31 — status visual + apply-text palettes.
-const STATUS_COLOR := {
-	"burn":   Color(1.00, 0.55, 0.18),
-	"bleed":  Color(0.85, 0.20, 0.20),
-	"snared": Color(0.45, 0.65, 0.30),
-	"root":   Color(0.30, 0.65, 0.25),
-	"marked": Color(1.00, 0.82, 0.30),
-}
+# Spec 31 — status apply-text palette. The per-kind status colour lives on
+# StatusEffect.KIND_COLOR (shared with the HUD pips in player_hud).
 const APPLY_TEXT := {
 	"burn":   "singed!",
 	"bleed":  "bleeding!",
@@ -678,13 +672,19 @@ func _restore_flash() -> void:
 			(mi as MeshInstance3D).material_override = _saved[mi]
 	_saved.clear()
 
-func _spawn_damage_number(amount: int, tier: String = "normal") -> void:
+# Spawn a DamageNumber node at head-height + `y_offset`, parented to our room
+# (tree root when detached). Callers run their own setup()/setup_apply().
+func _spawn_dn(y_offset: float) -> Node:
 	var dn := DamageNumberScene.instantiate()
 	var host: Node = get_parent()
 	if host == null:
 		host = get_tree().root
 	host.add_child(dn)
-	dn.global_position = global_position + Vector3(0.0, 2.0, 0.0)
+	dn.global_position = global_position + Vector3(0.0, y_offset, 0.0)
+	return dn
+
+func _spawn_damage_number(amount: int, tier: String = "normal") -> void:
+	var dn := _spawn_dn(2.0)
 	dn.setup(amount, tier)
 
 # ---- Spec 31: status framework ----
@@ -869,7 +869,7 @@ func _make_status_particle(kind: String) -> GPUParticles3D:
 	# disc (separate path). The kind-keyed parameters here change direction,
 	# gravity, spread, mesh shape, and emit position — same particle module,
 	# four distinct silhouettes.
-	var col: Color = STATUS_COLOR.get(kind, Color.WHITE)
+	var col: Color = StatusEffect.KIND_COLOR.get(kind, Color.WHITE)
 	var p := GPUParticles3D.new()
 	p.name = "%sParticle" % kind.capitalize()
 	p.local_coords = false
@@ -976,24 +976,14 @@ func _spawn_apply_text(kind: String) -> void:
 	var label: String = APPLY_TEXT.get(kind, "")
 	if label == "":
 		return
-	var col: Color = STATUS_COLOR.get(kind, Color.WHITE)
-	var dn := DamageNumberScene.instantiate()
-	var host: Node = get_parent()
-	if host == null:
-		host = get_tree().root
-	host.add_child(dn)
-	dn.global_position = global_position + Vector3(0.0, 2.4, 0.0)
+	var col: Color = StatusEffect.KIND_COLOR.get(kind, Color.WHITE)
+	var dn := _spawn_dn(2.4)
 	if dn.has_method("setup_apply"):
 		dn.setup_apply(label, col)
 
 # Float the elite modifier's name once on promotion, in its label_color.
 func _spawn_elite_label(text: String, col: Color) -> void:
-	var dn := DamageNumberScene.instantiate()
-	var host: Node = get_parent()
-	if host == null:
-		host = get_tree().root
-	host.add_child(dn)
-	dn.global_position = global_position + Vector3(0.0, 2.7, 0.0)
+	var dn := _spawn_dn(2.7)
 	if dn.has_method("setup_apply"):
 		dn.setup_apply(text, col)
 
@@ -1131,9 +1121,7 @@ func _spawn_one_pickup(host: Node, it: Dictionary, center: Vector3) -> void:
 	if not is_instance_valid(host):
 		return
 	# Spec 32a — the loot pipe lives behind ItemPickup.spawn now.
-	var ang := randf() * TAU
-	var kick := Vector3(cos(ang), 0.0, sin(ang)) * randf_range(0.4, 1.0)
-	ItemPickup.spawn(host, it, center + kick)
+	ItemPickup.spawn_scattered(host, it, center)
 
 # ---- Spec 32: elite promotion + modifier dispatch ----
 

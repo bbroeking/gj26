@@ -1202,9 +1202,6 @@ func run_cfg() -> Dictionary:
 			cfg["boss_kind"] = DEN_TO_BOSS[String(a.get("id", ""))]
 	return cfg
 
-func is_boss_den_affix(id: String) -> bool:
-	return id in ["hedgemother_den", "burrow_boar_den", "wolf_alpha_den"]
-
 func affix_good(id: String) -> bool:
 	for a in active_chart.get("affixes", []):
 		if String(a.get("id", "")) == id and bool(a.get("good", false)):

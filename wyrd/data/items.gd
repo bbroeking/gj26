@@ -177,6 +177,20 @@ const ENCHANT_SLOTS_BY_CATEGORY := {
 	"pickaxe": 0, "axe": 0,
 }
 
+# Painted item icons (Meshy ink-style pass, 2026-06-10), keyed by kind_id.
+# One catalogue for every surface that draws an item (the pack, the vendor
+# counter). Missing kinds fall back to the flat icon_color plate. Callers
+# preload these in _ready (a CompressedTexture2D whose first load lands inside
+# _draw renders as a white rect — macOS, Godot 4.6).
+const ICON_TEX := {
+	"shortbow": "res://assets/ui/items/shortbow.png",
+	"longbow": "res://assets/ui/items/longbow.png",
+	"leather_helm": "res://assets/ui/items/leather_helm.png",
+	"leather_chest": "res://assets/ui/items/leather_chest.png",
+	"leather_boots": "res://assets/ui/items/leather_boots.png",
+	"copper_ring": "res://assets/ui/items/copper_ring.png",
+}
+
 static func kind_ids() -> Array:
 	return KINDS.keys()
 

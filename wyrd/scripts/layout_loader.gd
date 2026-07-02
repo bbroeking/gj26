@@ -13,7 +13,6 @@ const DungeonGenScript = preload("res://scripts/dungeon_gen.gd")
 const AnimDriverScript = preload("res://scripts/anim_driver.gd")
 const CombatantScript = preload("res://scripts/combatant.gd")
 const BossScript = preload("res://scripts/boss.gd")
-const RatAnimScript = preload("res://scripts/rat_anim.gd")
 const CreatureAnimScript = preload("res://scripts/creature_anim.gd")
 const BreakableScript = preload("res://scripts/breakable.gd")
 const GatherNodeScript = preload("res://scripts/gather_node.gd")
@@ -1062,34 +1061,6 @@ func _place_wall(x: int, y: int, grid: Array) -> void:
 	col.shape = shape
 	body.add_child(col)
 	add_child(body)
-
-# Port of the three.js cryptWallVariant() — picks straight / corner pieces
-# + a Y rotation from which cardinal neighbours are open floor.
-func _wall_variant(grid: Array, x: int, y: int) -> Dictionary:
-	var n := _is_floor(grid, x, y - 1)
-	var e := _is_floor(grid, x + 1, y)
-	var s := _is_floor(grid, x, y + 1)
-	var w := _is_floor(grid, x - 1, y)
-	var count := int(n) + int(e) + int(s) + int(w)
-	if count == 0 or count == 4:
-		return {"kind": "straight", "ry": 0.0}
-	if count == 1:
-		if n: return {"kind": "straight", "ry": 0.0}
-		if e: return {"kind": "straight", "ry": -PI / 2}
-		if s: return {"kind": "straight", "ry": PI}
-		return {"kind": "straight", "ry": PI / 2}            # w
-	if count == 2:
-		if n and s: return {"kind": "straight", "ry": 0.0}
-		if e and w: return {"kind": "straight", "ry": PI / 2}
-		if n and e: return {"kind": "cornerOuter", "ry": 0.0}
-		if e and s: return {"kind": "cornerOuter", "ry": -PI / 2}
-		if s and w: return {"kind": "cornerOuter", "ry": PI}
-		return {"kind": "cornerOuter", "ry": PI / 2}         # w and n
-	# count == 3 — one closed side, concave inner corner.
-	if not n: return {"kind": "cornerInner", "ry": PI}
-	if not e: return {"kind": "cornerInner", "ry": PI / 2}
-	if not s: return {"kind": "cornerInner", "ry": 0.0}
-	return {"kind": "cornerInner", "ry": -PI / 2}            # not w
 
 func _is_floor(grid: Array, x: int, y: int) -> bool:
 	if y < 0 or y >= grid.size() or x < 0 or x >= grid[0].size():

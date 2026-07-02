@@ -6,9 +6,9 @@ extends Control
 # an item or slot to quick-(un)equip. Toggled by the player (I key).
 
 const Affixes = preload("res://data/affixes.gd")  # spec 27f tooltip formatter
-const CraftingDefs = preload("res://data/crafting.gd")
 const ChartsData = preload("res://data/charts.gd")
 const GatherDefs = preload("res://data/gather.gd")
+const ItemsData = preload("res://data/items.gd")
 
 const COLS := 5
 const ROWS := 6
@@ -38,16 +38,9 @@ const SLOT_OFFSET := {
 	"axe": Vector2(88, 268),
 }
 
-# Painted item icons (Meshy ink-style pass, 2026-06-10). Missing kinds
-# fall back to the flat color plate.
-const ICON_TEX := {
-	"shortbow": "res://assets/ui/items/shortbow.png",
-	"longbow": "res://assets/ui/items/longbow.png",
-	"leather_helm": "res://assets/ui/items/leather_helm.png",
-	"leather_chest": "res://assets/ui/items/leather_chest.png",
-	"leather_boots": "res://assets/ui/items/leather_boots.png",
-	"copper_ring": "res://assets/ui/items/copper_ring.png",
-}
+# Painted item icons live in the item catalogue (ItemsData.ICON_TEX) so the
+# pack and the vendor counter draw from one map. Missing kinds fall back to
+# the flat icon_color plate.
 
 # Live pack row count (grows with level); falls back to the base ROWS const
 # before the Inventory is bound.
@@ -111,7 +104,7 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	# Preload every texture _draw needs — a CompressedTexture2D whose first
 	# load happens inside _draw renders as a white rect (macOS, Godot 4.6).
-	for path in ICON_TEX.values():
+	for path in ItemsData.ICON_TEX.values():
 		if ResourceLoader.exists(String(path)):
 			_tex_cache[String(path)] = load(String(path))
 	for path in TAB_ICONS:
@@ -523,7 +516,7 @@ func _draw_item_rect_scaled(it: Dictionary, top: Vector2, size: Vector2, ghost: 
 			var g := rc
 			g.a = 0.10 + 0.06 * float(2 - i)
 			draw_rect(r.grow(2.0 + i * 3.0), g)
-	var tex_path := String(ICON_TEX.get(String(it.get("kind_id", "")), ""))
+	var tex_path := String(ItemsData.ICON_TEX.get(String(it.get("kind_id", "")), ""))
 	var tex: Texture2D = _cached_tex(tex_path)
 	if tex != null:
 		# Enamel plate under the painted icon (maple slots already are jade).
@@ -898,11 +891,6 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 		y += 10.0
 	_tab_content_h[2] = y - view.position.y
 
-
-# Squiggly ink divider under headers — the UI bible's hand-drawn rule.
-func _draw_squiggle(from: Vector2, width: float, color: Color) -> void:
-	# Usability pass — a quiet straight rule beats the wobbly one.
-	draw_line(from, from + Vector2(width, 0.0), color, 1.2)
 
 # Spec 39 — the Trades page: the Wayfinding band (round emblem, name + level,
 # XP bar) followed by the mastery ladder — a level 1→17 skill tree of every

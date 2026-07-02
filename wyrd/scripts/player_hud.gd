@@ -882,11 +882,8 @@ class GlobeGauge extends Control:
 # globe. Pure _draw (no textures — white-texture gotcha). The combatant has
 # tint-pulse feedback; this is the player's at-a-glance "what's on me" readout.
 class StatusPipRow extends Control:
-	const PIP_COLOR := {
-		"burn":   Color(1.00, 0.55, 0.18), "bleed":  Color(0.85, 0.20, 0.20),
-		"snared": Color(0.45, 0.65, 0.30), "root":   Color(0.30, 0.65, 0.25),
-		"marked": Color(1.00, 0.82, 0.30),
-	}
+	# Pip tints share the one per-kind status palette (StatusEffect.KIND_COLOR)
+	# with the world-space status VFX in combatant.gd.
 	var _pips: Array = []
 
 	func _ready() -> void:
@@ -903,7 +900,7 @@ class StatusPipRow extends Control:
 			return
 		var cx: float = size.x * 0.5 - float(_pips.size() - 1) * GAP * 0.5
 		for p in _pips:
-			var col: Color = PIP_COLOR.get(String(p.get("kind", "")), Color(0.7, 0.7, 0.7))
+			var col: Color = StatusEffect.KIND_COLOR.get(String(p.get("kind", "")), Color(0.7, 0.7, 0.7))
 			draw_circle(Vector2(cx, R), R, col.darkened(0.3))
 			var frac: float = clampf(float(p.get("frac", 1.0)), 0.0, 1.0)
 			if frac > 0.0:

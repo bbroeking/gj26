@@ -42,6 +42,15 @@ static func spawn(host: Node, item: Dictionary, position: Vector3) -> ItemPickup
 	pk._setup(item)
 	return pk
 
+# Spec 32a — spawn a pickup with a small random horizontal kick so multi-drops
+# fan out from `center` instead of stacking. Same loot seam as spawn(); the
+# scatter math used to be copy-pasted in combatant, net_game, and chest.
+static func spawn_scattered(host: Node, item: Dictionary, center: Vector3,
+		min_kick: float = 0.4, max_kick: float = 1.0) -> ItemPickup:
+	var ang := randf() * TAU
+	var kick := Vector3(cos(ang), 0.0, sin(ang)) * randf_range(min_kick, max_kick)
+	return spawn(host, item, center + kick)
+
 # Build the Area3D's collision + visuals from the item data. Private — only
 # called by `spawn`.
 func _setup(item: Dictionary) -> void:

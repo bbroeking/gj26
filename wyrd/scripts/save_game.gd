@@ -258,7 +258,7 @@ static func _items_out(items: Array) -> Array:
 		out.append((item as Dictionary).duplicate(true))
 	return out
 
-static func _equipment_out(equipment) -> Dictionary:
+static func _equipment_out(equipment: Equipment) -> Dictionary:
 	var out := {}
 	if equipment == null:
 		return out

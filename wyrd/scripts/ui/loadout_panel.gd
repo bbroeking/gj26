@@ -261,7 +261,7 @@ func _group_label(text: String, dim := false) -> Label:
 	l.add_theme_font_size_override("font_size", 14 if dim else 15)
 	return l
 
-func _tex(path) -> Texture2D:
+func _tex(path: String) -> Texture2D:
 	return _tex_cache.get(String(path), null)
 
 

@@ -49,9 +49,8 @@ func interact(_player: Node) -> Array:
 	if host == null:
 		host = get_tree().root
 	for it in pile:
-		var ang := randf() * TAU
-		var kick := Vector3(cos(ang), 0.0, sin(ang)) * randf_range(0.6, 1.2)
-		ItemPickup.spawn(host, it, global_position + kick + Vector3(0.0, 0.1, 0.0))
+		ItemPickup.spawn_scattered(host, it,
+			global_position + Vector3(0.0, 0.1, 0.0), 0.6, 1.2)
 	# Hide the prompt + sink the chest visual.
 	var lbl := get_node_or_null("PromptLabel") as Label3D
 	if lbl != null:

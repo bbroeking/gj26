@@ -430,9 +430,7 @@ func _drop_event(kind_id: String, rarity: String, pos: Vector3) -> void:
 	var it: Dictionary = items.make_item(kind_id, rarity)
 	if it.is_empty():
 		return
-	var ang := randf() * TAU
-	var kick := Vector3(cos(ang), 0.0, sin(ang)) * randf_range(0.4, 1.0)
-	ItemPickup.spawn(scene, it, pos + kick)
+	ItemPickup.spawn_scattered(scene, it, pos)
 
 # C-2 — Host → guests: a foe took damage; pop a matching number so guests see
 # hits land (their puppet enemies don't run take_damage). NOT call_local — the

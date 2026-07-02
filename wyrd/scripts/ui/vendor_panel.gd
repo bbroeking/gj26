@@ -8,18 +8,12 @@ extends CanvasLayer
 # ring) so the counter reads as a carved shelf, not a spreadsheet.
 
 const GatherDefs = preload("res://data/gather.gd")
+const ItemsData = preload("res://data/items.gd")
 
-# Painted item icons (shared with the pack). Preloaded in _ready and handed to
-# each card — a CompressedTexture2D whose first load() lands inside _draw
-# renders as a white rect (macOS, Godot 4.6).
-const ICON_TEX := {
-	"shortbow": "res://assets/ui/items/shortbow.png",
-	"longbow": "res://assets/ui/items/longbow.png",
-	"leather_helm": "res://assets/ui/items/leather_helm.png",
-	"leather_chest": "res://assets/ui/items/leather_chest.png",
-	"leather_boots": "res://assets/ui/items/leather_boots.png",
-	"copper_ring": "res://assets/ui/items/copper_ring.png",
-}
+# Painted item icons come from the item catalogue (ItemsData.ICON_TEX) — the
+# same map the pack draws from. Preloaded in _ready and handed to each card;
+# a CompressedTexture2D whose first load() lands inside _draw renders as a
+# white rect (macOS, Godot 4.6).
 
 # Rarity tints route through the one game-wide ramp (WyrdUi.RARITY) so the
 # counter glows the same as the pack, loot beam, and tooltips.
@@ -36,7 +30,7 @@ func _ready() -> void:
 	layer = 90
 	_game = get_tree().root.get_node_or_null("Game")
 	# Preload painted icons once (white-rect-in-_draw gotcha).
-	for path in ICON_TEX.values():
+	for path in ItemsData.ICON_TEX.values():
 		if ResourceLoader.exists(String(path)):
 			_tex_cache[String(path)] = load(String(path))
 	WyrdUi.make_backdrop(self, _close)   # spec 53 — one scrim + click-outside dismiss
@@ -152,7 +146,7 @@ func _render() -> void:
 		var it: Dictionary = item
 		var rarity := String(it.get("rarity", "normal"))
 		var rc: Color = WyrdUi.RARITY.get(rarity, WyrdUi.INK_MID)
-		var path := String(ICON_TEX.get(String(it.get("kind_id", "")), ""))
+		var path := String(ItemsData.ICON_TEX.get(String(it.get("kind_id", "")), ""))
 		var card := _VendorCard.new()
 		card.setup_sell(String(it.get("name", "?")), EconomyData.sell_value(it),
 			rarity, rc, _tex_cache.get(path, null))

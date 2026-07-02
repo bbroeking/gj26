@@ -163,30 +163,15 @@ static func maple_panel_stylebox() -> StyleBoxTexture:
 	sb.set_content_margin_all(30.0)
 	return sb
 
-# The glossy jade slot from the generated art (9-patch; item icons draw on top).
-static func maple_slot_stylebox() -> StyleBoxTexture:
-	var sb := StyleBoxTexture.new()
-	sb.texture = load(MAPLE_SLOT)
-	sb.texture_margin_left = 20.0
-	sb.texture_margin_right = 20.0
-	sb.texture_margin_top = 20.0
-	sb.texture_margin_bottom = 20.0
-	return sb
-
-# UI bible fonts: IM Fell English (body), IM Fell English SC (headers),
-# Caveat (hand-jotted notes — toasts, costs, margin scribbles).
+# UI bible fonts: IM Fell English (body), IM Fell English SC (headers).
 const FONT_BODY_PATH := "res://assets/fonts/IMFellEnglish-Regular.ttf"
 const FONT_HEADER_PATH := "res://assets/fonts/IMFellEnglishSC-Regular.ttf"
-const FONT_HAND_PATH := "res://assets/fonts/Caveat.ttf"
 
 static func font_body() -> Font:
 	return load(FONT_BODY_PATH) if ResourceLoader.exists(FONT_BODY_PATH) else null
 
 static func font_header() -> Font:
 	return load(FONT_HEADER_PATH) if ResourceLoader.exists(FONT_HEADER_PATH) else null
-
-static func font_hand() -> Font:
-	return load(FONT_HAND_PATH) if ResourceLoader.exists(FONT_HAND_PATH) else null
 
 # Spec 53 — the single highest-leverage taste fix: make IM Fell English the
 # project default so every Label / draw_string that doesn't override its font
@@ -226,15 +211,6 @@ static func make_backdrop(host: Node, on_dismiss: Callable) -> ColorRect:
 static func _set_font(c: Control, f: Font) -> void:
 	if f != null:
 		c.add_theme_font_override("font", f)
-
-# Outlined label floating over the 3D world (objective, trades, prompts').
-static func style_hud_label(l: Label, size: int = 16,
-		color: Color = Color(0.96, 0.92, 0.80)) -> void:
-	_set_font(l, font_header())
-	l.add_theme_font_size_override("font_size", size)
-	l.add_theme_color_override("font_color", color)
-	l.add_theme_color_override("font_outline_color", Color(0.12, 0.09, 0.06))
-	l.add_theme_constant_override("outline_size", 7)
 
 # A parchment meter (HP / Focus / boss bar): button-plate trough + a
 # rounded watercolor fill + an ink label. Returns {root, fill, label};
@@ -407,32 +383,6 @@ static func style_button(b: Button) -> void:
 	focus.set_corner_radius_all(BTN_RADIUS + 2)
 	focus.corner_detail = 10
 	b.add_theme_stylebox_override("focus", focus)
-
-static func _btn_tex(mod: Color) -> StyleBoxTexture:
-	var sb := StyleBoxTexture.new()
-	sb.texture = load(BUTTON_TEX_PATH)
-	sb.texture_margin_left = BUTTON_MARGIN
-	sb.texture_margin_right = BUTTON_MARGIN
-	sb.texture_margin_top = BUTTON_MARGIN
-	sb.texture_margin_bottom = BUTTON_MARGIN
-	sb.content_margin_left = 12.0
-	sb.content_margin_right = 12.0
-	sb.content_margin_top = 5.0
-	sb.content_margin_bottom = 5.0
-	sb.modulate_color = mod
-	return sb
-
-static func _btn_flat(bg: Color) -> StyleBoxFlat:
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = bg
-	sb.border_color = Color(0.45, 0.37, 0.25)
-	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(6)
-	sb.content_margin_left = 10.0
-	sb.content_margin_right = 10.0
-	sb.content_margin_top = 6.0
-	sb.content_margin_bottom = 6.0
-	return sb
 
 # Selected list entry (toggled template / chart / trophy buttons) — a sage
 # ink ring over the parchment plate.

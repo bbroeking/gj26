@@ -8,7 +8,6 @@ extends Interactable
 # docs/WORLD_BIBLE.md (plain-spoken, warm, no fantasy-isms).
 
 const QUILL_GLB := preload("res://models/npc_quill_v2.glb")
-const DialogPanelScript = preload("res://scripts/ui/dialog_panel.gd")
 const QuillPanelScript = preload("res://scripts/ui/quill_panel.gd")
 
 func get_prompt_text() -> String:
