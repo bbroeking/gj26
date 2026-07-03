@@ -39,6 +39,13 @@ func _ready() -> void:
 	_panel.offset_bottom = 300
 	add_child(_panel)
 
+	# Header art — drawn first so it sits behind the title and close hint.
+	var header_art := _HearthHeaderArt.new()
+	header_art.anchor_right = 1.0
+	header_art.anchor_bottom = 1.0
+	header_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(header_art)
+
 	var title := Label.new()
 	title.text = String(st.get("title", "Crafting"))
 	WyrdUi.style_title(title)
@@ -212,3 +219,40 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# Header art: an amber-warm wash over the title zone, parchment grain, a
+# ── ◆ ── flourish divider, and a campfire glyph in the right margin — so
+# the Hearth and Forge panels read as warm domestic spaces, not bare forms.
+class _HearthHeaderArt extends Control:
+	func _draw() -> void:
+		# Warm ember wash over the header zone (y 0..88).
+		var zone := Rect2(Vector2.ZERO, Vector2(size.x, 88.0))
+		draw_rect(zone, Color(0.98, 0.82, 0.55, 0.20))
+		WyrdUi.draw_parchment_grain(self, zone, 33)
+		# Flourish divider separating the header from the recipe list.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 88.0), size.x - 108.0)
+		# Campfire glyph in the right margin of the header.
+		_draw_campfire(size.x - 64.0, 44.0)
+
+	func _draw_campfire(cx: float, cy: float) -> void:
+		# Two crossed logs at the base.
+		draw_line(Vector2(cx - 14, cy + 14), Vector2(cx + 10, cy + 6),
+			Color(0.52, 0.32, 0.15, 0.72), 3.5)
+		draw_line(Vector2(cx - 10, cy + 6), Vector2(cx + 14, cy + 14),
+			Color(0.52, 0.32, 0.15, 0.72), 3.5)
+		# Ember glow at the base of the flames.
+		draw_circle(Vector2(cx, cy + 8), 9.0, Color(0.95, 0.55, 0.18, 0.25))
+		# Left flame lick — three stacked circles narrowing upward.
+		draw_circle(Vector2(cx - 5, cy + 1), 6.0, Color(0.96, 0.58, 0.18, 0.40))
+		draw_circle(Vector2(cx - 4, cy - 5), 4.0, Color(0.97, 0.72, 0.26, 0.35))
+		draw_circle(Vector2(cx - 3, cy - 10), 2.5, Color(0.99, 0.88, 0.44, 0.28))
+		# Right flame lick.
+		draw_circle(Vector2(cx + 5, cy + 1), 5.5, Color(0.95, 0.58, 0.18, 0.38))
+		draw_circle(Vector2(cx + 4, cy - 4), 3.5, Color(0.97, 0.72, 0.26, 0.32))
+		draw_circle(Vector2(cx + 2, cy - 9), 2.0, Color(0.99, 0.88, 0.44, 0.26))
+		# Central taller flame — the dominant tongue.
+		draw_circle(Vector2(cx, cy - 2), 7.0, Color(0.97, 0.65, 0.22, 0.48))
+		draw_circle(Vector2(cx, cy - 8), 5.0, Color(0.98, 0.78, 0.32, 0.42))
+		draw_circle(Vector2(cx, cy - 14), 3.0, Color(0.99, 0.90, 0.48, 0.35))
+		draw_circle(Vector2(cx, cy - 18), 1.8, Color(1.0, 0.98, 0.72, 0.28))
