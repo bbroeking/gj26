@@ -37,6 +37,10 @@ func _ready() -> void:
 	_panel.offset_bottom = 230
 	add_child(_panel)
 
+	var header_art := _WaystoneHeaderArt.new()
+	header_art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_panel.add_child(header_art)
+
 	var title := Label.new()
 	title.text = "The Waystone"
 	WyrdUi.style_title(title)
@@ -154,3 +158,47 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# ---- decorative header art (drawn behind all labels) ----
+# A warm honey band, parchment grain, the waystone glyph (six mossy stones
+# in a circle with a jade threshold glow), and a flourish divider — all
+# pure vector so no load() touches _draw().
+class _WaystoneHeaderArt extends Control:
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		# Warm honey wash over the title zone — lifts the header off the plain
+		# cream interior without overwhelming the terracotta title text.
+		draw_rect(Rect2(0.0, 42.0, size.x, 52.0), Color(0.98, 0.91, 0.72, 0.26))
+		WyrdUi.draw_parchment_grain(self, Rect2(0.0, 42.0, size.x, 52.0), 17)
+		# The waystone glyph — six rough stones arranged in a circle, with a soft
+		# jade arc inside (the threshold, the glow that says "the crossing is near").
+		# Right-aligned in the header zone so it doesn't crowd the title text.
+		var cx := size.x - 64.0
+		var cy := 68.0
+		var ring_r := 21.0
+		# Jade inner glow — the threshold shimmer.
+		draw_arc(Vector2(cx, cy), ring_r * 0.64, 0.0, TAU, 36,
+			Color(0.42, 0.65, 0.38, 0.30), 6.0, true)
+		# Six mossy standing stones in a ring.
+		for i in 6:
+			var ang := float(i) / 6.0 * TAU - PI * 0.5
+			var sc := Vector2(cx + cos(ang) * ring_r, cy + sin(ang) * ring_r)
+			# Each stone: a small upright block (taller than wide), slightly
+			# warm grey — the mossy slate of Bramblewood's old stones.
+			var sw := 5.5
+			var sh := 7.5
+			var sr := Rect2(sc - Vector2(sw * 0.5, sh * 0.5), Vector2(sw, sh))
+			draw_rect(sr, Color(0.52, 0.50, 0.46))
+			# Top highlight — the stone catches the page's warm light.
+			draw_rect(Rect2(sr.position + Vector2(1.0, 1.0),
+				Vector2(sr.size.x - 2.0, 2.0)), Color(1.0, 0.98, 0.90, 0.38))
+			draw_rect(sr, WyrdUi.KIT_EDGE, false, 1.0)
+		# Outer ring pinstripe — a ghosted circle unifying the stones.
+		draw_arc(Vector2(cx, cy), ring_r + 6.0, 0.0, TAU, 44,
+			Color(WyrdUi.KIT_EDGE, 0.18), 1.0, true)
+		# Flourish divider below the header band — the ── ◆ ── separator that
+		# marks the end of the decorative zone before the chart list begins.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.45, 94.0), size.x * 0.70)
