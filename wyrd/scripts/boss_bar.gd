@@ -27,6 +27,18 @@ func _ready() -> void:
 		root.anchor_right = 0.5
 		root.offset_left = -300
 		root.offset_top = 18
+		# Art nameplate — added before the meter so it draws behind the trough.
+		# The thorn branches are visible in the 40 px side margins; the bevel +
+		# gold inset frame shows above + below the trough as a carved surround.
+		var art := _BossNameplateArt.new()
+		art.anchor_left = 0.5
+		art.anchor_right = 0.5
+		art.offset_left = -340
+		art.offset_right = 340
+		art.offset_top = 12
+		art.offset_bottom = 62
+		art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(art)
 		add_child(root)
 
 # Called at build — set max HP and fill the bar.
@@ -57,3 +69,68 @@ func set_phase(phase: int) -> void:
 
 func hide_boss() -> void:
 	visible = false
+
+
+# A carved parchment nameplate that sits BEHIND the meter trough (drawn first,
+# so the trough renders on top). The 40 px side margins show thorn-branch
+# ornament in sepia + sage — the Hedgemother's bramble motif, pulled from
+# mj_hud_bramble.png. The cream bevel + gold inset peeks above/below the
+# trough as a "this is a carved proclamation" surround.
+class _BossNameplateArt extends Control:
+	func _ready() -> void:
+		resized.connect(queue_redraw)
+
+	func _draw() -> void:
+		if size.x < 2.0 or size.y < 2.0:
+			return
+		var r := Rect2(Vector2.ZERO, size)
+		var cy := size.y * 0.5
+		# Cream parchment face — slightly cooler than KIT_PLATE to read as
+		# ancient carved stone rather than warm workshop parchment.
+		draw_rect(r, WyrdUi.KIT_PLATE.darkened(0.04))
+		# Top light bevel (catches the page's warm overhead light).
+		draw_rect(Rect2(r.position + Vector2(3, 2), Vector2(r.size.x - 6, 2.5)),
+			Color(1.0, 0.97, 0.88, 0.50))
+		# Bottom ink shadow — grounds the banner so it sits ON the world.
+		draw_rect(Rect2(r.position + Vector2(3, r.size.y - 4.5),
+			Vector2(r.size.x - 6, 2.5)), Color(WyrdUi.KIT_EDGE, 0.30))
+		# Ink border.
+		draw_rect(r, WyrdUi.KIT_EDGE, false, 1.5)
+		# Gold inner inset — the "burnished proclamation" read.
+		draw_rect(r.grow(-4.0), Color(WyrdUi.GOLD, 0.40), false, 1.0)
+		# Sparse parchment grain across the full face.
+		WyrdUi.draw_parchment_grain(self, r.grow(-6.0), 88)
+		# Thorn-branch ornament at each end — the bramble motif.
+		_draw_thorn_branch(Vector2(6.0, cy), 1.0)
+		_draw_thorn_branch(Vector2(r.size.x - 6.0, cy), -1.0)
+
+	# Draws a thorny bramble branch from `origin` in direction `dir` (+1 = right).
+	# All draw_* calls are on self (this Control), valid inside _draw call chain.
+	func _draw_thorn_branch(origin: Vector2, dir: float) -> void:
+		var col := Color(WyrdUi.KIT_EDGE, 0.65)
+		var leaf_col := Color(WyrdUi.SAGE, 0.52)
+		# Main horizontal stem — 28 px long, inward from the edge.
+		draw_line(origin, origin + Vector2(dir * 28.0, 0.0), col, 1.5)
+		# Three thorns branching alternately up and down from points on the stem.
+		var stem_offsets: Array = [6.0, 14.0, 22.0]
+		for i in stem_offsets.size():
+			var p := origin + Vector2(dir * stem_offsets[i], 0.0)
+			if i % 2 == 0:
+				# Upper thorn — angles up and outward.
+				draw_line(p, p + Vector2(dir * 3.5, -8.0), col, 1.2)
+			else:
+				# Lower thorn — angles down and outward.
+				draw_line(p, p + Vector2(dir * 3.0, 7.5), col, 1.2)
+		# Small sage leaf at the far tip of the stem — the living end of the bramble.
+		var tip := origin + Vector2(dir * 28.0, 0.0)
+		var pts := PackedVector2Array([
+			tip + Vector2(dir * 8.0, 0.0),
+			tip + Vector2(dir * 3.5, -5.5),
+			tip + Vector2(dir * -1.0, 0.0),
+			tip + Vector2(dir * 3.5, 5.5),
+		])
+		draw_colored_polygon(pts, leaf_col)
+		# Faint leaf-vein line.
+		draw_line(tip + Vector2(dir * 2.0, 0.0),
+			tip + Vector2(dir * 7.0, 0.0),
+			Color(WyrdUi.SAGE.darkened(0.25), 0.38), 0.8)
