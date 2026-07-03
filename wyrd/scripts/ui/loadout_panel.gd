@@ -76,6 +76,9 @@ func _ready() -> void:
 	_panel.offset_right = 330
 	_panel.offset_bottom = 300
 	add_child(_panel)
+	var header_art := _LoadoutHeaderArt.new()
+	header_art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_panel.add_child(header_art)
 	var title := Label.new()
 	title.text = "Loadout"
 	WyrdUi.style_title(title)
@@ -262,3 +265,62 @@ class _SkillCard extends Control:
 		# --- short desc (up to two lines) ---
 		draw_multiline_string(font, Vector2(tx, 40.0), _desc,
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 16.0, 12, 2, dim)
+
+
+# ── Loadout header ornament ──────────────────────────────────────────────────
+# Sage wash + parchment grain + ── ◆ ── divider at the base of the header
+# zone, plus a bow-and-quiver glyph in the right margin — the "arming up"
+# moment before every dungeon crossing. Pure vector; no load() in _draw().
+class _LoadoutHeaderArt extends Control:
+	func _ready() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		var w := size.x
+		var zone := Rect2(0.0, 0.0, w, 88.0)
+		# Sage tint — the wild/nature register of the skill pool.
+		draw_rect(zone, Color(0.44, 0.56, 0.26, 0.17))
+		WyrdUi.draw_parchment_grain(self, zone, 41)
+		WyrdUi.draw_flourish(self, Vector2(w * 0.5, 89.0), w * 0.88)
+		_draw_bow_quiver(w - 66.0, 46.0)
+
+	func _draw_bow_quiver(cx: float, cy: float) -> void:
+		var wood  := Color(0.54, 0.38, 0.20, 0.72)
+		var limb  := Color(0.44, 0.30, 0.16, 0.76)
+		var sage_c := Color(0.40, 0.56, 0.24, 0.62)
+		var ink_c  := Color(WyrdUi.KIT_EDGE, 0.52)
+
+		# Quiver: a small leather cylinder, 34 px left of the bow.
+		var qx := cx - 34.0
+		var qw := 11.0
+		var qt := cy - 18.0     # mouth (top)
+		var qb := cy + 18.0     # base (bottom)
+		draw_rect(Rect2(qx - qw * 0.5, qt, qw, qb - qt),
+			Color(0.66, 0.48, 0.26, 0.72))
+		# Leather cap at the mouth.
+		draw_rect(Rect2(qx - qw * 0.5 - 1.5, qt, qw + 3.0, 5.0),
+			Color(0.44, 0.30, 0.16, 0.80))
+		draw_rect(Rect2(qx - qw * 0.5, qt, qw, qb - qt), ink_c, false, 1.2)
+		# Three arrow shafts, staggered heights.
+		for i in 3:
+			var ax := qx + (float(i) - 1.0) * 3.2
+			var at_ := qt - 10.0 - float(i % 2) * 6.0
+			draw_line(Vector2(ax, qt + 2.0), Vector2(ax, at_), wood, 1.2, true)
+			draw_line(Vector2(ax - 3.0, at_ + 5.0), Vector2(ax, at_), wood, 1.2, true)
+			draw_line(Vector2(ax + 3.0, at_ + 5.0), Vector2(ax, at_), wood, 1.2, true)
+			# Sage fletching at the nock end.
+			draw_line(Vector2(ax - 3.5, qt - 1.0),
+				Vector2(ax + 3.5, qt - 1.0), sage_c, 1.3, true)
+
+		# Bow: D-arc curving right; string and opening face left.
+		# Arc from -PI*0.45 (upper-right) through 0 (rightmost) to PI*0.45
+		# (lower-right) — tips land near (cx+3, cy±20).
+		var br := 20.0
+		draw_arc(Vector2(cx, cy), br, -PI * 0.45, PI * 0.45, 24, limb, 2.8, true)
+		var tip_a := Vector2(cx + br * cos(-PI * 0.45), cy + br * sin(-PI * 0.45))
+		var tip_b := Vector2(cx + br * cos(PI * 0.45), cy + br * sin(PI * 0.45))
+		# Burnished gold tip caps — the same language as hotbar slot flash.
+		draw_circle(tip_a, 2.2, Color(WyrdUi.GOLD, 0.65))
+		draw_circle(tip_b, 2.2, Color(WyrdUi.GOLD, 0.65))
+		# Bowstring: thin ink line connecting the two limb tips.
+		draw_line(tip_a, tip_b, ink_c, 1.0, true)
