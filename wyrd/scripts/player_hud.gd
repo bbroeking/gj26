@@ -420,8 +420,7 @@ class GlobeGauge extends Control:
 		draw_arc(c, R + 1.5, 0, TAU, 64, RING_EDGE, 2.0, true)
 		for i in 4:
 			var a := PI * 0.25 + float(i) * PI * 0.5
-			var np := c + Vector2(cos(a), sin(a)) * (R + 8.0)
-			WyrdUi.draw_round_well(self, np, 8.0, Color(0.93, 0.88, 0.74))
+			_draw_bramble_knot(c + Vector2(cos(a), sin(a)) * (R + 8.0), a)
 		# --- glass orb ---
 		draw_circle(c, R, Color(0.12, 0.10, 0.09))
 		if frac > 0.003:
@@ -473,6 +472,41 @@ class GlobeGauge extends Control:
 				HORIZONTAL_ALIGNMENT_CENTER, size.x, 11, 4, Color(0.12, 0.09, 0.06))
 			draw_string(f, Vector2(0, c.y - 16), status,
 				HORIZONTAL_ALIGNMENT_CENTER, size.x, 11, Color(0.95, 0.78, 0.5))
+
+	# A twig-and-leaf cluster at one of the four ring knots — three spokes
+	# fan outward in the radial direction, each tipped with a sage leaf diamond
+	# and a fine vein. A terracotta berry marks the node center. Together the
+	# four clusters turn the plain wooden ring into the "bramble nest" named in
+	# the mj_hud_bramble.png reference (a cradling, botanical holding of the orb).
+	func _draw_bramble_knot(kc: Vector2, angle: float) -> void:
+		var col_stem := Color(0.38, 0.28, 0.16, 0.82)
+		var col_leaf := Color(WyrdUi.SAGE, 0.58)
+		var col_vein := Color(WyrdUi.SAGE.darkened(0.3), 0.44)
+		var col_berry := Color(0.54, 0.18, 0.12, 0.74)
+		var rd := Vector2(cos(angle), sin(angle))          # outward normal from ring center
+		var td := Vector2(-sin(angle), cos(angle))         # tangent along ring
+		# Three twig spokes: one straight out, two fanning ±50° to form a Y
+		var tips := [
+			kc + rd * 9.0,
+			kc + (rd * 0.64 + td * 0.77) * 7.0,
+			kc + (rd * 0.64 - td * 0.77) * 7.0,
+		]
+		for t in tips:
+			draw_line(kc, t, col_stem, 1.3, true)
+			var dv := (t - kc).normalized()
+			var nv := Vector2(-dv.y, dv.x)
+			var ls := 3.2 if t == tips[0] else 2.7
+			var lp := PackedVector2Array([
+				t + dv * ls,
+				t + nv * (ls * 0.52),
+				t - dv * (ls * 0.55),
+				t - nv * (ls * 0.52),
+			])
+			draw_colored_polygon(lp, col_leaf)
+			draw_line(lp[0], lp[2], col_vein, 0.8)
+		# Terracotta berry at the knot node
+		draw_circle(kc, 2.4, col_berry)
+		draw_arc(kc, 2.4, 0, TAU, 10, Color(0.28, 0.10, 0.08, 0.88), 1.2, true)
 
 
 # Slice B — the quest plate's scroll dressing, drawn over the painted-wood
