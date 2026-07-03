@@ -1,10 +1,11 @@
 extends Control
 
 # A carved storybook hotbar slot. Draws its own face (carved button + recessed
-# icon well + parchment grain), a true RADIAL cooldown wedge (square-clamped so
-# it never bulges past the slot), and a gold ready-flash when a skill comes off
-# cooldown. The icon/glyph/keybind/cost are children added by skill_bar.gd and
-# render over this _draw. Pure-vector (no texture in _draw — gotcha-safe).
+# icon well + parchment grain + ivy corner sprigs in the frame margin), a true
+# RADIAL cooldown wedge (square-clamped so it never bulges past the slot), and
+# a gold ready-flash when a skill comes off cooldown. The icon/glyph/keybind/
+# cost are children added by skill_bar.gd and render over this _draw.
+# Pure-vector (no texture in _draw — gotcha-safe).
 
 var cd_ratio: float = 0.0      # 1 = just cast (full dark wedge) → 0 = ready
 var castable: bool = true
@@ -37,6 +38,12 @@ func _draw() -> void:
 	WyrdUi.draw_carved_button(self, r, castable)
 	WyrdUi.draw_well(self, r.grow(-7.0), WyrdUi.KIT_PLATE.lightened(0.05))
 	WyrdUi.draw_parchment_grain(self, r, _seed)
+	# Botanical corner sprigs — ivy ornament in the 7px carved frame margin
+	# between the outer button edge and the inner icon well. Two sage leaf
+	# diamonds + sepia stems + terracotta berries; drawn under the cooldown
+	# wedge so state indicators always sit on top.
+	_draw_corner_sprig(Vector2(3.0, 3.0), 1.0)
+	_draw_corner_sprig(Vector2(size.x - 3.0, 3.0), -1.0)
 	# Radial cooldown wedge — a square-clamped pie from 12 o'clock clockwise,
 	# shrinking as the skill cools. Vertices ride the slot's own edge so it
 	# reads as the slot face darkening, with no overshoot into the gaps.
@@ -57,3 +64,23 @@ func _draw() -> void:
 		draw_colored_polygon(pts, Color(0.10, 0.08, 0.07, 0.52))
 	if _flash > 0.0:
 		draw_rect(r.grow(-1.5), Color(WyrdUi.GOLD, _flash * 0.85), false, 3.0)
+
+# One ivy corner sprig: sepia stem, sage leaf diamond with faint vein, and a
+# small terracotta berry at the stem node. xdir +1 = left corner (grows right),
+# xdir -1 = right corner (grows left). All coords stay within the 7px frame
+# margin so the sprig never occludes the icon well or child labels.
+func _draw_corner_sprig(origin: Vector2, xdir: float) -> void:
+	var stem_end := origin + Vector2(xdir * 4.0, 5.5)
+	draw_line(origin, stem_end, Color(WyrdUi.KIT_EDGE, 0.45), 1.0)
+	var s := 2.7
+	draw_colored_polygon(PackedVector2Array([
+		stem_end + Vector2(0.0, -s),
+		stem_end + Vector2(xdir * s * 0.80, 0.0),
+		stem_end + Vector2(0.0, s * 0.55),
+		stem_end + Vector2(-xdir * s * 0.45, 0.0),
+	]), Color(WyrdUi.SAGE, 0.62))
+	draw_line(stem_end + Vector2(0.0, -s + 0.5),
+		stem_end + Vector2(0.0, s * 0.35),
+		Color(WyrdUi.SAGE.darkened(0.3), 0.32), 0.8)
+	draw_circle(stem_end + Vector2(-xdir * 1.5, -1.8), 1.4,
+		Color(WyrdUi.TERRACOTTA, 0.60))
