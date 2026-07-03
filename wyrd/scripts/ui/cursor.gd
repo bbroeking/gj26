@@ -44,11 +44,23 @@ class CursorMark extends Control:
 		# Ink ring + cream inner lip.
 		draw_arc(m, rad, 0.0, TAU, 28, ring_c, 2.2, true)
 		draw_arc(m, rad - 2.0, 0.0, TAU, 24, Color(WyrdUi.CREAM, 0.7), 1.0, true)
-		# Four short ticks (NE/NW/SE/SW so they never read as a crosshair).
+		# Four tiny leaf fronds (NE/NW/SE/SW): filled triangle + faint midrib spine.
+		# Organic ivy marks at the diagonals so the cursor reads storybook, not
+		# crosshair — the same leaf language the frame corners and bench ornament use.
 		for i in 4:
 			var a := PI * 0.25 + float(i) * PI * 0.5
 			var d := Vector2(cos(a), sin(a))
-			draw_line(m + d * (rad + 1.0), m + d * (rad + 4.0), ring_c, 1.6)
+			var perp := Vector2(-sin(a), cos(a))
+			var tip := m + d * (rad + 5.5)
+			var base := m + d * (rad + 0.5)
+			draw_colored_polygon(
+				PackedVector2Array([tip, base + perp * 2.2, base - perp * 2.2]),
+				ring_c)
+			# Midrib spine — a lighter stroke down the leaf centre.
+			draw_line(base, tip, Color(ring_c, 0.40), 0.8)
+		# Ghost rune ring — a faint arc just inside the hollow, like an inked rune
+		# carved into the cursor disc. The colour follows pip_c (gold idle, sage hover).
+		draw_arc(m, rad * 0.42, 0.0, TAU, 16, Color(pip_c, 0.20), 1.0)
 		# Burnished center pip — a tiny gold diamond.
 		var s := 2.6 + recoil * 1.6
 		draw_colored_polygon(PackedVector2Array([
