@@ -507,12 +507,21 @@ class BenchView extends Control:
 		var font: Font = get_theme_default_font()
 		if hdr == null:
 			hdr = font
+		# Header zone: sage-jade wash + grain + quill glyph. The Inscribing
+		# Table is the cartographer's workspace — sage for the Wayfinding trade
+		# colour. Same treatment as craft_panel's ember wash (spec 44).
+		var hz := Rect2(Vector2(0, 0), Vector2(size.x, 72))
+		draw_rect(hz, Color(0.74, 0.86, 0.68, 0.16))
+		WyrdUi.draw_parchment_grain(self, hz, 101)
+		# Quill glyph drawn before text so title and close-hint render on top.
+		_draw_quill(size.x - 64.0, 28.0)
 		# Spec 44 — parchment grain over the working face (vector, no tex).
 		WyrdUi.draw_parchment_grain(self,
 			Rect2(Vector2(46, 72), size - Vector2(92, 124)))
 		draw_string(hdr, Vector2(54, 56), "The Inscribing Table",
 			HORIZONTAL_ALIGNMENT_LEFT, 400, 24, WyrdUi.TERRACOTTA)
-		WyrdUi.draw_flourish(self, Vector2(146, 66), 180.0)
+		# Full-width flourish separates the header band from the working face.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 72.0), size.x - 96.0)
 		draw_string(font, Vector2(size.x - 180, 56), "Esc — close",
 			HORIZONTAL_ALIGNMENT_RIGHT, 130, 12, DIM)
 		_odds_rows.clear()
@@ -877,3 +886,28 @@ class BenchView extends Control:
 			draw_string(font, Vector2(box.position.x + 10.0, ty), ln,
 				HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 20.0, 13, TXT)
 			ty += 19.0
+
+	# A cartographer's feather quill: gold barbed shaft, sepia nib, ink drop.
+	# Trade mark for the Inscribing Table header — drawn code-side, no texture.
+	func _draw_quill(cx: float, cy: float) -> void:
+		var shaft_a := Vector2(cx - 8.0, cy + 20.0)   # nib end (lower)
+		var shaft_b := Vector2(cx + 10.0, cy - 18.0)  # quill tip (upper)
+		# Vane barbs — pairs fan from the shaft, alpha fades toward the tip.
+		for i in 6:
+			var t := 0.25 + float(i) * 0.11
+			var mid := shaft_a.lerp(shaft_b, t)
+			draw_line(mid, mid + Vector2(-7.0 + float(i) * 0.5, 2.5),
+				Color(WyrdUi.GOLD, 0.44 - float(i) * 0.04), 1.2)
+			draw_line(mid, mid + Vector2(-5.0 + float(i) * 0.4, -4.5),
+				Color(WyrdUi.GOLD, 0.38 - float(i) * 0.04), 1.0)
+		# Shaft — gold, drawn over the barbs.
+		draw_line(shaft_a, shaft_b, Color(WyrdUi.GOLD, 0.72), 2.0)
+		# Nib split — two fine sepia lines diverging at the lower tip.
+		draw_line(shaft_a, shaft_a + Vector2(-3.5, 5.0),
+			Color(WyrdUi.INK, 0.85), 1.5)
+		draw_line(shaft_a, shaft_a + Vector2(3.5, 5.0),
+			Color(WyrdUi.INK, 0.85), 1.5)
+		# Ink drop beneath the nib — a filled circle with an ink-edge ring.
+		draw_circle(shaft_a + Vector2(0.0, 8.0), 3.0, Color(WyrdUi.INK, 0.50))
+		draw_arc(shaft_a + Vector2(0.0, 8.0), 3.0, 0, TAU, 12,
+			Color(WyrdUi.INK, 0.75), 1.0, true)
