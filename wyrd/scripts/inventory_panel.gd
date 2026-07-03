@@ -861,29 +861,44 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 		var card_x := x + 42.0
 		var card_w := w - 50.0
 		var cardy := sy + 18.0
+		var perk_idx := 0
 		for p in perks:
 			var pl: int = int(p.lv)
 			var ok: bool = lv >= pl
 			if _span_visible(cardy - CARD_GAP, cardy + CARD_H + CARD_GAP, scroll, view):
-				# spine segment (left gutter — cards sit to its right, never cover it)
-				draw_line(Vector2(lx, cardy - CARD_GAP),
-					Vector2(lx, cardy + CARD_H + CARD_GAP),
-					Color(0.55, 0.62, 0.40, 0.65), 3.0)
+				# Spine rod — sage-green for earned, quiet sepia for locked
+				draw_rect(Rect2(Vector2(lx - 1.5, cardy - CARD_GAP),
+					Vector2(3.0, CARD_H + CARD_GAP * 2.0)),
+					Color(0.55, 0.62, 0.40, 0.68 if ok else 0.28))
 				var cr := Rect2(Vector2(card_x, cardy), Vector2(card_w, CARD_H))
 				if ok:
-					draw_rect(cr, Color(0.93, 0.88, 0.74))
-					draw_rect(cr, WyrdUi.SAGE.darkened(0.12), false, 2.0)
+					# Earned: parchment list-row plate (bevel + sage accent stripe)
+					# and a sparse grain pass so each card reads as hand-pressed paper.
+					WyrdUi.draw_list_row(self, cr, WyrdUi.SAGE)
+					WyrdUi.draw_parchment_grain(self, cr.grow(-3.0), 17 + perk_idx * 5)
 				else:
-					draw_rect(cr, Color(0.78, 0.72, 0.60, 0.85))
-					draw_rect(cr, Color(0.50, 0.42, 0.32, 0.7), false, 1.5)
-				# node disc on the spine
+					# Locked: recessed quiet well — colour lives on earned cards only.
+					WyrdUi.draw_well(self, cr, Color(0.83, 0.77, 0.64, 0.78))
+				# Spine node — filled diamond for earned (echoes the ◆ flourish
+				# motif used throughout the kit); hollow circle for locked.
 				var dc := Vector2(lx, cardy + CARD_H * 0.5)
-				draw_circle(dc, 12.0, WyrdUi.SAGE.darkened(0.05) if ok \
-					else Color(0.62, 0.55, 0.45))
-				draw_arc(dc, 12.0, 0.0, TAU, 24, Color(0.25, 0.18, 0.12), 1.5, true)
-				draw_string(hdr, Vector2(dc.x - 12.0, dc.y + 6.0),
-					"❖" if ok else "⚿", HORIZONTAL_ALIGNMENT_CENTER, 24.0, 13,
-					Color(0.97, 0.95, 0.86) if ok else Color(0.86, 0.81, 0.73))
+				if ok:
+					var dp := 11.0
+					var dnpts := PackedVector2Array([dc + Vector2(0, -dp),
+						dc + Vector2(dp * 0.78, 0), dc + Vector2(0, dp),
+						dc + Vector2(-dp * 0.78, 0)])
+					draw_colored_polygon(dnpts, WyrdUi.SAGE.darkened(0.05))
+					draw_polyline(dnpts + PackedVector2Array([dnpts[0]]),
+						Color(0.25, 0.18, 0.12), 1.5, true)
+					var ip := 5.0
+					var inner := PackedVector2Array([dc + Vector2(0, -ip),
+						dc + Vector2(ip * 0.78, 0), dc + Vector2(0, ip),
+						dc + Vector2(-ip * 0.78, 0)])
+					draw_colored_polygon(inner, Color(WyrdUi.GOLD, 0.70))
+				else:
+					draw_circle(dc, 9.0, Color(0.78, 0.72, 0.61))
+					draw_arc(dc, 9.0, 0.0, TAU, 24,
+						Color(0.35, 0.28, 0.22, 0.60), 1.5, true)
 				# name + state tag
 				draw_string(hdr, Vector2(cr.position.x + 12.0, cardy + 23.0),
 					String(p.name), HORIZONTAL_ALIGNMENT_LEFT, card_w - 96.0, 16,
@@ -896,6 +911,7 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 				draw_multiline_string(font, Vector2(cr.position.x + 12.0, cardy + 41.0),
 					String(p.desc), HORIZONTAL_ALIGNMENT_LEFT, card_w - 24.0, 12, 2,
 					Color(0.34, 0.28, 0.22) if ok else Color(0.52, 0.46, 0.39))
+			perk_idx += 1
 			cardy += CARD_H + CARD_GAP
 		y = cardy + 12.0
 	_tab_content_h[3] = y - view.position.y
