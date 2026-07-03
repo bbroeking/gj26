@@ -790,7 +790,15 @@ class BenchView extends Control:
 				Color(WyrdUi.GOLD, _stamp_t * 2.0), false, 3.0)
 		var y := 250.0
 		if bench.base_id == "":
-			draw_string(font, _result_rect.position + Vector2(0, 60),
+			# Ghost compass — faint chart outline while the result socket is empty.
+			# Drawn before the "place a base" hint so it reads as the inscription
+			# target, not decoration.
+			var wc := _result_rect.position + Vector2(_result_rect.size.x * 0.5, 34.0)
+			draw_arc(wc, 22.0, 0, TAU, 36, Color(EDGE, 0.11), 1.0, true)
+			draw_line(wc - Vector2(22, 0), wc + Vector2(22, 0), Color(EDGE, 0.09), 1.0)
+			draw_line(wc - Vector2(0, 22), wc + Vector2(0, 22), Color(EDGE, 0.09), 1.0)
+			draw_arc(wc, 4.5, 0, TAU, 16, Color(WyrdUi.GOLD, 0.15), 1.5, true)
+			draw_string(font, _result_rect.position + Vector2(0, 88),
 				"place a base", HORIZONTAL_ALIGNMENT_CENTER,
 				_result_rect.size.x, 13, DIM)
 			return
@@ -811,21 +819,35 @@ class BenchView extends Control:
 			for id in ids:
 				var stab: int = ChartsData.effective_stability(String(id),
 					bench._carto_lv(), bonus, bench._stab_perk_bonus())
-				draw_string(font, Vector2(rx, y),
-					"%s — %d%% · good %d%%" % [
-						String(ChartsData.AFFIXES[id].name),
-						roundi(weights[id]), stab],
-					HORIZONTAL_ALIGNMENT_LEFT, 220, 13, TXT)
-				_odds_rows.append({"rect": Rect2(Vector2(rx, y - 14), Vector2(220, 18)),
-					"id": String(id)})
-				y += 19.0
+				# Affix chip card — the same draw_list_row language used in the tray
+				# and every other panel, so the result reads as "reading the inks"
+				# rather than a probability spreadsheet.
+				# Accent stripe tells the good-vs-bad-twin story at a glance:
+				# sage = good-leaning (≥55%), gold = balanced, terracotta = risky.
+				var row_r := Rect2(Vector2(rx, y), Vector2(216, 22))
+				var accent: Color = WyrdUi.SAGE if stab >= 55 \
+					else (WyrdUi.GOLD if stab >= 35 else WyrdUi.TERRACOTTA)
+				WyrdUi.draw_list_row(self, row_r, accent)
+				draw_string(font, row_r.position + Vector2(8.0, 16.0),
+					String(ChartsData.AFFIXES[id].name),
+					HORIZONTAL_ALIGNMENT_LEFT, 130, 12, TXT)
+				draw_string(font, row_r.position + Vector2(row_r.size.x - 4.0, 16.0),
+					"%d%% · %d%%" % [roundi(weights[id]), stab],
+					HORIZONTAL_ALIGNMENT_RIGHT, 80, 11, DIM)
+				_odds_rows.append({"rect": row_r, "id": String(id)})
+				y += 26.0
 			if bench.trophy != "":
 				var den: Dictionary = ChartsData.AFFIXES[
 					ChartsData.TROPHY_TO_AFFIX[bench.trophy]]
-				draw_string(font, Vector2(rx, y),
-					"★ %s — certain" % String(den.name),
-					HORIZONTAL_ALIGNMENT_LEFT, 220, 12, WyrdUi.GOLD.darkened(0.15))
-				y += 19.0
+				var rr := Rect2(Vector2(rx, y), Vector2(216, 22))
+				WyrdUi.draw_list_row(self, rr, WyrdUi.GOLD)
+				draw_string(font, rr.position + Vector2(8.0, 16.0),
+					"★ " + String(den.name),
+					HORIZONTAL_ALIGNMENT_LEFT, 150, 12, WyrdUi.GOLD.darkened(0.2))
+				draw_string(font, rr.position + Vector2(rr.size.x - 4.0, 16.0),
+					"certain",
+					HORIZONTAL_ALIGNMENT_RIGHT, 56, 11, WyrdUi.GOLD.darkened(0.15))
+				y += 26.0
 		else:
 			draw_string(font, Vector2(rx, y), "A clean run — no affixes.",
 				HORIZONTAL_ALIGNMENT_LEFT, 220, 13, DIM)
