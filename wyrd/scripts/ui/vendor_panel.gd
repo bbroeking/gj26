@@ -61,6 +61,13 @@ func _ready() -> void:
 	_panel.offset_right = 380
 	_panel.offset_bottom = 260
 	add_child(_panel)
+	# Header art added first so it draws behind the title/subtitle labels.
+	var hdr_art := _VendorHeaderArt.new()
+	hdr_art.anchor_right = 1.0
+	hdr_art.offset_top = 46
+	hdr_art.offset_bottom = 91
+	hdr_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(hdr_art)
 
 	var title := Label.new()
 	title.text = "Hod's Counter"
@@ -112,6 +119,9 @@ func _ready() -> void:
 	sell_hdr.text = "Sell (he melts it down)"
 	WyrdUi.style_section(sell_hdr)
 	col1.add_child(sell_hdr)
+	var _sdiv1 := _SectionDivider.new()
+	_sdiv1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col1.add_child(_sdiv1)
 	# A full pack outgrows the panel — the sell list scrolls now.
 	var sell_scroll := ScrollContainer.new()
 	sell_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -130,6 +140,9 @@ func _ready() -> void:
 	buy_hdr.text = "Wares"
 	WyrdUi.style_section(buy_hdr)
 	col2.add_child(buy_hdr)
+	var _sdiv2 := _SectionDivider.new()
+	_sdiv2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col2.add_child(_sdiv2)
 	_buy_box = VBoxContainer.new()
 	_buy_box.add_theme_constant_override("separation", 5)
 	_buy_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -286,3 +299,32 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# Warm honey wash + parchment grain + ink rule / gold ◆ flourish divider
+# at the base of the header zone — the ornament that makes the panel read
+# as a proper storybook heading rather than a floating title.
+class _VendorHeaderArt extends Control:
+	func _draw() -> void:
+		var w := size.x
+		var h := size.y
+		# Warm honey tint — lifts the header zone off the plain cream interior.
+		draw_rect(Rect2(Vector2.ZERO, size), Color(0.98, 0.91, 0.72, 0.32))
+		WyrdUi.draw_parchment_grain(self, Rect2(Vector2.ZERO, size), 41)
+		# Ink rule + gold ◆ flourish at the bottom of the zone, bridging the
+		# title area and the content columns (same divider language as the bench).
+		var ry := h - 2.0
+		draw_line(Vector2(14.0, ry), Vector2(w - 14.0, ry),
+			Color(WyrdUi.KIT_EDGE, 0.38), 1.0)
+		WyrdUi.draw_flourish(self, Vector2(w * 0.5, ry), w * 0.55)
+
+
+# A thin drawn flourish separator dropped into VBoxContainers after section
+# headers — gives "Sell" and "Wares" the same ornamental divider the bench uses.
+class _SectionDivider extends Control:
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 10.0)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5),
+			size.x * 0.75)
