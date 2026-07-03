@@ -378,6 +378,15 @@ func _draw() -> void:
 		if scroll > max_s:
 			_tab_scroll[_tab] = max_s
 			queue_redraw()
+	# Header art: honey wash + parchment grain + knapsack glyph + flourish —
+	# the same ornament treatment every other frequently-opened panel received.
+	var hdr_zone := Rect2(win.position + Vector2(36.0, 36.0),
+		Vector2(win.size.x - 72.0, 38.0))
+	draw_rect(hdr_zone, Color(0.98, 0.91, 0.72, 0.22))
+	WyrdUi.draw_parchment_grain(self, hdr_zone, 61)
+	_draw_knapsack_glyph(Vector2(win.end.x - 58.0, win.position.y + 52.0))
+	WyrdUi.draw_flourish(self, Vector2(win.position.x + win.size.x * 0.5,
+		win.position.y + 70.0), win.size.x * 0.62)
 	draw_string(hdr_font, win.position + Vector2(52, 58),
 		"Adventurer's Pack", HORIZONTAL_ALIGNMENT_LEFT, win.size.x - 104, 24,
 		WyrdUi.TERRACOTTA)
@@ -592,9 +601,19 @@ func _draw_tabs(win: Rect2) -> void:
 			draw_line(r.position + Vector2(2, r.size.y - 2),
 				r.position + Vector2(r.size.x - 2, r.size.y - 2),
 				WyrdUi.TERRACOTTA, 3.0)
-		draw_string(font, r.position + Vector2(0, 22), String(TABS[i]),
-			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16,
-			WyrdUi.INK if active else WyrdUi.INK_MID)
+		var icon_tex: Texture2D = _cached_tex(String(TAB_ICONS[i]))
+		if icon_tex != null:
+			var ic := 14.0
+			draw_texture_rect(icon_tex,
+				Rect2(r.position + Vector2(5.0, (r.size.y - ic) * 0.5), Vector2(ic, ic)),
+				false, Color(1.0, 1.0, 1.0, 1.0) if active else Color(1.0, 1.0, 1.0, 0.55))
+			draw_string(font, r.position + Vector2(22.0, 22.0), String(TABS[i]),
+				HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 24.0, 15,
+				WyrdUi.INK if active else WyrdUi.INK_MID)
+		else:
+			draw_string(font, r.position + Vector2(0.0, 22.0), String(TABS[i]),
+				HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16,
+				WyrdUi.INK if active else WyrdUi.INK_MID)
 
 # ---- Spec 45 followup: drawn-page scrolling (Satchel / Charts / Trades) ----
 # The pack window is a fixed 644×604 panel but the list pages grew past it
@@ -782,6 +801,38 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 func _draw_squiggle(from: Vector2, width: float, color: Color) -> void:
 	# Usability pass — a quiet straight rule beats the wobbly one.
 	draw_line(from, from + Vector2(width, 0.0), color, 1.2)
+
+# A drawn knapsack in the pack-window header's right margin — gives the panel
+# the same "here's what this space is" glyph every other modal now carries
+# (campfire on the Hearth, standing-stone ring on the Waystone, bow on the
+# Loadout, lantern on the Lantern). Pure vector, no load() near draw().
+func _draw_knapsack_glyph(center: Vector2) -> void:
+	var leather := Color(0.58, 0.42, 0.25)
+	var leather_d := Color(0.42, 0.30, 0.17)
+	# Two shoulder straps rising above the flap
+	for dx in [-7.0, 4.0]:
+		draw_rect(Rect2(center + Vector2(dx, -20.0), Vector2(3.5, 13.0)), leather_d)
+		draw_rect(Rect2(center + Vector2(dx, -20.0), Vector2(3.5, 13.0)),
+			WyrdUi.KIT_EDGE, false, 1.0)
+	# Top flap (slightly wider than the body, overlaps the strap base)
+	var flap := Rect2(center + Vector2(-11.0, -9.0), Vector2(22.0, 10.0))
+	draw_rect(flap, leather_d)
+	draw_rect(Rect2(flap.position + Vector2(2.0, 1.5),
+		Vector2(flap.size.x - 4.0, 1.5)), Color(1.0, 0.90, 0.72, 0.40))
+	draw_rect(flap, WyrdUi.KIT_EDGE, false, 1.5)
+	# Gold clasp on the flap centre
+	var clasp := Rect2(center + Vector2(-3.5, -1.5), Vector2(7.0, 4.0))
+	draw_rect(clasp, WyrdUi.GOLD.darkened(0.08))
+	draw_rect(clasp, WyrdUi.KIT_EDGE, false, 1.0)
+	# Pack body
+	var body := Rect2(center + Vector2(-10.0, 1.5), Vector2(20.0, 18.0))
+	draw_rect(body, leather)
+	# Sunken inner panel — the worn-leather-pocket read
+	draw_rect(body.grow(-3.5), leather.lightened(0.10))
+	# Top bevel on the body face (warm light catching the leather)
+	draw_rect(Rect2(body.position + Vector2(2.0, 2.0),
+		Vector2(body.size.x - 4.0, 1.5)), Color(1.0, 0.88, 0.68, 0.42))
+	draw_rect(body, WyrdUi.KIT_EDGE, false, 1.5)
 
 # Spec 39 — the Trades page: the Wayfinding band (round emblem, name + level,
 # XP bar) followed by the mastery ladder — a level 1→17 skill tree of every
