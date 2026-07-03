@@ -75,7 +75,7 @@ func _ready() -> void:
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	col.add_child(scroll)
 	_recipe_box = VBoxContainer.new()
-	_recipe_box.add_theme_constant_override("separation", 8)
+	_recipe_box.add_theme_constant_override("separation", 4)
 	_recipe_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_recipe_box)
 
@@ -115,8 +115,15 @@ func _render() -> void:
 	for rid in st.get("recipes", []):
 		var rec: Dictionary = CraftingDefs.recipe(String(rid))
 		var locked: bool = lv < int(rec.get("req_lv", 1))
+		var affordable: bool = not locked and _game != null \
+			and _game.can_afford(rec.inputs)
+		var accent: Color = WyrdUi.INK_MID if locked \
+			else (WyrdUi.SAGE if affordable else WyrdUi.TERRACOTTA)
+		var card := _RecipeCard.new()
+		card.accent = accent
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 		# Spec 44 — a painted icon chip in front of every recipe row.
 		var chip := Label.new()
@@ -166,7 +173,8 @@ func _render() -> void:
 			if _game != null and _game.craft(station_id, rid_s):
 				_render())
 		row.add_child(b)
-		_recipe_box.add_child(row)
+		card.add_child(row)
+		_recipe_box.add_child(card)
 
 	if _game == null:
 		_satchel_lbl.text = ""
@@ -212,3 +220,20 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# Carved parchment card behind each recipe row — draws draw_list_row so the
+# forge reads as a shelf of carved cards rather than a flat column.
+# Accent: SAGE = craftable now, TERRACOTTA = missing materials, INK_MID = locked.
+class _RecipeCard extends MarginContainer:
+	var accent: Color = WyrdUi.INK_MID
+
+	func _init() -> void:
+		size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		add_theme_constant_override("margin_left", 6)
+		add_theme_constant_override("margin_right", 6)
+		add_theme_constant_override("margin_top", 5)
+		add_theme_constant_override("margin_bottom", 5)
+
+	func _draw() -> void:
+		WyrdUi.draw_list_row(self, Rect2(Vector2.ZERO, size), accent)
