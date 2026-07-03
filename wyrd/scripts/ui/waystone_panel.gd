@@ -115,18 +115,13 @@ func _render() -> void:
 		_list_box.add_child(l)
 	for i in n:
 		var chart: Dictionary = _game.charts[i]
-		var b := Button.new()
-		WyrdUi.style_button(b)
-		WyrdUi.mark_selected(b, i == _selected)
-		b.toggle_mode = true
-		b.button_pressed = i == _selected
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.text = ChartsData.chart_label(chart)
+		var card := _ChartCard.new()
+		card.setup(chart, i == _selected)
 		var idx := i
-		b.pressed.connect(func():
+		card.pressed.connect(func():
 			_selected = idx
 			_render())
-		_list_box.add_child(b)
+		_list_box.add_child(card)
 	# Detail + button state.
 	if _selected >= 0 and _selected < n:
 		var chart: Dictionary = _game.charts[_selected]
@@ -154,3 +149,93 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# ---- drawn chart scroll card (one row in the case list) ----
+# A clickable Control: draw_list_row plate (gold accent when selected, quiet
+# ink otherwise), a draw_scroll icon in a recessed well on the left (sealed
+# when the chart carries affixes — the wax seal means "something inked in"),
+# the chart name in TERRACOTTA when selected or INK when not, a small tier
+# chip top-right, and a dim one-line affix summary below the name.
+# Fully self-contained — callers hand it everything it draws.
+class _ChartCard extends Control:
+	const WELL_W := 34.0
+	const WELL_H := 44.0
+
+	var _chart: Dictionary = {}
+	var _selected := false
+	var _hover := false
+
+	signal pressed
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 64.0)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
+	func setup(chart: Dictionary, selected: bool) -> void:
+		_chart = chart
+		_selected = selected
+		queue_redraw()
+
+	func _gui_input(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.pressed \
+				and event.button_index == MOUSE_BUTTON_LEFT:
+			pressed.emit()
+			accept_event()
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_MOUSE_ENTER:
+			_hover = true
+			queue_redraw()
+		elif what == NOTIFICATION_MOUSE_EXIT:
+			_hover = false
+			queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		var accent: Color = WyrdUi.GOLD if _selected else WyrdUi.INK_MID
+		WyrdUi.draw_list_row(self, r, accent)
+		if _hover and not _selected:
+			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.10))
+
+		# --- scroll icon well on the left ---
+		var wy := (size.y - WELL_H) * 0.5
+		var ir := Rect2(Vector2(9.0, wy), Vector2(WELL_W, WELL_H))
+		WyrdUi.draw_well(self, ir, Color(0.95, 0.91, 0.80))
+		# sealed = chart has affixes (the wax seal reads "something inked in")
+		var has_affixes := not (_chart.get("affixes", []) as Array).is_empty()
+		WyrdUi.draw_scroll(self, ir.grow(-3.0), has_affixes)
+		# gold ring when this chart is chosen
+		if _selected:
+			draw_rect(ir, WyrdUi.GOLD, false, 2.0)
+
+		# --- chart name ---
+		var font := get_theme_default_font()
+		var tx := ir.end.x + 11.0
+		var name_col: Color = WyrdUi.TERRACOTTA if _selected else WyrdUi.INK
+		draw_string(font, Vector2(tx, 25.0), String(_chart.get("name", "Chart")),
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 44.0, 16, name_col)
+
+		# --- tier chip (top-right corner) ---
+		var chip := Rect2(Vector2(size.x - 36.0, 9.0), Vector2(28.0, 16.0))
+		draw_rect(chip, WyrdUi.KIT_WELL)
+		draw_rect(chip, Color(WyrdUi.KIT_EDGE, 0.55), false, 1.0)
+		draw_string(font, Vector2(chip.position.x, chip.position.y + 12.0),
+			"T%d" % int(_chart.get("tier", 1)),
+			HORIZONTAL_ALIGNMENT_CENTER, chip.size.x, 11, WyrdUi.INK_MID)
+
+		# --- affix summary (one dim line below the name) ---
+		var affixes: Array = _chart.get("affixes", [])
+		var aff_parts: Array = []
+		for a in affixes:
+			var aff: Dictionary = ChartsData.AFFIXES.get(String(a.get("id", "")), {})
+			if aff.is_empty():
+				continue
+			if bool(a.get("good", false)):
+				aff_parts.append(String(aff.name))
+			else:
+				aff_parts.append(String(aff.bad_name))
+		var aff_line: String = "  ".join(aff_parts) if not aff_parts.is_empty() \
+			else "Clean run — no affixes inked"
+		draw_string(font, Vector2(tx, 44.0), aff_line,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 14.0, 12, WyrdUi.INK_MID)
