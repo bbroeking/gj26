@@ -10,6 +10,59 @@ var _status: Label
 var _ip_edit: LineEdit
 var _roster: Label
 
+# Drawn header art: a warm amber wash + parchment grain + a hanging lantern
+# glyph (glass body, candle flame, chain) in the space between the title and
+# the Esc hint. Draws behind all children via PRESET_FULL_RECT + draw order.
+class _LanternHeaderArt extends Control:
+	func _ready() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		var zone := Rect2(Vector2.ZERO, Vector2(size.x, 88.0))
+		# Warm amber wash — the lantern's candlelight bleeding into the parchment.
+		draw_rect(zone, Color(0.98, 0.80, 0.44, 0.20))
+		WyrdUi.draw_parchment_grain(self, zone, 53)
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 88.0), size.x * 0.80)
+		_draw_lantern(Vector2(size.x * 0.60, 44.0))
+
+	func _draw_lantern(ctr: Vector2) -> void:
+		# Outer halo — candle glow warming the parchment around the lantern.
+		draw_circle(ctr, 32.0, Color(0.99, 0.84, 0.44, 0.09))
+		draw_circle(ctr, 20.0, Color(0.99, 0.84, 0.44, 0.07))
+		# Hanging chain + hook bar.
+		draw_line(ctr + Vector2(0.0, -36.0), ctr + Vector2(0.0, -26.0),
+			WyrdUi.KIT_EDGE, 1.5)
+		draw_line(ctr + Vector2(-5.0, -36.0), ctr + Vector2(5.0, -36.0),
+			WyrdUi.KIT_EDGE, 1.5)
+		# Top wooden cap.
+		var cap_t := Rect2(ctr + Vector2(-10.0, -26.0), Vector2(20.0, 7.0))
+		draw_rect(cap_t, Color(0.56, 0.42, 0.24))
+		draw_rect(cap_t, WyrdUi.KIT_EDGE, false, 1.0)
+		# Glass body — amber translucent face.
+		var body := Rect2(ctr + Vector2(-13.0, -19.0), Vector2(26.0, 38.0))
+		draw_rect(body, Color(0.96, 0.82, 0.50, 0.66))
+		# Vertical frame bars: two outer edges + two inner pane dividers.
+		for ox in [-13.0, -4.0, 4.0, 13.0]:
+			var full_edge := absf(ox) == 13.0
+			draw_line(Vector2(ctr.x + ox, body.position.y),
+				Vector2(ctr.x + ox, body.position.y + 38.0),
+				Color(WyrdUi.KIT_EDGE, 0.90 if full_edge else 0.38),
+				1.5 if full_edge else 1.0)
+		# Horizontal mid-rail.
+		draw_line(body.position + Vector2(0.0, 15.0),
+			body.position + Vector2(26.0, 15.0),
+			Color(WyrdUi.KIT_EDGE, 0.50), 1.0)
+		# Flame — wide amber base tapering to a cream tip.
+		draw_circle(ctr + Vector2(0.0, 10.0), 5.5, Color(0.96, 0.52, 0.18))
+		draw_circle(ctr + Vector2(0.0,  6.0), 3.5, Color(0.98, 0.76, 0.36))
+		draw_circle(ctr + Vector2(0.0,  3.0), 2.0, Color(0.99, 0.96, 0.80))
+		# Body border (drawn last so it sits cleanly over the fill and bars).
+		draw_rect(body, WyrdUi.KIT_EDGE, false, 1.5)
+		# Bottom wooden cap.
+		var cap_b := Rect2(ctr + Vector2(-10.0, 19.0), Vector2(20.0, 7.0))
+		draw_rect(cap_b, Color(0.56, 0.42, 0.24))
+		draw_rect(cap_b, WyrdUi.KIT_EDGE, false, 1.0)
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 96
@@ -31,6 +84,10 @@ func _ready() -> void:
 	_panel.offset_right = 260
 	_panel.offset_bottom = 220
 	add_child(_panel)
+	# Header art first — draws behind the title, hint, and content children.
+	var art := _LanternHeaderArt.new()
+	art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_panel.add_child(art)
 	var title := Label.new()
 	title.text = "The Lantern"
 	WyrdUi.style_title(title)
