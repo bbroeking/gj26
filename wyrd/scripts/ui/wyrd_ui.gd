@@ -327,7 +327,11 @@ static func draw_parchment_grain(c: CanvasItem, r: Rect2, seed_v: int = 7) -> vo
 		c.draw_line(p, p + Vector2(ln, rng.randf_range(-1.2, 1.2)),
 			Color(0.62, 0.52, 0.38, 0.05 + rng.randf() * 0.05), 1.0)
 
-# Section flourish: ── ◆ ── centred under a header.
+# Section flourish: ── ❧◆❧ ── centred under a header.
+# On wide flourishes (>= 60 px) two gold pearls flank the diamond and a pair
+# of sage leaf-buds grows above/below the line a little further out — the
+# "leafy ivy + gold filigree" language in miniature.  Narrow flourishes (the
+# hotbar-end marks at 24 px) stay clean: ornament is skipped below 60 px.
 static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 	var col := Color(KIT_EDGE, 0.45)
 	c.draw_line(center - Vector2(width * 0.5, 0), center - Vector2(7, 0), col, 1.0)
@@ -336,6 +340,18 @@ static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 		center + Vector2(3.5, 0), center + Vector2(0, 3.5),
 		center + Vector2(-3.5, 0)])
 	c.draw_colored_polygon(pts, Color(GOLD, 0.8))
+	if width < 60.0:
+		return
+	# Gold pearls at ±13 px — gold filigree accents just outside the diamond.
+	c.draw_circle(center - Vector2(13.0, 0.0), 1.8, Color(GOLD, 0.62))
+	c.draw_circle(center + Vector2(13.0, 0.0), 1.8, Color(GOLD, 0.62))
+	# Ivy leaf-buds at ±26 px: a stem dot (dark ink) with two sage circles
+	# above and below it — reads as a tiny sprouting leaf node on each side.
+	for side in [-1.0, 1.0]:
+		var hub := center + Vector2(side * 26.0, 0.0)
+		c.draw_circle(hub, 1.1, Color(KIT_EDGE, 0.38))   # stem node
+		c.draw_circle(hub + Vector2(0.0, -3.2), 2.4, Color(SAGE, 0.52))   # upper leaf
+		c.draw_circle(hub + Vector2(0.0,  3.2), 2.4, Color(SAGE, 0.52))   # lower leaf
 
 # A little hand-blown ink bottle — glass body, ink fill, neck, cork, and a
 # glass highlight. Replaces the bare text glyphs in sockets and trays.
