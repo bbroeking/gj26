@@ -44,6 +44,10 @@ func _ready() -> void:
 	well.position = Vector2(48, 104)
 	well.size = Vector2(120, 120)
 	_panel.add_child(well)
+	# Parchment grain + vertical portrait/text divider (drawn behind all labels).
+	var divider := _PortraitDivider.new()
+	divider.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_panel.add_child(divider)
 	_name_lbl = Label.new()
 	var hf := WyrdUi.font_header()
 	if hf != null:
@@ -130,6 +134,42 @@ func _finish() -> void:
 	get_node("/root/Game").modal_closed()
 	finished.emit()
 	queue_free()
+
+
+# Drawn behind all labels; fills the panel. Adds two details to the interior:
+#
+#  1. Parchment grain — short sepia fibre strokes over the body text area
+#     (right of the portrait, clear of the name label). Matches the bench and
+#     hotbar tray treatments so the dialog reads as the same physical material.
+#
+#  2. Vertical divider — a thin sepia ink line at the portrait/text boundary
+#     (x ≈ 187), split at the midpoint by a small jade ivy-leaf ornament
+#     (WyrdUi.draw_leaf_ornament). The break keeps the line airy rather than
+#     mechanical, and the leaf colour echoes the sage accent that marks good
+#     choices across the design language.
+#
+class _PortraitDivider extends Control:
+	func _draw() -> void:
+		# Grain — body text zone only, so it doesn't muddy the portrait circle.
+		# Seed 31 chosen to give a different fibre pattern than the bench (71).
+		var grain_w := maxf(0.0, size.x - 260.0)
+		var grain_h := maxf(0.0, size.y - 172.0)
+		if grain_w > 0.0 and grain_h > 0.0:
+			WyrdUi.draw_parchment_grain(self,
+				Rect2(Vector2(196.0, 104.0), Vector2(grain_w, grain_h)), 31)
+		# Divider — in the 32 px gap between portrait right edge (168) and
+		# body-label left edge (200). x = 187 sits in the middle of that gap.
+		var x := 187.0
+		var y0 := 92.0
+		var y1 := size.y - 60.0
+		if y1 <= y0:
+			return
+		var mid_y := (y0 + y1) * 0.5
+		var leaf_gap := 19.0
+		var line_col := Color(WyrdUi.KIT_EDGE, 0.30)
+		draw_line(Vector2(x, y0), Vector2(x, mid_y - leaf_gap), line_col, 1.0)
+		draw_line(Vector2(x, mid_y + leaf_gap), Vector2(x, y1), line_col, 1.0)
+		WyrdUi.draw_leaf_ornament(self, Vector2(x, mid_y), 26.0)
 
 
 # Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
