@@ -397,6 +397,9 @@ class GlobeGauge extends Control:
 
 	const RING_WOOD := Color(0.85, 0.74, 0.52)   # pale carved honey
 	const RING_EDGE := Color(0.26, 0.19, 0.13)
+	const TWIG_INK  := Color(0.26, 0.17, 0.09)  # dark bramble twig stroke
+	const LEAF_BUD  := Color(0.38, 0.52, 0.26)  # sage leaf bud at twig tip
+	const BERRY_RED := Color(0.72, 0.22, 0.18)  # terracotta berry at knot crown
 	var _t := 0.0                                # animation clock (low-warn pulse)
 
 	func update_to(p_frac: float, p_label: String, p_status: String) -> void:
@@ -422,6 +425,26 @@ class GlobeGauge extends Control:
 			var a := PI * 0.25 + float(i) * PI * 0.5
 			var np := c + Vector2(cos(a), sin(a)) * (R + 8.0)
 			WyrdUi.draw_round_well(self, np, 8.0, Color(0.93, 0.88, 0.74))
+		# Bramble twig + leaf detail — each knot sprouts two short strokes
+		# (±40° from radial) with a sage leaf bud at the tip, and a terracotta
+		# berry at the outermost crown of the knot, past the ring's outer edge.
+		# Together they give the "jittered twig rings with leaf + berry knots"
+		# cradle described in the mj_hud_bramble.png reference.
+		for i in 4:
+			var a := PI * 0.25 + float(i) * PI * 0.5
+			var kc := c + Vector2(cos(a), sin(a)) * (R + 8.0)
+			# Two twig strokes at ±40° from the radial direction; each emerges
+			# from the well edge (8.5px from knot centre) and extends 7px outward.
+			for s in [-1, 1]:
+				var ta := a + float(s) * (PI * 0.22)
+				var td := Vector2(cos(ta), sin(ta))
+				draw_line(kc + td * 8.5, kc + td * 15.5, TWIG_INK, 1.5)
+				draw_circle(kc + td * 15.5, 2.5, LEAF_BUD)
+			# Berry: a single dot at the radially outermost tip of the well crown,
+			# just past the ring's outer-ink edge — the thorn-tip of the nest.
+			var ob := kc + Vector2(cos(a), sin(a)) * 8.0
+			draw_circle(ob, 2.2, BERRY_RED)
+			draw_arc(ob, 2.2, 0, TAU, 8, Color(0.44, 0.12, 0.10), 0.8, true)
 		# --- glass orb ---
 		draw_circle(c, R, Color(0.12, 0.10, 0.09))
 		if frac > 0.003:
