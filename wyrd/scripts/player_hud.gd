@@ -475,11 +475,9 @@ class GlobeGauge extends Control:
 				HORIZONTAL_ALIGNMENT_CENTER, size.x, 11, Color(0.95, 0.78, 0.5))
 
 
-# Slice B — the quest plate's scroll dressing, drawn over the painted-wood
-# 9-patch backing: faint parchment grain, a flourish under the QUEST header,
-# and a small wax seal up top so the banner reads as a sealed proclamation.
-# Pure-vector + WyrdUi primitives (grain + flourish); the seal is lifted from
-# WyrdUi.draw_scroll. _draw-on-Control is the proven pattern in this layer.
+# Quest banner art — warm amber header wash behind "◆ Quest", ivy leaf sprigs
+# flanking the flourish, and a gold compass-diamond sigil in the wax seal.
+# Moves toward the mj_dialog_ribbon lit-header + botanical frame language.
 class QuestScrollArt extends Control:
 	func _ready() -> void:
 		resized.connect(queue_redraw)
@@ -487,14 +485,34 @@ class QuestScrollArt extends Control:
 	func _draw() -> void:
 		if size.x < 2.0 or size.y < 2.0:
 			return
-		# Faint parchment grain across the inner face (inset off the wood frame).
-		var inner := Rect2(Vector2(18, 16), size - Vector2(36, 32))
-		WyrdUi.draw_parchment_grain(self, inner, 23)
-		# Flourish centred under the QUEST header (header sits ~y 11–28).
-		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 30.0), 120.0)
-		# A small wax seal up top-left, clear of the wood frame — the scroll's
-		# signature read (same motif as WyrdUi.draw_scroll's seal).
+		# Warm amber wash behind "◆ Quest" — a honey-glow header band that
+		# separates the title from the objective body text below.
+		draw_rect(Rect2(Vector2(20.0, 12.0), Vector2(size.x - 40.0, 22.0)),
+			Color(1.0, 0.85, 0.48, 0.15))
+		# Parchment grain in the body only, below the header band.
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(Vector2(18, 36), size - Vector2(36, 52)), 23)
+		# Flourish beneath the header + ivy leaf sprigs at both ends.
+		var fcx := size.x * 0.5
+		WyrdUi.draw_flourish(self, Vector2(fcx, 30.0), 120.0)
+		_draw_leaf_pair(Vector2(fcx - 62.0, 30.0), Vector2(-1.0, 0.0))
+		_draw_leaf_pair(Vector2(fcx + 62.0, 30.0), Vector2(1.0, 0.0))
+		# Wax seal top-left — the proclamation's signature.
 		var sc := Vector2(28.0, 24.0)
 		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
 		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
 		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+		# Gold compass-diamond in the seal face — the Wayfinder's sigil.
+		var sp := PackedVector2Array([sc + Vector2(0, -2.5), sc + Vector2(2.5, 0),
+			sc + Vector2(0, 2.5), sc + Vector2(-2.5, 0)])
+		draw_colored_polygon(sp, Color(0.88, 0.74, 0.40, 0.90))
+
+	func _draw_leaf_pair(anchor: Vector2, out_dir: Vector2) -> void:
+		# Two small ivy leaves fanning away from the flourish line terminus.
+		var perp := Vector2(-out_dir.y, out_dir.x)
+		for s in [-1.0, 1.0]:
+			var tip := anchor + out_dir * 7.0 + perp * s * 5.0
+			var mid := anchor + out_dir * 3.5 + perp * s * 4.5
+			draw_colored_polygon(PackedVector2Array([anchor, mid, tip]),
+				Color(0.42, 0.54, 0.23, 0.78))
+			draw_line(anchor, tip, Color(0.26, 0.19, 0.13, 0.38), 0.7)
