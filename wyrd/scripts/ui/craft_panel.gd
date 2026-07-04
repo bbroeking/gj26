@@ -12,7 +12,7 @@ var station_id := "cookfire"
 var _game: Node
 var _panel: Panel
 var _recipe_box: VBoxContainer
-var _satchel_lbl: Label
+var _satchel_flow: Container
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -93,10 +93,13 @@ func _ready() -> void:
 	s2.text = "Satchel"
 	WyrdUi.style_section(s2)
 	col.add_child(s2)
-	_satchel_lbl = Label.new()
-	WyrdUi.style_body(_satchel_lbl, 13)
-	_satchel_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	col.add_child(_satchel_lbl)
+	# Spec artistic — material chips replace the flat dot-joined string.
+	# Each chip is tinted by its gathering group so herbs read green,
+	# ores amber, and lumen gold at a glance, without needing to scan text.
+	_satchel_flow = FlowContainer.new()
+	_satchel_flow.add_theme_constant_override("h_separation", 6)
+	_satchel_flow.add_theme_constant_override("v_separation", 5)
+	col.add_child(_satchel_flow)
 
 	get_node("/root/Game").modal_opened()
 	_render()
@@ -169,7 +172,8 @@ func _render() -> void:
 		_recipe_box.add_child(row)
 
 	if _game == null:
-		_satchel_lbl.text = ""
+		for c in _satchel_flow.get_children():
+			c.queue_free()
 		return
 	_render_satchel()
 
@@ -207,8 +211,41 @@ func _recipe_tint(rec: Dictionary, locked: bool) -> Color:
 	return Color(0.88, 0.83, 0.72)
 
 func _render_satchel() -> void:
-	var parts: Array = []
+	for c in _satchel_flow.get_children():
+		c.queue_free()
+	var has_any := false
 	for id in _game.materials:
-		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
-			GatherDefs.material_name(String(id)), int(_game.materials[id])])
-	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+		if int(_game.materials[id]) > 0:
+			has_any = true
+			break
+	if not has_any:
+		var l := Label.new()
+		l.text = "empty"
+		WyrdUi.style_dim(l, 13)
+		_satchel_flow.add_child(l)
+		return
+	for id in _game.materials:
+		var n := int(_game.materials[id])
+		if n <= 0:
+			continue
+		var mat: Dictionary = GatherDefs.MATERIALS.get(String(id), {})
+		var group := String(mat.get("group", ""))
+		var chip := Label.new()
+		chip.text = "%s ×%d" % [GatherDefs.material_icon(String(id)), n]
+		chip.tooltip_text = GatherDefs.material_name(String(id))
+		chip.add_theme_stylebox_override("normal",
+			WyrdUi.chip_stylebox(_group_chip_tint(group)))
+		chip.add_theme_color_override("font_color", WyrdUi.INK)
+		chip.add_theme_font_size_override("font_size", 12)
+		_satchel_flow.add_child(chip)
+
+# Each gathering group gets a warm tint so materials are scannable by colour:
+# herbs green, stone amber, lumen gold, metal grey, trophies blush.
+func _group_chip_tint(group: String) -> Color:
+	match group:
+		"verdant": return Color(0.84, 0.90, 0.72)   # sage-washed cream
+		"earthen": return Color(0.90, 0.84, 0.70)   # warm amber clay
+		"lumen":   return Color(0.94, 0.90, 0.72)   # pale parchment gold
+		"metal":   return Color(0.85, 0.82, 0.77)   # cool iron grey
+		"trophy":  return Color(0.93, 0.85, 0.78)   # terracotta blush
+	return WyrdUi.KIT_PLATE
