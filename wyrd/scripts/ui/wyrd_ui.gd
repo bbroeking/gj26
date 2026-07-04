@@ -337,6 +337,30 @@ static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 		center + Vector2(-3.5, 0)])
 	c.draw_colored_polygon(pts, Color(GOLD, 0.8))
 
+# A small ivy leaf — upward-pointing teardrop with a centre vein and a short
+# stem nub. Used as ornament on separator lines (dialog divider, panel corners).
+# leaf_h controls total height in pixels; pass a smaller value for tight spots.
+static func draw_leaf_ornament(c: CanvasItem, pos: Vector2,
+		leaf_h: float = 22.0) -> void:
+	var r := leaf_h * 0.5
+	var pts := PackedVector2Array([
+		pos + Vector2(0.0, -r),
+		pos + Vector2(r * 0.60, -r * 0.30),
+		pos + Vector2(r * 0.70, r * 0.28),
+		pos + Vector2(0.0, r * 0.80),
+		pos + Vector2(-r * 0.70, r * 0.28),
+		pos + Vector2(-r * 0.60, -r * 0.30),
+	])
+	c.draw_colored_polygon(pts, Color(SAGE, 0.68))
+	c.draw_polyline(pts + PackedVector2Array([pts[0]]),
+		Color(SAGE.darkened(0.28), 0.85), 1.2, true)
+	# Centre vein
+	c.draw_line(pos + Vector2(0.0, -r * 0.85), pos + Vector2(0.0, r * 0.65),
+		Color(SAGE.darkened(0.28), 0.80), 0.9)
+	# Short stem nub at base
+	c.draw_line(pos + Vector2(0.0, r * 0.80), pos + Vector2(0.0, r * 1.12),
+		Color(KIT_EDGE, 0.55), 1.0)
+
 # A little hand-blown ink bottle — glass body, ink fill, neck, cork, and a
 # glass highlight. Replaces the bare text glyphs in sockets and trays.
 static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
