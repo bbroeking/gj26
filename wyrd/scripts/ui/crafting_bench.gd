@@ -535,9 +535,18 @@ class BenchView extends Control:
 		return GatherDefs.material_name(id)
 
 	func _tray_section(hdr: Font, x: float, y: float, label: String) -> float:
-		draw_string(hdr, Vector2(x, y), label,
-			HORIZONTAL_ALIGNMENT_LEFT, 200, 13, WyrdUi.INK)
-		WyrdUi.draw_flourish(self, Vector2(x + 106.0, y + 7.0), 204.0)
+		# Carved section plaque: cream plate + sage left accent (draw_list_row
+		# language), bevel, ink border. Label in dark sage — reads as a
+		# storybook divider, not a bare text line.
+		var r := Rect2(Vector2(x, y - 10.0), Vector2(212.0, 16.0))
+		draw_rect(r, PLATE.lightened(0.04))
+		draw_rect(Rect2(r.position, Vector2(3.0, r.size.y)), WyrdUi.SAGE)
+		draw_rect(Rect2(r.position + Vector2(1.0, 1.0),
+			Vector2(r.size.x - 2.0, 1.5)), Color(1.0, 0.97, 0.86, 0.45))
+		draw_rect(r, Color(EDGE, 0.6), false, 1.5)
+		draw_string(hdr, Vector2(x + 8.0, y), label,
+			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 16.0, 12,
+			WyrdUi.SAGE.darkened(0.15))
 		return y + 8.0
 
 	func _tray_row(font: Font, x: float, y: float, kind: String, id: String,
