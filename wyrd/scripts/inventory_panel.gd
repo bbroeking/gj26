@@ -741,41 +741,133 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 	var game := get_tree().root.get_node_or_null("Game")
 	if game == null:
 		return
+	var hdr: Font = WyrdUi.font_header()
+	if hdr == null:
+		hdr = font
 	var x := win.position.x + 76.0
 	var w := win.size.x - 148.0
 	var y := win.position.y + 134.0
 	if (game.charts as Array).is_empty():
-		draw_string(font, Vector2(x, y),
-			"No charts inscribed. The Inscribing Table awaits.",
-			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
+		# Empty state — a centered compass rose + atmospheric text so the
+		# blank page feels like an invitation, not a void.
+		var mid := Vector2(win.position.x + win.size.x * 0.5, win.position.y + 290.0)
+		_draw_chart_compass(mid)
+		draw_string(font, Vector2(mid.x - 170.0, mid.y + 74.0),
+			"No charts inscribed.", HORIZONTAL_ALIGNMENT_CENTER,
+			340.0, 14, WyrdUi.INK_MID)
+		draw_string(font, Vector2(mid.x - 170.0, mid.y + 94.0),
+			"Visit the Inscribing Table.", HORIZONTAL_ALIGNMENT_CENTER,
+			340.0, 13, Color(WyrdUi.INK_MID, 0.65))
 		_tab_content_h[2] = 0.0
 		return
-	# Slice C — each chart rides a list-row plate led with a drawn scroll
-	# (the rolled-parchment, wax-sealed read); its affixes list beneath.
+	# Manuscript cards — each chart is a parchment card: honey header band,
+	# drawn scroll in a round ink well, chart name in the header font, a
+	# gold tier-badge disc, and the affixes listed inline with jade (good)
+	# or terracotta (bad) dot marks. Cleaner than the old thin list-row.
+	const HEADER_H := 34.0
+	const WELL_R := 16.0
+	const AFFIX_H := 19.0
+	const CARD_GAP := 10.0
 	for chart in game.charts:
-		var row_top := y - 18.0
-		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 32.0))
-		if _span_visible(row_top, row.end.y, scroll, view):
-			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
-			WyrdUi.draw_scroll(self, Rect2(Vector2(row.position.x + 8.0,
-				row.position.y + 5.0), Vector2(24.0, 22.0)))
-			draw_string(font, Vector2(x + 30.0, y + 1.0),
-				ChartsData.chart_label(chart),
-				HORIZONTAL_ALIGNMENT_LEFT, w - 36.0, 17, WyrdUi.INK)
-		y += 36.0
+		# Pre-collect the affix data so we can size the card.
+		var affixes_arr: Array = []
 		for a in chart.get("affixes", []):
 			var aff: Dictionary = ChartsData.AFFIXES.get(String(a.get("id", "")), {})
-			if aff.is_empty():
-				continue
-			if _span_visible(y - 14.0, y + 5.0, scroll, view):
-				var good: bool = bool(a.get("good", false))
-				draw_string(font, Vector2(x + 30, y),
-					("✓ " + String(aff.name)) if good else ("✗ " + String(aff.bad_name)),
-					HORIZONTAL_ALIGNMENT_LEFT, w - 30, 13,
-					WyrdUi.SAGE.darkened(0.2) if good else WyrdUi.TERRACOTTA)
-			y += 20.0
-		y += 10.0
+			if not aff.is_empty():
+				affixes_arr.append({"aff": aff, "good": bool(a.get("good", false))})
+		# Card height: header band + body (affix rows or minimum padding).
+		var body_h: float = HEADER_H + maxf(10.0, affixes_arr.size() * AFFIX_H + 10.0)
+		var card := Rect2(Vector2(x - 8.0, y), Vector2(w + 16.0, body_h))
+		if _span_visible(y, y + body_h, scroll, view):
+			# Parchment face.
+			draw_rect(card, WyrdUi.KIT_PLATE)
+			# Top bevel — card catches the page's warm light.
+			draw_rect(Rect2(card.position + Vector2(1.5, 1.5),
+				Vector2(card.size.x - 3.0, 2.0)), Color(1.0, 1.0, 0.93, 0.45))
+			# Bottom shade — card sits on the parchment.
+			draw_rect(Rect2(card.position + Vector2(2.0, card.size.y - 3.0),
+				Vector2(card.size.x - 4.0, 2.0)), Color(WyrdUi.KIT_EDGE, 0.18))
+			# Ink border + gold inner inset (the burnished manuscript read).
+			draw_rect(card, WyrdUi.KIT_EDGE, false, 1.5)
+			draw_rect(card.grow(-3.5), Color(WyrdUi.GOLD, 0.28), false, 1.0)
+			# Honey header band over the top strip.
+			draw_rect(Rect2(card.position + Vector2(1.5, 1.5),
+				Vector2(card.size.x - 3.0, HEADER_H - 3.0)),
+				Color(1.0, 0.90, 0.64, 0.32))
+			# Thin divider separating header from card body.
+			draw_line(Vector2(card.position.x + 6.0, card.position.y + HEADER_H),
+				Vector2(card.end.x - 6.0, card.position.y + HEADER_H),
+				Color(WyrdUi.KIT_EDGE, 0.35), 1.0)
+			# Round ink well + sealed scroll icon on the left of the header.
+			var well_cx := card.position.x + 10.0 + WELL_R
+			var well_cy := card.position.y + HEADER_H * 0.5
+			WyrdUi.draw_round_well(self, Vector2(well_cx, well_cy), WELL_R,
+				WyrdUi.KIT_PLATE.lightened(0.06))
+			WyrdUi.draw_scroll(self,
+				Rect2(Vector2(well_cx - 11.0, well_cy - 8.0), Vector2(22.0, 16.0)),
+				true)
+			# Chart name in header font, right of the well.
+			var name_x := well_cx + WELL_R + 10.0
+			var badge_cx := card.end.x - 22.0
+			draw_string(hdr, Vector2(name_x, card.position.y + 22.0),
+				ChartsData.chart_label(chart), HORIZONTAL_ALIGNMENT_LEFT,
+				badge_cx - name_x - 12.0, 14, WyrdUi.INK)
+			# Tier badge — gold-ringed disc at the header's right edge.
+			var tier: int = int(chart.get("tier", 1))
+			draw_circle(Vector2(badge_cx, well_cy), 13.0,
+				WyrdUi.KIT_WELL.darkened(0.05))
+			draw_arc(Vector2(badge_cx, well_cy), 13.0, 0, TAU, 24,
+				Color(WyrdUi.GOLD, 0.78), 2.0, true)
+			draw_string(font, Vector2(badge_cx - 13.0, well_cy + 5.0),
+				"T%d" % tier, HORIZONTAL_ALIGNMENT_CENTER, 26.0, 11,
+				WyrdUi.GOLD.darkened(0.15))
+			# Affixes in the card body — colored dot + name (jade good, terracotta bad).
+			var ay := card.position.y + HEADER_H + 13.0
+			for af_data in affixes_arr:
+				var aff: Dictionary = af_data.aff
+				var good: bool = af_data.good
+				draw_circle(Vector2(name_x + 4.5, ay - 4.5),
+					4.0, WyrdUi.SAGE.darkened(0.1) if good else WyrdUi.TERRACOTTA)
+				draw_string(font, Vector2(name_x + 13.0, ay),
+					String(aff.name) if good else String(aff.bad_name),
+					HORIZONTAL_ALIGNMENT_LEFT,
+					card.size.x - (name_x - card.position.x) - 52.0,
+					12, WyrdUi.INK if good else WyrdUi.TERRACOTTA)
+				ay += AFFIX_H
+		y += body_h + CARD_GAP
 	_tab_content_h[2] = y - view.position.y
+
+
+# A compass rose drawn at the center of the empty charts page — four cardinal
+# ink-diamond petals, four shorter intercardinal petals, a gold disc, and an
+# outer parchment ring. Uses only draw_* primitives; no textures.
+func _draw_chart_compass(center: Vector2) -> void:
+	var font: Font = get_theme_default_font()
+	# Outer parchment ring.
+	draw_circle(center, 52.0, Color(WyrdUi.KIT_PLATE, 0.82))
+	draw_arc(center, 52.0, 0, TAU, 64, Color(WyrdUi.KIT_EDGE, 0.35), 1.5, true)
+	# Cardinal petal arms (N/S/E/W) — long ink diamonds.
+	for arm_angle in [0.0, 90.0, 180.0, 270.0]:
+		var a := deg_to_rad(arm_angle - 90.0)   # 0° = north
+		var tip := center + Vector2(cos(a) * 44.0, sin(a) * 44.0)
+		var lft := center + Vector2(cos(a + PI * 0.5) * 7.0, sin(a + PI * 0.5) * 7.0)
+		var rgt := center + Vector2(cos(a - PI * 0.5) * 7.0, sin(a - PI * 0.5) * 7.0)
+		draw_colored_polygon(PackedVector2Array([center, lft, tip, rgt]),
+			Color(WyrdUi.INK, 0.45))
+	# Intercardinal petal arms (NE/SE/SW/NW) — shorter, dimmer.
+	for arm_angle2 in [45.0, 135.0, 225.0, 315.0]:
+		var a2 := deg_to_rad(arm_angle2 - 90.0)
+		var tip2 := center + Vector2(cos(a2) * 27.0, sin(a2) * 27.0)
+		var lft2 := center + Vector2(cos(a2 + PI * 0.5) * 4.0, sin(a2 + PI * 0.5) * 4.0)
+		var rgt2 := center + Vector2(cos(a2 - PI * 0.5) * 4.0, sin(a2 - PI * 0.5) * 4.0)
+		draw_colored_polygon(PackedVector2Array([center, lft2, tip2, rgt2]),
+			Color(WyrdUi.INK, 0.28))
+	# Gold centre disc + ink ring.
+	draw_circle(center, 9.0, WyrdUi.GOLD)
+	draw_arc(center, 9.0, 0, TAU, 20, Color(WyrdUi.KIT_EDGE, 0.65), 1.5, true)
+	# "N" label at the top, barely visible — navigational flavour.
+	draw_string(font, Vector2(center.x - 14.0, center.y - 58.0), "N",
+		HORIZONTAL_ALIGNMENT_CENTER, 28.0, 11, Color(WyrdUi.INK_MID, 0.50))
 
 
 # Squiggly ink divider under headers — the UI bible's hand-drawn rule.
