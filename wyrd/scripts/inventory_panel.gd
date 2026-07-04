@@ -378,9 +378,7 @@ func _draw() -> void:
 		if scroll > max_s:
 			_tab_scroll[_tab] = max_s
 			queue_redraw()
-	draw_string(hdr_font, win.position + Vector2(52, 58),
-		"Adventurer's Pack", HORIZONTAL_ALIGNMENT_LEFT, win.size.x - 104, 24,
-		WyrdUi.TERRACOTTA)
+	_draw_pack_header(win, hdr_font)
 	_draw_tabs(win)
 	if _tab == 0:
 		# Gold readout lives with the paper-doll — Gear tab only, else it
@@ -576,6 +574,34 @@ func _draw_held() -> void:
 	var hp := _cursor_screen - Vector2(fp.x * CELL, fp.y * CELL) * 0.5
 	_draw_item_rect_scaled(_held_item, hp, Vector2(fp.x * CELL, fp.y * CELL), true)
 
+
+# Carved header plaque for the pack window: a warm parchment plate behind the
+# title, a centred ── ◆ ── flourish beneath it, and a thin gold rule above the
+# tab strip — the design-language's section-header ornament applied here.
+# The plate sits between the wooden frame's inner edge and just above the tabs
+# (y+28 to y+70). Flourish is centred at y+66; gold rule runs the content
+# width at y+70.
+func _draw_pack_header(win: Rect2, font: Font) -> void:
+	var inset_l := WyrdUi.PANEL_MARGIN_L
+	var inset_r := WyrdUi.PANEL_MARGIN_R
+	var plate := Rect2(
+		Vector2(win.position.x + inset_l, win.position.y + 28.0),
+		Vector2(win.size.x - inset_l - inset_r, 42.0))
+	# Subtle warm wash behind the title so it lifts slightly off the parchment.
+	draw_rect(plate, Color(0.92, 0.86, 0.72, 0.55))
+	# Top light bevel.
+	draw_rect(Rect2(plate.position + Vector2(0.0, 0.0),
+		Vector2(plate.size.x, 1.5)), Color(1.0, 1.0, 0.93, 0.35))
+	# Thin gold rule at the plate's bottom edge — transitions into the tab strip.
+	draw_rect(Rect2(Vector2(plate.position.x, plate.end.y - 1.5),
+		Vector2(plate.size.x, 1.5)), Color(WyrdUi.GOLD, 0.55))
+	# Title string — same position as before.
+	draw_string(font, win.position + Vector2(52, 58),
+		"Adventurer's Pack", HORIZONTAL_ALIGNMENT_LEFT, win.size.x - 104, 24,
+		WyrdUi.TERRACOTTA)
+	# Centred ── ◆ ── flourish just below the title, above the tab strip.
+	WyrdUi.draw_flourish(self,
+		Vector2(win.position.x + win.size.x * 0.5, win.position.y + 67.0), 180.0)
 
 # ---- Wyrd: tabs + the Satchel / Charts pages ----
 func _draw_tabs(win: Rect2) -> void:
