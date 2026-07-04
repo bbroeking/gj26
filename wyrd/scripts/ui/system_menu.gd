@@ -31,6 +31,11 @@ func _ready() -> void:
 	_panel.offset_right = 260
 	_panel.offset_bottom = 220
 	add_child(_panel)
+	# Header ornament: drawn before the labels so the flame glyph and
+	# flourish sit behind the title text.
+	var hdr := _LanternHeader.new()
+	hdr.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_panel.add_child(hdr)
 	var title := Label.new()
 	title.text = "The Lantern"
 	WyrdUi.style_title(title)
@@ -190,3 +195,17 @@ func _close() -> void:
 	if _game != null:
 		_game.modal_closed()
 	queue_free()
+
+
+# Drawn behind the panel's labels: parchment grain over the header band, a
+# warm section flourish under the title, and a campfire-flame glyph in the
+# left margin — so The Lantern reads as a warm storybook gathering place.
+class _LanternHeader extends Control:
+	func _ready() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(40.0, 8.0, size.x - 80.0, 80.0), 31)
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 74.0), size.x - 108.0)
+		WyrdUi.draw_lantern_flame(self, Vector2(30.0, 50.0), 34.0)
