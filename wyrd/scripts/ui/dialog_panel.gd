@@ -44,16 +44,30 @@ func _ready() -> void:
 	well.position = Vector2(48, 104)
 	well.size = Vector2(120, 120)
 	_panel.add_child(well)
+	# NameBanner — terracotta ribbon behind the speaker's name; drawn first
+	# so _name_lbl (added next) renders on top. The classic storybook pennant
+	# shape reads immediately as "this is who's talking."
+	var banner := NameBanner.new()
+	banner.anchor_right = 1.0
+	banner.offset_left = 16
+	banner.offset_right = -16
+	banner.offset_top = 22
+	banner.offset_bottom = 70
+	_panel.add_child(banner)
 	_name_lbl = Label.new()
 	var hf := WyrdUi.font_header()
 	if hf != null:
 		_name_lbl.add_theme_font_override("font", hf)
 	_name_lbl.add_theme_font_size_override("font_size", 24)
-	_name_lbl.add_theme_color_override("font_color", WyrdUi.TERRACOTTA)
+	# Cream on terracotta ribbon — readable and warm.
+	_name_lbl.add_theme_color_override("font_color", Color(0.97, 0.93, 0.82))
+	_name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_name_lbl.anchor_right = 1.0
 	_name_lbl.offset_left = 56
 	_name_lbl.offset_right = -56
-	_name_lbl.offset_top = 38
+	_name_lbl.offset_top = 22
+	_name_lbl.offset_bottom = 70
 	_panel.add_child(_name_lbl)
 	_body = Label.new()
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -143,3 +157,51 @@ class PortraitWell extends Control:
 		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
 		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
 		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+
+
+# Drawn terracotta ribbon banner behind the speaker's name. Classic 6-point
+# pennant: straight top/bottom with inward-pointed tips at each end, filled
+# with the kit's TERRACOTTA, outlined in GOLD. A warm top-light bevel and
+# two gold dot accents at each inner shoulder complete the storybook read.
+# No textures — pure vector so the white-rect-in-_draw trap is impossible.
+class NameBanner extends Control:
+	func _draw() -> void:
+		if size.x < 40.0 or size.y < 10.0:
+			return
+		var w := size.x
+		var h := size.y
+		var tip := h * 0.54   # horizontal reach of each pointed end
+		# Drop shadow (offset 2-3px, low alpha so the panel shows through)
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(tip + 2, 4), Vector2(w - tip + 2, 4),
+			Vector2(w + 2, h * 0.5 + 1), Vector2(w - tip + 2, h + 3),
+			Vector2(tip + 2, h + 3), Vector2(2, h * 0.5 + 1)
+		]), Color(0.08, 0.05, 0.03, 0.26))
+		# Main ribbon face
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(tip, 0), Vector2(w - tip, 0),
+			Vector2(w, h * 0.5), Vector2(w - tip, h),
+			Vector2(tip, h), Vector2(0, h * 0.5)
+		]), WyrdUi.TERRACOTTA)
+		# Warm cream highlight — gives the banner a slight 3-D plumpness
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(tip + 3, 3), Vector2(w - tip - 3, 3),
+			Vector2(w - 5, h * 0.5), Vector2(w - tip - 3, h - 3),
+			Vector2(tip + 3, h - 3), Vector2(5, h * 0.5)
+		]), Color(1.0, 0.88, 0.72, 0.14))
+		# Top-light bevel
+		draw_line(Vector2(tip + 5, 2.5), Vector2(w - tip - 5, 2.5),
+			Color(1.0, 0.80, 0.68, 0.42), 2.0)
+		# Gold outline (closed polyline)
+		draw_polyline(PackedVector2Array([
+			Vector2(tip, 0), Vector2(w - tip, 0),
+			Vector2(w, h * 0.5), Vector2(w - tip, h),
+			Vector2(tip, h), Vector2(0, h * 0.5),
+			Vector2(tip, 0)
+		]), Color(WyrdUi.GOLD, 0.72), 1.5)
+		# Gold dot accents at each inner shoulder
+		var cy := h * 0.5
+		for cx in [tip + 18.0, w - tip - 18.0]:
+			draw_circle(Vector2(cx, cy), 3.2, Color(WyrdUi.GOLD, 0.84))
+			draw_arc(Vector2(cx, cy), 3.2, 0, TAU, 14,
+				Color(0.52, 0.30, 0.08, 0.65), 1.0, true)
