@@ -705,34 +705,61 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
 		_tab_content_h[1] = 0.0
 		return
-	# Slice C — each material rides a list-row plate: an ink-disc holding its
-	# glyph on the left, name + count on the card, the lore line beneath.
+	# Slice C — each material rides a list-row plate: a group-tinted ink-disc
+	# holding its glyph on the left, name + count on the card, lore beneath.
+	# 44px card height (up from 30) so the draw_list_row bevel and accent
+	# stripe actually read as a carved card rather than a flat line. Accent
+	# colours follow the material's group: sage for verdant, amber for earthen,
+	# gold for lumen, muted terracotta for echo (rare trophies), ochre for
+	# gristle — matching the recipe-tint vocabulary from craft_panel.gd.
 	for id in game.materials:
 		var def: Dictionary = GatherDefs.MATERIALS.get(String(id), {})
-		var row_top := y - 18.0
-		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 30.0))
+		var group := String(def.get("group", ""))
+		var accent: Color
+		var disc_fill: Color
+		match group:
+			"verdant":
+				accent     = WyrdUi.SAGE.darkened(0.08)
+				disc_fill  = Color(0.82, 0.87, 0.68)
+			"earthen":
+				accent     = Color(0.72, 0.48, 0.24)
+				disc_fill  = Color(0.85, 0.80, 0.70)
+			"lumen":
+				accent     = WyrdUi.GOLD.darkened(0.08)
+				disc_fill  = Color(0.92, 0.90, 0.78)
+			"echo":
+				accent     = WyrdUi.TERRACOTTA.darkened(0.15)
+				disc_fill  = Color(0.88, 0.75, 0.68)
+			"gristle":
+				accent     = Color(0.60, 0.50, 0.35)
+				disc_fill  = Color(0.85, 0.79, 0.65)
+			_:
+				accent     = WyrdUi.INK_MID
+				disc_fill  = Color(0.88, 0.81, 0.66)
+		var row_top := y - 22.0
+		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 44.0))
 		if _span_visible(row_top, row.end.y, scroll, view):
-			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
-			# glyph disc on the left
-			var dc := Vector2(row.position.x + 19.0, row.position.y + 15.0)
-			WyrdUi.draw_round_well(self, dc, 11.0, Color(0.88, 0.81, 0.66))
-			draw_string(font, Vector2(dc.x - 11.0, dc.y + 6.0),
+			WyrdUi.draw_list_row(self, row, accent)
+			# glyph disc — centred in the 44px card, tinted to the material group
+			var dc := Vector2(row.position.x + 22.0, row.position.y + 22.0)
+			WyrdUi.draw_round_well(self, dc, 13.0, disc_fill)
+			draw_string(font, Vector2(dc.x - 13.0, dc.y + 6.0),
 				String(def.get("icon", "·")), HORIZONTAL_ALIGNMENT_CENTER,
-				22.0, 14, WyrdUi.INK)
-			draw_string(font, Vector2(x + 28.0, y + 1.0),
+				26.0, 14, WyrdUi.INK)
+			draw_string(font, Vector2(x + 32.0, y + 1.0),
 				String(def.get("name", id)),
-				HORIZONTAL_ALIGNMENT_LEFT, w - 110.0, 17, WyrdUi.INK)
+				HORIZONTAL_ALIGNMENT_LEFT, w - 114.0, 17, WyrdUi.INK)
 			draw_string(font, Vector2(x + w - 78.0, y + 1.0),
 				"× %d" % int(game.materials[id]),
 				HORIZONTAL_ALIGNMENT_RIGHT, 70.0, 17, WyrdUi.TERRACOTTA)
-		y += 34.0
+		y += 48.0
 		var desc := String(def.get("desc", ""))
 		if desc != "":
 			var dh: float = font.get_multiline_string_size(desc,
-				HORIZONTAL_ALIGNMENT_LEFT, w - 30, 14).y
+				HORIZONTAL_ALIGNMENT_LEFT, w - 34, 14).y
 			if _span_visible(y - 13.0, y + dh, scroll, view):
-				draw_multiline_string(font, Vector2(x + 30, y), desc,
-					HORIZONTAL_ALIGNMENT_LEFT, w - 30, 14, -1, Color(0.30, 0.24, 0.19))
+				draw_multiline_string(font, Vector2(x + 34, y), desc,
+					HORIZONTAL_ALIGNMENT_LEFT, w - 34, 14, -1, Color(0.30, 0.24, 0.19))
 			y += dh + 4.0
 		y += 10.0
 	_tab_content_h[1] = y - view.position.y
