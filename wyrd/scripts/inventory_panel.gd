@@ -528,9 +528,12 @@ func _draw_tooltip() -> void:
 		return
 	var lines: Array = _tooltip_lines(item)
 	var line_h := 18
-	var ipad := 8
-	var w := 280.0
-	var h: float = ipad * 2 + lines.size() * line_h
+	var ipad := 10
+	var w := 290.0
+	# lines[0]=name  lines[1]=rarity-type subtitle  lines[2]=spacer  lines[3+]=stats
+	var HDR_H := 40.0
+	var body_lines: Array = lines.slice(3)
+	var h: float = HDR_H + ipad * 2.0 + body_lines.size() * float(line_h) + 4.0
 	var pos := _cursor_screen + Vector2(16, 16)
 	var screen := get_viewport_rect().size
 	if pos.x + w > screen.x:
@@ -541,15 +544,43 @@ func _draw_tooltip() -> void:
 		pos.x = 0
 	if pos.y < 0:
 		pos.y = 0
+	var rc: Color = RARITY_COLOR.get(String(item.rarity), Color(0.48, 0.40, 0.30))
+	# Soft drop shadow so the card lifts off the grid.
+	draw_rect(Rect2(pos + Vector2(3, 3), Vector2(w, h)), Color(0, 0, 0, 0.22))
+	# Parchment body face.
 	draw_rect(Rect2(pos, Vector2(w, h)), Color(0.93, 0.88, 0.76, 0.97))
-	draw_rect(Rect2(pos, Vector2(w, h)),
-		Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
-	var font := get_theme_default_font()
-	var y := pos.y + ipad + 14
-	for line in lines:
-		draw_string(font, Vector2(pos.x + ipad, y), String(line.text),
-			HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2, int(line.size), line.color)
-		y += line_h
+	# Sparse parchment grain on the stat body only (below the header band).
+	WyrdUi.draw_parchment_grain(self,
+		Rect2(pos + Vector2(6, HDR_H + 2), Vector2(w - 12, h - HDR_H - 8)), 41)
+	# Rarity-tinted colour wash in the name band — normal stays near-neutral,
+	# magic gets a blue blush, rare a gold glow, unique a rust warmth.
+	draw_rect(Rect2(pos, Vector2(w, HDR_H)), Color(rc.r, rc.g, rc.b, 0.13))
+	# Left accent stripe: the rarity hue at a glance (mirrors draw_list_row).
+	draw_rect(Rect2(pos + Vector2(1.5, 1.5), Vector2(3.0, h - 3.0)),
+		Color(rc, 0.70))
+	# Thin divider separating the header band from the stat body.
+	draw_line(pos + Vector2(8, HDR_H),
+		pos + Vector2(w - 8, HDR_H), Color(WyrdUi.KIT_EDGE, 0.32), 1.0)
+	# Outer ink border drawn last so it sits over the stripe and wash.
+	draw_rect(Rect2(pos, Vector2(w, h)), Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+	var hdr_font: Font = WyrdUi.font_header()
+	var font: Font = get_theme_default_font()
+	if hdr_font == null:
+		hdr_font = font
+	# Item name in the header band — small-caps header font, rarity-hued.
+	draw_string(hdr_font, Vector2(pos.x + 12, pos.y + 19),
+		String(lines[0].text), HORIZONTAL_ALIGNMENT_LEFT,
+		w - 20, int(lines[0].size) + 1, lines[0].color)
+	# Rarity-type subtitle — small body font, quiet dim ink.
+	draw_string(font, Vector2(pos.x + 12, pos.y + 34),
+		String(lines[1].text), HORIZONTAL_ALIGNMENT_LEFT,
+		w - 20, int(lines[1].size), lines[1].color)
+	# Stat and affix lines in the body area below the divider.
+	var y := pos.y + HDR_H + ipad + 13.0
+	for line in body_lines:
+		draw_string(font, Vector2(pos.x + 12, y), String(line.text),
+			HORIZONTAL_ALIGNMENT_LEFT, w - 24, int(line.size), line.color)
+		y += float(line_h)
 
 func _draw_held() -> void:
 	var fp: Vector2i = Inventory.footprint(_held_item, _held_rotated)
