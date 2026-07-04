@@ -39,10 +39,26 @@ func _ready() -> void:
 	_panel.offset_bottom = 300
 	add_child(_panel)
 
+	# Header ornament: a full-width amber wash strip + flourish divider,
+	# and a round station-emblem orb to the left of the title.
+	# Added before the title so they render behind it (Godot draw order).
+	var strip := _HeaderStrip.new()
+	strip.anchor_right = 1.0
+	strip.offset_bottom = 82.0
+	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(strip)
+
+	var orb := _StationOrb.new()
+	orb.station_id = station_id
+	orb.position = Vector2(20.0, 14.0)
+	orb.size = Vector2(54.0, 54.0)
+	orb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(orb)
+
 	var title := Label.new()
 	title.text = String(st.get("title", "Crafting"))
 	WyrdUi.style_title(title)
-	title.position = Vector2(54, 34)
+	title.position = Vector2(82, 34)
 	_panel.add_child(title)
 
 	var close_hint := Label.new()
@@ -212,3 +228,94 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# ---- drawn header art (same vector-only approach as PortraitWell/BenchView) ----
+
+# Full-width amber wash strip across the top of the panel.  Provides the faint
+# warm light that separates the title block from the recipe body, and ends with
+# a WyrdUi flourish divider so the eye lands naturally on "Recipes".
+class _HeaderStrip extends Control:
+	func _draw() -> void:
+		var w := size.x
+		# Soft amber tint — warm for cookfire, barely perceptible on forge but
+		# still harmonises with the wood frame.
+		draw_rect(Rect2(Vector2.ZERO, size), Color(0.96, 0.84, 0.58, 0.09))
+		# Flourish divider at the bottom edge of the strip.
+		WyrdUi.draw_flourish(self, Vector2(w * 0.5, size.y - 3.0), w - 80.0)
+
+
+# Round parchment emblem to the left of the panel title.  Cookfire: three
+# upward flame tongues over an ember glow.  Forge: stylised anvil silhouette
+# with gold spark rays.  Pattern mirrors dialog_panel.PortraitWell but smaller
+# and placed in the header rather than the body.
+class _StationOrb extends Control:
+	var station_id := "cookfire"
+
+	func _draw() -> void:
+		var c := size * 0.5
+		var r := minf(c.x, c.y) - 2.0
+		# Parchment disc base
+		draw_circle(c, r, WyrdUi.KIT_PLATE)
+		# Station illustration
+		if station_id == "cookfire":
+			_draw_flame(c, r)
+		else:
+			_draw_forge(c, r)
+		# Gold ring + ink border — same convention as PortraitWell
+		draw_arc(c, r - 2.0, 0.0, TAU, 36, Color(WyrdUi.GOLD, 0.68), 2.5, true)
+		draw_arc(c, r, 0.0, TAU, 36, WyrdUi.KIT_EDGE, 1.5, true)
+
+	# Three upward flame tongues (left, centre—tallest, right) + ember glow.
+	func _draw_flame(c: Vector2, r: float) -> void:
+		# Ember glow at the base
+		draw_circle(c + Vector2(0.0, r * 0.26), r * 0.32,
+			Color(0.84, 0.36, 0.10, 0.70))
+		var offsets := [
+			Vector2(-r * 0.18, 0.0), Vector2(0.0, -r * 0.08), Vector2(r * 0.18, 0.0)
+		]
+		var heights := [r * 0.54, r * 0.72, r * 0.46]
+		var cols := [
+			Color(0.90, 0.44, 0.12, 0.82),
+			Color(0.98, 0.70, 0.20, 0.88),
+			Color(0.88, 0.38, 0.10, 0.76),
+		]
+		for i in 3:
+			var base := c + offsets[i] + Vector2(0.0, r * 0.20)
+			var tip := base + Vector2(0.0, -heights[i])
+			var pts := PackedVector2Array()
+			# Left edge of tongue (base → tip)
+			for j in 9:
+				var t := float(j) / 8.0
+				var hw := sin(t * PI) * r * 0.19
+				pts.append(lerp(base, tip, t) + Vector2(-hw, 0.0))
+			# Right edge of tongue (tip → base)
+			for j in 9:
+				var t := float(8 - j) / 8.0
+				var hw := sin(t * PI) * r * 0.19
+				pts.append(lerp(base, tip, t) + Vector2(hw, 0.0))
+			draw_colored_polygon(pts, cols[i])
+		# Bright hotspot at the flame core
+		draw_circle(c + Vector2(0.0, r * 0.04), r * 0.12,
+			Color(1.0, 0.93, 0.58, 0.60))
+
+	# Anvil silhouette (wide top plate, narrow waist, broad foot) with six
+	# gold spark lines radiating from the impact point upper-right.
+	func _draw_forge(c: Vector2, r: float) -> void:
+		var face := Color(WyrdUi.INK.darkened(0.05), 0.78)
+		var aw := r * 0.66
+		# Top plate → waist → foot
+		draw_rect(Rect2(c + Vector2(-aw, -r * 0.34), Vector2(aw * 2.0, r * 0.26)), face)
+		draw_rect(Rect2(c + Vector2(-aw * 0.38, -r * 0.08), Vector2(aw * 0.76, r * 0.20)), face)
+		draw_rect(Rect2(c + Vector2(-aw * 0.58, r * 0.12), Vector2(aw * 1.16, r * 0.24)), face)
+		# Deterministic spark rays (fixed seed — no frame-to-frame drift)
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 42
+		var origin := c + Vector2(r * 0.20, -r * 0.22)
+		for _i in 6:
+			var angle := rng.randf_range(-PI * 0.85, -PI * 0.15)
+			var length := r * (0.28 + rng.randf() * 0.32)
+			var dest := origin + Vector2(cos(angle), sin(angle)) * length
+			draw_line(origin, dest, Color(WyrdUi.GOLD, 0.78), 1.5)
+		# Bright impact dot
+		draw_circle(origin, r * 0.10, Color(1.0, 0.96, 0.56, 0.90))
