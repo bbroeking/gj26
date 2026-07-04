@@ -108,9 +108,9 @@ func _ready() -> void:
 	col1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col1.add_theme_constant_override("separation", 6)
 	columns.add_child(col1)
-	var sell_hdr := Label.new()
-	sell_hdr.text = "Sell (he melts it down)"
-	WyrdUi.style_section(sell_hdr)
+	var sell_hdr := _SectionPlaque.new()
+	sell_hdr.setup("Sell — he melts it down", WyrdUi.TERRACOTTA, WyrdUi.font_header())
+	sell_hdr.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col1.add_child(sell_hdr)
 	# A full pack outgrows the panel — the sell list scrolls now.
 	var sell_scroll := ScrollContainer.new()
@@ -126,9 +126,9 @@ func _ready() -> void:
 	col2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col2.add_theme_constant_override("separation", 6)
 	columns.add_child(col2)
-	var buy_hdr := Label.new()
-	buy_hdr.text = "Wares"
-	WyrdUi.style_section(buy_hdr)
+	var buy_hdr := _SectionPlaque.new()
+	buy_hdr.setup("Wares", WyrdUi.GOLD, WyrdUi.font_header())
+	buy_hdr.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col2.add_child(buy_hdr)
 	_buy_box = VBoxContainer.new()
 	_buy_box.add_theme_constant_override("separation", 5)
@@ -286,3 +286,51 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# ---- drawn section plaque (column header) ----
+# Carved parchment header for each vendor column: the same KIT_PLATE face and
+# ink border as draw_list_row so "Sell" and "Wares" read as carved shelf labels
+# rather than floating text. Accent stripe convention: TERRACOTTA = outgoing
+# (sell), GOLD = incoming (wares). A small diamond finial on the right echoes
+# the draw_flourish ◆ motif already used as a section divider throughout the kit.
+class _SectionPlaque extends Control:
+	var _text := ""
+	var _accent: Color = WyrdUi.GOLD
+	var _font: Font = null
+
+	func setup(text: String, accent: Color, font: Font) -> void:
+		_text = text
+		_accent = accent
+		_font = font
+		custom_minimum_size = Vector2(0, 38.0)
+		queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		# parchment face — matches the KIT_PLATE used in draw_list_row
+		draw_rect(r, WyrdUi.KIT_PLATE)
+		# top light bevel — the plaque catches the page's warm light
+		draw_rect(Rect2(Vector2(0, 0), Vector2(r.size.x, 2.0)),
+			Color(1.0, 1.0, 0.93, 0.50))
+		# bottom shade so the plaque sits ON the parchment
+		draw_rect(Rect2(Vector2(0, r.size.y - 2.0), Vector2(r.size.x, 2.0)),
+			Color(WyrdUi.KIT_EDGE, 0.22))
+		# ink border
+		draw_rect(r, WyrdUi.KIT_EDGE, false, 1.5)
+		# accent stripe on the left — same convention as draw_list_row rows below
+		draw_rect(Rect2(Vector2(1.5, 1.5), Vector2(3.5, r.size.y - 3.0)), _accent)
+		# section title in IM Fell SC (header font), terracotta — kit style_section colour
+		var font := _font if _font != null else get_theme_default_font()
+		draw_string(font, Vector2(14.0, 26.0), _text,
+			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 34.0, 16, WyrdUi.TERRACOTTA)
+		# small diamond finial on the right — echoes the draw_flourish ◆ jewel
+		var cx := r.size.x - 14.0
+		var cy := r.size.y * 0.5
+		var pts := PackedVector2Array([
+			Vector2(cx, cy - 4.5), Vector2(cx + 4.5, cy),
+			Vector2(cx, cy + 4.5), Vector2(cx - 4.5, cy)])
+		draw_colored_polygon(pts, Color(_accent, 0.70))
+		draw_polyline(
+			PackedVector2Array([pts[0], pts[1], pts[2], pts[3], pts[0]]),
+			Color(WyrdUi.KIT_EDGE, 0.45), 1.0)
