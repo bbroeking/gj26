@@ -55,6 +55,13 @@ func _ready() -> void:
 	_name_lbl.offset_right = -56
 	_name_lbl.offset_top = 38
 	_panel.add_child(_name_lbl)
+	var sf := _Flourish.new()
+	sf.anchor_right = 1.0
+	sf.offset_left = 56
+	sf.offset_right = -56
+	sf.offset_top = 66
+	sf.offset_bottom = 78
+	_panel.add_child(sf)
 	_body = Label.new()
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.anchor_right = 1.0
@@ -134,12 +141,36 @@ func _finish() -> void:
 
 # Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
 # silhouette placeholder until painted portraits exist.
+# Artistic pass: gold filigree crown arc + three ivy leaf buds at the top
+# of the frame, pushing toward hero_dialog / mj_dialog_scroll references.
 class PortraitWell extends Control:
 	func _draw() -> void:
 		var c := size * 0.5
 		var r := minf(c.x, c.y)
 		draw_circle(c, r, Color(0.88, 0.82, 0.67))
+		# Warm amber lamp-glow behind the subject.
+		draw_circle(c, r * 0.55, Color(0.96, 0.81, 0.50, 0.13))
 		draw_circle(c + Vector2(0, r * 0.28), r * 0.34, Color(0.55, 0.47, 0.36, 0.55))
 		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
-		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
 		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
+		# Gold filigree crown arc — top section of the portrait ring (10→2 o'clock).
+		draw_arc(c, r + 2.0, -PI * 5.0 / 6.0, -PI / 6.0, 18,
+				Color(WyrdUi.GOLD, 0.62), 2.0, true)
+		# Three ivy leaf buds at 10, 12, and 2 o'clock.
+		for angle in [-PI * 5.0 / 6.0, -PI * 0.5, -PI / 6.0]:
+			var dir := Vector2(cos(angle), sin(angle))
+			var base_pt := c + dir * (r + 2.5)
+			var tip_pt  := c + dir * (r + 9.0)
+			var perp    := Vector2(-sin(angle), cos(angle))
+			draw_colored_polygon(PackedVector2Array([tip_pt,
+					base_pt + perp * 3.5, base_pt - perp * 3.5]),
+					Color(WyrdUi.SAGE, 0.78))
+			draw_line(base_pt, tip_pt,
+					Color(WyrdUi.SAGE.darkened(0.25), 0.50), 1.0)
+
+
+# A centred gold-diamond flourish drawn just below the speaker name.
+class _Flourish extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5), 180.0)
