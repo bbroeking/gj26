@@ -37,6 +37,11 @@ func _ready() -> void:
 	_panel.offset_bottom = 230
 	add_child(_panel)
 
+	var art := WaystoneArt.new()
+	art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(art)
+
 	var title := Label.new()
 	title.text = "The Waystone"
 	WyrdUi.style_title(title)
@@ -154,3 +159,46 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# Decorative header dressing: parchment grain across the inner face, a
+# divider flourish below the two-line header, and a faint compass-rune
+# etching in the upper-right margin — pure-vector, no textures.
+class WaystoneArt extends Control:
+	func _draw() -> void:
+		if size.x < 4.0 or size.y < 4.0:
+			return
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(Vector2(46.0, 72.0), size - Vector2(92.0, 96.0)), 41)
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 82.0), 240.0)
+		_draw_compass_rune(Vector2(size.x - 74.0, 50.0), 20.0)
+
+	func _draw_compass_rune(center: Vector2, r: float) -> void:
+		var ink := Color(WyrdUi.INK_MID, 0.28)
+		var gold := Color(WyrdUi.GOLD, 0.48)
+		draw_arc(center, r, 0.0, TAU, 40, ink, 1.5, true)
+		draw_arc(center, r * 0.55, 0.0, TAU, 32,
+			Color(WyrdUi.INK_MID, 0.16), 1.0, true)
+		for i in 8:
+			var angle := float(i) * TAU / 8.0
+			var cardinal := (i % 2 == 0)
+			var inner_r := r * (0.30 if cardinal else 0.38)
+			var outer_r := r * (0.95 if cardinal else 0.72)
+			draw_line(
+				center + Vector2(cos(angle), sin(angle)) * inner_r,
+				center + Vector2(cos(angle), sin(angle)) * outer_r,
+				gold if cardinal else ink, 1.2)
+		for i in 4:
+			var angle := float(i) * TAU / 4.0
+			var tip := center + Vector2(cos(angle), sin(angle)) * r * 0.95
+			var lp := tip + Vector2(cos(angle + PI * 0.5), sin(angle + PI * 0.5)) * 3.0
+			var rp := tip + Vector2(cos(angle - PI * 0.5), sin(angle - PI * 0.5)) * 3.0
+			var base := center + Vector2(cos(angle), sin(angle)) * r * 0.80
+			draw_colored_polygon(PackedVector2Array([tip, lp, base, rp]), gold)
+		var cd := r * 0.15
+		var pts := PackedVector2Array([
+			center + Vector2(0.0, -cd), center + Vector2(cd, 0.0),
+			center + Vector2(0.0, cd), center + Vector2(-cd, 0.0)])
+		draw_colored_polygon(pts, gold)
+		draw_polyline(pts + PackedVector2Array([pts[0]]),
+			Color(WyrdUi.KIT_EDGE, 0.38), 1.0, true)
