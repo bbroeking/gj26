@@ -12,7 +12,7 @@ var _game: Node
 var _selected := -1
 var _panel: Panel
 var _list_box: VBoxContainer
-var _detail: Label
+var _detail_box: VBoxContainer   # drawn affix-row cards (replaces plain Label)
 var _go_btn: Button
 
 func _ready() -> void:
@@ -66,17 +66,25 @@ func _ready() -> void:
 	_list_box.add_theme_constant_override("separation", 6)
 	scroll.add_child(_list_box)
 
-	_detail = Label.new()
-	WyrdUi.style_body(_detail, 13)
-	_detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_detail.anchor_right = 1.0
-	_detail.anchor_top = 1.0
-	_detail.anchor_bottom = 1.0
-	_detail.offset_left = 52
-	_detail.offset_right = -52
-	_detail.offset_top = -150
-	_detail.offset_bottom = -64
-	_panel.add_child(_detail)
+	# Drawn affix cards — sage stripe for good affixes, terracotta for bad,
+	# so the risk/reward of each chart reads at a glance before stepping through.
+	# A transparent ScrollContainer clips overflow on 3+-affix charts without
+	# cluttering the panel with a scrollbar.
+	var detail_scroll := ScrollContainer.new()
+	detail_scroll.anchor_right = 1.0
+	detail_scroll.anchor_top = 1.0
+	detail_scroll.anchor_bottom = 1.0
+	detail_scroll.offset_left = 52
+	detail_scroll.offset_right = -52
+	detail_scroll.offset_top = -150
+	detail_scroll.offset_bottom = -64
+	detail_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	detail_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	_panel.add_child(detail_scroll)
+	_detail_box = VBoxContainer.new()
+	_detail_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_detail_box.add_theme_constant_override("separation", 4)
+	detail_scroll.add_child(_detail_box)
 
 	_go_btn = Button.new()
 	WyrdUi.style_button(_go_btn)
@@ -128,23 +136,31 @@ func _render() -> void:
 			_render())
 		_list_box.add_child(b)
 	# Detail + button state.
+	for c in _detail_box.get_children():
+		c.queue_free()
 	if _selected >= 0 and _selected < n:
 		var chart: Dictionary = _game.charts[_selected]
-		var lines: Array = []
+		var had_affixes := false
 		for a in chart.get("affixes", []):
 			var aff: Dictionary = ChartsData.AFFIXES.get(String(a.get("id", "")), {})
 			if aff.is_empty():
 				continue
-			if bool(a.get("good", false)):
-				lines.append("✓ %s — %s" % [String(aff.name), String(aff.good_desc)])
-			else:
-				lines.append("✗ %s — %s" % [String(aff.bad_name), String(aff.bad_desc)])
-		if lines.is_empty():
-			lines.append("A clean chart. Nothing inked in but the way there and back.")
-		_detail.text = "\n".join(lines)
+			had_affixes = true
+			var row := _AffixRow.new()
+			var is_good := bool(a.get("good", false))
+			row.setup(
+				String(aff.name if is_good else aff.bad_name),
+				String(aff.good_desc if is_good else aff.bad_desc),
+				is_good)
+			_detail_box.add_child(row)
+		if not had_affixes:
+			var empty_lbl := Label.new()
+			empty_lbl.text = "A clean chart. Nothing inked in but the way there and back."
+			WyrdUi.style_dim(empty_lbl, 12)
+			empty_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			_detail_box.add_child(empty_lbl)
 		_go_btn.disabled = false
 	else:
-		_detail.text = ""
 		_go_btn.disabled = true
 
 func _on_go() -> void:
@@ -154,3 +170,35 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# A single drawn affix row: cream plate, left-edge accent stripe in the
+# affix's good/bad colour, checkmark/cross glyph, name in ink, description
+# in dim ink below. Matches the design language used by vendor and inventory
+# item cards (draw_list_row + ink text = carved-shelf feel, not spreadsheet).
+class _AffixRow extends Control:
+	var _title := ""
+	var _desc := ""
+	var _good := true
+
+	func setup(title: String, desc: String, good: bool) -> void:
+		_title = title
+		_desc = desc
+		_good = good
+		custom_minimum_size = Vector2(0, 40)
+		queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		var accent: Color = WyrdUi.SAGE if _good else WyrdUi.TERRACOTTA
+		WyrdUi.draw_list_row(self, r, accent)
+		var font := get_theme_default_font()
+		# Checkmark / cross in the accent colour — the read-at-a-glance signal.
+		var mark := "✓" if _good else "✗"
+		var mc := WyrdUi.SAGE.darkened(0.2) if _good else WyrdUi.TERRACOTTA
+		draw_string(font, Vector2(12.0, 15.0), mark,
+			HORIZONTAL_ALIGNMENT_LEFT, 16, 13, mc)
+		draw_string(font, Vector2(30.0, 15.0), _title,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - 40.0, 14, WyrdUi.INK)
+		draw_string(font, Vector2(30.0, 31.0), _desc,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - 40.0, 11, WyrdUi.INK_MID)
