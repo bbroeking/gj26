@@ -44,7 +44,7 @@ var _game: Node
 var _panel: Panel
 var _picks: Array = []
 var _rows: VBoxContainer
-var _slots_lbl: Label
+var _slot_strip
 var _apply: Button
 var _tex_cache := {}
 
@@ -76,6 +76,12 @@ func _ready() -> void:
 	_panel.offset_right = 330
 	_panel.offset_bottom = 300
 	add_child(_panel)
+	# Header ornament strip — grain + flourish; drawn behind title labels.
+	var hdr := _LoadoutHeader.new()
+	hdr.anchor_right = 1.0
+	hdr.offset_bottom = 80
+	hdr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(hdr)
 	var title := Label.new()
 	title.text = "Loadout"
 	WyrdUi.style_title(title)
@@ -111,9 +117,9 @@ func _ready() -> void:
 	_rows.add_theme_constant_override("separation", 6)
 	_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_rows)
-	_slots_lbl = Label.new()
-	WyrdUi.style_body(_slots_lbl, 14)
-	col.add_child(_slots_lbl)
+	_slot_strip = _SlotStrip.new()
+	_slot_strip.custom_minimum_size = Vector2(0, 36)
+	col.add_child(_slot_strip)
 	_apply = Button.new()
 	WyrdUi.style_kit_button(_apply)
 	_apply.text = "Take up this kit"
@@ -156,8 +162,7 @@ func _render() -> void:
 					_picks.append(sid)
 				_render())
 		_rows.add_child(card)
-	_slots_lbl.text = "Slots 2–4:  %s" % (" · ".join(_picks) \
-		if not _picks.is_empty() else "—")
+	_slot_strip.update_picks(_picks)
 	_apply.disabled = _picks.size() != 3
 
 
@@ -262,3 +267,61 @@ class _SkillCard extends Control:
 		# --- short desc (up to two lines) ---
 		draw_multiline_string(font, Vector2(tx, 40.0), _desc,
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 16.0, 12, 2, dim)
+
+
+# ---- header ornament (drawn behind title labels) ----
+# Parchment grain across the header strip + a ── ◆ –– flourish centred below
+# the "Loadout" title — the same ornament language every other panel uses.
+class _LoadoutHeader extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(Vector2.ZERO, size), 61)
+		WyrdUi.draw_flourish(self,
+			Vector2(size.x * 0.36, size.y - 7.0), 280.0)
+
+
+# ---- drawn slot-indicator strip (replaces the plain "Slots 2–4: A · B · C" label) ----
+# Three carved badge wells sit side-by-side. An empty well is a quiet
+# KIT_WELL recess with its slot number (2, 3, 4) in dim ink — so the colour
+# lives on what's filled, not on the absence. A filled well uses a sage-washed
+# carved plate (the same selection language as the skill card's ring) and prints
+# the skill name. This is the storybook slot-picker read: carved → open → named.
+class _SlotStrip extends Control:
+	var _picks: Array = []
+
+	func update_picks(picks: Array) -> void:
+		_picks = picks.duplicate()
+		queue_redraw()
+
+	func _draw() -> void:
+		var font := get_theme_default_font()
+		# "Slots 2–4:" label in dim ink at left.
+		draw_string(font, Vector2(0.0, size.y * 0.5 + 5.5),
+			"Slots  2–4:", HORIZONTAL_ALIGNMENT_LEFT, 84.0,
+			12, WyrdUi.INK_MID)
+		# Three badge wells.
+		var bw := 134.0
+		var bh := 28.0
+		var bx := 88.0
+		var by := (size.y - bh) * 0.5
+		for i in 3:
+			var r := Rect2(Vector2(bx + float(i) * (bw + 7.0), by),
+				Vector2(bw, bh))
+			var filled := i < _picks.size()
+			if filled:
+				# Sage-washed carved plate — this slot is set.
+				WyrdUi.draw_carved_button(self, r, true)
+				draw_rect(r.grow(-2.5), Color(WyrdUi.SAGE, 0.10))
+				draw_string(font,
+					Vector2(r.position.x, r.position.y + bh * 0.70),
+					String(_picks[i]),
+					HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 11,
+					WyrdUi.SAGE.darkened(0.20))
+			else:
+				# Quiet recessed empty slot with dim numeral.
+				WyrdUi.draw_well(self, r, WyrdUi.KIT_WELL)
+				draw_string(font,
+					Vector2(r.position.x, r.position.y + bh * 0.70),
+					"%d" % (i + 2),
+					HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 12,
+					WyrdUi.INK_MID)
