@@ -383,3 +383,30 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# A warm campfire flame — log base, layered amber licks, bright core, soft
+# gold halo. Drawn beside "The Lantern" title; parallels draw_ink_bottle /
+# draw_scroll in the kit vocabulary.
+static func draw_lantern_flame(c: CanvasItem, center: Vector2, h: float) -> void:
+	var w := h * 0.55
+	# soft amber glow rings (faintest outermost)
+	for i in 3:
+		c.draw_circle(center, h * 0.50 - float(i) * 5.0,
+			Color(GOLD, 0.03 + float(i) * 0.02))
+	# log base — two short ellipses
+	for side in [-1.0, 1.0]:
+		var lc := center + Vector2(side * w * 0.22, h * 0.33)
+		c.draw_circle(lc, h * 0.10, Color(0.52, 0.34, 0.18))
+		c.draw_arc(lc, h * 0.10, 0, TAU, 12, Color(0.28, 0.16, 0.08), 1.0, true)
+	# flame body — wide amber base
+	c.draw_circle(center + Vector2(0, h * 0.08), h * 0.27,
+		Color(0.97, 0.66, 0.18, 0.88))
+	# flame mid-lick — narrower, lighter
+	c.draw_circle(center - Vector2(0, h * 0.09), h * 0.18,
+		Color(0.97, 0.80, 0.38, 0.82))
+	# flame tip — topmost point
+	c.draw_circle(center - Vector2(0, h * 0.24), h * 0.10,
+		Color(1.0, 0.93, 0.60, 0.68))
+	# bright inner core (heat centre)
+	c.draw_circle(center + Vector2(0, h * 0.05), h * 0.13,
+		Color(1.0, 0.96, 0.72, 0.62))
