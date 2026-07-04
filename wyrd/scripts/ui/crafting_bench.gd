@@ -736,9 +736,29 @@ class BenchView extends Control:
 			HORIZONTAL_ALIGNMENT_CENTER, _try_rect.size.x, 13,
 			WyrdUi.INK if can_try else DIM)
 		# Spec 43 — the codex: every pot recipe, in its discovery state.
+		# Open-book glyph header + wider flourish; discovered recipes are
+		# SAGE-accented parchment cards; unknowns are quiet recessed chips.
 		var cy := 462.0
-		draw_string(hdr, Vector2(bx, cy), "Codex", HORIZONTAL_ALIGNMENT_LEFT,
-			200, 13, WyrdUi.INK)
+		var bk := Vector2(bx + 8.0, cy + 6.0)
+		draw_rect(Rect2(bk + Vector2(-9.0, -5.0), Vector2(8.0, 10.0)),
+			Color(0.97, 0.93, 0.78))
+		draw_rect(Rect2(bk + Vector2(-9.0, -5.0), Vector2(8.0, 10.0)),
+			Color(EDGE, 0.55), false, 1.0)
+		draw_rect(Rect2(bk + Vector2(1.0, -5.0), Vector2(8.0, 10.0)),
+			Color(0.97, 0.93, 0.78))
+		draw_rect(Rect2(bk + Vector2(1.0, -5.0), Vector2(8.0, 10.0)),
+			Color(EDGE, 0.55), false, 1.0)
+		draw_line(bk + Vector2(-0.5, -5.5), bk + Vector2(-0.5, 5.5), EDGE, 1.5)
+		draw_line(bk + Vector2(0.5, -5.5), bk + Vector2(0.5, 5.5), EDGE, 1.5)
+		draw_line(bk + Vector2(2.5, -2.0), bk + Vector2(8.5, -2.0),
+			Color(EDGE, 0.30), 1.0)
+		draw_line(bk + Vector2(2.5, 0.5), bk + Vector2(8.5, 0.5),
+			Color(EDGE, 0.30), 1.0)
+		draw_line(bk + Vector2(2.5, 3.0), bk + Vector2(8.5, 3.0),
+			Color(EDGE, 0.30), 1.0)
+		draw_string(hdr, Vector2(bx + 20.0, cy + 13.0), "Codex",
+			HORIZONTAL_ALIGNMENT_LEFT, 160, 13, WyrdUi.INK)
+		WyrdUi.draw_flourish(self, Vector2(bx + 140.0, cy + 7.0), 252.0)
 		cy += 16.0
 		_codex_rects.clear()
 		for rid in GatherDefs.INK_RECIPE_ORDER:
@@ -764,17 +784,22 @@ class BenchView extends Control:
 			elif riddle_open:
 				line = "◌ ??? — %s" % String(rec.get("riddle", ""))
 			if known:
-				# Spec 44 — a tiny bottle in the ink's color marks the find.
-				WyrdUi.draw_ink_bottle(self, Vector2(bx + 6.0, cy + 7.0), 13.0,
+				# Discovered: SAGE-accented parchment card — the find is celebrated.
+				var row_r := Rect2(Vector2(bx, cy), Vector2(330.0, 15.0))
+				WyrdUi.draw_list_row(self, row_r, WyrdUi.SAGE)
+				WyrdUi.draw_ink_bottle(self, Vector2(bx + 10.0, cy + 7.5), 13.0,
 					INK_TINT.get(String(rid), Color(0.4, 0.4, 0.4)))
-				draw_string(font, Vector2(bx + 16.0, cy + 11.0), line,
-					HORIZONTAL_ALIGNMENT_LEFT, 314, 11, col)
+				draw_string(font, Vector2(bx + 22.0, cy + 11.0), line,
+					HORIZONTAL_ALIGNMENT_LEFT, 302.0, 11, col)
 				# Spec 45-carto — Practiced Measures: a known row is a button.
-				_codex_rects.append({"rect": Rect2(Vector2(bx, cy),
-					Vector2(330.0, 15.0)), "id": String(rid)})
+				_codex_rects.append({"rect": row_r, "id": String(rid)})
 			else:
-				draw_string(font, Vector2(bx, cy + 11.0), line,
-					HORIZONTAL_ALIGNMENT_LEFT, 330, 11, col)
+				# Quiet recessed chip — unknowns stay visually humble.
+				var row_r := Rect2(Vector2(bx, cy), Vector2(330.0, 14.0))
+				draw_rect(row_r, Color(WELL, 0.45))
+				draw_rect(row_r, Color(EDGE, 0.18), false, 1.0)
+				draw_string(font, Vector2(bx + 6.0, cy + 10.0), line,
+					HORIZONTAL_ALIGNMENT_LEFT, 318.0, 10, Color(DIM, 0.70))
 			cy += 15.0
 
 	func _draw_result(hdr: Font, font: Font) -> void:
