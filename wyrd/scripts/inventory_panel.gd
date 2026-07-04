@@ -816,13 +816,9 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 			if i > 0:
 				draw_line(Vector2(x, y - 12.0), Vector2(x + w, y - 12.0),
 					Color(0.52, 0.42, 0.30, 0.45), 1.5)
-			# --- emblem (60px disc, double ink ring — spec 40) ---
+			# --- emblem (carved compass medallion — ref: mj_trades_professions.png) ---
 			var ec := Vector2(x + 26.0, y + 30.0)
-			draw_circle(ec, 26.0, (row.color as Color))
-			draw_arc(ec, 26.0, 0, TAU, 48, Color(0.25, 0.18, 0.12), 2.5, true)
-			draw_arc(ec, 21.0, 0, TAU, 48, Color(0.97, 0.93, 0.82, 0.55), 1.2, true)
-			draw_string(hdr, Vector2(ec.x - 26.0, ec.y + 8.0), String(row.glyph),
-				HORIZONTAL_ALIGNMENT_CENTER, 52.0, 22, Color(0.98, 0.95, 0.86))
+			_draw_trade_emblem(ec, String(row.glyph), row.color as Color, hdr)
 			# --- name + level (ink, per the design — terracotta is title-only) ---
 			draw_string(hdr, Vector2(cx, y + 18.0), String(row.name),
 				HORIZONTAL_ALIGNMENT_LEFT, w - 78.0, 21, WyrdUi.INK)
@@ -898,4 +894,57 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 					Color(0.34, 0.28, 0.22) if ok else Color(0.52, 0.46, 0.39))
 			cardy += CARD_H + CARD_GAP
 		y = cardy + 12.0
+
+
+# Carved compass medallion (trade emblem). Replaces the old flat colour disc
+# with a wood-ring frame, parchment face, compass rose, and outlined glyph —
+# moving toward the mj_trades_professions.png medallion reference.
+func _draw_trade_emblem(ec: Vector2, glyph: String, trade_col: Color, font: Font) -> void:
+	const R        := 26.0   # face disc radius
+	const RING_W   := 6.0    # half-width of the carved wood ring
+	const RING_WOOD := Color(0.46, 0.31, 0.19)
+	const RING_EDGE := Color(0.20, 0.13, 0.09)
+	# Soft drop shadow so the medallion sits proud of the page.
+	draw_circle(ec + Vector2(0, 3.5), R + RING_W * 2.0 + 1.0, Color(0, 0, 0, 0.18))
+	# Carved wood ring: same honey-oak / ink-edge language as GlobeGauge.
+	draw_arc(ec, R + RING_W, 0, TAU, 64, RING_WOOD, RING_W * 2.0, true)
+	draw_arc(ec, R + RING_W * 2.0 - 0.5, 0, TAU, 64, RING_EDGE, 2.0, true)
+	draw_arc(ec, R + 0.5, 0, TAU, 64, RING_EDGE, 1.8, true)
+	# Four knob ornaments at the diagonal positions of the ring.
+	for k in 4:
+		var a := PI * 0.25 + float(k) * PI * 0.5
+		WyrdUi.draw_round_well(self, ec + Vector2(cos(a), sin(a)) * (R + RING_W),
+			5.0, Color(0.91, 0.86, 0.72))
+	# Gold filigree ring just inside the wood band (burnished inset line).
+	draw_arc(ec, R + 3.5, 0, TAU, 48, Color(WyrdUi.GOLD, 0.70), 1.5, true)
+	# Parchment face + trade colour as a soft watercolour wash.
+	draw_circle(ec, R, Color(0.91, 0.86, 0.72))
+	var wash := trade_col
+	wash.a = 0.27
+	draw_circle(ec, R, wash)
+	# Compass rose — 4 cardinal pointed diamonds + 4 diagonal tick lines.
+	var spoke := Color(0.26, 0.19, 0.13, 0.52)
+	for k in 4:
+		var a  := float(k) * PI * 0.5
+		var d  := Vector2(cos(a), sin(a))
+		var pv := Vector2(-sin(a), cos(a))
+		draw_colored_polygon(PackedVector2Array([
+			ec + d * 6.5 + pv * 2.2,
+			ec + d * 6.5 - pv * 2.2,
+			ec + d * 20.5
+		]), spoke)
+		var b := a + PI * 0.25
+		draw_line(ec + Vector2(cos(b), sin(b)) * 9.0,
+			ec + Vector2(cos(b), sin(b)) * 14.5, Color(0.26, 0.19, 0.13, 0.36), 1.2, true)
+	# Hub disc at the centre of the rose.
+	draw_circle(ec, 5.0, Color(0.88, 0.81, 0.66))
+	draw_arc(ec, 5.0, 0, TAU, 20, RING_EDGE, 1.5, true)
+	# Faint inner ring (burnished boundary just inside the face edge).
+	draw_arc(ec, R - 3.5, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.26), 1.0, true)
+	# Trade glyph with ink outline so it reads on any wash colour.
+	var gp := Vector2(ec.x - R, ec.y + 8.0)
+	draw_string_outline(font, gp, glyph, HORIZONTAL_ALIGNMENT_CENTER,
+		R * 2.0, 22, 2, Color(0.16, 0.11, 0.08, 0.82))
+	draw_string(font, gp, glyph, HORIZONTAL_ALIGNMENT_CENTER,
+		R * 2.0, 22, Color(0.98, 0.95, 0.87))
 	_tab_content_h[3] = y - view.position.y
