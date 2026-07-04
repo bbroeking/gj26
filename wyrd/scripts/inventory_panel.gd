@@ -428,32 +428,79 @@ func _draw_grid() -> void:
 func _draw_slots() -> void:
 	if equipment == null:
 		return
-	var font: Font = get_theme_default_font()
-	# Spec 41 (Pack design) — the tool pair gets its section label.
 	var hdr2: Font = WyrdUi.font_header()
 	if hdr2 == null:
-		hdr2 = font
+		hdr2 = get_theme_default_font()
 	draw_string(hdr2, _slot_top("pickaxe") + Vector2(0, -10), "Trade Tools",
 		HORIZONTAL_ALIGNMENT_LEFT, 160.0, 14, WyrdUi.INK)
 	for name in SLOT_OFFSET:
 		var top := _slot_top(String(name))
 		var r := Rect2(top, Vector2(SLOT_SIZE, SLOT_SIZE))
-		# Recessed slot well.
-		draw_rect(r, Color(0.80, 0.72, 0.58))
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(SLOT_SIZE - 1, 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(1, SLOT_SIZE - 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
 		var it = equipment.get_slot(String(name))
+		# Kit well: 3-step inner shadow + bottom light lip reads as a carved socket.
+		WyrdUi.draw_well(self, r)
 		if it != null:
 			_draw_item_rect_scaled(it, top + Vector2(6, 6),
 				Vector2(SLOT_SIZE - 12, SLOT_SIZE - 12), false)
 		else:
-			# Empty slot — name ghosted in the well, Diablo-style.
-			draw_string(font, top + Vector2(0, SLOT_SIZE * 0.5 + 5),
-				String(name).capitalize(), HORIZONTAL_ALIGNMENT_CENTER,
-				SLOT_SIZE, 12, Color(0.50, 0.42, 0.32, 0.85))
+			# Quiet storybook silhouette — etched hint of what belongs here.
+			_draw_slot_glyph(String(name), r.get_center())
+
+# A quiet ink-etched silhouette showing what item type a slot accepts.
+# Drawn at low alpha so the socket reads as empty, not illustrated.
+func _draw_slot_glyph(slot_name: String, c: Vector2) -> void:
+	var col := Color(WyrdUi.INK_MID, 0.34)
+	var lw := 2.0
+	match slot_name:
+		"helmet":
+			# Rounded dome arc + flat brim + cheek guards.
+			draw_arc(c + Vector2(0, 2), 14.0, PI, TAU, 22, col, lw, true)
+			draw_line(c + Vector2(-18, 2), c + Vector2(18, 2), col, lw)
+			draw_line(c + Vector2(-8, 2), c + Vector2(-8, 9), col, lw)
+			draw_line(c + Vector2(8, 2), c + Vector2(8, 9), col, lw)
+		"chest":
+			# Breastplate outline — shoulder notch narrowing at waist, flared hips.
+			var pts := PackedVector2Array([
+				c + Vector2(-13, -14), c + Vector2(-6, -18),
+				c + Vector2(6, -18),   c + Vector2(13, -14),
+				c + Vector2(16, 2),    c + Vector2(11, 16),
+				c + Vector2(-11, 16),  c + Vector2(-16, 2)])
+			draw_polyline(pts + PackedVector2Array([pts[0]]), col, lw, true)
+		"boots":
+			# Boot profile: shaft + extended toe box, side view.
+			var pts_b := PackedVector2Array([
+				c + Vector2(-8, -18), c + Vector2(8, -18),
+				c + Vector2(8, 4),    c + Vector2(18, 4),
+				c + Vector2(18, 16),  c + Vector2(-8, 16)])
+			draw_polyline(pts_b + PackedVector2Array([pts_b[0]]), col, lw, true)
+		"weapon":
+			# Shortbow: C-curve limbs bowing to the right + taut string on the left.
+			draw_arc(c + Vector2(-10, 0), 18.0, -PI * 0.3, PI * 0.3, 18,
+				col, lw + 0.5, false)
+			draw_line(c + Vector2(-1, -14), c + Vector2(-1, 14), col, 1.0)
+			draw_line(c + Vector2(-4, 0), c + Vector2(2, 0), col, 1.5)
+		"ring":
+			# Ring band with a small diamond gemstone seated at the top.
+			draw_arc(c + Vector2(0, 3), 13.0, 0, TAU, 32, col, lw, true)
+			var gem := PackedVector2Array([
+				c + Vector2(0, -10), c + Vector2(5, -16),
+				c + Vector2(0, -21), c + Vector2(-5, -16)])
+			draw_colored_polygon(gem, Color(WyrdUi.GOLD, 0.18))
+			draw_polyline(gem + PackedVector2Array([gem[0]]), col, 1.5, true)
+		"pickaxe":
+			# Pickaxe: vertical handle + angled cross-head with curved pick tip.
+			draw_line(c + Vector2(0, 18), c + Vector2(0, -8), col, lw)
+			draw_line(c + Vector2(-16, -12), c + Vector2(16, -4), col, lw + 0.5)
+			draw_arc(c + Vector2(-18, -8), 6.0, -PI * 0.4, PI * 0.6, 10,
+				col, lw, false)
+		"axe":
+			# Hatchet: straight handle + swept blade polygon.
+			draw_line(c + Vector2(2, 18), c + Vector2(-2, -8), col, lw)
+			var blade := PackedVector2Array([
+				c + Vector2(-2, -8),   c + Vector2(-14, -18),
+				c + Vector2(-18, -2),  c + Vector2(-5, 4)])
+			draw_colored_polygon(blade, Color(WyrdUi.INK_MID, 0.12))
+			draw_polyline(blade + PackedVector2Array([blade[0]]), col, lw, true)
 
 func _draw_item_in_grid(it: Dictionary) -> void:
 	var rotated: bool = it.get("rotated", false)
