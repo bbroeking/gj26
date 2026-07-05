@@ -337,6 +337,19 @@ static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 		center + Vector2(-3.5, 0)])
 	c.draw_colored_polygon(pts, Color(GOLD, 0.8))
 
+# A hand-drawn ivy sprig: a slender stem + two spread leaves + a tip leaf.
+# Used for banner-end ornament and header corner decoration. `root` is the
+# base of the stem; `h` is the total height.
+static func draw_leaf_sprig(c: CanvasItem, root: Vector2, h: float,
+		col := Color(SAGE, 0.72)) -> void:
+	var stem_top := root - Vector2(0, h)
+	c.draw_line(root, stem_top, Color(SAGE.darkened(0.18), 0.48), 1.0)
+	var mid := root - Vector2(0, h * 0.52)
+	var lr := h * 0.24
+	c.draw_circle(mid + Vector2(-h * 0.27, 0), lr, Color(col, 0.58))
+	c.draw_circle(mid + Vector2(h * 0.27, 0), lr, Color(col, 0.58))
+	c.draw_circle(stem_top + Vector2(0, lr * 0.45), lr * 1.05, Color(col, 0.65))
+
 # A little hand-blown ink bottle — glass body, ink fill, neck, cork, and a
 # glass highlight. Replaces the bare text glyphs in sockets and trays.
 static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
