@@ -425,6 +425,17 @@ func _draw_grid() -> void:
 		for it in inventory.items:
 			_draw_item_in_grid(it)
 
+func _slot_glyph(slot_name: String) -> String:
+	match slot_name:
+		"weapon":  return "➳"
+		"ring":    return "◎"
+		"pickaxe": return "⚒"
+		"axe":     return "⚒"
+		"helmet":  return "▲"
+		"chest":   return "▣"
+		"boots":   return "▼"
+	return "?"
+
 func _draw_slots() -> void:
 	if equipment == null:
 		return
@@ -438,22 +449,20 @@ func _draw_slots() -> void:
 	for name in SLOT_OFFSET:
 		var top := _slot_top(String(name))
 		var r := Rect2(top, Vector2(SLOT_SIZE, SLOT_SIZE))
-		# Recessed slot well.
-		draw_rect(r, Color(0.80, 0.72, 0.58))
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(SLOT_SIZE - 1, 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(1, SLOT_SIZE - 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+		# Carved slot well — the WyrdUi kit treatment (stepped inner shadow +
+		# ink border) so each socket reads as carved INTO the paper-doll column,
+		# not painted onto it. Replaces the old manual draw_rect/draw_line trio.
+		WyrdUi.draw_well(self, r)
 		var it = equipment.get_slot(String(name))
 		if it != null:
 			_draw_item_rect_scaled(it, top + Vector2(6, 6),
 				Vector2(SLOT_SIZE - 12, SLOT_SIZE - 12), false)
 		else:
-			# Empty slot — name ghosted in the well, Diablo-style.
-			draw_string(font, top + Vector2(0, SLOT_SIZE * 0.5 + 5),
-				String(name).capitalize(), HORIZONTAL_ALIGNMENT_CENTER,
-				SLOT_SIZE, 12, Color(0.50, 0.42, 0.32, 0.85))
+			# Empty slot — a storybook category glyph at 26 px, quiet and
+			# recessed, so colour lives on FILLED slots (design language rule).
+			draw_string(hdr2, top + Vector2(0, SLOT_SIZE * 0.5 + 12),
+				_slot_glyph(String(name)), HORIZONTAL_ALIGNMENT_CENTER,
+				SLOT_SIZE, 26, Color(WyrdUi.INK_MID, 0.45))
 
 func _draw_item_in_grid(it: Dictionary) -> void:
 	var rotated: bool = it.get("rotated", false)
