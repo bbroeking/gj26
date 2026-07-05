@@ -11,14 +11,30 @@ const TIER_COLOR := {
 const TIER_SCALE := {"normal": 1.0, "crit": 1.45, "super": 1.9}
 const LIFETIME := 0.62
 
+# Warm-tinted outline for hard hits: gold rim on crits, muted violet on supers.
+# Normal hits keep the .tscn default (dark sepia ink) so they stay quiet.
+const CRIT_OUTLINE  := Color(0.72, 0.54, 0.14, 0.82)
+const SUPER_OUTLINE := Color(0.58, 0.32, 0.76, 0.82)
+
 var _age := 0.0
 var _vel := Vector3.ZERO
 var _base := 1.0
+
+func _ready() -> void:
+	# Apply the hand-drawn IM Fell serif font so numbers read as quill-scratched
+	# ink rather than a flat engine default — the hairline serifs carry the
+	# storybook feel even at billboard scale.
+	if ResourceLoader.exists(WyrdUi.FONT_HEADER_PATH):
+		font = load(WyrdUi.FONT_HEADER_PATH) as Font
 
 func setup(amount: int, tier: String = "normal") -> void:
 	text = str(amount)
 	modulate = TIER_COLOR.get(tier, TIER_COLOR["normal"])
 	_base = TIER_SCALE.get(tier, 1.0)
+	# Tier-specific outline tint — the ink glows warmer when a blow lands hard.
+	match tier:
+		"crit":  outline_modulate = CRIT_OUTLINE
+		"super": outline_modulate = SUPER_OUTLINE
 	# Scatter — up hard, with a random sideways/forward kick.
 	var ang := randf() * TAU
 	_vel = Vector3(cos(ang) * 1.2, 3.2, sin(ang) * 1.2)
