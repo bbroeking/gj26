@@ -115,18 +115,14 @@ func _render() -> void:
 		_list_box.add_child(l)
 	for i in n:
 		var chart: Dictionary = _game.charts[i]
-		var b := Button.new()
-		WyrdUi.style_button(b)
-		WyrdUi.mark_selected(b, i == _selected)
-		b.toggle_mode = true
-		b.button_pressed = i == _selected
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.text = ChartsData.chart_label(chart)
+		var row := _ChartRow.new()
+		row.setup(ChartsData.chart_label(chart), int(chart.get("tier", 1)),
+			i == _selected)
 		var idx := i
-		b.pressed.connect(func():
+		row.pressed.connect(func():
 			_selected = idx
 			_render())
-		_list_box.add_child(b)
+		_list_box.add_child(row)
 	# Detail + button state.
 	if _selected >= 0 and _selected < n:
 		var chart: Dictionary = _game.charts[_selected]
@@ -154,3 +150,84 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# ---- drawn chart row ----
+# A clickable Control: draw_list_row plate (GOLD accent when selected), a
+# sealed scroll icon on the left, chart name in ink, affix summary below,
+# and a tier badge (T1/T2/T3) on the right. Charts ARE scrolls — this read
+# makes that literal. Mirrors VendorCard/_SkillCard's self-contained pattern.
+class _ChartRow extends Control:
+	const SCROLL_W := 50.0
+	const SCROLL_H := 38.0
+
+	var _label := ""
+	var _tier := 1
+	var _selected := false
+	var _hover := false
+
+	signal pressed
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 54.0)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
+	func setup(chart_label: String, tier: int, selected: bool) -> void:
+		_label = chart_label
+		_tier = tier
+		_selected = selected
+		queue_redraw()
+
+	func _gui_input(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.pressed \
+				and event.button_index == MOUSE_BUTTON_LEFT:
+			pressed.emit()
+			accept_event()
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_MOUSE_ENTER:
+			_hover = true
+			queue_redraw()
+		elif what == NOTIFICATION_MOUSE_EXIT:
+			_hover = false
+			queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		var accent := WyrdUi.GOLD if _selected else WyrdUi.INK_MID
+		WyrdUi.draw_list_row(self, r, accent)
+		if _selected:
+			# Warm gold wash on the selected row — chart is active.
+			draw_rect(r.grow(-1.5), Color(WyrdUi.GOLD, 0.08))
+		elif _hover:
+			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.10))
+		# Sealed scroll on the left — the chart IS a scroll.
+		var scroll_rect := Rect2(
+			Vector2(9.0, (size.y - SCROLL_H) * 0.5),
+			Vector2(SCROLL_W, SCROLL_H))
+		WyrdUi.draw_scroll(self, scroll_rect, true)
+		if _selected:
+			# Gold ring around the scroll when this chart is picked.
+			draw_rect(scroll_rect, Color(WyrdUi.GOLD, 0.85), false, 2.0)
+		# Text area starts after the scroll.
+		var tx := scroll_rect.end.x + 10.0
+		# Tier badge right-aligned — T1 in terracotta, T3 in gold.
+		var tier_col := WyrdUi.GOLD.darkened(0.1) if _tier >= 3 else WyrdUi.TERRACOTTA
+		var badge := Rect2(Vector2(size.x - 48.0, (size.y - 22.0) * 0.5),
+			Vector2(38.0, 22.0))
+		draw_rect(badge, Color(0.93, 0.89, 0.76))
+		draw_rect(badge, tier_col, false, 1.5)
+		var font := get_theme_default_font()
+		draw_string(font, badge.position + Vector2(0.0, 16.0),
+			"T%d" % _tier, HORIZONTAL_ALIGNMENT_CENTER, badge.size.x, 12, tier_col)
+		# Split "Name — Affixes" so the name is prominent and affixes are dim.
+		var sep_idx := _label.find(" — ")
+		var name_text := _label.substr(0, sep_idx) if sep_idx >= 0 else _label
+		var affix_text := _label.substr(sep_idx + 3) if sep_idx >= 0 else ""
+		var text_width := badge.position.x - tx - 8.0
+		var name_col := WyrdUi.GOLD.darkened(0.15) if _selected else WyrdUi.INK
+		draw_string(font, Vector2(tx, size.y * 0.5 - (3.0 if affix_text != "" else 1.0)),
+			name_text, HORIZONTAL_ALIGNMENT_LEFT, text_width, 15, name_col)
+		if affix_text != "":
+			draw_string(font, Vector2(tx, size.y * 0.5 + 14.0), affix_text,
+				HORIZONTAL_ALIGNMENT_LEFT, text_width, 12, WyrdUi.INK_MID)
