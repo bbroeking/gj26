@@ -57,3 +57,19 @@ func _draw() -> void:
 		draw_colored_polygon(pts, Color(0.10, 0.08, 0.07, 0.52))
 	if _flash > 0.0:
 		draw_rect(r.grow(-1.5), Color(WyrdUi.GOLD, _flash * 0.85), false, 3.0)
+		# Sage ivy leaves at each corner bloom with the flash (storybook "ready").
+		var dirs := [Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]
+		var origins := [r.position + Vector2(2, 2),
+			r.position + Vector2(r.size.x - 2, 2),
+			r.position + Vector2(2, r.size.y - 2),
+			r.end - Vector2(2, 2)]
+		for i in 4:
+			var d := dirs[i].normalized()
+			var perp := Vector2(-d.y, d.x)
+			var L := 7.0
+			draw_colored_polygon(PackedVector2Array([
+				origins[i],
+				origins[i] + perp * 2.8 + d * (L * 0.6),
+				origins[i] + d * L,
+				origins[i] - perp * 2.8 + d * (L * 0.6)]),
+				Color(WyrdUi.SAGE, _flash * 0.88))
