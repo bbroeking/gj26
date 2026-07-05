@@ -582,19 +582,38 @@ func _draw_tabs(win: Rect2) -> void:
 	var font: Font = WyrdUi.font_header()
 	if font == null:
 		font = get_theme_default_font()
+	const ICON_SZ := 18.0
+	const ICON_GAP := 5.0
 	for i in TABS.size():
 		var r := _tab_rect(i)
 		var active := i == _tab
-		# Spec 40 — text-only plates; active = brighter + terracotta underline.
+		# Spec 40 — plates; active = brighter + terracotta underline.
 		draw_rect(r, Color(0.95, 0.91, 0.80) if active else Color(0.85, 0.78, 0.64))
 		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 1.5)
 		if active:
 			draw_line(r.position + Vector2(2, r.size.y - 2),
 				r.position + Vector2(r.size.x - 2, r.size.y - 2),
 				WyrdUi.TERRACOTTA, 3.0)
-		draw_string(font, r.position + Vector2(0, 22), String(TABS[i]),
-			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16,
-			WyrdUi.INK if active else WyrdUi.INK_MID)
+		var label_col := WyrdUi.INK if active else WyrdUi.INK_MID
+		# Draw the preloaded tab icon (from TAB_ICONS, loaded in _ready) to the
+		# left of the label, centred as a unit within the tab. Inactive icons
+		# fade to 50% so colour lives on the selected tab only.
+		var tex: Texture2D = _cached_tex(String(TAB_ICONS[i]))
+		var label_text := String(TABS[i])
+		if tex != null:
+			var label_w := font.get_string_size(label_text,
+				HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
+			var unit_w := ICON_SZ + ICON_GAP + label_w
+			var ox := r.position.x + (r.size.x - unit_w) * 0.5
+			var oy := r.position.y + (r.size.y - ICON_SZ) * 0.5
+			draw_texture_rect(tex, Rect2(Vector2(ox, oy),
+				Vector2(ICON_SZ, ICON_SZ)), false,
+				Color(1.0, 1.0, 1.0, 1.0 if active else 0.50))
+			draw_string(font, Vector2(ox + ICON_SZ + ICON_GAP, r.position.y + 21.0),
+				label_text, HORIZONTAL_ALIGNMENT_LEFT, label_w + 2.0, 15, label_col)
+		else:
+			draw_string(font, r.position + Vector2(0, 22), label_text,
+				HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16, label_col)
 
 # ---- Spec 45 followup: drawn-page scrolling (Satchel / Charts / Trades) ----
 # The pack window is a fixed 644×604 panel but the list pages grew past it
