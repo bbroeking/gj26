@@ -828,16 +828,22 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 				HORIZONTAL_ALIGNMENT_LEFT, w - 78.0, 21, WyrdUi.INK)
 			draw_string(hdr, Vector2(cx, y + 20.0), "Lv %d" % lv,
 				HORIZONTAL_ALIGNMENT_RIGHT, w - 78.0, 16, WyrdUi.INK)
-			# --- xp bar ---
+			# --- xp bar (carved trough — inner shadow top, specular on fill) ---
 			var xp: int = int(game.trades[key].xp)
 			var lo: int = game.xp_for_level(lv)
 			var hi: int = game.xp_for_level(lv + 1)
 			var frac := clampf(float(xp - lo) / float(max(1, hi - lo)), 0.0, 1.0)
 			var bar := Rect2(Vector2(cx, y + 26.0), Vector2(w * 0.56, 12.0))
-			draw_rect(bar, Color(0.80, 0.72, 0.58))
-			draw_rect(Rect2(bar.position + Vector2(1, 1),
-				Vector2((bar.size.x - 2.0) * frac, bar.size.y - 2.0)),
-				(row.color as Color).lightened(0.12))
+			draw_rect(bar, Color(0.72, 0.64, 0.51))
+			draw_rect(Rect2(bar.position, Vector2(bar.size.x, 2.0)),
+				Color(WyrdUi.KIT_EDGE, 0.28))
+			var fill_w := (bar.size.x - 2.0) * frac
+			if fill_w > 0.0:
+				draw_rect(Rect2(bar.position + Vector2(1, 1),
+					Vector2(fill_w, bar.size.y - 2.0)),
+					(row.color as Color).lightened(0.12))
+				draw_rect(Rect2(bar.position + Vector2(1, 1),
+					Vector2(fill_w, 2.0)), Color(1.0, 0.97, 0.86, 0.30))
 			draw_rect(bar, Color(0.42, 0.34, 0.25, 0.9), false, 1.5)
 			draw_string(font, Vector2(bar.end.x + 10.0, y + 37.0),
 				"%d / %d xp" % [xp, hi],
