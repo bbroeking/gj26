@@ -745,9 +745,18 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 	var w := win.size.x - 148.0
 	var y := win.position.y + 134.0
 	if (game.charts as Array).is_empty():
-		draw_string(font, Vector2(x, y),
-			"No charts inscribed. The Inscribing Table awaits.",
-			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
+		# Empty-state illustration: a cartographer's compass rose centred on
+		# the parchment, evoking the chart-making trade before any charts exist.
+		var rose_center := Vector2(x + w * 0.5, y + 72.0)
+		WyrdUi.draw_compass_rose(self, rose_center, 56.0)
+		# Flourish rule under the rose, then the invitation text centred below.
+		WyrdUi.draw_flourish(self, Vector2(rose_center.x, y + 148.0), w * 0.48)
+		draw_string(font, Vector2(x, y + 163.0),
+			"No charts inscribed.",
+			HORIZONTAL_ALIGNMENT_CENTER, w, 15, WyrdUi.INK)
+		draw_string(font, Vector2(x, y + 184.0),
+			"The Inscribing Table awaits.",
+			HORIZONTAL_ALIGNMENT_CENTER, w, 13, WyrdUi.INK_MID)
 		_tab_content_h[2] = 0.0
 		return
 	# Slice C — each chart rides a list-row plate led with a drawn scroll

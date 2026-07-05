@@ -383,3 +383,51 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# A hand-drawn cartographer's compass rose — four sword-tip cardinal arms,
+# four shorter ordinal diamonds, a double ink ring, and a gold centre jewel.
+# Drawn entirely in vector so it scales cleanly; the north arm is a touch
+# longer than the others by cartographic convention.
+# Used in the Charts tab empty-state and any map-adjacent surface.
+static func draw_compass_rose(c: CanvasItem, center: Vector2, r: float) -> void:
+	# Faint disc so the rose has a ground — barely visible on parchment.
+	c.draw_circle(center, r, Color(0.91, 0.85, 0.70, 0.14))
+	c.draw_arc(center, r, 0, TAU, 64, Color(KIT_EDGE, 0.20), 1.2, true)
+
+	# Cardinal arms (N/S/E/W) — kite / sword-tip shape.
+	# North is 6% longer to follow the classic navigator's convention.
+	var card_dirs := [Vector2.UP, Vector2.RIGHT, Vector2.DOWN, Vector2.LEFT]
+	var card_reach := [0.92, 0.86, 0.86, 0.86]
+	for i in 4:
+		var dir: Vector2 = card_dirs[i]
+		var perp := dir.rotated(PI * 0.5)
+		var tip := center + dir * r * card_reach[i]
+		var waist_l := center + dir * r * 0.28 + perp * r * 0.17
+		var waist_r := center + dir * r * 0.28 - perp * r * 0.17
+		var base := center + dir * r * 0.10
+		var pts := PackedVector2Array([tip, waist_l, base, waist_r])
+		c.draw_colored_polygon(pts, Color(GOLD, 0.58))
+		c.draw_polyline(PackedVector2Array([tip, waist_l, base, waist_r, tip]),
+			Color(KIT_EDGE, 0.52), 1.2)
+
+	# Ordinal diamonds (NE / SE / SW / NW) — shorter, narrower.
+	for ang_deg in [45, 135, 225, 315]:
+		var ang := deg_to_rad(float(ang_deg))
+		var dir := Vector2(sin(ang), -cos(ang))
+		var perp := dir.rotated(PI * 0.5)
+		var tip := center + dir * r * 0.56
+		var waist_l := center + dir * r * 0.20 + perp * r * 0.09
+		var waist_r := center + dir * r * 0.20 - perp * r * 0.09
+		var base := center + dir * r * 0.09
+		c.draw_colored_polygon(PackedVector2Array([tip, waist_l, base, waist_r]),
+			Color(INK_MID, 0.36))
+		c.draw_polyline(PackedVector2Array([tip, waist_l, base, waist_r, tip]),
+			Color(KIT_EDGE, 0.30), 0.9)
+
+	# Two fine concentric rings — inner at ordinal-tip radius, outer at cardinal waist.
+	c.draw_arc(center, r * 0.22, 0, TAU, 32, Color(KIT_EDGE, 0.28), 1.0, true)
+	c.draw_arc(center, r * 0.38, 0, TAU, 40, Color(KIT_EDGE, 0.16), 0.8, true)
+
+	# Centre jewel — gold disc with ink ring.
+	c.draw_circle(center, r * 0.10, Color(GOLD, 0.78))
+	c.draw_arc(center, r * 0.10, 0, TAU, 20, Color(KIT_EDGE, 0.68), 1.5, true)
