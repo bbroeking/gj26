@@ -626,8 +626,13 @@ class BenchView extends Control:
 		# Base socket.
 		_base_rect = Rect2(Vector2(bx + 40, 116), Vector2(180, 96))
 		var bs := _pop_scale("base")
-		_socket_well(Rect2(_base_rect.get_center() - _base_rect.size * bs * 0.5,
-			_base_rect.size * bs), bench.base_id != "")
+		var base_scaled := Rect2(_base_rect.get_center() - _base_rect.size * bs * 0.5,
+			_base_rect.size * bs)
+		if bench.base_id == "":
+			# Blank charting paper motif — map-grid + compass cross + corner marks.
+			WyrdUi.draw_blank_chart_well(self, base_scaled)
+		else:
+			_socket_well(base_scaled, true)
 		_highlight(_base_rect, target == "base")
 		if bench.base_id == "":
 			draw_string(font, _base_rect.position + Vector2(0, 52),
@@ -783,7 +788,12 @@ class BenchView extends Control:
 			HORIZONTAL_ALIGNMENT_LEFT, 200, 14, WyrdUi.INK)
 		WyrdUi.draw_flourish(self, Vector2(rx + 130.0, 88.0), 160.0)
 		_result_rect = Rect2(Vector2(rx, 116), Vector2(216, 110))
-		_socket_well(_result_rect, bench.base_id != "")
+		if bench.base_id == "":
+			# Blank charting paper — same motif as the base socket so the two
+			# wells read as a matched pair awaiting the inscription sequence.
+			WyrdUi.draw_blank_chart_well(self, _result_rect)
+		else:
+			_socket_well(_result_rect, true)
 		_highlight(_result_rect, bench._tutorial_target() == "result")
 		if _stamp_t > 0.0:
 			draw_rect(_result_rect.grow(8.0 * _stamp_t * 4.0),

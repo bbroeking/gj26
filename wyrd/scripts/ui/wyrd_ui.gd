@@ -383,3 +383,39 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# An empty chart socket: the recessed well plate + faint map-grid ruling +
+# tiny corner registration marks + a whispered compass cross. Reads as
+# "blank charting paper awaiting the first quill stroke" — quiet by design
+# (colour lives on the FILLED state: see draw_scroll). Used for the inscribing
+# table's base socket and result preview when nothing is placed.
+static func draw_blank_chart_well(c: CanvasItem, r: Rect2) -> void:
+	draw_well(c, r, KIT_WELL)
+	# Three faint horizontal ruled lines — blank parchment sheet feel.
+	var inner := r.grow(-14.0)
+	for i in 3:
+		var t := 0.22 + float(i) * 0.28
+		var ry := inner.position.y + inner.size.y * t
+		c.draw_line(Vector2(inner.position.x + 3.0, ry),
+			Vector2(inner.end.x - 3.0, ry), Color(KIT_EDGE, 0.09), 1.0)
+	# Four corner registration marks — the cartographer's tick marks before
+	# the first pen stroke (like the corner crosses on blank mapping paper).
+	var signs := [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]
+	for sv in signs:
+		var cx := r.get_center().x + sv.x * (r.size.x * 0.5 - 9.0)
+		var cy2 := r.get_center().y + sv.y * (r.size.y * 0.5 - 9.0)
+		c.draw_line(Vector2(cx - sv.x * 5.0, cy2), Vector2(cx, cy2),
+			Color(KIT_EDGE, 0.22), 1.0)
+		c.draw_line(Vector2(cx, cy2 - sv.y * 5.0), Vector2(cx, cy2),
+			Color(KIT_EDGE, 0.22), 1.0)
+	# Whispered compass cross at the centre — four cardinal arms + a gold pip.
+	# Very faint; the FILLED state (draw_scroll) owns the visual weight.
+	var cc := r.get_center()
+	var arm := minf(r.size.x, r.size.y) * 0.18
+	for i in 4:
+		var ang := float(i) * PI * 0.5
+		c.draw_line(cc + Vector2(cos(ang), sin(ang)) * 4.5,
+			cc + Vector2(cos(ang), sin(ang)) * arm,
+			Color(KIT_EDGE, 0.14), 1.2)
+	c.draw_circle(cc, 2.5, Color(GOLD, 0.30))
+	c.draw_arc(cc, 2.5, 0, TAU, 16, Color(KIT_EDGE, 0.22), 1.0, true)
