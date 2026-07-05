@@ -64,9 +64,7 @@ func _ready() -> void:
 	col.add_theme_constant_override("separation", 10)
 	_panel.add_child(col)
 
-	var section := Label.new()
-	section.text = "Recipes"
-	WyrdUi.style_section(section)
+	var section := _SectionPlaque.new("Recipes")
 	col.add_child(section)
 
 	# A7-full grew the forge to 14 recipes — the list scrolls now.
@@ -89,9 +87,7 @@ func _ready() -> void:
 			var lp: CanvasLayer = load("res://scripts/ui/loadout_panel.gd").new()
 			get_tree().current_scene.add_child(lp))
 		col.add_child(lb)
-	var s2 := Label.new()
-	s2.text = "Satchel"
-	WyrdUi.style_section(s2)
+	var s2 := _SectionPlaque.new("Satchel")
 	col.add_child(s2)
 	_satchel_lbl = Label.new()
 	WyrdUi.style_body(_satchel_lbl, 13)
@@ -212,3 +208,45 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# ---- carved section plaque ----
+# Replaces the plain WyrdUi.style_section() Label with a drawn Control:
+# KIT_PLATE face, top honey bevel, bottom shade, ink border, a SAGE left-
+# edge accent stripe (the kit's "category / section" read, matching the
+# draw_list_row language), and a draw_flourish extending rightward from the
+# title text. Mirrors the Inscribing Table's _tray_section treatment.
+class _SectionPlaque extends Control:
+	var _text := ""
+
+	func _init(text: String) -> void:
+		_text = text
+		custom_minimum_size = Vector2(0, 28.0)
+		size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		draw_rect(r, WyrdUi.KIT_PLATE)
+		# top honey bevel — the plaque catches the page's warm light
+		draw_rect(Rect2(r.position + Vector2(1.0, 1.0),
+			Vector2(r.size.x - 2.0, 1.5)), Color(1.0, 1.0, 0.93, 0.45))
+		# bottom shade so the plaque sits ON the parchment
+		draw_rect(Rect2(r.position + Vector2(2.0, r.size.y - 2.5),
+			Vector2(r.size.x - 4.0, 1.5)), Color(WyrdUi.KIT_EDGE, 0.22))
+		draw_rect(r, WyrdUi.KIT_EDGE, false, 1.5)
+		# SAGE accent stripe down the left edge — the section identity mark
+		draw_rect(Rect2(r.position + Vector2(1.5, 1.5),
+			Vector2(3.0, r.size.y - 3.0)), WyrdUi.SAGE)
+		# section title in IM Fell SC
+		var hdr := WyrdUi.font_header()
+		var font: Font = hdr if hdr != null else get_theme_default_font()
+		draw_string(font, Vector2(12.0, 19.0), _text,
+			HORIZONTAL_ALIGNMENT_LEFT, 160, 13, WyrdUi.INK)
+		# flourish extending right of the title toward the panel edge
+		var tw: float = font.get_string_size(_text,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
+		var fx := 12.0 + tw + 16.0
+		if fx + 24.0 < size.x - 8.0:
+			WyrdUi.draw_flourish(self, Vector2(fx + (size.x - 8.0 - fx) * 0.5,
+				14.0), size.x - 8.0 - fx)
