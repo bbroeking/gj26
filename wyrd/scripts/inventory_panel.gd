@@ -856,11 +856,17 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 			draw_string(font, Vector2(cx, sy),
 				"%d / %d earned" % [earned, perks.size()],
 				HORIZONTAL_ALIGNMENT_RIGHT, w - 78.0, 13, Color(0.40, 0.34, 0.27))
+			# ── ◆ ── flourish under the section header — matches bench/tray
+			# language: ornament on headers, plain body below.
+			WyrdUi.draw_flourish(self,
+				Vector2(cx + 112.0, sy - 6.0),
+				minf(190.0, (w - 78.0) - 120.0))
 		# cards march down a spine in the left gutter; the disc lights when earned
 		var lx := x + 18.0
 		var card_x := x + 42.0
 		var card_w := w - 50.0
 		var cardy := sy + 18.0
+		var _mastery_seed := 0          # deterministic grain per card
 		for p in perks:
 			var pl: int = int(p.lv)
 			var ok: bool = lv >= pl
@@ -870,12 +876,19 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 					Vector2(lx, cardy + CARD_H + CARD_GAP),
 					Color(0.55, 0.62, 0.40, 0.65), 3.0)
 				var cr := Rect2(Vector2(card_x, cardy), Vector2(card_w, CARD_H))
+				# Earned cards: full draw_list_row plate (KIT_PLATE face, top
+				# light bevel, bottom shade, ink border, SAGE accent stripe on
+				# the left) + sparse parchment grain — the same language as
+				# vendor cards, skill rows, and satchel rows.
+				# Locked cards: same carved structure but dimmed (INK_MID stripe +
+				# a warm parchment wash over the face) so they read as out-of-reach
+				# without abandoning the carved-wood vocabulary.
 				if ok:
-					draw_rect(cr, Color(0.93, 0.88, 0.74))
-					draw_rect(cr, WyrdUi.SAGE.darkened(0.12), false, 2.0)
+					WyrdUi.draw_list_row(self, cr, WyrdUi.SAGE)
+					WyrdUi.draw_parchment_grain(self, cr, 0xa3 + _mastery_seed * 17)
 				else:
-					draw_rect(cr, Color(0.78, 0.72, 0.60, 0.85))
-					draw_rect(cr, Color(0.50, 0.42, 0.32, 0.7), false, 1.5)
+					WyrdUi.draw_list_row(self, cr, WyrdUi.INK_MID)
+					draw_rect(cr.grow(-2.0), Color(0.82, 0.76, 0.62, 0.42))
 				# node disc on the spine
 				var dc := Vector2(lx, cardy + CARD_H * 0.5)
 				draw_circle(dc, 12.0, WyrdUi.SAGE.darkened(0.05) if ok \
@@ -896,6 +909,7 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 				draw_multiline_string(font, Vector2(cr.position.x + 12.0, cardy + 41.0),
 					String(p.desc), HORIZONTAL_ALIGNMENT_LEFT, card_w - 24.0, 12, 2,
 					Color(0.34, 0.28, 0.22) if ok else Color(0.52, 0.46, 0.39))
+			_mastery_seed += 1
 			cardy += CARD_H + CARD_GAP
 		y = cardy + 12.0
 	_tab_content_h[3] = y - view.position.y
