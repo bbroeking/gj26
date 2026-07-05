@@ -866,14 +866,36 @@ class BenchView extends Control:
 			w = maxf(w, font.get_string_size(ln, HORIZONTAL_ALIGNMENT_LEFT,
 				-1, 13).x)
 		var box := Rect2(_tip_at + Vector2(16, 12),
-			Vector2(w + 20.0, 12.0 + 19.0 * lines.size()))
+			Vector2(w + 24.0, 16.0 + 19.0 * lines.size()))
 		# Keep it on the panel.
 		box.position.x = minf(box.position.x, size.x - box.size.x - 8.0)
 		box.position.y = minf(box.position.y, size.y - box.size.y - 8.0)
+		# Soft drop shadow so the card sits ON the bench surface.
+		draw_rect(Rect2(box.position + Vector2(2.0, 3.0), box.size),
+			Color(0, 0, 0, 0.14))
+		# Warm parchment plate.
 		draw_rect(box, Color(0.97, 0.93, 0.80, 0.97))
+		# Top bevel — warm light catches the card's upper lip.
+		draw_rect(Rect2(box.position + Vector2(2.0, 2.0),
+			Vector2(box.size.x - 4.0, 1.5)), Color(1.0, 0.98, 0.91, 0.55))
+		# Bottom shadow — grounds the card against the bench.
+		draw_rect(Rect2(box.position + Vector2(2.0, box.size.y - 3.0),
+			Vector2(box.size.x - 4.0, 1.5)), Color(EDGE, 0.20))
+		# Sparse parchment grain — keeps the flat plate from reading as CSS.
+		WyrdUi.draw_parchment_grain(self, box, 31)
+		# Ink border.
 		draw_rect(box, EDGE, false, 2.0)
+		# Gold inner inset — the burnished read shared with every carved surface.
+		draw_rect(box.grow(-3.5), Color(WyrdUi.GOLD, 0.28), false, 1.0)
+		# Text lines; a sepia rule separates the item/material name from the desc.
 		var ty := box.position.y + 17.0
-		for ln in lines:
-			draw_string(font, Vector2(box.position.x + 10.0, ty), ln,
-				HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 20.0, 13, TXT)
+		for i in lines.size():
+			draw_string(font, Vector2(box.position.x + 12.0, ty),
+				String(lines[i]),
+				HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 24.0, 13, TXT)
 			ty += 19.0
+			if i == 0 and lines.size() > 1:
+				# Thin rule in the gap between the name line and the body text.
+				draw_line(Vector2(box.position.x + 8.0, ty - 9.0),
+					Vector2(box.end.x - 8.0, ty - 9.0),
+					Color(EDGE, 0.28), 1.0)
