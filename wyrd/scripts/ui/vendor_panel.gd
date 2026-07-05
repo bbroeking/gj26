@@ -101,7 +101,7 @@ func _ready() -> void:
 	columns.offset_top = 94
 	columns.offset_right = -52
 	columns.offset_bottom = -56
-	columns.add_theme_constant_override("separation", 26)
+	columns.add_theme_constant_override("separation", 8)
 	_panel.add_child(columns)
 
 	var col1 := VBoxContainer.new()
@@ -121,6 +121,9 @@ func _ready() -> void:
 	_sell_box.add_theme_constant_override("separation", 5)
 	_sell_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sell_scroll.add_child(_sell_box)
+
+	# Carved vertical rule between the two counter halves.
+	columns.add_child(_ColumnDivider.new())
 
 	var col2 := VBoxContainer.new()
 	col2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -286,3 +289,14 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# ---- vertical rule between Sell and Wares columns ----
+class _ColumnDivider extends Control:
+	func _init() -> void:
+		custom_minimum_size = Vector2(18.0, 0.0)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+	func _draw() -> void:
+		WyrdUi.draw_vert_rule(self, Rect2(Vector2.ZERO, size))

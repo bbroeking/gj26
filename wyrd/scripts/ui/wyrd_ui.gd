@@ -383,3 +383,30 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# A vertical rule with a centred gold diamond and serif ticks at the ends —
+# column separator for two-pane modals (e.g. vendor counter Sell | Wares).
+static func draw_vert_rule(c: CanvasItem, rect: Rect2) -> void:
+	var cx := rect.position.x + rect.size.x * 0.5
+	var top_y := rect.position.y + 8.0
+	var bot_y := rect.end.y - 8.0
+	var mid_y := (top_y + bot_y) * 0.5
+	var line_col := Color(KIT_EDGE, 0.38)
+	# Serif ticks at the two ends of the rule
+	c.draw_line(Vector2(cx - 3.0, top_y), Vector2(cx + 3.0, top_y), line_col, 1.0)
+	c.draw_line(Vector2(cx - 3.0, bot_y), Vector2(cx + 3.0, bot_y), line_col, 1.0)
+	# Upper and lower segments, interrupted by the diamond
+	c.draw_line(Vector2(cx, top_y), Vector2(cx, mid_y - 7.0), line_col, 1.0)
+	c.draw_line(Vector2(cx, mid_y + 7.0), Vector2(cx, bot_y), line_col, 1.0)
+	# Gold diamond fill
+	var d := PackedVector2Array([
+		Vector2(cx, mid_y - 5.5),
+		Vector2(cx + 4.5, mid_y),
+		Vector2(cx, mid_y + 5.5),
+		Vector2(cx - 4.5, mid_y)])
+	c.draw_colored_polygon(d, Color(GOLD, 0.82))
+	# Diamond outline in ink
+	c.draw_line(d[0], d[1], Color(KIT_EDGE, 0.50), 1.0)
+	c.draw_line(d[1], d[2], Color(KIT_EDGE, 0.50), 1.0)
+	c.draw_line(d[2], d[3], Color(KIT_EDGE, 0.50), 1.0)
+	c.draw_line(d[3], d[0], Color(KIT_EDGE, 0.50), 1.0)
