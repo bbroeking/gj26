@@ -617,12 +617,26 @@ class BenchView extends Control:
 		var a := 0.45 + 0.35 * sin(bench._pulse)
 		draw_rect(r.grow(5), Color(WyrdUi.GOLD, a), false, 3.5)
 
+	# Carved zone-header plaque spanning the column: parchment face with top
+	# bevel, sage accent stripe on the left, and ink border — mirrors the tray
+	# section plaque language for the center + right column headers.
+	func _draw_col_header(hdr: Font, x: float, w: float, label: String) -> void:
+		var r := Rect2(Vector2(x - 2.0, 77.0), Vector2(w, 22.0))
+		draw_rect(r, WyrdUi.KIT_PLATE.darkened(0.04))
+		draw_rect(Rect2(r.position + Vector2(1.0, 1.0), Vector2(r.size.x - 2.0, 1.5)),
+			Color(1.0, 1.0, 0.93, 0.44))
+		draw_rect(Rect2(r.position + Vector2(1.5, 1.5), Vector2(3.0, r.size.y - 3.0)),
+			Color(WyrdUi.SAGE, 0.88))
+		draw_rect(r, WyrdUi.KIT_EDGE, false, 1.5)
+		var f := hdr if hdr != null else get_theme_default_font()
+		draw_string(f, Vector2(r.position.x + 9.0, r.position.y + 16.0), label,
+			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 12.0, 13, WyrdUi.INK)
+
 	func _draw_bench(hdr: Font, font: Font) -> void:
 		var target: String = bench._tutorial_target()
 		var bx := 320.0
-		draw_string(hdr, Vector2(bx, 92), "Bench",
-			HORIZONTAL_ALIGNMENT_LEFT, 200, 14, WyrdUi.INK)
-		WyrdUi.draw_flourish(self, Vector2(bx + 130.0, 88.0), 200.0)
+		_draw_col_header(hdr, bx, 262.0, "Bench")
+		WyrdUi.draw_flourish(self, Vector2(bx + 131.0, 102.0), 230.0)
 		# Base socket.
 		_base_rect = Rect2(Vector2(bx + 40, 116), Vector2(180, 96))
 		var bs := _pop_scale("base")
@@ -779,9 +793,8 @@ class BenchView extends Control:
 
 	func _draw_result(hdr: Font, font: Font) -> void:
 		var rx := 660.0
-		draw_string(hdr, Vector2(rx, 92), "Result",
-			HORIZONTAL_ALIGNMENT_LEFT, 200, 14, WyrdUi.INK)
-		WyrdUi.draw_flourish(self, Vector2(rx + 130.0, 88.0), 160.0)
+		_draw_col_header(hdr, rx, 222.0, "Result")
+		WyrdUi.draw_flourish(self, Vector2(rx + 111.0, 102.0), 192.0)
 		_result_rect = Rect2(Vector2(rx, 116), Vector2(216, 110))
 		_socket_well(_result_rect, bench.base_id != "")
 		_highlight(_result_rect, bench._tutorial_target() == "result")
