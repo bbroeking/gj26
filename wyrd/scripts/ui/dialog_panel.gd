@@ -12,7 +12,7 @@ var _done := false        # finished must fire exactly once (queue_free defers)
 var _speaker := ""
 var _panel: Panel
 var _body: Label
-var _name_lbl: Label
+var _banner: SpeakerBanner
 var _hint: Label
 var _lockout := 0.0
 
@@ -44,17 +44,13 @@ func _ready() -> void:
 	well.position = Vector2(48, 104)
 	well.size = Vector2(120, 120)
 	_panel.add_child(well)
-	_name_lbl = Label.new()
-	var hf := WyrdUi.font_header()
-	if hf != null:
-		_name_lbl.add_theme_font_override("font", hf)
-	_name_lbl.add_theme_font_size_override("font_size", 24)
-	_name_lbl.add_theme_color_override("font_color", WyrdUi.TERRACOTTA)
-	_name_lbl.anchor_right = 1.0
-	_name_lbl.offset_left = 56
-	_name_lbl.offset_right = -56
-	_name_lbl.offset_top = 38
-	_panel.add_child(_name_lbl)
+	_banner = SpeakerBanner.new()
+	_banner.anchor_right = 1.0
+	_banner.offset_left = 36
+	_banner.offset_right = -36
+	_banner.offset_top = 34
+	_banner.custom_minimum_size = Vector2(0, 60)
+	_panel.add_child(_banner)
 	_body = Label.new()
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.anchor_right = 1.0
@@ -86,7 +82,8 @@ func open(speaker: String, pages: Array) -> void:
 	_idx = 0
 
 func _render() -> void:
-	_name_lbl.text = _speaker
+	_banner.speaker_name = _speaker
+	_banner.queue_redraw()
 	if _idx < _pages.size():
 		_body.text = String(_pages[_idx])
 
@@ -130,6 +127,46 @@ func _finish() -> void:
 	get_node("/root/Game").modal_closed()
 	finished.emit()
 	queue_free()
+
+
+# Storybook speaker-name banner: a warm parchment plaque spanning the top of
+# the dialog, with a honey bevel, gold inner frame, a flourish-diamond
+# separator, and ivy sprigs at each end. Replaces the plain name label so the
+# speaker's entrance reads as "announced" rather than typed.
+class SpeakerBanner extends Control:
+	var speaker_name := ""
+
+	func _draw() -> void:
+		if size.x < 30:
+			return
+		var hdr := WyrdUi.font_header()
+		if hdr == null:
+			hdr = get_theme_default_font()
+		# Warm honey-cream plaque strip — slightly richer than the main parchment
+		var sr := Rect2(Vector2(0, 5), Vector2(size.x, size.y - 8))
+		draw_rect(sr, Color(0.96, 0.90, 0.74))
+		# Top honey bevel: the plaque catches the warm overhead light
+		draw_rect(Rect2(sr.position + Vector2(4, 1.5),
+			Vector2(sr.size.x - 8, 2.0)), Color(1.0, 0.97, 0.88, 0.55))
+		# Bottom ink shadow: grounds the plaque onto the parchment face
+		draw_rect(Rect2(Vector2(4, sr.end.y - 3),
+			Vector2(sr.size.x - 8, 2.0)), Color(WyrdUi.KIT_EDGE, 0.28))
+		# Ink border + gold inner inset line (the "burnished" read)
+		draw_rect(sr, WyrdUi.KIT_EDGE, false, 1.5)
+		draw_rect(sr.grow(-4.5), Color(WyrdUi.GOLD, 0.42), false, 1.0)
+		# Speaker name centred in the plaque
+		if speaker_name != "":
+			var name_y := sr.position.y + sr.size.y * 0.60
+			draw_string(hdr, Vector2(0.0, name_y), speaker_name,
+				HORIZONTAL_ALIGNMENT_CENTER, size.x, 24, WyrdUi.TERRACOTTA)
+		# Flourish-diamond separator below the name
+		WyrdUi.draw_flourish(self,
+			Vector2(size.x * 0.5, sr.position.y + sr.size.y * 0.86),
+			size.x * 0.50)
+		# Ivy sprigs at each end — the design language's leafy ornament
+		var sprig_y := sr.position.y + sr.size.y * 0.74
+		WyrdUi.draw_leaf_sprig(self, Vector2(30.0, sprig_y), 18.0)
+		WyrdUi.draw_leaf_sprig(self, Vector2(size.x - 30.0, sprig_y), 18.0)
 
 
 # Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
