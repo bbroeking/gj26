@@ -61,6 +61,14 @@ func _ready() -> void:
 	_panel.offset_right = 380
 	_panel.offset_bottom = 260
 	add_child(_panel)
+	# Craftsman's anvil medallion — painted guild crest for the smithy header.
+	# Centred in the open space between the title (x≈54–260) and the gold chip
+	# (x≈560+) so it never overlaps text. Mouse ignored; pure ornament.
+	var crest := _VendorCrest.new()
+	crest.position = Vector2(377.0, 17.0)
+	crest.size = Vector2(66.0, 66.0)
+	crest.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(crest)
 
 	var title := Label.new()
 	title.text = "Hod's Counter"
@@ -286,3 +294,46 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# Craftsman's anvil medallion — the painted guild crest for Hod's Counter.
+# A parchment disc with a burnished gold ring, sage leaf knots at top/bottom
+# (ivy language), gold nubs at left/right, and an anvil silhouette in the
+# centre. Drawn over the open header space; no textures touched.
+class _VendorCrest extends Control:
+	func _draw() -> void:
+		var c := size * 0.5
+		var r := minf(c.x, c.y) - 1.0
+
+		# Parchment face
+		draw_circle(c, r, WyrdUi.KIT_PLATE)
+
+		# Subtle inset ring for depth (the disc sits inside the frame)
+		draw_arc(c, r - 4.0, 0.0, TAU, 64, Color(WyrdUi.KIT_EDGE, 0.18), 1.2, true)
+
+		# Sage leaf knots at top and bottom — the ivy / vine ornament language
+		draw_circle(c + Vector2(0.0, -(r - 1.0)), 3.5, WyrdUi.SAGE)
+		draw_circle(c + Vector2(0.0,  (r - 1.0)), 3.5, WyrdUi.SAGE)
+		# Gold nubs at left and right — burnished ring language
+		draw_circle(c + Vector2(-(r - 1.0), 0.0), 2.5, Color(WyrdUi.GOLD, 0.80))
+		draw_circle(c + Vector2( (r - 1.0), 0.0), 2.5, Color(WyrdUi.GOLD, 0.80))
+
+		# Anvil silhouette — Bramblewood smithy's mark
+		var aw  := r * 0.80    # face width
+		var unit := r * 0.20   # height unit
+		var top_y := c.y - unit * 2.4
+		# Face (widest top bar)
+		draw_rect(Rect2(c.x - aw * 0.50, top_y,                aw,        unit * 1.40), WyrdUi.INK)
+		# Waist (narrow step)
+		draw_rect(Rect2(c.x - aw * 0.24, top_y + unit * 1.40,  aw * 0.48, unit * 0.90), WyrdUi.INK)
+		# Base (wide foot)
+		draw_rect(Rect2(c.x - aw * 0.44, top_y + unit * 2.30,  aw * 0.88, unit * 0.85), WyrdUi.INK)
+		# Top-bevel highlight on the anvil face
+		draw_rect(Rect2(c.x - aw * 0.50 + 1.5, top_y + 1.5, aw - 3.0, 2.0),
+			Color(1.0, 1.0, 0.92, 0.30))
+
+		# Gold ring (burnished metalwork read) — drawn after the knots so the
+		# ring line sits on top of the leaf/nub dots, crisping the edge.
+		draw_arc(c, r, 0.0, TAU, 64, Color(WyrdUi.GOLD, 0.72), 2.5, true)
+		# Ink border (outermost crisping edge)
+		draw_arc(c, r, 0.0, TAU, 64, WyrdUi.KIT_EDGE, 2.0, true)
