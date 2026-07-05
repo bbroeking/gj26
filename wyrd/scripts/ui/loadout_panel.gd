@@ -79,7 +79,7 @@ func _ready() -> void:
 	var title := Label.new()
 	title.text = "Loadout"
 	WyrdUi.style_title(title)
-	title.position = Vector2(54, 36)
+	title.position = Vector2(56, 36)
 	_panel.add_child(title)
 	var hint := Label.new()
 	hint.text = "Esc — close"
@@ -89,6 +89,18 @@ func _ready() -> void:
 	hint.offset_left = -130
 	hint.offset_top = 38
 	_panel.add_child(hint)
+	# Bow emblem — a carved parchment disc with vector bow+arrow, giving the
+	# loadout screen an armory read (design lang: emblem left of every header).
+	var emblem := _BowEmblem.new()
+	emblem.position = Vector2(7, 28)
+	emblem.size = Vector2(44, 44)
+	_panel.add_child(emblem)
+	# Gold flourish divider under the title — creates visual hierarchy between
+	# the header and the scrolling skill list (same spec-44 language as bench).
+	var hflourish := _HeaderFlourish.new()
+	hflourish.position = Vector2(56, 70)
+	hflourish.size = Vector2(200, 12)
+	_panel.add_child(hflourish)
 	var col := VBoxContainer.new()
 	col.anchor_right = 1.0
 	col.anchor_bottom = 1.0
@@ -262,3 +274,49 @@ class _SkillCard extends Control:
 		# --- short desc (up to two lines) ---
 		draw_multiline_string(font, Vector2(tx, 40.0), _desc,
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 16.0, 12, 2, dim)
+
+
+# Carved parchment disc with a vector bow-and-arrow — the loadout screen's
+# identifying emblem (armory language). Same disc-ring pattern as PortraitWell.
+class _BowEmblem extends Control:
+	func _draw() -> void:
+		var c := size * 0.5
+		var r := minf(c.x, c.y) - 1.0
+		# parchment disc face
+		draw_circle(c, r, Color(0.88, 0.82, 0.67))
+		# slight warm shadow on lower-right edge (depth)
+		draw_arc(c, r - 1.5, PI * 0.15, PI * 0.85, 20,
+			Color(0.26, 0.19, 0.13, 0.18), 3.0, true)
+		# bow arc — a D facing right, ink strokes
+		draw_arc(c + Vector2(-r * 0.07, 0), r * 0.60,
+			-PI * 0.52, PI * 0.52, 24, WyrdUi.INK, 2.5, true)
+		# bow string — straight line connecting the two limb tips
+		var top_pt := c + Vector2(r * 0.27, -r * 0.50)
+		var bot_pt := c + Vector2(r * 0.27, r * 0.50)
+		draw_line(top_pt, bot_pt, WyrdUi.INK, 1.5)
+		# arrow shaft — diagonal from lower-left to upper-right (nocked read)
+		var a0 := c + Vector2(-r * 0.56, r * 0.20)
+		var a1 := c + Vector2(r * 0.56, -r * 0.20)
+		draw_line(a0, a1, WyrdUi.GOLD, 2.0)
+		# arrowhead triangle
+		var fwd := (a1 - a0).normalized()
+		var perp := Vector2(-fwd.y, fwd.x)
+		draw_colored_polygon(PackedVector2Array([
+			a1,
+			a1 - fwd * 7.5 + perp * 3.5,
+			a1 - fwd * 7.5 - perp * 3.5,
+		]), WyrdUi.GOLD)
+		# fletching at the nock end
+		var fl := a0 + fwd * 3.0
+		draw_line(fl, fl - fwd * 6.0 + perp * 5.5, Color(WyrdUi.SAGE, 0.85), 1.5)
+		draw_line(fl, fl - fwd * 6.0 - perp * 5.5, Color(WyrdUi.SAGE, 0.85), 1.5)
+		# ink ring border + faint gold inner ring
+		draw_arc(c, r, 0, TAU, 40, WyrdUi.KIT_EDGE, 2.0, true)
+		draw_arc(c, r - 3.5, 0, TAU, 32, Color(WyrdUi.GOLD, 0.38), 1.0, true)
+
+
+# Gold section flourish that anchors the header. Uses the shared kit helper so
+# it reads identically to the bench, charts, and crafting section dividers.
+class _HeaderFlourish extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, size * 0.5, size.x * 0.92)
