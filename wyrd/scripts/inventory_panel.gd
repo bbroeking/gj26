@@ -705,36 +705,54 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
 		_tab_content_h[1] = 0.0
 		return
-	# Slice C — each material rides a list-row plate: an ink-disc holding its
-	# glyph on the left, name + count on the card, the lore line beneath.
+	# Slice D — each material is a drawn item card matching the vendor/loadout
+	# language: a 60px plate with a recessed square icon well on the left
+	# (glyph centred), name + count inline, and the lore in dim ink inside the
+	# card. The accent stripe comes from material group so the shelf reads as
+	# categorised at a glance: verdant = sage, lumen = gold, gristle/echo =
+	# terracotta, earthen = neutral ink.
+	const ICON_W := 40.0
+	const ROW_H := 60.0
+	const ROW_GAP := 6.0
 	for id in game.materials:
 		var def: Dictionary = GatherDefs.MATERIALS.get(String(id), {})
-		var row_top := y - 18.0
-		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 30.0))
-		if _span_visible(row_top, row.end.y, scroll, view):
-			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
-			# glyph disc on the left
-			var dc := Vector2(row.position.x + 19.0, row.position.y + 15.0)
-			WyrdUi.draw_round_well(self, dc, 11.0, Color(0.88, 0.81, 0.66))
-			draw_string(font, Vector2(dc.x - 11.0, dc.y + 6.0),
-				String(def.get("icon", "·")), HORIZONTAL_ALIGNMENT_CENTER,
-				22.0, 14, WyrdUi.INK)
-			draw_string(font, Vector2(x + 28.0, y + 1.0),
+		var cnt: int = int(game.materials[id])
+		var group := String(def.get("group", ""))
+		var accent: Color
+		match group:
+			"verdant":         accent = WyrdUi.SAGE
+			"lumen":           accent = WyrdUi.GOLD
+			"gristle", "echo": accent = WyrdUi.TERRACOTTA
+			_:                 accent = WyrdUi.INK_MID
+		var row := Rect2(Vector2(x - 8.0, y), Vector2(w + 16.0, ROW_H))
+		if _span_visible(row.position.y, row.end.y, scroll, view):
+			WyrdUi.draw_list_row(self, row, accent)
+			# Recessed square icon well — matches vendor card language.
+			var ir := Rect2(
+				Vector2(row.position.x + 9.0,
+					row.position.y + (ROW_H - ICON_W) * 0.5),
+				Vector2(ICON_W, ICON_W))
+			WyrdUi.draw_well(self, ir, Color(0.95, 0.91, 0.80))
+			draw_string(font,
+				ir.position + Vector2(0.0, ICON_W * 0.74),
+				String(def.get("icon", "·")),
+				HORIZONTAL_ALIGNMENT_CENTER, ICON_W, 20, WyrdUi.INK)
+			# Name + count.
+			var tx := row.position.x + ICON_W + 19.0
+			draw_string(font, Vector2(tx, row.position.y + 22.0),
 				String(def.get("name", id)),
-				HORIZONTAL_ALIGNMENT_LEFT, w - 110.0, 17, WyrdUi.INK)
-			draw_string(font, Vector2(x + w - 78.0, y + 1.0),
-				"× %d" % int(game.materials[id]),
-				HORIZONTAL_ALIGNMENT_RIGHT, 70.0, 17, WyrdUi.TERRACOTTA)
-		y += 34.0
-		var desc := String(def.get("desc", ""))
-		if desc != "":
-			var dh: float = font.get_multiline_string_size(desc,
-				HORIZONTAL_ALIGNMENT_LEFT, w - 30, 14).y
-			if _span_visible(y - 13.0, y + dh, scroll, view):
-				draw_multiline_string(font, Vector2(x + 30, y), desc,
-					HORIZONTAL_ALIGNMENT_LEFT, w - 30, 14, -1, Color(0.30, 0.24, 0.19))
-			y += dh + 4.0
-		y += 10.0
+				HORIZONTAL_ALIGNMENT_LEFT, w - ICON_W - 90.0, 15, WyrdUi.INK)
+			draw_string(font, Vector2(row.end.x - 72.0, row.position.y + 22.0),
+				"× %d" % cnt,
+				HORIZONTAL_ALIGNMENT_RIGHT, 64.0, 15, WyrdUi.TERRACOTTA)
+			# Lore line — up to 2 lines inside the card in dim ink.
+			var desc := String(def.get("desc", ""))
+			if desc != "":
+				draw_multiline_string(font,
+					Vector2(tx, row.position.y + 40.0), desc,
+					HORIZONTAL_ALIGNMENT_LEFT, w - ICON_W - 26.0,
+					11, 2, WyrdUi.INK_MID)
+		y += ROW_H + ROW_GAP
 	_tab_content_h[1] = y - view.position.y
 
 func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> void:
