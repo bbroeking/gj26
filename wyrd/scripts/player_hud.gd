@@ -296,20 +296,20 @@ func _refresh_trades() -> void:
 		int(game.gold), game.trade_lv("wayfinding")]
 
 func show_toast(msg: String) -> void:
-	var l := Label.new()
-	l.text = msg
-	# Spec 41 — toasts are kit parchment chips.
-	WyrdUi.style_chip(l, 15)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_toast_box.add_child(l)
+	# Toasts are carved parchment proclamation plates — a honey-bevel plank
+	# with sepia grain, a burnished gold inset, and a gold diamond sigil on
+	# the left edge so game events read as storybook announcements.
+	var plate := ToastPlate.new(msg)
+	plate.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_toast_box.add_child(plate)
 	var t := create_tween()
 	# Pause-immune — most toasts (mix, inscribe, level-up) fire while a modal
 	# has the tree paused; a pause-bound tween would freeze them into a stack.
 	t.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	t.tween_interval(2.4)
-	t.tween_property(l, "modulate:a", 0.0, 0.6)
-	t.tween_callback(l.queue_free)
+	t.tween_property(plate, "modulate:a", 0.0, 0.6)
+	t.tween_callback(plate.queue_free)
 
 func set_hp(cur: int, mx: int, status_suffix: String = "") -> void:
 	var f := clampf(float(cur) / float(max(1, mx)), 0.0, 1.0)
@@ -498,3 +498,67 @@ class QuestScrollArt extends Control:
 		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
 		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
 		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+
+# A storybook toast card: carved parchment proclamation plate with a honey
+# bevel, sepia grain, burnished gold inset border, and a small gold diamond
+# sigil on the left edge — every game event reads as an announcement, not a
+# floating debug chip. Inner-class pattern proven by GlobeGauge + QuestScrollArt.
+class ToastPlate extends Control:
+	var _lbl: Label = null
+
+	func _init(msg: String) -> void:
+		_lbl = Label.new()
+		_lbl.text = msg
+		var bf := WyrdUi.font_body()
+		if bf != null:
+			_lbl.add_theme_font_override("font", bf)
+		_lbl.add_theme_font_size_override("font_size", 16)
+		_lbl.add_theme_color_override("font_color", WyrdUi.INK)
+		_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_lbl.anchor_right = 1.0
+		_lbl.anchor_bottom = 1.0
+		_lbl.offset_left = 20.0    # clearance for the gold pip on the left
+		_lbl.offset_right = -6.0
+		_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(_lbl)
+		# Approximate width from char count (~9.5 px per glyph at size 16,
+		# plus pip clearance and padding). Floor keeps short toasts readable.
+		var w := maxf(180.0, float(msg.length()) * 9.5 + 40.0)
+		custom_minimum_size = Vector2(w, 34.0)
+
+	func _ready() -> void:
+		resized.connect(queue_redraw)
+
+	func _draw() -> void:
+		if size.x < 4.0 or size.y < 4.0:
+			return
+		var r := Rect2(Vector2.ZERO, size)
+		# Parchment plate — hard-cornered carved plank, matching the list-row
+		# and hotbar-tray language (no corner radius = cut wood, not a pill).
+		draw_rect(r, WyrdUi.KIT_PLATE)
+		# Honey bevel — top edge catches the warm overhead light.
+		draw_rect(Rect2(r.position + Vector2(2.0, 2.0),
+			Vector2(r.size.x - 4.0, 2.0)), Color(1.0, 0.98, 0.88, 0.55))
+		# Ink shadow — bottom edge grounds the plank on the parchment.
+		draw_rect(Rect2(r.position + Vector2(2.0, r.size.y - 3.0),
+			Vector2(r.size.x - 4.0, 2.0)), Color(WyrdUi.KIT_EDGE, 0.22))
+		# Sepia grain — every parchment face has it.
+		WyrdUi.draw_parchment_grain(self, r, int(r.size.x) ^ 0x5d3)
+		# Ink border + burnished gold inset line.
+		draw_rect(r, WyrdUi.KIT_EDGE, false, 1.5)
+		draw_rect(r.grow(-3.0), Color(WyrdUi.GOLD, 0.30), false, 1.0)
+		# Small gold diamond sigil on the left edge — the storybook seal that
+		# marks this as a proclamation, not floating text.
+		var pip := Vector2(10.0, r.size.y * 0.5)
+		var s := 3.5
+		draw_colored_polygon(PackedVector2Array([
+			pip + Vector2(0.0, -s), pip + Vector2(s, 0.0),
+			pip + Vector2(0.0, s), pip + Vector2(-s, 0.0),
+		]), Color(WyrdUi.GOLD, 0.80))
+		draw_polyline(PackedVector2Array([
+			pip + Vector2(0.0, -s), pip + Vector2(s, 0.0),
+			pip + Vector2(0.0, s), pip + Vector2(-s, 0.0),
+			pip + Vector2(0.0, -s),
+		]), Color(WyrdUi.INK, 0.55), 1.0)
