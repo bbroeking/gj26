@@ -323,10 +323,15 @@ func _show_bar() -> void:
 	_bar_root = Node3D.new()
 	_bar_root.position = Vector3(0.0, 1.15, 0.0)
 	add_child(_bar_root)
-	var bg := _bar_quad(Vector2(0.7, 0.1), Color(0.10, 0.08, 0.06, 0.85))
+	# Carved-trough look: dark ink frame → warm parchment trough → sage fill.
+	# Scene-tree order drives render order (no_depth_test + alpha), so frame
+	# goes in first (bottom), bg second, fill last (top).
+	var frame := _bar_quad(Vector2(0.76, 0.14), Color(0.20, 0.14, 0.10, 0.92))
+	_bar_root.add_child(frame)
+	var bg := _bar_quad(Vector2(0.70, 0.10), Color(0.90, 0.83, 0.66, 0.92))
 	_bar_root.add_child(bg)
-	_bar_fill = _bar_quad(Vector2(0.66, 0.06), Color(0.78, 0.92, 0.62))
-	_bar_fill.position.z = 0.01     # in front of the bg quad
+	_bar_fill = _bar_quad(Vector2(0.66, 0.06), Color(0.55, 0.78, 0.36))
+	_bar_fill.position.z = 0.005
 	_bar_root.add_child(_bar_fill)
 	_set_bar(0.0)
 
@@ -373,13 +378,16 @@ func _regrow() -> void:
 func _float_text(text: String) -> void:
 	var lbl := Label3D.new()
 	lbl.text = text
+	var hf := WyrdUi.font_header()
+	if hf != null:
+		lbl.font = hf
 	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lbl.no_depth_test = true
-	lbl.font_size = 40
+	lbl.font_size = 44
 	lbl.pixel_size = 0.005
-	lbl.outline_size = 10
+	lbl.outline_size = 12
 	lbl.outline_modulate = Color(0.08, 0.05, 0.06, 1.0)
-	lbl.modulate = Color(0.85, 0.95, 0.7)
+	lbl.modulate = Color(0.93, 0.96, 0.80)
 	lbl.position = Vector3(0.0, 1.0, 0.0)
 	add_child(lbl)
 	var t := create_tween()
