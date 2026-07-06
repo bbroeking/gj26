@@ -378,9 +378,16 @@ func _draw() -> void:
 		if scroll > max_s:
 			_tab_scroll[_tab] = max_s
 			queue_redraw()
-	draw_string(hdr_font, win.position + Vector2(52, 58),
-		"Adventurer's Pack", HORIZONTAL_ALIGNMENT_LEFT, win.size.x - 104, 24,
+	# Pack header — parchment grain in the title band, a leather satchel
+	# emblem left of the title, and a flourish rule above the tab strip.
+	WyrdUi.draw_parchment_grain(self,
+		Rect2(win.position + Vector2(36, 36), Vector2(win.size.x - 72, 74)), 19)
+	_draw_satchel_crest(win.position + Vector2(50, 47))
+	draw_string(hdr_font, win.position + Vector2(72, 58),
+		"Adventurer's Pack", HORIZONTAL_ALIGNMENT_LEFT, win.size.x - 128, 24,
 		WyrdUi.TERRACOTTA)
+	WyrdUi.draw_flourish(self,
+		win.position + Vector2(win.size.x * 0.5, 65.0), win.size.x * 0.56)
 	_draw_tabs(win)
 	if _tab == 0:
 		# Gold readout lives with the paper-doll — Gear tab only, else it
@@ -899,3 +906,39 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 			cardy += CARD_H + CARD_GAP
 		y = cardy + 12.0
 	_tab_content_h[3] = y - view.position.y
+
+
+# Leather satchel bag drawn in the pack header — body, darker flap, squared
+# strap loop, and a gold clasp bead. Sits left of the title to anchor the
+# header with the same crest-language as the other panels.
+func _draw_satchel_crest(center: Vector2) -> void:
+	var h := 20.0
+	var w := h * 0.78
+	# Bag body — warm leather amber
+	var body := Rect2(center + Vector2(-w * 0.5, -h * 0.20),
+		Vector2(w, h * 0.60))
+	draw_rect(body, Color(0.74, 0.57, 0.35))
+	# Top-light bevel — the bag catches the warm page light
+	draw_rect(Rect2(body.position + Vector2(1.5, 1.5),
+		Vector2(body.size.x - 3.0, 1.8)), Color(1.0, 0.96, 0.78, 0.45))
+	# Bottom shade so the bag sits on the parchment
+	draw_rect(Rect2(body.position + Vector2(2.0, body.size.y - 2.5),
+		Vector2(body.size.x - 4.0, 1.5)), Color(WyrdUi.KIT_EDGE, 0.22))
+	# Flap — darker leather, overhangs body top
+	var flap := Rect2(center + Vector2(-w * 0.43, -h * 0.44),
+		Vector2(w * 0.86, h * 0.27))
+	draw_rect(flap, Color(0.60, 0.43, 0.25))
+	draw_rect(flap, WyrdUi.KIT_EDGE, false, 1.0)
+	# Shoulder strap — three lines forming a squared-off loop above the flap
+	draw_line(center + Vector2(-w * 0.26, -h * 0.44),
+		center + Vector2(-w * 0.16, -h * 0.56), Color(0.52, 0.38, 0.23), 2.0)
+	draw_line(center + Vector2(-w * 0.16, -h * 0.56),
+		center + Vector2(w * 0.16, -h * 0.56), Color(0.52, 0.38, 0.23), 2.0)
+	draw_line(center + Vector2(w * 0.16, -h * 0.56),
+		center + Vector2(w * 0.26, -h * 0.44), Color(0.52, 0.38, 0.23), 2.0)
+	# Gold clasp bead at flap midpoint
+	var bc := center + Vector2(0, -h * 0.19)
+	draw_circle(bc, 2.5, WyrdUi.GOLD)
+	draw_arc(bc, 2.5, 0, TAU, 10, WyrdUi.KIT_EDGE, 1.0, false)
+	# Body ink outline
+	draw_rect(body, WyrdUi.KIT_EDGE, false, 1.5)
