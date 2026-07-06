@@ -132,14 +132,44 @@ func _finish() -> void:
 	queue_free()
 
 
-# Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
-# silhouette placeholder until painted portraits exist.
+# Spec 41 — the round portrait well: warm gold medallion ring with compass
+# diamonds, parchment face disc with grain, and a proportioned ink silhouette.
+# Reads as a carved locket rather than a plain placeholder circle.
 class PortraitWell extends Control:
 	func _draw() -> void:
 		var c := size * 0.5
-		var r := minf(c.x, c.y)
-		draw_circle(c, r, Color(0.88, 0.82, 0.67))
-		draw_circle(c + Vector2(0, r * 0.28), r * 0.34, Color(0.55, 0.47, 0.36, 0.55))
-		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
-		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
-		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+		var r := minf(c.x, c.y) - 1.0
+		# Warm gold band (outer medallion frame)
+		draw_arc(c, r - 5.0, 0.0, TAU, 64, Color(0.72, 0.54, 0.20), 10.0, true)
+		# Carved top-left shadow for depth
+		draw_arc(c, r - 5.0, PI * 0.75, PI * 1.65, 24,
+			Color(0.18, 0.12, 0.07, 0.32), 10.0, true)
+		# Outer + inner ink borders of the ring
+		draw_arc(c, r, 0.0, TAU, 56, Color(0.24, 0.17, 0.11), 2.0, true)
+		draw_arc(c, r - 10.0, 0.0, TAU, 56, Color(0.24, 0.17, 0.11), 1.5, true)
+		# Cream parchment face disc
+		var fr := r - 11.0
+		draw_circle(c, fr, Color(0.89, 0.82, 0.66))
+		# Subtle centre highlight
+		draw_circle(c, fr * 0.5, Color(0.95, 0.89, 0.75, 0.22))
+		# Parchment grain
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(c - Vector2(fr, fr), Vector2(fr * 2.0, fr * 2.0)), 42)
+		# Silhouette — proportioned head + cloaked body
+		var sil := Color(0.38, 0.30, 0.23, 0.60)
+		draw_circle(c - Vector2(0.0, fr * 0.20), fr * 0.23, sil)
+		var by := c.y - fr * 0.02
+		draw_rect(Rect2(c.x - fr * 0.34, by, fr * 0.68, fr * 0.54), sil)
+		# Soft ambient shadow inside the disc
+		draw_arc(c, fr * 0.78, PI * 1.08, PI * 1.92, 24,
+			Color(0.0, 0.0, 0.0, 0.06), fr * 0.28, true)
+		# Compass diamonds on the gold ring (N, E, S, W)
+		for i in 4:
+			var a := float(i) * PI * 0.5
+			var np := c + Vector2(cos(a), sin(a)) * (r - 5.0)
+			var pts := PackedVector2Array([
+				np + Vector2(0.0, -4.0), np + Vector2(4.0, 0.0),
+				np + Vector2(0.0, 4.0), np + Vector2(-4.0, 0.0)])
+			draw_colored_polygon(pts, Color(0.93, 0.86, 0.68))
+			draw_polyline(PackedVector2Array([pts[0], pts[1], pts[2],
+				pts[3], pts[0]]), Color(0.24, 0.17, 0.11), 1.0)
