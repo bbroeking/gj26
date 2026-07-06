@@ -76,6 +76,12 @@ func _ready() -> void:
 	_panel.offset_right = 330
 	_panel.offset_bottom = 300
 	add_child(_panel)
+	# Drawn header ornament — behind the title labels (first child = lowest z).
+	var hdr := _LoadoutHeader.new()
+	hdr.anchor_right = 1.0
+	hdr.offset_bottom = 78.0
+	hdr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(hdr)
 	var title := Label.new()
 	title.text = "Loadout"
 	WyrdUi.style_title(title)
@@ -262,3 +268,45 @@ class _SkillCard extends Control:
 		# --- short desc (up to two lines) ---
 		draw_multiline_string(font, Vector2(tx, 40.0), _desc,
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 16.0, 12, 2, dim)
+
+
+# ---- loadout header ornament ----
+# A code-drawn header band sitting behind the title labels. Adds the three
+# storybook touches missing from the plain label header: warm parchment grain,
+# a ◆ flourish rule dividing the header from the card list, and a crossed-
+# arrows crest at the left edge — the archer's emblem for "choose your kit".
+class _LoadoutHeader extends Control:
+	func _draw() -> void:
+		var w := size.x
+		# Warm parchment grain across the full header strip.
+		WyrdUi.draw_parchment_grain(self, Rect2(0.0, 0.0, w, size.y), 17)
+		# ◆ flourish rule at the bottom of the header band — the chapter-heading
+		# divider that separates "who you are" from "what you carry".
+		WyrdUi.draw_flourish(self, Vector2(w * 0.5, size.y - 6.0), w - 112.0)
+		# Crossed-arrows crest tucked at the left edge of the parchment.
+		# Renders behind the title Label; only the portion left of the "L" in
+		# "Loadout" (x < 54) is fully uncovered, giving a "sealed page" read.
+		_draw_crossed_arrows(Vector2(44.0, 45.0))
+
+	func _draw_crossed_arrows(center: Vector2) -> void:
+		# Two arrows crossing at 38° above and below horizontal, both tips
+		# pointing right — the traditional "forward together" archer's crest.
+		for sign_y in [1.0, -1.0]:
+			var a := sign_y * deg_to_rad(38.0)
+			var co := cos(a)
+			var si := sin(a)
+			var tip  := center + Vector2(co,  si) * 14.0
+			var tail := center - Vector2(co,  si) * 14.0
+			draw_line(tail, tip, Color(WyrdUi.KIT_EDGE, 0.62), 1.5)
+			# Terracotta arrowhead at the tip.
+			var perp := Vector2(-si, co)
+			draw_colored_polygon(PackedVector2Array([
+				tip,
+				tip - Vector2(co, si) * 5.0 + perp * 2.5,
+				tip - Vector2(co, si) * 5.0 - perp * 2.5
+			]), Color(WyrdUi.TERRACOTTA, 0.78))
+			# Sage fletching lines at the tail end.
+			draw_line(tail, tail + perp * 4.0, Color(WyrdUi.SAGE, 0.60), 1.5)
+			draw_line(tail, tail - perp * 4.0, Color(WyrdUi.SAGE, 0.60), 1.5)
+		# Gold binding ring where the shafts cross — the seal of the kit.
+		draw_arc(center, 4.5, 0.0, TAU, 16, Color(WyrdUi.GOLD, 0.72), 1.5, true)
