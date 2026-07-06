@@ -37,6 +37,12 @@ func _ready() -> void:
 	_panel.offset_bottom = 230
 	add_child(_panel)
 
+	# Drawn header ornament — renders behind all labels as the first child.
+	var hdr_art := _WaystoneHeaderArt.new()
+	hdr_art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	hdr_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(hdr_art)
+
 	var title := Label.new()
 	title.text = "The Waystone"
 	WyrdUi.style_title(title)
@@ -154,3 +160,29 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# Drawn header ornament: parchment grain over the header band, a runic
+# waystone-eye crest left of the title, and a ── ◆ ── flourish rule at the
+# header/content seam. Pure vector — no textures, no load() inside _draw().
+class _WaystoneHeaderArt extends Control:
+	func _draw() -> void:
+		if size.x < 4.0:
+			return
+		WyrdUi.draw_parchment_grain(self, Rect2(0.0, 0.0, size.x, 92.0), 31)
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 88.0), size.x - 104.0)
+		_draw_crest(Vector2(27.0, 46.0), 26.0)
+
+	func _draw_crest(c: Vector2, r: float) -> void:
+		# Outer stone ring — the waystone's carved seal.
+		draw_arc(c, r, 0.0, TAU, 48, Color(0.50, 0.44, 0.36, 0.78), 3.5, true)
+		# Inner runic ring.
+		draw_arc(c, r * 0.65, 0.0, TAU, 36, Color(0.50, 0.44, 0.36, 0.50), 1.5, true)
+		# Four cardinal arms — the Wayfinding compass motif.
+		for i in 4:
+			var a := float(i) * PI * 0.5
+			draw_line(c, c + Vector2(cos(a), sin(a)) * (r - 3.0),
+				Color(WyrdUi.KIT_EDGE, 0.32), 1.2, true)
+		# Gold center jewel — the portal eye, drawn over the cross arms.
+		draw_circle(c, r * 0.16, Color(WyrdUi.GOLD, 0.82))
+		draw_arc(c, r * 0.16, 0.0, TAU, 16, Color(WyrdUi.KIT_EDGE, 0.60), 1.0, true)
