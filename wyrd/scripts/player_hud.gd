@@ -244,8 +244,10 @@ func _refresh_objective() -> void:
 	_quest_progress.text = prog
 	_quest_progress.visible = prog != ""
 
-# Bottom-right action bar — Pack (I) and Satchel (M) as clickable parchment
-# buttons, so the systems are discoverable without reading the guide.
+# Bottom-right action bar — Gear (I), Satchel (M), Trades (K) as parchment
+# buttons. Each carries the trade-accent color language; the keybind rides a
+# styled parchment chip in the bottom-right corner instead of being embedded
+# in the label text, so the name reads clean and the hint stays legible.
 func _build_action_bar() -> void:
 	var bar := HBoxContainer.new()
 	bar.anchor_left = 1.0
@@ -271,12 +273,28 @@ func _build_action_bar() -> void:
 			accent = WyrdUi.GOLD
 		b.add_theme_color_override("font_color", accent.darkened(0.12))
 		b.add_theme_color_override("font_hover_color", accent)
-		b.text = "%s (%s)" % [spec[0], spec[1]]
+		b.text = String(spec[0])
 		var icon_path := "res://assets/ui/icons/%s.png" % spec[3]
 		if ResourceLoader.exists(icon_path):
 			b.icon = load(icon_path)
 			b.add_theme_constant_override("icon_max_width", 22)
 			b.expand_icon = false
+		# Keybind chip — a small parchment badge pinned to the bottom-right
+		# corner. mouse_filter IGNORE so clicks fall through to the Button.
+		var kbchip := Label.new()
+		WyrdUi.style_chip(kbchip, 11)
+		kbchip.text = String(spec[1])
+		kbchip.anchor_left = 1.0
+		kbchip.anchor_right = 1.0
+		kbchip.anchor_top = 1.0
+		kbchip.anchor_bottom = 1.0
+		kbchip.offset_left = -22
+		kbchip.offset_top = -15
+		kbchip.offset_right = -3
+		kbchip.offset_bottom = -3
+		kbchip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		kbchip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(kbchip)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var method: String = spec[2]
 		b.pressed.connect(func():
