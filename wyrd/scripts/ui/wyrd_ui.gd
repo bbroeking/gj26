@@ -358,6 +358,72 @@ static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
 		body.position + Vector2(2.5, body.size.y - 3.0),
 		Color(1, 1, 1, 0.45), 1.5)
 
+# A hand-drawn lantern crest — glass-paned cage, flame glow, cap + handle arc.
+# Used in the Lantern (system menu) header left margin; call with sz ≈ (38, 52).
+static func draw_lantern_crest(c: CanvasItem, sz: Vector2) -> void:
+	var cx := sz.x * 0.5
+	# -- cage body --
+	var bw := sz.x * 0.56
+	var bh := sz.y * 0.46
+	var bx := cx - bw * 0.5
+	var by := sz.y * 0.30
+	var body := Rect2(bx, by, bw, bh)
+	# soft drop shadow
+	c.draw_rect(Rect2(body.position + Vector2(1.0, 2.0), body.size),
+		Color(0, 0, 0, 0.16))
+	# warm glass-pane fill
+	c.draw_rect(body, Color(0.96, 0.90, 0.72, 0.80))
+	# flame glow halo
+	var fc := Vector2(cx, by + bh * 0.50)
+	c.draw_circle(fc, bw * 0.30, Color(GOLD, 0.25))
+	# flame body — teardrop polygon, tip at the top
+	var fw := bw * 0.17
+	var fh := bh * 0.40
+	var fpts := PackedVector2Array([
+		fc + Vector2(0.0, -fh),
+		fc + Vector2(fw, -fh * 0.28),
+		fc + Vector2(fw * 0.72, fh * 0.30),
+		fc + Vector2(0.0, fh * 0.44),
+		fc + Vector2(-fw * 0.72, fh * 0.30),
+		fc + Vector2(-fw, -fh * 0.28),
+	])
+	c.draw_colored_polygon(fpts, TERRACOTTA)
+	# inner highlight (gold diamond)
+	var ihpts := PackedVector2Array([
+		fc + Vector2(0.0, -fh * 0.72),
+		fc + Vector2(fw * 0.42, -fh * 0.14),
+		fc + Vector2(0.0, fh * 0.06),
+		fc + Vector2(-fw * 0.42, -fh * 0.14),
+	])
+	c.draw_colored_polygon(ihpts, Color(GOLD, 0.82))
+	# cage bars
+	c.draw_rect(body, KIT_EDGE, false, 1.5)
+	c.draw_line(Vector2(cx, by + 2.0), Vector2(cx, by + bh - 2.0),
+		Color(KIT_EDGE, 0.38), 1.0)
+	var sill_y := by + bh * 0.56
+	c.draw_line(Vector2(bx + 2.0, sill_y), Vector2(bx + bw - 2.0, sill_y),
+		Color(KIT_EDGE, 0.38), 1.0)
+	# -- peaked cap (roof) --
+	var cap_pts := PackedVector2Array([
+		Vector2(bx - 1.0, by),
+		Vector2(cx - 2.0, by - sz.y * 0.10),
+		Vector2(cx + 2.0, by - sz.y * 0.10),
+		Vector2(bx + bw + 1.0, by),
+	])
+	c.draw_colored_polygon(cap_pts, KIT_EDGE)
+	c.draw_line(Vector2(cx - 1.5, by - sz.y * 0.085),
+		Vector2(cx + 1.5, by - sz.y * 0.085), Color(GOLD, 0.60), 1.5)
+	# -- handle arc above cap --
+	c.draw_arc(Vector2(cx, by - sz.y * 0.085), bw * 0.30,
+		-PI, 0.0, 16, KIT_EDGE, 1.5, true)
+	# -- finial dot --
+	c.draw_circle(Vector2(cx, by - sz.y * 0.20), 2.0, Color(GOLD, 0.92))
+	# -- base plate --
+	var base := Rect2(bx - 2.0, by + bh, bw + 4.0, sz.y * 0.09)
+	c.draw_rect(base, Color(KIT_EDGE, 0.70))
+	c.draw_rect(Rect2(base.position + Vector2(1.0, 1.0),
+		base.size - Vector2(2.0, 1.5)), Color(1.0, 1.0, 0.88, 0.28))
+
 # A rolled parchment scroll with a wax seal — the chart-in-a-socket read.
 static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 	var face := Rect2(r.position + Vector2(r.size.x * 0.08, r.size.y * 0.12),

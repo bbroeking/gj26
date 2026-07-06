@@ -4,6 +4,19 @@ extends CanvasLayer
 # fire, join a friend's by IP, see who's in the yard, leave. Offline it
 # pauses like every modal; in a session the world keeps breathing.
 
+# -- header ornament --
+
+# Small lantern crest rendered left of the title using the kit draw helper.
+class _LanternCrest extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_lantern_crest(self, size)
+
+# A single-row flourish rule (── ◆ ──) under the title, the same gold diamond
+# separator every other panel header uses now.
+class _FlourRule extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5), size.x * 0.82)
+
 var _game: Node
 var _panel: Panel
 var _status: Label
@@ -34,8 +47,23 @@ func _ready() -> void:
 	var title := Label.new()
 	title.text = "The Lantern"
 	WyrdUi.style_title(title)
-	title.position = Vector2(54, 36)
+	title.position = Vector2(54, 34)
 	_panel.add_child(title)
+	# Lantern crest — sits in the left margin beside the title.
+	var crest := _LanternCrest.new()
+	crest.custom_minimum_size = Vector2(38, 52)
+	crest.size = Vector2(38, 52)
+	crest.position = Vector2(8, 12)
+	_panel.add_child(crest)
+	# Flourish rule below the title — the kit's gold-diamond separator.
+	var rule := _FlourRule.new()
+	rule.anchor_right = 1.0
+	rule.offset_left = 48
+	rule.offset_right = -48
+	rule.offset_top = 70
+	rule.offset_bottom = 82
+	rule.custom_minimum_size = Vector2(0, 12)
+	_panel.add_child(rule)
 	var hint := Label.new()
 	hint.text = "Esc — close"
 	WyrdUi.style_dim(hint)
@@ -48,7 +76,7 @@ func _ready() -> void:
 	col.anchor_right = 1.0
 	col.anchor_bottom = 1.0
 	col.offset_left = 56
-	col.offset_top = 92
+	col.offset_top = 98
 	col.offset_right = -56
 	col.offset_bottom = -48
 	col.add_theme_constant_override("separation", 10)
