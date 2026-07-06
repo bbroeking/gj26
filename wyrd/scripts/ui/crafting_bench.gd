@@ -739,6 +739,8 @@ class BenchView extends Control:
 		var cy := 462.0
 		draw_string(hdr, Vector2(bx, cy), "Codex", HORIZONTAL_ALIGNMENT_LEFT,
 			200, 13, WyrdUi.INK)
+		# Flourish rule consistent with the Bench / Result zone headers.
+		WyrdUi.draw_flourish(self, Vector2(bx + 128.0, cy + 6.0), 240.0)
 		cy += 16.0
 		_codex_rects.clear()
 		for rid in GatherDefs.INK_RECIPE_ORDER:
@@ -763,19 +765,34 @@ class BenchView extends Control:
 				col = TXT
 			elif riddle_open:
 				line = "◌ ??? — %s" % String(rec.get("riddle", ""))
+			# Mini parchment card behind each recipe row — three visual tiers:
+			# known = cream plate with a soft sage wash (recipe learned),
+			# riddle-open = medium warm cream (hint available),
+			# pure mystery = dim cream (blank, unearned).
+			var card := Rect2(Vector2(bx - 4.0, cy + 1.0), Vector2(338.0, 13.0))
+			var bg: Color = PLATE if known \
+				else (Color(0.87, 0.81, 0.68) if riddle_open \
+				else Color(0.79, 0.74, 0.62))
+			draw_rect(card, bg)
+			# Top light bevel — the card catches the page's warm light.
+			draw_rect(Rect2(card.position + Vector2(1.0, 1.0),
+				Vector2(card.size.x - 2.0, 1.5)), Color(1.0, 1.0, 0.93, 0.35))
+			# Sage wash on discovered recipes marks the earned state.
+			if known:
+				draw_rect(card.grow(-1.0), Color(WyrdUi.SAGE, 0.07))
+			draw_rect(card, Color(EDGE, 0.30 if known else 0.15), false, 1.0)
 			if known:
 				# Spec 44 — a tiny bottle in the ink's color marks the find.
-				WyrdUi.draw_ink_bottle(self, Vector2(bx + 6.0, cy + 7.0), 13.0,
+				WyrdUi.draw_ink_bottle(self, Vector2(bx + 6.0, cy + 8.0), 12.0,
 					INK_TINT.get(String(rid), Color(0.4, 0.4, 0.4)))
-				draw_string(font, Vector2(bx + 16.0, cy + 11.0), line,
+				draw_string(font, Vector2(bx + 16.0, cy + 12.0), line,
 					HORIZONTAL_ALIGNMENT_LEFT, 314, 11, col)
 				# Spec 45-carto — Practiced Measures: a known row is a button.
-				_codex_rects.append({"rect": Rect2(Vector2(bx, cy),
-					Vector2(330.0, 15.0)), "id": String(rid)})
+				_codex_rects.append({"rect": card, "id": String(rid)})
 			else:
-				draw_string(font, Vector2(bx, cy + 11.0), line,
-					HORIZONTAL_ALIGNMENT_LEFT, 330, 11, col)
-			cy += 15.0
+				draw_string(font, Vector2(bx + 6.0, cy + 12.0), line,
+					HORIZONTAL_ALIGNMENT_LEFT, 326, 11, col)
+			cy += 16.0
 
 	func _draw_result(hdr: Font, font: Font) -> void:
 		var rx := 660.0
