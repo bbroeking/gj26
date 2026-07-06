@@ -34,16 +34,25 @@ func _ready() -> void:
 	_panel.offset_right = 330
 	_panel.offset_bottom = 160
 	add_child(_panel)
-	# Title.
+	WyrdUi.style_panel(_panel)
+	# Title — IM Fell SC in terracotta, matching every other panel header.
 	var title := Label.new()
 	title.text = "An Old Altar Stirs"
-	title.add_theme_font_size_override("font_size", 28)
 	title.anchor_left = 0.0
 	title.anchor_right = 1.0
 	title.offset_top = 16
 	title.offset_bottom = 56
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	WyrdUi.style_title(title)
 	_panel.add_child(title)
+	# ── ◆ ── rule under the title — the same beat used in every panel.
+	var rule := _AltarRule.new()
+	rule.anchor_left = 0.0
+	rule.anchor_right = 1.0
+	rule.offset_top = 56
+	rule.offset_bottom = 68
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(rule)
 	# HBox for the 3 buff cards.
 	_hbox = HBoxContainer.new()
 	_hbox.add_theme_constant_override("separation", 20)
@@ -51,7 +60,7 @@ func _ready() -> void:
 	_hbox.anchor_left = 0.0
 	_hbox.anchor_right = 1.0
 	_hbox.anchor_bottom = 1.0
-	_hbox.offset_top = 70
+	_hbox.offset_top = 74
 	_hbox.offset_bottom = -20
 	_hbox.offset_left = 16
 	_hbox.offset_right = -16
@@ -64,8 +73,10 @@ func setup(buffs: Array) -> void:
 		c.queue_free()
 	for b in _buffs:
 		var btn := Button.new()
+		WyrdUi.style_button(btn)
 		btn.custom_minimum_size = Vector2(180, 200)
 		btn.text = String(b.name) + "\n\n" + String(b.desc)
+		btn.add_theme_font_size_override("font_size", 14)
 		btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		btn.pressed.connect(_on_pressed.bind(b))
 		_hbox.add_child(btn)
@@ -75,3 +86,10 @@ func _on_pressed(buff: Dictionary) -> void:
 	get_node("/root/Game").modal_closed()
 	chosen.emit(buff)
 	queue_free()
+
+
+# ── ◆ ── flourish rule drawn under the altar title.
+class _AltarRule extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5),
+			size.x * 0.55)
