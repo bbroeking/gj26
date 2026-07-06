@@ -39,6 +39,13 @@ func _ready() -> void:
 	_panel.offset_top = 70
 	_panel.offset_bottom = -70
 	add_child(_panel)
+	# Speaker ribbon (ui/artistic-dialog-ribbon) — terracotta banner pinned to
+	# the frame edge so the speaker's name reads as a titled card, not a label.
+	var ribbon := _SpeakerRibbon.new()
+	ribbon.position = Vector2(28.0, 22.0)
+	ribbon.custom_minimum_size = Vector2(400.0, 36.0)
+	ribbon.size = Vector2(400.0, 36.0)
+	_panel.add_child(ribbon)
 	# Portrait well (spec 41) — ghosted silhouette until painted portraits.
 	var well := PortraitWell.new()
 	well.position = Vector2(48, 104)
@@ -49,12 +56,22 @@ func _ready() -> void:
 	if hf != null:
 		_name_lbl.add_theme_font_override("font", hf)
 	_name_lbl.add_theme_font_size_override("font_size", 24)
-	_name_lbl.add_theme_color_override("font_color", WyrdUi.TERRACOTTA)
+	# Cream text reads on the terracotta ribbon behind it.
+	_name_lbl.add_theme_color_override("font_color", Color(0.97, 0.91, 0.79))
 	_name_lbl.anchor_right = 1.0
-	_name_lbl.offset_left = 56
+	_name_lbl.offset_left = 44
 	_name_lbl.offset_right = -56
-	_name_lbl.offset_top = 38
+	_name_lbl.offset_top = 30
 	_panel.add_child(_name_lbl)
+	# Header divider below the ribbon — a botanical flourish separating the
+	# speaker zone from the dialog body (makes the layout read as two regions).
+	var divider := _HeaderDivider.new()
+	divider.anchor_right = 1.0
+	divider.offset_left = WyrdUi.PANEL_MARGIN_L
+	divider.offset_right = -WyrdUi.PANEL_MARGIN_R
+	divider.offset_top = 64.0
+	divider.offset_bottom = 80.0
+	_panel.add_child(divider)
 	_body = Label.new()
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.anchor_right = 1.0
@@ -132,14 +149,35 @@ func _finish() -> void:
 	queue_free()
 
 
-# Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
-# silhouette placeholder until painted portraits exist.
+# Spec 41 — the round portrait well: parchment disc, double ink ring with a
+# burnished gold band between them, ghosted silhouette placeholder until
+# painted portraits exist.
 class PortraitWell extends Control:
 	func _draw() -> void:
 		var c := size * 0.5
 		var r := minf(c.x, c.y)
+		# Parchment face.
 		draw_circle(c, r, Color(0.88, 0.82, 0.67))
+		# Ghost silhouette — torso + head.
 		draw_circle(c + Vector2(0, r * 0.28), r * 0.34, Color(0.55, 0.47, 0.36, 0.55))
 		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
-		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
-		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+		# Inner ink ring (secondary, softer).
+		draw_arc(c, r - 6.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.30), 1.0, true)
+		# Gold band between the two ink rings.
+		draw_arc(c, r - 3.5, 0, TAU, 48, Color(WyrdUi.GOLD, 0.55), 1.8, true)
+		# Outer ink ring (primary, bold).
+		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 3.0, true)
+
+
+# A terracotta ribbon pinned to the wooden frame edge — draws the speaker name
+# banner via WyrdUi.draw_speaker_ribbon across the full declared size.
+class _SpeakerRibbon extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_speaker_ribbon(self, Rect2(Vector2.ZERO, size))
+
+
+# A botanical flourish divider under the ribbon, separating the speaker-name
+# zone from the dialog body. Draws a ── ◆ ── centred on the control.
+class _HeaderDivider extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5), size.x * 0.55)
