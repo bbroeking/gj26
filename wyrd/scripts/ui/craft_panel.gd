@@ -118,18 +118,13 @@ func _render() -> void:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
 
-		# Spec 44 — a painted icon chip in front of every recipe row.
-		var chip := Label.new()
-		chip.text = _recipe_glyph(rec)
-		chip.custom_minimum_size = Vector2(36, 36)
-		chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		chip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		chip.add_theme_font_size_override("font_size", 17)
-		chip.add_theme_color_override("font_color",
-			WyrdUi.INK if not locked else WyrdUi.INK_MID)
-		chip.add_theme_stylebox_override("normal",
-			WyrdUi.chip_stylebox(_recipe_tint(rec, locked)))
-		row.add_child(chip)
+		# Carved icon well — replaces the flat chip_stylebox Label so every
+		# recipe icon reads as sunk INTO the panel face rather than painted on.
+		# The tint carries the material-group signal; draw_well adds the inner
+		# shadow depth and light lip that sell the carved-wood language.
+		var icon := _RecipeIcon.new()
+		icon.setup(_recipe_glyph(rec), _recipe_tint(rec, locked), locked)
+		row.add_child(icon)
 
 		var info := VBoxContainer.new()
 		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -212,3 +207,34 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# Carved icon well for each recipe row.
+# WyrdUi.draw_well gives the recessed inset depth — inner shadow top-left,
+# light lip bottom-right — so the icon reads as carved into the panel face.
+# The caller's tint colour carries the material-group signal (sage-green for
+# herbs, warm earth for ore, pale cream for refined items).
+class _RecipeIcon extends Control:
+	var _glyph := ""
+	var _tint: Color = WyrdUi.KIT_WELL
+	var _locked := false
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(38, 38)
+		mouse_filter = Control.MOUSE_FILTER_PASS
+		size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+	func setup(glyph: String, tint: Color, locked: bool) -> void:
+		_glyph = glyph
+		_tint = tint
+		_locked = locked
+		queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2(2, 2), size - Vector2(4, 4))
+		WyrdUi.draw_well(self, r,
+			_tint if not _locked else Color(0.84, 0.79, 0.67))
+		var font := get_theme_default_font()
+		draw_string(font, Vector2(0.0, size.y * 0.5 + 6.0), _glyph,
+			HORIZONTAL_ALIGNMENT_CENTER, size.x, 15,
+			WyrdUi.INK if not _locked else WyrdUi.INK_MID)
