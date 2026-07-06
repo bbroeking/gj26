@@ -62,6 +62,15 @@ func _ready() -> void:
 	_panel.offset_bottom = 260
 	add_child(_panel)
 
+	# Forge-mark header art — amber anvil crest left of the title and a flourish
+	# rule at the header/content seam. Added before the title labels so the
+	# ornament renders behind the text (panel children draw in order).
+	var hdr_art := _VendorHeaderArt.new()
+	hdr_art.anchor_right = 1.0
+	hdr_art.offset_bottom = 90.0
+	hdr_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(hdr_art)
+
 	var title := Label.new()
 	title.text = "Hod's Counter"
 	WyrdUi.style_title(title)
@@ -286,3 +295,29 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# Vendor panel header ornament — drawn behind the title labels.
+# An amber forge-mark disc (Hod is the town smith) fills the dead space left
+# of "Hod's Counter"; a flourish rule marks the header/content seam.
+# Ornament on headers only — body text stays plain (design rule).
+class _VendorHeaderArt extends Control:
+	func _draw() -> void:
+		if size.x < 2.0 or size.y < 2.0:
+			return
+		# Amber forge-mark disc in the 54px gap left of the title.
+		var dc := Vector2(29.0, 31.0)
+		draw_circle(dc, 23.0, Color(0.68, 0.48, 0.18))
+		draw_arc(dc, 23.0, 0, TAU, 44, WyrdUi.KIT_EDGE, 2.5, true)
+		draw_arc(dc, 17.5, 0, TAU, 44, Color(0.97, 0.93, 0.82, 0.35), 1.2, true)
+		# Stylised anvil inside the disc: horn bar across the top, working
+		# face beneath, and a wide base foot — a recognisable smith mark.
+		draw_rect(Rect2(dc + Vector2(-12.0, -9.5), Vector2(24.0, 5.5)),
+			Color(0.96, 0.92, 0.85))
+		draw_rect(Rect2(dc + Vector2(-7.0, -4.0), Vector2(14.0, 10.0)),
+			Color(0.96, 0.92, 0.85))
+		draw_rect(Rect2(dc + Vector2(-9.0, 6.0), Vector2(18.0, 4.5)),
+			Color(0.86, 0.80, 0.71))
+		# Flourish rule spanning the panel at the header/content seam.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y - 5.0),
+			size.x - 120.0)
