@@ -422,6 +422,41 @@ class GlobeGauge extends Control:
 			var a := PI * 0.25 + float(i) * PI * 0.5
 			var np := c + Vector2(cos(a), sin(a)) * (R + 8.0)
 			WyrdUi.draw_round_well(self, np, 8.0, Color(0.93, 0.88, 0.74))
+		# Bramble ornament — the ring's carved face becomes a storybook bramble
+		# nest (ref: docs/ui-refs/mj_hud_bramble.png). Sparse overlapping twig
+		# arcs at jittered radii give the wood a wrapped/woven texture; a pair
+		# of ivy-leaf teardrops + a berry knot dress each of the four wells.
+		# Pure vector, seeded so geometry holds still between redraws.
+		var _rng := RandomNumberGenerator.new()
+		_rng.seed = 171
+		for _i in 5:
+			var sa := _rng.randf() * TAU
+			var sp := 0.30 + _rng.randf() * 0.55
+			var rt := R + 3.5 + _rng.randf() * 9.0
+			draw_arc(c, rt, sa, sa + sp, 10,
+				Color(WyrdUi.KIT_EDGE, 0.13 + _rng.randf() * 0.09), 1.2, true)
+		for i in 4:
+			var a := PI * 0.25 + float(i) * PI * 0.5
+			var kc := c + Vector2(cos(a), sin(a)) * (R + 8.0)
+			# Two ivy leaves splay outward from the knot — teardrop polygons
+			# pointing radially, bracketing the well at ±17°.
+			for li in 2:
+				var la := a + (0.30 if li == 0 else -0.30)
+				var dv := Vector2(cos(la), sin(la))
+				var pv := dv.rotated(PI * 0.5)
+				var tip := kc + dv * 7.5
+				var base := kc - dv * 2.0
+				var lpts := PackedVector2Array()
+				for si in 5:
+					var t := float(si) / 4.0
+					lpts.append(lerp(base, tip, t) + pv * sin(t * PI) * 2.0)
+				for si in range(3, -1, -1):
+					var t := float(si) / 4.0
+					lpts.append(lerp(base, tip, t) - pv * sin(t * PI) * 2.0)
+				draw_colored_polygon(lpts, Color(WyrdUi.SAGE, 0.62))
+			# Berry dot at the knot centre — the bramble fruit.
+			draw_circle(kc, 2.8, Color(0.66, 0.21, 0.17, 0.80))
+			draw_circle(kc, 1.5, Color(0.84, 0.38, 0.30, 0.65))
 		# --- glass orb ---
 		draw_circle(c, R, Color(0.12, 0.10, 0.09))
 		if frac > 0.003:
