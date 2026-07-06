@@ -528,8 +528,8 @@ func _draw_tooltip() -> void:
 		return
 	var lines: Array = _tooltip_lines(item)
 	var line_h := 18
-	var ipad := 8
-	var w := 280.0
+	var ipad := 10
+	var w := 292.0
 	var h: float = ipad * 2 + lines.size() * line_h
 	var pos := _cursor_screen + Vector2(16, 16)
 	var screen := get_viewport_rect().size
@@ -541,14 +541,39 @@ func _draw_tooltip() -> void:
 		pos.x = 0
 	if pos.y < 0:
 		pos.y = 0
-	draw_rect(Rect2(pos, Vector2(w, h)), Color(0.93, 0.88, 0.76, 0.97))
-	draw_rect(Rect2(pos, Vector2(w, h)),
-		Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+	var box := Rect2(pos, Vector2(w, h))
+	var rc: Color = RARITY_COLOR.get(String(item.rarity),
+		Color(0.48, 0.40, 0.30))
+	# Parchment face.
+	draw_rect(box, Color(0.93, 0.88, 0.76, 0.97))
+	# Left rarity ribbon — 4 px strip in the item's rarity hue. Identifies
+	# the item's tier at a glance without competing with the body text.
+	draw_rect(Rect2(pos, Vector2(4.0, h)), Color(rc, 0.80))
+	# Honey bevel (top light) + ink shadow (bottom) — the carved-plank language.
+	draw_rect(Rect2(pos + Vector2(4.0, 0.0), Vector2(w - 4.0, 2.0)),
+		Color(1.0, 0.97, 0.88, 0.42))
+	draw_rect(Rect2(pos + Vector2(4.0, h - 2.0), Vector2(w - 4.0, 2.0)),
+		Color(WyrdUi.KIT_EDGE, 0.20))
+	# Parchment grain over the face (seeded constant — no per-frame drift).
+	WyrdUi.draw_parchment_grain(self, box.grow(-2.0), 41)
+	# Ink border.
+	draw_rect(box, Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+	var hdr := WyrdUi.font_header()
 	var font := get_theme_default_font()
+	var lx := pos.x + 12.0
+	var tw := w - 20.0
 	var y := pos.y + ipad + 14
-	for line in lines:
-		draw_string(font, Vector2(pos.x + ipad, y), String(line.text),
-			HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2, int(line.size), line.color)
+	for i in lines.size():
+		var line: Dictionary = lines[i]
+		# IM Fell SC for the item name — same typeface as panel titles.
+		var f: Font = (hdr if hdr != null else font) if i == 0 else font
+		draw_string(f, Vector2(lx, y), String(line.text),
+			HORIZONTAL_ALIGNMENT_LEFT, tw, int(line.size), line.color)
+		# Hairline divider between the name/rarity header and the stat block.
+		if i == 1:
+			draw_line(Vector2(lx, y + line_h / 2),
+				Vector2(pos.x + w - 8.0, y + line_h / 2),
+				Color(0.42, 0.34, 0.25, 0.28), 1.0)
 		y += line_h
 
 func _draw_held() -> void:
