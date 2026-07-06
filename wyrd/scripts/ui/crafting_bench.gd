@@ -801,8 +801,13 @@ class BenchView extends Control:
 		draw_string(font, _result_rect.position + Vector2(0, 72),
 			String(t.get("desc", "")), HORIZONTAL_ALIGNMENT_CENTER,
 			_result_rect.size.x, 11, DIM)
-		# Odds (same math as before: weights + stability).
+		# Affix odds — drawn row cards with a stability pill on the right edge.
+		# Accent: gold = highly stable (≥60%), sage = moderate (≥35%), ink_mid = lower.
 		if bench.affix_slots() > 0:
+			draw_string(hdr, Vector2(rx, y - 4.0), "Odds",
+				HORIZONTAL_ALIGNMENT_LEFT, 60, 12, WyrdUi.INK)
+			WyrdUi.draw_flourish(self, Vector2(rx + 108.0, y + 3.0), 214.0)
+			y += 14.0
 			var weights: Dictionary = ChartsData.compute_weights(int(t.tier), bench.inks,
 				bench._carto_lv())
 			var bonus: float = ChartsData.ink_stability_bonus(bench.inks)
@@ -811,38 +816,60 @@ class BenchView extends Control:
 			for id in ids:
 				var stab: int = ChartsData.effective_stability(String(id),
 					bench._carto_lv(), bonus, bench._stab_perk_bonus())
-				draw_string(font, Vector2(rx, y),
-					"%s — %d%% · good %d%%" % [
-						String(ChartsData.AFFIXES[id].name),
-						roundi(weights[id]), stab],
-					HORIZONTAL_ALIGNMENT_LEFT, 220, 13, TXT)
-				_odds_rows.append({"rect": Rect2(Vector2(rx, y - 14), Vector2(220, 18)),
-					"id": String(id)})
-				y += 19.0
+				var acc: Color = WyrdUi.GOLD if stab >= 60 else \
+					(WyrdUi.SAGE if stab >= 35 else WyrdUi.INK_MID)
+				var row_r := Rect2(Vector2(rx, y), Vector2(216.0, 22.0))
+				WyrdUi.draw_list_row(self, row_r, acc)
+				draw_string(font, Vector2(rx + 8.0, y + 15.0),
+					"%s — %d%%" % [String(ChartsData.AFFIXES[id].name),
+						roundi(weights[id])],
+					HORIZONTAL_ALIGNMENT_LEFT, 136, 12, TXT)
+				# Stability pill — coloured capsule showing good-twin probability.
+				var pill := Rect2(Vector2(rx + 154.0, y + 3.0), Vector2(58.0, 16.0))
+				draw_rect(pill, Color(acc, 0.20))
+				draw_rect(pill, Color(acc, 0.55), false, 1.0)
+				draw_string(font, Vector2(pill.position.x, pill.position.y + 11.0),
+					"good %d%%" % stab,
+					HORIZONTAL_ALIGNMENT_CENTER, pill.size.x, 10, acc.darkened(0.25))
+				_odds_rows.append({"rect": row_r, "id": String(id)})
+				y += 24.0
 			if bench.trophy != "":
 				var den: Dictionary = ChartsData.AFFIXES[
 					ChartsData.TROPHY_TO_AFFIX[bench.trophy]]
-				draw_string(font, Vector2(rx, y),
+				var row_r := Rect2(Vector2(rx, y), Vector2(216.0, 22.0))
+				WyrdUi.draw_list_row(self, row_r, WyrdUi.GOLD)
+				draw_string(font, Vector2(rx + 8.0, y + 15.0),
 					"★ %s — certain" % String(den.name),
-					HORIZONTAL_ALIGNMENT_LEFT, 220, 12, WyrdUi.GOLD.darkened(0.15))
-				y += 19.0
+					HORIZONTAL_ALIGNMENT_LEFT, 200, 12, WyrdUi.GOLD.darkened(0.15))
+				y += 24.0
 		else:
 			draw_string(font, Vector2(rx, y), "A clean run — no affixes.",
 				HORIZONTAL_ALIGNMENT_LEFT, 220, 13, DIM)
 			y += 19.0
-		# Cost + craft button.
+		# Cost section — drawn row cards, sage accent when affordable, terracotta when short.
 		var cost: Dictionary = ChartsData.craft_cost(bench.base_id,
 			bench.inks, bench.trophy, bench._hedge_discount())
-		y += 6.0
+		y += 8.0
+		draw_string(hdr, Vector2(rx, y - 4.0), "Cost",
+			HORIZONTAL_ALIGNMENT_LEFT, 60, 12, WyrdUi.INK)
+		WyrdUi.draw_flourish(self, Vector2(rx + 108.0, y + 3.0), 214.0)
+		y += 14.0
 		for id in cost:
 			var have: int = 0 if bench._game == null \
 				else bench._game.material_count(String(id))
 			var enough: bool = have >= int(cost[id])
-			draw_string(font, Vector2(rx, y), "%d× %s  (have %d)" % [
-				int(cost[id]), GatherDefs.material_name(String(id)), have],
-				HORIZONTAL_ALIGNMENT_LEFT, 220, 13,
+			var row_r := Rect2(Vector2(rx, y), Vector2(216.0, 22.0))
+			WyrdUi.draw_list_row(self, row_r,
+				WyrdUi.SAGE if enough else WyrdUi.TERRACOTTA)
+			draw_string(font, Vector2(rx + 8.0, y + 15.0),
+				"%d× %s" % [int(cost[id]), GatherDefs.material_name(String(id))],
+				HORIZONTAL_ALIGNMENT_LEFT, 138, 12,
 				TXT if enough else WyrdUi.TERRACOTTA)
-			y += 18.0
+			draw_string(font, Vector2(rx + 156.0, y + 15.0),
+				"have %d" % have,
+				HORIZONTAL_ALIGNMENT_RIGHT, 58, 11,
+				WyrdUi.SAGE.darkened(0.15) if enough else WyrdUi.TERRACOTTA)
+			y += 24.0
 		_craft_rect = Rect2(Vector2(rx, size.y - 92), Vector2(216, 40))
 		var can: bool = bench._game != null and bench._game.can_afford(cost)
 		WyrdUi.draw_carved_button(self, _craft_rect, can)
