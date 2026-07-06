@@ -41,14 +41,29 @@ class CursorMark extends Control:
 		var rad := 7.5 + recoil * 5.0
 		# Soft glow (blooms on fire).
 		draw_circle(m, rad + 5.0, Color(WyrdUi.GOLD, 0.10 + recoil * 0.22))
-		# Ink ring + cream inner lip.
-		draw_arc(m, rad, 0.0, TAU, 28, ring_c, 2.2, true)
-		draw_arc(m, rad - 2.0, 0.0, TAU, 24, Color(WyrdUi.CREAM, 0.7), 1.0, true)
-		# Four short ticks (NE/NW/SE/SW so they never read as a crosshair).
+		# Organic ink ring + cream inner lip — wobbly polylines so the cursor reads
+		# as a hand-stamped wayfinder's mark rather than a geometric engine circle.
+		var n_ring := 34
+		var ring_pts := PackedVector2Array()
+		var lip_pts := PackedVector2Array()
+		for i in n_ring + 1:
+			var a := TAU * float(i) / float(n_ring)
+			var dr := sin(a * 3.0) * 0.55 + cos(a * 5.0) * 0.35
+			ring_pts.append(m + Vector2(cos(a), sin(a)) * (rad + dr))
+			lip_pts.append(m + Vector2(cos(a), sin(a)) * (rad - 2.0 + dr))
+		draw_polyline(ring_pts, ring_c, 2.2, true)
+		draw_polyline(lip_pts, Color(WyrdUi.CREAM, 0.7), 1.0, true)
+		# Four diagonal ticks (NE/NW/SE/SW — not a crosshair) each tipped with a
+		# tiny ivy-leaf bud: a filled teardrop that reads as botanical, not targety.
 		for i in 4:
 			var a := PI * 0.25 + float(i) * PI * 0.5
 			var d := Vector2(cos(a), sin(a))
-			draw_line(m + d * (rad + 1.0), m + d * (rad + 4.0), ring_c, 1.6)
+			var perp := Vector2(-d.y, d.x)
+			draw_line(m + d * (rad + 1.5), m + d * (rad + 4.5), ring_c, 1.6, true)
+			var bud_tip := m + d * (rad + 8.0)
+			var bud_base := m + d * (rad + 4.5)
+			draw_colored_polygon(PackedVector2Array([
+				bud_base - perp * 2.2, bud_tip, bud_base + perp * 2.2]), ring_c)
 		# Burnished center pip — a tiny gold diamond.
 		var s := 2.6 + recoil * 1.6
 		draw_colored_polygon(PackedVector2Array([
