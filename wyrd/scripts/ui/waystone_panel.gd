@@ -12,7 +12,7 @@ var _game: Node
 var _selected := -1
 var _panel: Panel
 var _list_box: VBoxContainer
-var _detail: Label
+var _detail: Control
 var _go_btn: Button
 
 func _ready() -> void:
@@ -66,15 +66,13 @@ func _ready() -> void:
 	_list_box.add_theme_constant_override("separation", 6)
 	scroll.add_child(_list_box)
 
-	_detail = Label.new()
-	WyrdUi.style_body(_detail, 13)
-	_detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_detail = ChartDetailView.new()
 	_detail.anchor_right = 1.0
 	_detail.anchor_top = 1.0
 	_detail.anchor_bottom = 1.0
 	_detail.offset_left = 52
 	_detail.offset_right = -52
-	_detail.offset_top = -150
+	_detail.offset_top = -162
 	_detail.offset_bottom = -64
 	_panel.add_child(_detail)
 
@@ -130,21 +128,23 @@ func _render() -> void:
 	# Detail + button state.
 	if _selected >= 0 and _selected < n:
 		var chart: Dictionary = _game.charts[_selected]
-		var lines: Array = []
+		var affix_data: Array = []
 		for a in chart.get("affixes", []):
 			var aff: Dictionary = ChartsData.AFFIXES.get(String(a.get("id", "")), {})
 			if aff.is_empty():
 				continue
-			if bool(a.get("good", false)):
-				lines.append("✓ %s — %s" % [String(aff.name), String(aff.good_desc)])
-			else:
-				lines.append("✗ %s — %s" % [String(aff.bad_name), String(aff.bad_desc)])
-		if lines.is_empty():
-			lines.append("A clean chart. Nothing inked in but the way there and back.")
-		_detail.text = "\n".join(lines)
+			var is_good := bool(a.get("good", false))
+			affix_data.append({
+				"name": String(aff.name) if is_good else String(aff.bad_name),
+				"desc": String(aff.good_desc) if is_good else String(aff.bad_desc),
+				"good": is_good,
+			})
+		if affix_data.is_empty():
+			affix_data.append({"clean": true})
+		(_detail as ChartDetailView).set_affixes(affix_data)
 		_go_btn.disabled = false
 	else:
-		_detail.text = ""
+		(_detail as ChartDetailView).set_affixes([])
 		_go_btn.disabled = true
 
 func _on_go() -> void:
@@ -154,3 +154,48 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# Drawn affix cards for the chart detail section. Each affix becomes a
+# draw_list_row card with a SAGE stripe for a boon or TERRACOTTA for a bane,
+# so polarity reads at a glance without relying on ✓/✗ glyphs alone.
+class ChartDetailView extends Control:
+	var _affixes: Array = []
+
+	func set_affixes(data: Array) -> void:
+		_affixes = data
+		queue_redraw()
+
+	func _draw() -> void:
+		if _affixes.is_empty():
+			return
+		var font := WyrdUi.font_body()
+		if font == null:
+			font = get_theme_default_font()
+		var hdr := WyrdUi.font_header()
+		if hdr == null:
+			hdr = font
+		const ROW_H := 22.0
+		const GAP := 3.0
+		var y := 0.0
+		for a in _affixes:
+			var r := Rect2(Vector2(0.0, y), Vector2(size.x, ROW_H))
+			if a.has("clean"):
+				# A clean chart — quiet neutral stripe, dim italic label.
+				WyrdUi.draw_list_row(self, r, WyrdUi.INK_MID)
+				draw_string(font, Vector2(10.0, y + ROW_H - 5.0),
+					"A clean chart — nothing inked in but the way there and back.",
+					HORIZONTAL_ALIGNMENT_LEFT, size.x - 14.0, 12, WyrdUi.INK_MID)
+			else:
+				var is_good: bool = bool(a.get("good", false))
+				var accent: Color = WyrdUi.SAGE if is_good else WyrdUi.TERRACOTTA
+				WyrdUi.draw_list_row(self, r, accent)
+				# Glyph in accent colour so good/bad pops even before reading text.
+				var glyph := "✓ " if is_good else "✗ "
+				draw_string(hdr, Vector2(10.0, y + ROW_H - 5.0), glyph,
+					HORIZONTAL_ALIGNMENT_LEFT, 18.0, 13, accent)
+				draw_string(font,
+					Vector2(24.0, y + ROW_H - 5.0),
+					"%s  —  %s" % [String(a.get("name", "")), String(a.get("desc", ""))],
+					HORIZONTAL_ALIGNMENT_LEFT, size.x - 28.0, 12, WyrdUi.INK)
+			y += ROW_H + GAP
