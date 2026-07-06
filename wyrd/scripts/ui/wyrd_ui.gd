@@ -383,3 +383,54 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# A terracotta ribbon banner for dialog speaker names: a rectangular body with a
+# right-end V-notch (the "ribbon" silhouette), a warm face highlight, a gold inset
+# trim line, and a narrow fold shadow on the left so it reads as a strip peeled
+# from the wooden frame edge. The speaker's name Label renders on top; callers
+# position the Rect2 to overlap the frame edge by ~6px for the "pinned" look.
+static func draw_speaker_ribbon(c: CanvasItem, r: Rect2) -> void:
+	var notch := r.size.y * 0.44
+	var col   := TERRACOTTA.darkened(0.10)
+	var shade := TERRACOTTA.darkened(0.32)
+	var lit   := TERRACOTTA.lightened(0.22)
+	var pts := PackedVector2Array([
+		r.position,
+		Vector2(r.end.x - notch, r.position.y),
+		Vector2(r.end.x, r.position.y + r.size.y * 0.5),
+		Vector2(r.end.x - notch, r.end.y),
+		Vector2(r.position.x, r.end.y),
+	])
+	c.draw_colored_polygon(pts, col)
+	# Warm face highlight along the top edge.
+	c.draw_line(pts[0] + Vector2(1.0, 2.0), pts[1] + Vector2(-1.0, 2.0),
+		Color(lit, 0.58), 1.5)
+	# Cool shade along the bottom edge.
+	c.draw_line(pts[4] + Vector2(1.0, -2.0), pts[3] + Vector2(-1.0, -2.0),
+		Color(shade, 0.55), 1.5)
+	# Ink outline.
+	c.draw_polyline(PackedVector2Array([pts[0], pts[1], pts[2], pts[3], pts[4], pts[0]]),
+		KIT_EDGE, 1.5, true)
+	# Gold inset trim (the "burnished ribbon" read).
+	var ins := 4.0
+	var inner := PackedVector2Array([
+		pts[0] + Vector2(ins, ins),
+		pts[1] + Vector2(-ins * 0.5, ins),
+		pts[2] + Vector2(-ins, 0.0),
+		pts[3] + Vector2(-ins * 0.5, -ins),
+		pts[4] + Vector2(ins, -ins),
+	])
+	c.draw_polyline(PackedVector2Array(
+		[inner[0], inner[1], inner[2], inner[3], inner[4], inner[0]]),
+		Color(GOLD, 0.42), 1.0, true)
+	# Left fold shadow: the ribbon folds behind itself at the frame edge.
+	var fw := 6.0
+	var fold := PackedVector2Array([
+		r.position + Vector2(-fw, r.size.y * 0.12),
+		r.position,
+		r.position + Vector2(0.0, r.size.y),
+		r.position + Vector2(-fw, r.size.y * 0.88),
+	])
+	c.draw_colored_polygon(fold, shade)
+	c.draw_line(fold[0], fold[1], Color(KIT_EDGE, 0.65), 1.0)
+	c.draw_line(fold[2], fold[3], Color(KIT_EDGE, 0.65), 1.0)
