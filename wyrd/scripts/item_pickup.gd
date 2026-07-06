@@ -80,18 +80,67 @@ func _build_beacon() -> void:
 
 func _build_label() -> void:
 	var col: Color = RARITY_COLOR.get(String(_item.rarity), Color.WHITE)
+	var rarity := String(_item.rarity)
+	var hf := WyrdUi.font_header()
+	# Parchment plate — ink border behind cream fill, both billboarded.
+	# Added before the label so the painter's algorithm puts text on top.
+	var has_sub := rarity != "normal"
+	var plate_h := 0.36 if has_sub else 0.24
+	var border := _plate_quad(Vector2(1.40, plate_h + 0.04),
+		Color(0.08, 0.04, 0.02, 0.86))
+	border.name = "ItemPlate"
+	border.position = Vector3(0, 1.15, -0.012)
+	add_child(border)
+	var fill := _plate_quad(Vector2(1.33, plate_h),
+		Color(0.93, 0.87, 0.70, 0.78))
+	fill.position = Vector3(0, 1.15, -0.006)
+	add_child(fill)
+	# Item name in IM Fell SC — rarity colour on parchment.
 	var lbl := Label3D.new()
 	lbl.name = "Label"
 	lbl.text = String(_item.name)
 	lbl.modulate = col
 	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lbl.no_depth_test = true
-	lbl.font_size = 64
-	lbl.pixel_size = 0.005
-	lbl.outline_size = 16
-	lbl.outline_modulate = Color(0.08, 0.05, 0.06, 1)
-	lbl.position = Vector3(0, 1.15, 0)
+	lbl.font_size = 56
+	lbl.pixel_size = 0.0048
+	lbl.outline_size = 10
+	lbl.outline_modulate = Color(0.08, 0.05, 0.06, 0.92)
+	if hf != null:
+		lbl.font = hf
+	lbl.position = Vector3(0, 1.22 if has_sub else 1.15, 0)
 	add_child(lbl)
+	# Rarity inscription below the name — magic+ items only.
+	if has_sub:
+		var sub := Label3D.new()
+		sub.name = "RarityLabel"
+		sub.text = rarity.capitalize()
+		sub.modulate = Color(col, 0.72)
+		sub.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		sub.no_depth_test = true
+		sub.font_size = 36
+		sub.pixel_size = 0.0048
+		sub.outline_size = 8
+		sub.outline_modulate = Color(0.08, 0.05, 0.06, 0.80)
+		if hf != null:
+			sub.font = hf
+		sub.position = Vector3(0, 1.04, 0)
+		add_child(sub)
+
+# A billboarded quad for the label's parchment plate backing.
+func _plate_quad(sz: Vector2, color: Color) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	var quad := QuadMesh.new()
+	quad.size = sz
+	mi.mesh = quad
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = color
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	mat.no_depth_test = true
+	mi.material_override = mat
+	return mi
 
 # Spec 32a — full take transaction. Returns true on success, false if the
 # player's inventory is full (pickup stays on the ground) or if we've
@@ -141,8 +190,11 @@ func _play_pickup_vfx() -> void:
 	t.set_parallel(true)
 	var beacon := get_node_or_null("Beacon")
 	var lbl := get_node_or_null("Label")
+	var sub := get_node_or_null("RarityLabel")
 	if beacon != null:
 		t.tween_property(beacon, "scale", Vector3(2.0, 2.0, 2.0), 0.20)
 	if lbl != null:
 		t.tween_property(lbl, "position:y", 1.7, 0.20)
 		t.tween_property(lbl, "modulate:a", 0.0, 0.20)
+	if sub != null:
+		t.tween_property(sub, "modulate:a", 0.0, 0.18)
