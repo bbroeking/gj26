@@ -383,3 +383,51 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# Recurve bow with nocked arrow — the Ranger's loadout crest.
+# Draws a parchment disc of diameter sz centred on `center`. The bow faces
+# right (belly right, string left) with a nocked diagonal arrow and sage
+# fletching. Call from _draw() only; caller must preload nothing.
+static func draw_archer_crest(c: CanvasItem, center: Vector2, sz: float) -> void:
+	var r := sz * 0.5
+	# parchment disc — fill, double ink ring
+	c.draw_circle(center, r, KIT_PLATE)
+	c.draw_arc(center, r, 0.0, TAU, 48, KIT_EDGE, 2.0, true)
+	c.draw_arc(center, r - 3.5, 0.0, TAU, 48, Color(KIT_EDGE, 0.22), 1.0, true)
+	# bow — a right-facing arc (belly curves RIGHT, tips top/bottom, string on the LEFT)
+	# arc centre is offset left so the belly lands inside the disc
+	var arc_c := center + Vector2(-sz * 0.10, 0.0)
+	var bow_r := sz * 0.28
+	var tip_top := arc_c + Vector2(0.0, -bow_r)   # arc at -PI/2 (up)
+	var tip_bot := arc_c + Vector2(0.0, bow_r)    # arc at +PI/2 (down)
+	# warm gold halo — the bow's belly glows like burnished wood
+	c.draw_arc(arc_c, bow_r, -PI * 0.5, PI * 0.5, 24,
+		Color(GOLD, 0.28), sz * 0.09, true)
+	# main limb
+	c.draw_arc(arc_c, bow_r, -PI * 0.5, PI * 0.5, 24,
+		GOLD, sz * 0.052, true)
+	# ink outline so the limb reads against the parchment
+	c.draw_arc(arc_c, bow_r + sz * 0.025, -PI * 0.5, PI * 0.5, 24,
+		Color(KIT_EDGE, 0.35), 1.0, true)
+	# bowstring — taut line from tip to tip
+	c.draw_line(tip_top, tip_bot, Color(KIT_EDGE, 0.60), 1.5, true)
+	# nocking point — tiny gold dot where the arrow rests on the string
+	var nock := Vector2(tip_top.x - sz * 0.02, center.y)
+	c.draw_circle(nock, sz * 0.022, Color(GOLD, 0.90))
+	# arrow — diagonal shaft, lower-left (nock end) to upper-right (head)
+	var head := center + Vector2(sz * 0.20, -sz * 0.18)
+	var tail := center + Vector2(-sz * 0.19, sz * 0.13)
+	c.draw_line(tail, head, KIT_EDGE, sz * 0.020, true)
+	# arrowhead — small filled triangle
+	var dir := (head - tail).normalized()
+	var perp := Vector2(-dir.y, dir.x)
+	c.draw_colored_polygon(PackedVector2Array([
+		head,
+		head - dir * sz * 0.08 + perp * sz * 0.035,
+		head - dir * sz * 0.08 - perp * sz * 0.035,
+	]), KIT_EDGE)
+	# fletching — two sage lines fanning from the tail
+	c.draw_line(tail, tail - dir * sz * 0.065 + perp * sz * 0.048,
+		Color(SAGE, 0.85), 1.5, true)
+	c.draw_line(tail, tail - dir * sz * 0.065 - perp * sz * 0.048,
+		Color(SAGE, 0.85), 1.5, true)
