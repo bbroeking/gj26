@@ -350,6 +350,12 @@ func _draw() -> void:
 	# Warm parchment wash over the frame's pale page so the window never
 	# reads as bare white.
 	draw_rect(win.grow(-26), Color(0.91, 0.85, 0.70, 0.45))
+	# Ivy sprig ornaments at all four frame corners — tucked inside the
+	# carved wooden border, per the design language (no ornament in body).
+	WyrdUi.draw_corner_ivy(self, win.position, 1.0, 1.0)
+	WyrdUi.draw_corner_ivy(self, Vector2(win.end.x, win.position.y), -1.0, 1.0)
+	WyrdUi.draw_corner_ivy(self, Vector2(win.position.x, win.end.y), 1.0, -1.0)
+	WyrdUi.draw_corner_ivy(self, win.end, -1.0, -1.0)
 	var hdr_font: Font = WyrdUi.font_header()
 	if hdr_font == null:
 		hdr_font = get_theme_default_font()
