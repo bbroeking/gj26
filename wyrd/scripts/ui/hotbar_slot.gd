@@ -37,6 +37,9 @@ func _draw() -> void:
 	WyrdUi.draw_carved_button(self, r, castable)
 	WyrdUi.draw_well(self, r.grow(-7.0), WyrdUi.KIT_PLATE.lightened(0.05))
 	WyrdUi.draw_parchment_grain(self, r, _seed)
+	# Ivy corner sprigs — two leaf pairs per corner in the border zone, tying
+	# each slot into the carved-vine frame language used across the kit.
+	WyrdUi.draw_slot_corner_ivy(self, r)
 	# Radial cooldown wedge — a square-clamped pie from 12 o'clock clockwise,
 	# shrinking as the skill cools. Vertices ride the slot's own edge so it
 	# reads as the slot face darkening, with no overshoot into the gaps.
@@ -57,3 +60,12 @@ func _draw() -> void:
 		draw_colored_polygon(pts, Color(0.10, 0.08, 0.07, 0.52))
 	if _flash > 0.0:
 		draw_rect(r.grow(-1.5), Color(WyrdUi.GOLD, _flash * 0.85), false, 3.0)
+		# Corner leaf-burst: four short diagonal strokes radiate outward so the
+		# "skill ready" signal reads as the ivy blooming gold, not a plain box.
+		var blen := 5.5 * _flash
+		var bc := Color(WyrdUi.GOLD, _flash * 0.70)
+		for i in 4:
+			var a := PI * 0.25 + float(i) * PI * 0.5
+			var d := Vector2(cos(a), sin(a))
+			var origin := r.get_center() + d * minf(r.size.x, r.size.y) * 0.46
+			draw_line(origin, origin + d * blen, bc, 2.0)

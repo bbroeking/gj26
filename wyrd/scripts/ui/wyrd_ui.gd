@@ -358,6 +358,36 @@ static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
 		body.position + Vector2(2.5, body.size.y - 3.0),
 		Color(1, 1, 1, 0.45), 1.5)
 
+# Two small leaf pairs at each corner of a carved slot frame — suggests vine
+# growth from the wooden border without touching the icon area. Reuse for any
+# small carved panel that should read as "set into a vine frame."
+# Default col: SAGE at 55% alpha; visible without overwhelming icons.
+static func draw_slot_corner_ivy(c: CanvasItem, r: Rect2,
+		col: Color = Color(0.44, 0.55, 0.25, 0.55)) -> void:
+	var _leaf := func(tip: Vector2, ax: Vector2, ln: float, lw: float) -> void:
+		var perp := Vector2(-ax.y, ax.x)
+		c.draw_colored_polygon(PackedVector2Array([
+			tip,
+			tip - ax * ln * 0.55 + perp * lw,
+			tip - ax * ln,
+			tip - ax * ln * 0.55 - perp * lw
+		]), col)
+	var px := r.position
+	var ex := r.end
+	var d := Vector2(1.0, 1.0).normalized()    # 45° diagonal shared by all corners
+	# top-left — two leaves fanning toward upper-left
+	_leaf.call(px + Vector2(5.0, 2.5),  Vector2(-d.x, -d.y), 7.0, 2.5)
+	_leaf.call(px + Vector2(2.5, 5.0),  Vector2(-d.x, -d.y), 6.0, 2.0)
+	# top-right
+	_leaf.call(Vector2(ex.x - 5.0, px.y + 2.5), Vector2(d.x, -d.y), 7.0, 2.5)
+	_leaf.call(Vector2(ex.x - 2.5, px.y + 5.0), Vector2(d.x, -d.y), 6.0, 2.0)
+	# bottom-left
+	_leaf.call(Vector2(px.x + 5.0, ex.y - 2.5), Vector2(-d.x, d.y), 7.0, 2.5)
+	_leaf.call(Vector2(px.x + 2.5, ex.y - 5.0), Vector2(-d.x, d.y), 6.0, 2.0)
+	# bottom-right
+	_leaf.call(ex - Vector2(5.0, 2.5), Vector2(d.x, d.y), 7.0, 2.5)
+	_leaf.call(ex - Vector2(2.5, 5.0), Vector2(d.x, d.y), 6.0, 2.0)
+
 # A rolled parchment scroll with a wax seal — the chart-in-a-socket read.
 static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 	var face := Rect2(r.position + Vector2(r.size.x * 0.08, r.size.y * 0.12),
