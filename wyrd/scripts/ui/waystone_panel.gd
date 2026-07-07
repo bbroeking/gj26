@@ -115,18 +115,17 @@ func _render() -> void:
 		_list_box.add_child(l)
 	for i in n:
 		var chart: Dictionary = _game.charts[i]
-		var b := Button.new()
-		WyrdUi.style_button(b)
-		WyrdUi.mark_selected(b, i == _selected)
-		b.toggle_mode = true
-		b.button_pressed = i == _selected
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.text = ChartsData.chart_label(chart)
+		var card := _ChartCard.new()
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		card.setup(String(chart.get("name", "Chart")),
+			int(chart.get("tier", 0)),
+			chart.get("affixes", []) as Array,
+			i == _selected)
 		var idx := i
-		b.pressed.connect(func():
+		card.pressed.connect(func():
 			_selected = idx
 			_render())
-		_list_box.add_child(b)
+		_list_box.add_child(card)
 	# Detail + button state.
 	if _selected >= 0 and _selected < n:
 		var chart: Dictionary = _game.charts[_selected]
@@ -154,3 +153,91 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# ---- drawn chart-scroll card (one row in the list) ----
+# Replaces the plain style_button rows. Each card shows a drawn scroll
+# (sealed = has affixes, open = clean run) in a recessed parchment well on the
+# left, the chart name in IM Fell, a tier badge, and a secondary affix-names
+# line. Gold accent stripe + well ring = selected; warm overlay = hover.
+class _ChartCard extends Control:
+	var _name := ""
+	var _tier := 0
+	var _affixes: Array = []
+	var _selected := false
+	var _hover := false
+
+	signal pressed
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 64.0)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
+	func setup(chart_name: String, tier: int, affixes: Array,
+			selected: bool) -> void:
+		_name = chart_name
+		_tier = tier
+		_affixes = affixes
+		_selected = selected
+		queue_redraw()
+
+	func _gui_input(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.pressed \
+				and event.button_index == MOUSE_BUTTON_LEFT:
+			pressed.emit()
+			accept_event()
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_MOUSE_ENTER:
+			_hover = true
+			queue_redraw()
+		elif what == NOTIFICATION_MOUSE_EXIT:
+			_hover = false
+			queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		var accent: Color = WyrdUi.GOLD if _selected else WyrdUi.INK_MID
+		WyrdUi.draw_list_row(self, r, accent)
+		if _selected:
+			# Warm parchment wash so the chosen chart reads as "in hand"
+			draw_rect(r.grow(-1.5), Color(WyrdUi.GOLD, 0.07))
+		elif _hover:
+			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.10))
+		var font := get_theme_default_font()
+		var hdr := WyrdUi.font_header()
+		if hdr == null:
+			hdr = font
+		# Drawn scroll in a recessed parchment well — sealed when it has affixes
+		const WELL_SZ := 46.0
+		var wr := Rect2(Vector2(10.0, (size.y - WELL_SZ) * 0.5),
+			Vector2(WELL_SZ, WELL_SZ))
+		WyrdUi.draw_well(self, wr, Color(0.95, 0.91, 0.80))
+		WyrdUi.draw_scroll(self, wr.grow(-4.0), _affixes.size() > 0)
+		if _selected:
+			draw_rect(wr, Color(WyrdUi.GOLD, 0.75), false, 2.0)
+		# Chart name in IM Fell header font
+		var tx := wr.end.x + 12.0
+		draw_string(hdr, Vector2(tx, size.y * 0.46),
+			_name, HORIZONTAL_ALIGNMENT_LEFT,
+			size.x - tx - 72.0, 17, WyrdUi.INK)
+		# Tier badge right-aligned
+		if _tier > 0:
+			draw_string(font, Vector2(size.x - 66.0, size.y * 0.42),
+				"Tier %d" % _tier,
+				HORIZONTAL_ALIGNMENT_RIGHT, 58.0, 12, WyrdUi.INK_MID)
+		# Secondary line: affix names in 11px dim, or "clean run" for slotless
+		var aff_text := ""
+		for aff in _affixes:
+			var aff_data: Dictionary = ChartsData.AFFIXES.get(
+				String(aff.get("id", "")), {})
+			if aff_data.is_empty():
+				continue
+			if aff_text != "":
+				aff_text += " · "
+			aff_text += String(aff_data.name) if bool(aff.get("good", false)) \
+				else String(aff_data.bad_name)
+		if aff_text == "":
+			aff_text = "clean run"
+		draw_string(font, Vector2(tx, size.y * 0.80), aff_text,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 72.0, 11, WyrdUi.INK_MID)
