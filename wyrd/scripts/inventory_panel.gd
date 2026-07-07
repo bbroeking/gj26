@@ -707,15 +707,21 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 		return
 	# Slice C — each material rides a list-row plate: an ink-disc holding its
 	# glyph on the left, name + count on the card, the lore line beneath.
+	# Group-coded accent stripe + disc fill: verdant = sage, earthen = warm
+	# ink, lumen = gold, echo = rust, gristle = dark — so the satchel reads
+	# as a categorised storybook page, not a flat list.
 	for id in game.materials:
 		var def: Dictionary = GatherDefs.MATERIALS.get(String(id), {})
+		var group := String(def.get("group", "earthen"))
+		var accent := _mat_group_accent(group)
+		var disc_fill := _mat_group_disc(group)
 		var row_top := y - 18.0
 		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 30.0))
 		if _span_visible(row_top, row.end.y, scroll, view):
-			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
-			# glyph disc on the left
+			WyrdUi.draw_list_row(self, row, accent)
+			# glyph disc — tinted by the material's group
 			var dc := Vector2(row.position.x + 19.0, row.position.y + 15.0)
-			WyrdUi.draw_round_well(self, dc, 11.0, Color(0.88, 0.81, 0.66))
+			WyrdUi.draw_round_well(self, dc, 11.0, disc_fill)
 			draw_string(font, Vector2(dc.x - 11.0, dc.y + 6.0),
 				String(def.get("icon", "·")), HORIZONTAL_ALIGNMENT_CENTER,
 				22.0, 14, WyrdUi.INK)
@@ -736,6 +742,27 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 			y += dh + 4.0
 		y += 10.0
 	_tab_content_h[1] = y - view.position.y
+
+# Group accent stripe — the 3px left-edge stripe on each satchel row
+# signals material category at a glance. Follows the design language:
+# accent encodes state/category, body stays readable cream.
+func _mat_group_accent(group: String) -> Color:
+	match group:
+		"verdant": return WyrdUi.SAGE             # herbs, logs, potions
+		"lumen":   return WyrdUi.GOLD             # refined inks, philters
+		"echo":    return WyrdUi.TERRACOTTA       # boss-drop essences, fangs
+		"gristle": return Color(0.40, 0.32, 0.24) # monster parts — quiet dark ink
+	return WyrdUi.INK_MID                         # earthen ores + bars
+
+# Matching disc fill — warm parchment tinted by group so the glyph
+# socket echoes the stripe without overpowering the ink text inside.
+func _mat_group_disc(group: String) -> Color:
+	match group:
+		"verdant": return Color(0.79, 0.88, 0.68)  # soft sage wash
+		"lumen":   return Color(0.93, 0.86, 0.60)  # warm gold wash
+		"echo":    return Color(0.90, 0.74, 0.66)  # muted rust
+		"gristle": return Color(0.70, 0.64, 0.56)  # greyed parchment
+	return Color(0.88, 0.81, 0.66)                 # earthen — existing warm cream
 
 func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> void:
 	var game := get_tree().root.get_node_or_null("Game")
