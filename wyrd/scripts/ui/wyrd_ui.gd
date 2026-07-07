@@ -383,3 +383,34 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# Three-leaf ivy sprig at a panel frame corner, nestled in the ~36 px carved
+# wooden border. corner is the corner's pixel position; dir_x/dir_y are ±1
+# pointing inward (top-left = +1,+1; bottom-right = -1,-1).
+static func draw_corner_ivy(c: CanvasItem, corner: Vector2,
+		dir_x: float, dir_y: float) -> void:
+	var lc := Color(SAGE, 0.62)
+	var sc := Color(SAGE.darkened(0.28), 0.70)
+	# stem origin, ~10 px inside the corner along the diagonal
+	var o := corner + Vector2(dir_x * 10.0, dir_y * 10.0)
+	# three tendril end-points fanning out from the stem origin
+	var e1 := o + Vector2(dir_x * 15.0, dir_y * 5.0)
+	var e2 := o + Vector2(dir_x * 5.0, dir_y * 15.0)
+	var e3 := o + Vector2(dir_x * 11.0, dir_y * 11.0)
+	c.draw_line(o, e1, sc, 1.2)
+	c.draw_line(o, e2, sc, 1.2)
+	c.draw_line(o, e3, sc, 1.0)
+	_draw_ivy_leaf(c, e1, Vector2(dir_x, dir_y * 0.33).normalized(), 7.5, lc)
+	_draw_ivy_leaf(c, e2, Vector2(dir_x * 0.33, dir_y).normalized(), 7.5, lc)
+	_draw_ivy_leaf(c, e3, Vector2(dir_x, dir_y).normalized(), 7.0, lc)
+
+static func _draw_ivy_leaf(c: CanvasItem, tip: Vector2, dir: Vector2,
+		size: float, col: Color) -> void:
+	var n := dir.normalized()
+	var perp := Vector2(-n.y, n.x)
+	var base := tip - n * (size * 2.0)
+	c.draw_colored_polygon(
+		PackedVector2Array([tip,
+			base + perp * size * 0.55,
+			base - perp * size * 0.55]),
+		col)
