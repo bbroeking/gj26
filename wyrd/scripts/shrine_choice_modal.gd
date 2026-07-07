@@ -30,20 +30,33 @@ func _ready() -> void:
 	_panel.anchor_right = 0.5
 	_panel.anchor_bottom = 0.5
 	_panel.offset_left = -330
-	_panel.offset_top = -160
+	_panel.offset_top = -170
 	_panel.offset_right = 330
-	_panel.offset_bottom = 160
+	_panel.offset_bottom = 170
 	add_child(_panel)
-	# Title.
+	# Carved-wood frame — the altar modal joins the Wayfinder UI kit language.
+	WyrdUi.style_panel(_panel)
+	# Title — header font + TERRACOTTA so it reads as a sacred announcement,
+	# not a dialog box.
 	var title := Label.new()
 	title.text = "An Old Altar Stirs"
-	title.add_theme_font_size_override("font_size", 28)
+	WyrdUi.style_title(title)
 	title.anchor_left = 0.0
 	title.anchor_right = 1.0
-	title.offset_top = 16
-	title.offset_bottom = 56
+	title.offset_top = 18
+	title.offset_bottom = 58
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_panel.add_child(title)
+	# Flavour sub-title — dim instruction, keeps the modal self-explanatory.
+	var sub := Label.new()
+	sub.text = "Touch a mark — its blessing is yours."
+	WyrdUi.style_dim(sub, 13)
+	sub.anchor_left = 0.0
+	sub.anchor_right = 1.0
+	sub.offset_top = 56
+	sub.offset_bottom = 82
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_panel.add_child(sub)
 	# HBox for the 3 buff cards.
 	_hbox = HBoxContainer.new()
 	_hbox.add_theme_constant_override("separation", 20)
@@ -51,7 +64,7 @@ func _ready() -> void:
 	_hbox.anchor_left = 0.0
 	_hbox.anchor_right = 1.0
 	_hbox.anchor_bottom = 1.0
-	_hbox.offset_top = 70
+	_hbox.offset_top = 88
 	_hbox.offset_bottom = -20
 	_hbox.offset_left = 16
 	_hbox.offset_right = -16
