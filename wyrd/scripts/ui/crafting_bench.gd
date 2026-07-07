@@ -510,9 +510,10 @@ class BenchView extends Control:
 		# Spec 44 — parchment grain over the working face (vector, no tex).
 		WyrdUi.draw_parchment_grain(self,
 			Rect2(Vector2(46, 72), size - Vector2(92, 124)))
-		draw_string(hdr, Vector2(54, 56), "The Inscribing Table",
+		_draw_bench_crest()
+		draw_string(hdr, Vector2(102, 56), "The Inscribing Table",
 			HORIZONTAL_ALIGNMENT_LEFT, 400, 24, WyrdUi.TERRACOTTA)
-		WyrdUi.draw_flourish(self, Vector2(146, 66), 180.0)
+		WyrdUi.draw_flourish(self, Vector2(244, 66), 300.0)
 		draw_string(font, Vector2(size.x - 180, 56), "Esc — close",
 			HORIZONTAL_ALIGNMENT_RIGHT, 130, 12, DIM)
 		_odds_rows.clear()
@@ -877,3 +878,33 @@ class BenchView extends Control:
 			draw_string(font, Vector2(box.position.x + 10.0, ty), ln,
 				HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 20.0, 13, TXT)
 			ty += 19.0
+
+	# Cartographer's compass-rose header crest — a hand-drawn medallion that
+	# identifies the Inscribing Table as the chart-making workshop. Eight-spoke
+	# rose (cardinal arms full-length in ink, intercardinal arms shorter and dim),
+	# a terracotta north arrow, and a gold centre pin. Matches the header-crest
+	# design language shared by other Wayfinder panels.
+	func _draw_bench_crest() -> void:
+		var cc := Vector2(74.0, 44.0)
+		var cr := 20.0
+		# warm cream disc — parchment face of the medallion
+		draw_circle(cc, cr, Color(0.92, 0.86, 0.70))
+		# 8-spoke compass rose: cardinal (full, ink) + intercardinal (shorter, dim)
+		for i in 8:
+			var a := float(i) * PI / 4.0 - PI * 0.5
+			var tip_r: float = cr * (0.76 if i % 2 == 0 else 0.48)
+			draw_line(cc, cc + Vector2(cos(a), sin(a)) * tip_r,
+				WyrdUi.INK if i % 2 == 0 else Color(WyrdUi.INK, 0.35), 1.2)
+		# north arrowhead (terracotta — warm read, marks the charted direction)
+		var nb := cr * 0.44
+		draw_colored_polygon(PackedVector2Array([
+			cc + Vector2(0.0, -(cr * 0.76)),
+			cc + Vector2(-4.5, -nb),
+			cc + Vector2(4.5, -nb)
+		]), Color(WyrdUi.TERRACOTTA, 0.90))
+		# gold centre pin + ink backing
+		draw_circle(cc, 3.5, WyrdUi.KIT_EDGE)
+		draw_circle(cc, 2.0, Color(WyrdUi.GOLD, 0.95))
+		# outer ink ring + inner burnished gold accent ring
+		draw_arc(cc, cr, 0.0, TAU, 40, WyrdUi.KIT_EDGE, 2.0, true)
+		draw_arc(cc, cr - 4.5, 0.0, TAU, 40, Color(WyrdUi.GOLD, 0.45), 1.0, true)
