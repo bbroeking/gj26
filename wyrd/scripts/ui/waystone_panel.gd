@@ -37,6 +37,15 @@ func _ready() -> void:
 	_panel.offset_bottom = 230
 	add_child(_panel)
 
+	# Header art — drawn behind the title labels so the crest and flourish rule
+	# sit in the right layer order without an extra CanvasLayer.
+	var hdr_art := _WaystoneHeaderArt.new()
+	hdr_art.anchor_right = 1.0
+	hdr_art.offset_top = 28
+	hdr_art.offset_bottom = 84
+	hdr_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(hdr_art)
+
 	var title := Label.new()
 	title.text = "The Waystone"
 	WyrdUi.style_title(title)
@@ -154,3 +163,38 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# Header ornament for the Waystone panel: a portal-star crest left of the
+# title (an 8-armed radiant star inside a gold ring — the crossing's seal)
+# and a flourish rule just below the subtitle. Pure-vector _draw; no textures.
+class _WaystoneHeaderArt extends Control:
+	func _draw() -> void:
+		if size.x < 2.0 or size.y < 2.0:
+			return
+		# Portal-star crest, left of "The Waystone".
+		# 8-armed star: 4 long cardinal arms + 4 short diagonal arms, in a
+		# gold ring with a soft cream halo — the waystone's navigational seal.
+		var cx := Vector2(32.0, size.y * 0.5 + 1.0)
+		# Soft cream halo so the star sits on the parchment, not punched into it.
+		draw_circle(cx, 22.0, Color(0.96, 0.91, 0.78, 0.45))
+		# Gold ring + inner ink ring.
+		draw_arc(cx, 20.0, 0.0, TAU, 48, WyrdUi.GOLD.darkened(0.08), 2.5, true)
+		draw_arc(cx, 13.0, 0.0, TAU, 40, Color(WyrdUi.KIT_EDGE, 0.35), 1.0, true)
+		# 8-pointed star arms, clockwise from top.
+		for k in 8:
+			var angle := float(k) * TAU / 8.0 - PI * 0.5
+			var long_arm := k % 2 == 0
+			var arm_r := 17.0 if long_arm else 10.0
+			var arm_w := 2.0 if long_arm else 1.2
+			var arm_col := Color(WyrdUi.GOLD, 0.92) if long_arm \
+				else Color(WyrdUi.GOLD, 0.55)
+			draw_line(cx, cx + Vector2(cos(angle), sin(angle)) * arm_r,
+				arm_col, arm_w)
+		# Centre jewel — gold disc with a bright inner point.
+		draw_circle(cx, 4.5, WyrdUi.GOLD)
+		draw_circle(cx, 2.2, Color(0.97, 0.92, 0.72))
+		draw_arc(cx, 4.5, 0.0, TAU, 20, WyrdUi.KIT_EDGE, 1.0, true)
+		# Flourish rule centred below the subtitle (at the control's bottom edge).
+		WyrdUi.draw_flourish(self,
+			Vector2(size.x * 0.5 + 24.0, size.y - 3.0), size.x - 140.0)
