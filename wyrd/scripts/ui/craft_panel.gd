@@ -54,6 +54,20 @@ func _ready() -> void:
 	close_hint.offset_top = 36
 	_panel.add_child(close_hint)
 
+	# Station crest — drawn cauldron (cookfire) or hammer (forge) at top-left.
+	var crest := _StationCrest.new()
+	crest.station = station_id
+	crest.position = Vector2(14.0, 24.0)
+	crest.size = Vector2(36.0, 48.0)
+	crest.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(crest)
+	# Flourish rule between title and recipe list.
+	var rule := _TitleRule.new()
+	rule.position = Vector2(52.0, 72.0)
+	rule.size = Vector2(556.0, 10.0)
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(rule)
+
 	var col := VBoxContainer.new()
 	col.anchor_right = 1.0
 	col.anchor_bottom = 1.0
@@ -212,3 +226,26 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# Station crest drawn into the header's left margin — sits to the left of the
+# title text and gives each station a visual identity at a glance.
+class _StationCrest extends Control:
+	var station := "cookfire"
+
+	func _draw() -> void:
+		var ctr := size * 0.5
+		if station == "cookfire":
+			WyrdUi.draw_cauldron(self, ctr, size.y * 0.84)
+		else:
+			WyrdUi.draw_craft_hammer(self, ctr, size.y * 0.84)
+
+
+# Flourish rule — the ── ◆ ── divider centred between the title and the
+# recipe list, reinforcing the parchment language of other kit panels.
+class _TitleRule extends Control:
+	func _draw() -> void:
+		if size.x < 4.0:
+			return
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5),
+			size.x * 0.68)

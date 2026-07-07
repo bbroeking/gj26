@@ -383,3 +383,57 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# A storybook cauldron with a wisp of flame — cookfire / Hearth craft panel crest.
+# h controls total height; the round belly radius is ~0.32·h.
+static func draw_cauldron(c: CanvasItem, center: Vector2, h: float) -> void:
+	var belly_r := h * 0.32
+	var belly_c := center + Vector2(0.0, h * 0.10)
+	c.draw_circle(belly_c, belly_r, Color(0.30, 0.24, 0.17))
+	# Sheen arc — warm light catching the upper-left of the iron belly
+	c.draw_arc(belly_c, belly_r - 4.0, PI * 1.15, PI * 1.75, 12,
+		Color(1.0, 0.95, 0.85, 0.28), 3.0, true)
+	c.draw_arc(belly_c, belly_r, 0.0, TAU, 32, KIT_EDGE, 2.0, true)
+	# Lip band — a thick sepia stroke across the rim
+	var rim_y := belly_c.y - belly_r * 0.90
+	c.draw_line(Vector2(center.x - belly_r * 1.18, rim_y),
+		Vector2(center.x + belly_r * 1.18, rim_y),
+		Color(0.50, 0.38, 0.24), belly_r * 0.22)
+	c.draw_line(Vector2(center.x - belly_r * 1.18, rim_y),
+		Vector2(center.x + belly_r * 1.18, rim_y),
+		KIT_EDGE, 1.5, true)
+	# Two stubby feet — warm sepia pegs contrasting the dark iron belly
+	for xi in [-belly_r * 0.55, belly_r * 0.55]:
+		var foot_top := Vector2(center.x + float(xi), belly_c.y + belly_r * 0.74)
+		c.draw_line(foot_top, foot_top + Vector2(0.0, belly_r * 0.42),
+			Color(0.58, 0.45, 0.30), belly_r * 0.24)
+	# Flame — four-point teardrop polygon
+	var fp := Vector2(center.x, center.y - h * 0.42)
+	c.draw_colored_polygon(PackedVector2Array([
+		fp + Vector2(0.0, -h * 0.16),
+		fp + Vector2(-h * 0.08, h * 0.07),
+		fp + Vector2(0.0, h * 0.02),
+		fp + Vector2(h * 0.08, h * 0.07),
+	]), Color(0.88, 0.52, 0.12, 0.92))
+	# Inner flame highlight
+	c.draw_colored_polygon(PackedVector2Array([
+		fp + Vector2(0.0, -h * 0.09),
+		fp + Vector2(-h * 0.04, h * 0.04),
+		fp + Vector2(h * 0.04, h * 0.04),
+	]), Color(1.0, 0.82, 0.28, 0.82))
+
+# A craft hammer — forge / anvil station crest.
+static func draw_craft_hammer(c: CanvasItem, center: Vector2, h: float) -> void:
+	# Handle — sepia diagonal stick
+	var htop := center + Vector2(h * 0.07, -h * 0.30)
+	var hbot := center + Vector2(-h * 0.09, h * 0.34)
+	c.draw_line(htop, hbot, Color(0.54, 0.40, 0.24), h * 0.13)
+	c.draw_line(htop, hbot, KIT_EDGE, 2.0, true)
+	# Head — wide carved plate
+	var head := Rect2(center + Vector2(-h * 0.26, -h * 0.44),
+		Vector2(h * 0.52, h * 0.22))
+	c.draw_rect(head, Color(0.60, 0.56, 0.48))
+	# Top-left highlight — the head catches the light
+	c.draw_rect(Rect2(head.position + Vector2(2.0, 2.0),
+		Vector2(head.size.x * 0.44, 2.0)), Color(1.0, 1.0, 0.92, 0.50))
+	c.draw_rect(head, KIT_EDGE, false, 1.8)
