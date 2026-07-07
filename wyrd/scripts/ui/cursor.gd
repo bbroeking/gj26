@@ -44,11 +44,19 @@ class CursorMark extends Control:
 		# Ink ring + cream inner lip.
 		draw_arc(m, rad, 0.0, TAU, 28, ring_c, 2.2, true)
 		draw_arc(m, rad - 2.0, 0.0, TAU, 24, Color(WyrdUi.CREAM, 0.7), 1.0, true)
-		# Four short ticks (NE/NW/SE/SW so they never read as a crosshair).
+		# Four botanical leaf-sprigs (NE/NW/SE/SW) — a short stem from the ring
+		# plus two tiny lobes opening outward, so the mark reads as an ivy sprig
+		# rather than a geometric tick. Consonant with the ivy/vine language on
+		# hotbar, trades, and flourish headers.
 		for i in 4:
 			var a := PI * 0.25 + float(i) * PI * 0.5
 			var d := Vector2(cos(a), sin(a))
-			draw_line(m + d * (rad + 1.0), m + d * (rad + 4.0), ring_c, 1.6)
+			var perp := Vector2(-d.y, d.x)
+			var root := m + d * (rad + 1.5)
+			var tip  := m + d * (rad + 4.5)
+			draw_line(root, tip, ring_c, 1.4)
+			draw_line(tip, tip + (d + perp).normalized() * 3.0, Color(ring_c, 0.75), 1.0)
+			draw_line(tip, tip + (d - perp).normalized() * 3.0, Color(ring_c, 0.75), 1.0)
 		# Burnished center pip — a tiny gold diamond.
 		var s := 2.6 + recoil * 1.6
 		draw_colored_polygon(PackedVector2Array([
