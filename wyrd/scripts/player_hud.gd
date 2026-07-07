@@ -26,7 +26,7 @@ var _objective: Label
 var _quest_plate: Panel
 var _quest_progress: Label
 var _toast_box: VBoxContainer
-var _skills_lbl: Label
+var _trades_readout: TradesReadout = null
 # Spec 38 — potion globes (PoE-style): HP red bottom-left of the skill
 # bar, Focus blue bottom-right. The liquid level IS the meter.
 var _hp_globe: GlobeGauge = null
@@ -207,16 +207,15 @@ func _build_wyrd_overlay() -> void:
 	_toast_box.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_toast_box.alignment = BoxContainer.ALIGNMENT_END
 	add_child(_toast_box)
-	_skills_lbl = Label.new()
-	WyrdUi.style_chip(_skills_lbl, 13)
-	_skills_lbl.anchor_left = 1.0
-	_skills_lbl.anchor_right = 1.0
-	_skills_lbl.anchor_top = 1.0
-	_skills_lbl.anchor_bottom = 1.0
-	_skills_lbl.offset_left = -330
-	_skills_lbl.offset_right = -10
-	_skills_lbl.offset_top = -26
-	add_child(_skills_lbl)
+	_trades_readout = TradesReadout.new()
+	_trades_readout.anchor_left = 1.0
+	_trades_readout.anchor_right = 1.0
+	_trades_readout.anchor_top = 1.0
+	_trades_readout.anchor_bottom = 1.0
+	_trades_readout.offset_left = -330
+	_trades_readout.offset_right = -10
+	_trades_readout.offset_top = -26
+	add_child(_trades_readout)
 	var game := get_tree().root.get_node_or_null("Game")
 	if game != null:
 		game.tutorial_changed.connect(func(_s): _refresh_objective())
@@ -292,8 +291,8 @@ func _refresh_trades() -> void:
 	var game := get_tree().root.get_node_or_null("Game")
 	if game == null:
 		return
-	_skills_lbl.text = "%dg · Wayfinding %d" % [
-		int(game.gold), game.trade_lv("wayfinding")]
+	if _trades_readout != null:
+		_trades_readout.update(int(game.gold), game.trade_lv("wayfinding"))
 
 func show_toast(msg: String) -> void:
 	var l := Label.new()
@@ -498,3 +497,42 @@ class QuestScrollArt extends Control:
 		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
 		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
 		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+
+# A hand-drawn chip for the bottom-right gold + Wayfinding readout. Replaces
+# the plain chip Label so each value gets its accent colour — gold ◆ for
+# coin, terracotta ✦ for the Wayfinder trade — matching the action bar buttons
+# immediately above it and making the readout feel like a carved placard
+# rather than a tooltip.
+class TradesReadout extends Control:
+	var _gold := 0
+	var _wf_lv := 1
+
+	func update(g: int, wf: int) -> void:
+		_gold = g
+		_wf_lv = wf
+		queue_redraw()
+
+	func _draw() -> void:
+		if size.x < 4.0 or size.y < 4.0:
+			return
+		var r := Rect2(Vector2.ZERO, size)
+		# Chip face — parchment plate + ink border, same recipe as
+		# chip_stylebox() so it reads as one family with the other HUD chips.
+		draw_rect(r.grow(-0.75), WyrdUi.KIT_PLATE, true)
+		draw_rect(r.grow(-0.75), WyrdUi.KIT_EDGE, false, 1.5)
+		# Faint parchment grain so the face breathes like real pressed paper.
+		WyrdUi.draw_parchment_grain(self, r.grow(-2.0), 9)
+		var f := get_theme_default_font()
+		var cy := size.y * 0.5 + 5.0
+		# ◆ coin glyph + amount in WyrdUi.GOLD — a small wealth flash.
+		draw_string(f, Vector2(8.0, cy), "◆ %dg" % _gold,
+			HORIZONTAL_ALIGNMENT_LEFT, 88.0, 13, WyrdUi.GOLD)
+		# Thin ink separator between the two values.
+		var sx := 100.0
+		draw_line(Vector2(sx, 4.0), Vector2(sx, size.y - 4.0),
+			Color(WyrdUi.KIT_EDGE, 0.40), 1.0)
+		# ✦ Wayfinding level in terracotta — matches the Gear action button.
+		draw_string(f, Vector2(sx + 7.0, cy), "✦ Wayfinding %d" % _wf_lv,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - sx - 13.0, 13,
+			WyrdUi.TERRACOTTA.darkened(0.10))
