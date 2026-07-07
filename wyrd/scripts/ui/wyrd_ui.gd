@@ -337,6 +337,47 @@ static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 		center + Vector2(-3.5, 0)])
 	c.draw_colored_polygon(pts, Color(GOLD, 0.8))
 
+# Teardrop leaf helper — a smooth bell-shaped leaf from base to tip.
+# Width at the widest point is half_w; tapers to zero at both ends via
+# sin(t*PI) so the polygon closes cleanly. Called by draw_ivy_end_cluster.
+static func _draw_leaf(c: CanvasItem, base: Vector2, tip: Vector2,
+		half_w: float, col: Color) -> void:
+	var dir := (tip - base).normalized()
+	var perp := Vector2(-dir.y, dir.x)
+	var len := base.distance_to(tip)
+	var pts := PackedVector2Array()
+	for i in 9:
+		var t := float(i) / 8.0
+		pts.append(base + dir * len * t + perp * (half_w * sin(t * PI)))
+	for i in range(7, 0, -1):
+		var t := float(i) / 8.0
+		pts.append(base + dir * len * t - perp * (half_w * sin(t * PI)))
+	c.draw_colored_polygon(pts, col)
+	c.draw_line(base, tip, Color(col.darkened(0.28), col.a * 0.55), 0.7)
+
+# Ivy end-cluster for the hotbar tray and similar plank frames: three
+# teardrop leaves on a short stem with a gold berry node. Replaces the
+# flat geometric ── ◆ ── with organic Bramblewood foliage — the
+# "carved wood reclaimed by the forest" storybook read. flip=true
+# mirrors the cluster horizontally for the right end cap.
+static func draw_ivy_end_cluster(c: CanvasItem, center: Vector2,
+		flip: bool = false) -> void:
+	var sg := -1.0 if flip else 1.0
+	var stem_b := center + Vector2(-sg * 3.0,  1.0)
+	var stem_m := center + Vector2( sg * 4.5, -1.5)
+	c.draw_line(stem_b, stem_m, Color(SAGE.darkened(0.20), 0.72), 1.3)
+	_draw_leaf(c,
+		center + Vector2(sg * 1.5, -1.0),
+		center + Vector2(sg * 7.5, -8.5), 3.2, Color(SAGE, 0.54))
+	_draw_leaf(c,
+		center + Vector2(sg * 3.5,  0.5),
+		center + Vector2(sg * 11.5, 0.5), 3.6, Color(SAGE, 0.56))
+	_draw_leaf(c,
+		center + Vector2(sg * 1.5,  2.0),
+		center + Vector2(sg * 7.5,  8.0), 3.0, Color(SAGE, 0.52))
+	c.draw_circle(stem_m, 2.2, Color(GOLD, 0.82))
+	c.draw_arc(stem_m, 2.2, 0.0, TAU, 10, Color(GOLD.darkened(0.35), 0.90), 1.0, true)
+
 # A little hand-blown ink bottle — glass body, ink fill, neck, cork, and a
 # glass highlight. Replaces the bare text glyphs in sockets and trays.
 static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
