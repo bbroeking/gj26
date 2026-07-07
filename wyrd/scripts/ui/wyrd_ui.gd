@@ -327,15 +327,48 @@ static func draw_parchment_grain(c: CanvasItem, r: Rect2, seed_v: int = 7) -> vo
 		c.draw_line(p, p + Vector2(ln, rng.randf_range(-1.2, 1.2)),
 			Color(0.62, 0.52, 0.38, 0.05 + rng.randf() * 0.05), 1.0)
 
-# Section flourish: ── ◆ ── centred under a header.
+# Section flourish: ── ✦◆✦ ── centred under a header.
+# Small ivy-leaf sprigs branch off each arm when width >= 60 — two triangular
+# leaves (upper jade, lower sage) with faint ink midrib veins, reading as a
+# botanical vine motif per the "leafy ivy/vine + gold filigree" design rule.
+# Narrow flourishes (hotbar caps at w=24) stay as plain ── ◆ ──.
 static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 	var col := Color(KIT_EDGE, 0.45)
-	c.draw_line(center - Vector2(width * 0.5, 0), center - Vector2(7, 0), col, 1.0)
-	c.draw_line(center + Vector2(7, 0), center + Vector2(width * 0.5, 0), col, 1.0)
+	var arm := width * 0.5
+	c.draw_line(center - Vector2(arm, 0), center - Vector2(7, 0), col, 1.0)
+	c.draw_line(center + Vector2(7, 0), center + Vector2(arm, 0), col, 1.0)
+	# Botanical sprigs — only when the arm is long enough to breathe.
+	if width >= 60.0:
+		for side in [-1.0, 1.0]:
+			# Branch point: 40% along each arm from center.
+			var bp := center + Vector2(side * arm * 0.40, 0.0)
+			# Upper leaf — fans upward-outward (jade, more opaque).
+			c.draw_colored_polygon(PackedVector2Array([
+				bp,
+				bp + Vector2(side * 4.0, -7.0),
+				bp + Vector2(side * 8.0, -1.5),
+			]), Color(SAGE, 0.55))
+			# Lower leaf — fans downward-outward (sage, softer echo).
+			c.draw_colored_polygon(PackedVector2Array([
+				bp,
+				bp + Vector2(side * 4.0, 7.0),
+				bp + Vector2(side * 8.0, 1.5),
+			]), Color(SAGE, 0.38))
+			# Ink midrib veins — a faint line to each leaf tip.
+			c.draw_line(bp, bp + Vector2(side * 4.0, -7.0), Color(KIT_EDGE, 0.22), 1.0)
+			c.draw_line(bp, bp + Vector2(side * 4.0, 7.0), Color(KIT_EDGE, 0.18), 1.0)
+	# Central diamond (gold).
 	var pts := PackedVector2Array([center + Vector2(0, -3.5),
 		center + Vector2(3.5, 0), center + Vector2(0, 3.5),
 		center + Vector2(-3.5, 0)])
 	c.draw_colored_polygon(pts, Color(GOLD, 0.8))
+	# Tiny terminal gold diamonds — filigree caps at each arm end.
+	for side in [-1.0, 1.0]:
+		var ep := center + Vector2(side * arm, 0.0)
+		c.draw_colored_polygon(PackedVector2Array([
+			ep + Vector2(0.0, -2.0), ep + Vector2(2.0, 0.0),
+			ep + Vector2(0.0, 2.0), ep + Vector2(-2.0, 0.0),
+		]), Color(GOLD, 0.45))
 
 # A little hand-blown ink bottle — glass body, ink fill, neck, cork, and a
 # glass highlight. Replaces the bare text glyphs in sockets and trays.
