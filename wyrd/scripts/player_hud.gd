@@ -492,9 +492,24 @@ class QuestScrollArt extends Control:
 		WyrdUi.draw_parchment_grain(self, inner, 23)
 		# Flourish centred under the QUEST header (header sits ~y 11–28).
 		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 30.0), 120.0)
-		# A small wax seal up top-left, clear of the wood frame — the scroll's
-		# signature read (same motif as WyrdUi.draw_scroll's seal).
+		# Wayfinder's compass seal top-left — a wax disc with four cardinal
+		# spikes stamped into it, the trade's navigation mark on every
+		# proclamation scroll. Spikes sit inside the outer ring so the whole
+		# motif reads as a single embossed impression in the wax.
 		var sc := Vector2(28.0, 24.0)
-		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
-		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
-		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+		draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
+		draw_circle(sc, 4.6, Color(0.72, 0.28, 0.22))
+		for si in 4:
+			var a := PI * 0.5 * float(si)
+			var tip := sc + Vector2(cos(a), sin(a)) * 7.5
+			var lft := sc + Vector2(cos(a + PI * 0.5), sin(a + PI * 0.5)) * 2.0
+			var rgt := sc + Vector2(cos(a - PI * 0.5), sin(a - PI * 0.5)) * 2.0
+			draw_colored_polygon(PackedVector2Array([lft, tip, rgt, sc]),
+				Color(0.52, 0.15, 0.12))
+		draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+		# Scroll-end roll on the right — the banner reads as physically held
+		# open; a pale oval suggests the second rolled cylinder edge.
+		var rc := Vector2(size.x - 22.0, 24.0)
+		draw_circle(rc, 6.5, Color(0.86, 0.78, 0.62))
+		draw_circle(rc, 4.0, Color(0.93, 0.87, 0.72))
+		draw_arc(rc, 6.5, 0, TAU, 16, Color(0.72, 0.62, 0.48), 1.5, true)
