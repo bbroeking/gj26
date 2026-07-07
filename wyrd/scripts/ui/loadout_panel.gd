@@ -76,6 +76,11 @@ func _ready() -> void:
 	_panel.offset_right = 330
 	_panel.offset_bottom = 300
 	add_child(_panel)
+	# Archer crest + flourish rule — drawn before the Labels so text sits on top.
+	var hdr_art := _HeaderArt.new()
+	hdr_art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	hdr_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(hdr_art)
 	var title := Label.new()
 	title.text = "Loadout"
 	WyrdUi.style_title(title)
@@ -262,3 +267,15 @@ class _SkillCard extends Control:
 		# --- short desc (up to two lines) ---
 		draw_multiline_string(font, Vector2(tx, 40.0), _desc,
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 16.0, 12, 2, dim)
+
+
+# Header ornament for the loadout panel: an archer crest (bow + arrow disc)
+# centred between the "Loadout" title and the "Esc" hint, with a flourish
+# rule spanning the full header band below them. Drawn as a full-rect Control
+# child of the panel so it sits behind all Label / Button children.
+class _HeaderArt extends Control:
+	func _draw() -> void:
+		# Flourish rule — a ── ◆ ── divider under the title/crest band
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 73.0), 440.0)
+		# Bow-and-arrow crest — centred between title end (~x 200) and hint start (~x 530)
+		WyrdUi.draw_archer_crest(self, Vector2(420.0, 43.0), 54.0)
