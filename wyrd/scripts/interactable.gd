@@ -42,7 +42,10 @@ func _ready() -> void:
 	pmesh.size = Vector2(1.0, 0.34)            # provisional — resized to text below
 	plate.mesh = pmesh
 	var pmat := StandardMaterial3D.new()
-	pmat.albedo_color = Color(0.20, 0.15, 0.11, 0.90)   # dark parchment scrap
+	# Warm cream parchment scrap — matches the WyrdUi kit plate so the prompt
+	# reads as a torn piece of the same document the panels are made of.
+	pmat.albedo_color = Color(WyrdUi.KIT_PLATE.r, WyrdUi.KIT_PLATE.g,
+		WyrdUi.KIT_PLATE.b, 0.90)
 	pmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	pmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	pmat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
@@ -55,7 +58,9 @@ func _ready() -> void:
 	var lbl := Label3D.new()
 	lbl.name = "PromptLabel"
 	lbl.text = get_prompt_text()
-	lbl.modulate = get_prompt_color()
+	# Ink text on cream plate — same dark-on-light voice as every WyrdUi panel.
+	# The subclass get_prompt_color() drives the marker diamond only.
+	lbl.modulate = WyrdUi.INK
 	# Storybook typeface (IM Fell) so the prompt reads as the game's voice, not
 	# debug text. It now sits on a parchment plate (PromptPlate above).
 	var pfont := WyrdUi.font_header()
@@ -65,8 +70,8 @@ func _ready() -> void:
 	lbl.no_depth_test = true
 	lbl.font_size = 72
 	lbl.pixel_size = 0.005
-	lbl.outline_size = 22
-	lbl.outline_modulate = Color(0.10, 0.07, 0.05, 1.0)
+	lbl.outline_size = 10
+	lbl.outline_modulate = Color(WyrdUi.CREAM.r, WyrdUi.CREAM.g, WyrdUi.CREAM.b, 0.60)
 	lbl.position = get_prompt_position() + Vector3(0.0, 0.0, 0.004)
 	lbl.visible = false
 	add_child(lbl)
