@@ -62,16 +62,22 @@ func _ready() -> void:
 	_panel.offset_bottom = 260
 	add_child(_panel)
 
+	# Merchant's balance-scale crest nestled in the header corner.
+	var crest := _HodCrest.new()
+	crest.position = Vector2(44, 28)
+	crest.size = Vector2(54, 54)
+	_panel.add_child(crest)
+
 	var title := Label.new()
 	title.text = "Hod's Counter"
 	WyrdUi.style_title(title)
-	title.position = Vector2(54, 34)
+	title.position = Vector2(106, 34)
 	_panel.add_child(title)
 
 	var sub := Label.new()
 	sub.text = "\"Sparks like to find sleeves. Mind the anvil, state your business.\""
 	WyrdUi.style_dim(sub, 13)
-	sub.position = Vector2(54, 66)
+	sub.position = Vector2(106, 66)
 	_panel.add_child(sub)
 
 	_gold_lbl = Label.new()
@@ -112,6 +118,9 @@ func _ready() -> void:
 	sell_hdr.text = "Sell (he melts it down)"
 	WyrdUi.style_section(sell_hdr)
 	col1.add_child(sell_hdr)
+	var _sell_sep := _FlourishSep.new()
+	_sell_sep.custom_minimum_size = Vector2(0, 14)
+	col1.add_child(_sell_sep)
 	# A full pack outgrows the panel — the sell list scrolls now.
 	var sell_scroll := ScrollContainer.new()
 	sell_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -130,6 +139,9 @@ func _ready() -> void:
 	buy_hdr.text = "Wares"
 	WyrdUi.style_section(buy_hdr)
 	col2.add_child(buy_hdr)
+	var _buy_sep := _FlourishSep.new()
+	_buy_sep.custom_minimum_size = Vector2(0, 14)
+	col2.add_child(_buy_sep)
 	_buy_box = VBoxContainer.new()
 	_buy_box.add_theme_constant_override("separation", 5)
 	_buy_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -286,3 +298,67 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# ---- header ornament helpers ----
+
+# Thin ink-and-gold rule with a central diamond — sits between a section
+# header label and its list so each column reads as a composed unit.
+class _FlourishSep extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5),
+			size.x * 0.82)
+
+
+# Hod's emblem: a merchant's balance scale. The right pan carries a gold coin
+# and hangs a little lower than the left — value weighed, trade found fair.
+# Pure code draw (no load() in _draw — white-rect gotcha proof).
+class _HodCrest extends Control:
+	func _draw() -> void:
+		var cx := size.x * 0.5
+		var beam_y := size.y * 0.28
+		var stand_base_y := size.y * 0.85
+		var beam_hw := size.x * 0.36
+		var pan_r := size.x * 0.13
+		var iron := Color(0.48, 0.40, 0.30)
+		var ink := WyrdUi.KIT_EDGE
+
+		# Vertical stand
+		draw_rect(Rect2(cx - 2.5, beam_y + 4.0, 5.0, stand_base_y - beam_y - 4.0),
+			iron)
+		draw_rect(Rect2(cx - 2.5, beam_y + 4.0, 5.0, stand_base_y - beam_y - 4.0),
+			ink, false, 1.0)
+		# Base
+		draw_rect(Rect2(cx - size.x * 0.28, stand_base_y, size.x * 0.56, 5.0),
+			iron)
+		draw_rect(Rect2(cx - size.x * 0.28, stand_base_y, size.x * 0.56, 5.0),
+			ink, false, 1.0)
+
+		# Beam — a flat rule with ink pinstripe
+		draw_line(Vector2(cx - beam_hw, beam_y), Vector2(cx + beam_hw, beam_y),
+			iron, 4.0)
+		draw_line(Vector2(cx - beam_hw, beam_y), Vector2(cx + beam_hw, beam_y),
+			ink, 1.0)
+
+		# Left pan (empty, hangs level)
+		var lx := cx - beam_hw
+		var l_pan_cy := beam_y + size.y * 0.30
+		draw_line(Vector2(lx, beam_y), Vector2(lx, l_pan_cy), iron, 1.5)
+		draw_arc(Vector2(lx, l_pan_cy), pan_r, 0.0, PI, 12, iron, 3.5)
+		draw_arc(Vector2(lx, l_pan_cy), pan_r, 0.0, PI, 12, ink, 1.0)
+
+		# Right pan (coin inside, hangs a little lower — heavier)
+		var rx := cx + beam_hw
+		var r_pan_cy := beam_y + size.y * 0.36
+		draw_line(Vector2(rx, beam_y), Vector2(rx, r_pan_cy), iron, 1.5)
+		draw_arc(Vector2(rx, r_pan_cy), pan_r, 0.0, PI, 12, iron, 3.5)
+		draw_arc(Vector2(rx, r_pan_cy), pan_r, 0.0, PI, 12, ink, 1.0)
+		# Gold coin resting in the pan
+		var coin_r := pan_r * 0.68
+		var coin_c := Vector2(rx, r_pan_cy - coin_r * 0.5)
+		draw_circle(coin_c, coin_r, WyrdUi.GOLD)
+		draw_arc(coin_c, coin_r, 0, TAU, 10, ink, 1.0)
+
+		# Pivot ornament — gold knob where beam meets stand
+		draw_circle(Vector2(cx, beam_y), 4.5, WyrdUi.GOLD)
+		draw_arc(Vector2(cx, beam_y), 4.5, 0, TAU, 12, ink, 1.0)
