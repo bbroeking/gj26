@@ -745,9 +745,41 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 	var w := win.size.x - 148.0
 	var y := win.position.y + 134.0
 	if (game.charts as Array).is_empty():
-		draw_string(font, Vector2(x, y),
-			"No charts inscribed. The Inscribing Table awaits.",
-			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
+		# Storybook empty state: an unsealed scroll centred in the parchment
+		# with a compass rose inked on its face (the Wayfinding trade motif),
+		# a flourish rule, and a two-line caption.
+		var cx := x + w * 0.5
+		var scroll_top := y + 14.0
+		WyrdUi.draw_scroll(self, Rect2(cx - 44.0, scroll_top, 88.0, 70.0), false)
+		# Compass rose drawn on the scroll face — centre matches the face centre.
+		var rc := Vector2(cx, scroll_top + 35.0)
+		draw_circle(rc, 20.0, Color(0.96, 0.91, 0.78, 0.50))
+		for i in 4:
+			var a := TAU * float(i) / 4.0
+			var tip := rc + Vector2(sin(a), -cos(a)) * 24.0
+			var base := rc + Vector2(sin(a), -cos(a)) * 5.0
+			var side := Vector2(cos(a), sin(a)) * 4.0
+			draw_colored_polygon(
+				PackedVector2Array([tip, base + side, base - side]),
+				Color(WyrdUi.GOLD, 0.80))
+		for i in 4:
+			var a := TAU * (float(i) + 0.5) / 4.0
+			draw_line(rc, rc + Vector2(sin(a), -cos(a)) * 17.0,
+				Color(WyrdUi.INK, 0.28), 1.0)
+		draw_arc(rc, 20.0, 0.0, TAU, 36, Color(WyrdUi.INK, 0.30), 1.0, true)
+		draw_circle(rc, 4.0, WyrdUi.GOLD)
+		draw_arc(rc, 4.0, 0.0, TAU, 16, WyrdUi.KIT_EDGE, 1.0, true)
+		# Flourish rule + centred caption
+		WyrdUi.draw_flourish(self, Vector2(cx, scroll_top + 83.0), w * 0.44)
+		var hdr_f: Font = WyrdUi.font_header()
+		if hdr_f == null:
+			hdr_f = font
+		draw_string(hdr_f, Vector2(x, scroll_top + 101.0),
+			"No charts inscribed yet.",
+			HORIZONTAL_ALIGNMENT_CENTER, w, 17, WyrdUi.TERRACOTTA)
+		draw_string(font, Vector2(x, scroll_top + 125.0),
+			"The Inscribing Table awaits your quill.",
+			HORIZONTAL_ALIGNMENT_CENTER, w, 13, WyrdUi.INK_MID)
 		_tab_content_h[2] = 0.0
 		return
 	# Slice C — each chart rides a list-row plate led with a drawn scroll
