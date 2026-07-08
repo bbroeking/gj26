@@ -303,10 +303,21 @@ static func draw_round_well(c: CanvasItem, center: Vector2, radius: float,
 		Color(1.0, 1.0, 0.92, 0.30), 2.0, true)
 	c.draw_arc(center, radius, 0, TAU, 40, KIT_EDGE, 2.0, true)
 
-# A carved button face: plate, light top bevel, dark bottom bevel, inner
-# pinstripe. Callers draw their own label on top.
+# A carved button face: plate, wood-grain stripes, light top bevel, dark
+# bottom bevel, inner pinstripe. Callers draw their own label on top.
 static func draw_carved_button(c: CanvasItem, r: Rect2, enabled := true) -> void:
-	c.draw_rect(r, KIT_PLATE if enabled else Color(0.84, 0.78, 0.65))
+	var plate := KIT_PLATE if enabled else Color(0.84, 0.78, 0.65)
+	c.draw_rect(r, plate)
+	# Horizontal wood-grain stripes — evenly spaced, alternating sepia tints.
+	# Runs inside a 3px inset so only the face shows grain, not the border ring.
+	var face_h := r.size.y - 6.0
+	var stripe_n := maxi(2, int(face_h / 6.0))
+	for i in stripe_n:
+		var y := r.position.y + 3.0 + face_h * (float(i) + 0.5) / float(stripe_n)
+		var alpha := 0.07 + float(i % 2) * 0.04
+		c.draw_line(Vector2(r.position.x + 3.0, y),
+			Vector2(r.end.x - 3.0, y),
+			Color(KIT_EDGE, alpha if enabled else alpha * 0.5), 0.8)
 	c.draw_rect(Rect2(r.position + Vector2(2.0, 2.0),
 		Vector2(r.size.x - 4.0, 2.0)), Color(1.0, 1.0, 0.93, 0.55))
 	c.draw_rect(Rect2(r.position + Vector2(2.0, r.size.y - 4.0),
