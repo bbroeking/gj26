@@ -58,9 +58,10 @@ func _win_rect() -> Rect2:
 func _tab_rect(i: int) -> Rect2:
 	var win := _win_rect()
 	# Spec 40 — four equal tabs spanning the content width, butt-joined.
+	# Tabs are 44px tall to accommodate the painted icon above the label.
 	var inset := 52.0
 	var tw := (win.size.x - inset * 2.0) / 4.0
-	return Rect2(win.position + Vector2(inset + i * tw, 72), Vector2(tw, 32))
+	return Rect2(win.position + Vector2(inset + i * tw, 68), Vector2(tw, 44))
 
 func _update_layout() -> void:
 	var vp := get_viewport_rect().size
@@ -585,15 +586,26 @@ func _draw_tabs(win: Rect2) -> void:
 	for i in TABS.size():
 		var r := _tab_rect(i)
 		var active := i == _tab
-		# Spec 40 — text-only plates; active = brighter + terracotta underline.
+		# Spec 40 — icon+label plates; active = brighter + terracotta underline.
 		draw_rect(r, Color(0.95, 0.91, 0.80) if active else Color(0.85, 0.78, 0.64))
 		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 1.5)
 		if active:
 			draw_line(r.position + Vector2(2, r.size.y - 2),
 				r.position + Vector2(r.size.x - 2, r.size.y - 2),
 				WyrdUi.TERRACOTTA, 3.0)
-		draw_string(font, r.position + Vector2(0, 22), String(TABS[i]),
-			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16,
+		# Hand-painted tab icon — textures preloaded in _ready to avoid the
+		# _draw-load white-rect gotcha. Active tab is full opacity; inactive
+		# dims to 0.50 so the colour lives on the selected tab only.
+		var tex: Texture2D = _cached_tex(String(TAB_ICONS[i]))
+		if tex != null:
+			var icon_sz := 22.0
+			var ix := r.position.x + (r.size.x - icon_sz) * 0.5
+			draw_texture_rect(tex,
+				Rect2(Vector2(ix, r.position.y + 3.0), Vector2(icon_sz, icon_sz)),
+				false,
+				Color(1.0, 1.0, 1.0, 1.0) if active else Color(1.0, 1.0, 1.0, 0.50))
+		draw_string(font, r.position + Vector2(0, r.size.y - 4.0), String(TABS[i]),
+			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 12,
 			WyrdUi.INK if active else WyrdUi.INK_MID)
 
 # ---- Spec 45 followup: drawn-page scrolling (Satchel / Charts / Trades) ----
@@ -610,8 +622,9 @@ var _tab_content_h: Dictionary = {}   # tab index -> content height (set in draw
 # bands above/below stay deeper (72px+) than the tallest single element a
 # page draws (the trade emblem cluster) so skipped spans never peek past.
 func _view_rect(win: Rect2) -> Rect2:
-	return Rect2(win.position.x + 40.0, win.position.y + 110.0,
-		win.size.x - 84.0, win.size.y - 222.0)
+	# View starts 6px below the taller (44px) tab row bottom (68+44=112 → 118).
+	return Rect2(win.position.x + 40.0, win.position.y + 118.0,
+		win.size.x - 84.0, win.size.y - 230.0)
 
 func _scroll_offset(tab: int, view: Rect2) -> float:
 	var max_s: float = maxf(0.0,
