@@ -755,8 +755,20 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 	for chart in game.charts:
 		var row_top := y - 18.0
 		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 32.0))
+		# Polarity-code the accent stripe from the chart's affix mix:
+		# any bad affix → terracotta warning; all-good → sage blessing;
+		# no affixes → quiet ink (blank chart, not yet inscribed fully).
+		var has_bad := false
+		var has_good := false
+		for a in chart.get("affixes", []):
+			if bool(a.get("good", false)):
+				has_good = true
+			else:
+				has_bad = true
+		var accent: Color = WyrdUi.TERRACOTTA if has_bad \
+			else (WyrdUi.SAGE if has_good else WyrdUi.INK_MID)
 		if _span_visible(row_top, row.end.y, scroll, view):
-			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
+			WyrdUi.draw_list_row(self, row, accent)
 			WyrdUi.draw_scroll(self, Rect2(Vector2(row.position.x + 8.0,
 				row.position.y + 5.0), Vector2(24.0, 22.0)))
 			draw_string(font, Vector2(x + 30.0, y + 1.0),
@@ -769,9 +781,15 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 				continue
 			if _span_visible(y - 14.0, y + 5.0, scroll, view):
 				var good: bool = bool(a.get("good", false))
-				draw_string(font, Vector2(x + 30, y),
-					("✓ " + String(aff.name)) if good else ("✗ " + String(aff.bad_name)),
-					HORIZONTAL_ALIGNMENT_LEFT, w - 30, 13,
+				var disc_col: Color = WyrdUi.SAGE if good else WyrdUi.TERRACOTTA
+				# Small filled disc replaces the plain ✓/✗ glyph —
+				# green for boons, terracotta for curses.
+				draw_circle(Vector2(x + 22.0, y - 5.0), 4.0, disc_col)
+				draw_circle(Vector2(x + 22.0, y - 5.0), 4.0,
+					disc_col.darkened(0.3), false, 1.2)
+				draw_string(font, Vector2(x + 33.0, y),
+					String(aff.name) if good else String(aff.bad_name),
+					HORIZONTAL_ALIGNMENT_LEFT, w - 42.0, 13,
 					WyrdUi.SAGE.darkened(0.2) if good else WyrdUi.TERRACOTTA)
 			y += 20.0
 		y += 10.0
