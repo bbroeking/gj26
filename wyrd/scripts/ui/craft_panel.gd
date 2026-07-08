@@ -64,10 +64,7 @@ func _ready() -> void:
 	col.add_theme_constant_override("separation", 10)
 	_panel.add_child(col)
 
-	var section := Label.new()
-	section.text = "Recipes"
-	WyrdUi.style_section(section)
-	col.add_child(section)
+	col.add_child(WyrdUi.section_rule("Recipes"))
 
 	# A7-full grew the forge to 14 recipes — the list scrolls now.
 	var scroll := ScrollContainer.new()
@@ -89,10 +86,7 @@ func _ready() -> void:
 			var lp: CanvasLayer = load("res://scripts/ui/loadout_panel.gd").new()
 			get_tree().current_scene.add_child(lp))
 		col.add_child(lb)
-	var s2 := Label.new()
-	s2.text = "Satchel"
-	WyrdUi.style_section(s2)
-	col.add_child(s2)
+	col.add_child(WyrdUi.section_rule("Satchel"))
 	_satchel_lbl = Label.new()
 	WyrdUi.style_body(_satchel_lbl, 13)
 	_satchel_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
