@@ -121,7 +121,7 @@ static func make_meter(width: float, height: float, fill_color: Color) -> Dictio
 	var root := Panel.new()
 	root.custom_minimum_size = Vector2(width, height)
 	root.size = Vector2(width, height)
-	# Spec 41 — kit treatment: flat trough + ink border (boss bar et al).
+	# Spec 41 — kit treatment: carved trough + ink border (boss bar et al).
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = KIT_WELL
 	sb.border_color = KIT_EDGE
@@ -136,6 +136,39 @@ static func make_meter(width: float, height: float, fill_color: Color) -> Dictio
 	fill.position = Vector2(3, 3)
 	fill.size = Vector2(width - 6, height - 6)
 	root.add_child(fill)
+	# Specular stripe inside the fill — a thin bright lip at the very top so
+	# the liquid reads as a real volume (not a flat rect). Anchored to fill so
+	# it moves with the fill's right edge as the ratio changes.
+	var shine := ColorRect.new()
+	shine.color = Color(1.0, 1.0, 0.95, 0.30)
+	shine.anchor_right = 1.0
+	shine.offset_left = 2.0
+	shine.offset_right = -2.0
+	shine.offset_top = 1.0
+	shine.offset_bottom = 3.5
+	fill.add_child(shine)
+	# Carved-trough depth overlay (drawn above the fill so it's always visible
+	# even at 100% — the drawn_well technique applied to a Panel meter).
+	# A dark strip at the top edge reads as a shadow cast by the bevel; the
+	# warm lip at the bottom reads as bounce light off the trough floor.
+	var top_sh := ColorRect.new()
+	top_sh.color = Color(0.0, 0.0, 0.0, 0.14)
+	top_sh.anchor_right = 1.0
+	top_sh.offset_left = 2.0
+	top_sh.offset_right = -2.0
+	top_sh.offset_top = 2.0
+	top_sh.offset_bottom = 4.5
+	root.add_child(top_sh)
+	var bot_lip := ColorRect.new()
+	bot_lip.color = Color(1.0, 1.0, 0.92, 0.20)
+	bot_lip.anchor_right = 1.0
+	bot_lip.anchor_top = 1.0
+	bot_lip.anchor_bottom = 1.0
+	bot_lip.offset_left = 2.0
+	bot_lip.offset_right = -2.0
+	bot_lip.offset_top = -4.5
+	bot_lip.offset_bottom = -2.0
+	root.add_child(bot_lip)
 	var label := Label.new()
 	label.name = "MeterLabel"
 	_set_font(label, font_header())
