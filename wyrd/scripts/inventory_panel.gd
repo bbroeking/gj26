@@ -870,12 +870,24 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 					Vector2(lx, cardy + CARD_H + CARD_GAP),
 					Color(0.55, 0.62, 0.40, 0.65), 3.0)
 				var cr := Rect2(Vector2(card_x, cardy), Vector2(card_w, CARD_H))
+				# Carved parchment card — plate, top honey bevel, bottom ink
+				# shadow, ink border, left accent stripe (SAGE = earned, DIM =
+				# locked), parchment grain. Earned cards get a gold inner
+				# pinstripe so the mastered read sits a step above plain ink.
+				var plate := WyrdUi.KIT_PLATE if ok else Color(0.84, 0.79, 0.66)
+				draw_rect(cr, plate)
+				draw_rect(Rect2(cr.position + Vector2(1.0, 1.0),
+					Vector2(cr.size.x - 2.0, 2.0)), Color(1.0, 1.0, 0.92, 0.42))
+				draw_rect(Rect2(cr.position + Vector2(2.0, cr.size.y - 3.0),
+					Vector2(cr.size.x - 4.0, 2.0)), Color(WyrdUi.KIT_EDGE, 0.22))
+				draw_rect(cr, WyrdUi.KIT_EDGE, false, 1.5)
+				var stripe := WyrdUi.SAGE.darkened(0.08) if ok \
+					else Color(WyrdUi.INK_MID, 0.55)
+				draw_rect(Rect2(cr.position + Vector2(1.5, 1.5),
+					Vector2(3.0, cr.size.y - 3.0)), stripe)
 				if ok:
-					draw_rect(cr, Color(0.93, 0.88, 0.74))
-					draw_rect(cr, WyrdUi.SAGE.darkened(0.12), false, 2.0)
-				else:
-					draw_rect(cr, Color(0.78, 0.72, 0.60, 0.85))
-					draw_rect(cr, Color(0.50, 0.42, 0.32, 0.7), false, 1.5)
+					draw_rect(cr.grow(-4.0), Color(WyrdUi.GOLD, 0.15), false, 1.0)
+				WyrdUi.draw_parchment_grain(self, cr, int(cardy) ^ 0x4a7b)
 				# node disc on the spine
 				var dc := Vector2(lx, cardy + CARD_H * 0.5)
 				draw_circle(dc, 12.0, WyrdUi.SAGE.darkened(0.05) if ok \
