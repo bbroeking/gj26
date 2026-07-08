@@ -282,7 +282,16 @@ class _VendorCard extends Control:
 		if _sub != "":
 			draw_string(font, Vector2(tx, size.y * 0.5 + 16.0), _sub,
 				HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 86.0, 12, WyrdUi.INK_MID)
-		# --- price (gold, right-aligned; red when unaffordable on buy) ---
+		# --- price chip: a small parchment market-tag behind the price so the
+		# coin amount reads at a glance. Gold-tinted when affordable, terracotta
+		# when the purse falls short. Kit language: same chip shape as the HUD
+		# gold readout and the draught counter.
+		var pr := Rect2(Vector2(size.x - 87.0, size.y * 0.5 - 13.5),
+			Vector2(79.0, 27.0))
+		draw_rect(pr, WyrdUi.KIT_PLATE)
+		draw_rect(pr, Color(WyrdUi.GOLD if not _price_red \
+			else WyrdUi.TERRACOTTA, 0.14))
+		draw_rect(pr, Color(WyrdUi.KIT_EDGE, 0.32), false, 1.0)
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
