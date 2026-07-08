@@ -707,15 +707,20 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 		return
 	# Slice C — each material rides a list-row plate: an ink-disc holding its
 	# glyph on the left, name + count on the card, the lore line beneath.
+	# The left-edge accent stripe and disc tint are keyed to the material's
+	# group so the satchel reads like the journal reference: green for growing
+	# things, clay for earthen, gold for refined, violet for echo drops,
+	# terracotta for trophies — colour at a glance, text confirms.
 	for id in game.materials:
 		var def: Dictionary = GatherDefs.MATERIALS.get(String(id), {})
+		var group := String(def.get("group", ""))
 		var row_top := y - 18.0
 		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 30.0))
 		if _span_visible(row_top, row.end.y, scroll, view):
-			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
-			# glyph disc on the left
+			WyrdUi.draw_list_row(self, row, _group_accent(group))
+			# glyph disc — tinted to the group family
 			var dc := Vector2(row.position.x + 19.0, row.position.y + 15.0)
-			WyrdUi.draw_round_well(self, dc, 11.0, Color(0.88, 0.81, 0.66))
+			WyrdUi.draw_round_well(self, dc, 11.0, _group_disc(group))
 			draw_string(font, Vector2(dc.x - 11.0, dc.y + 6.0),
 				String(def.get("icon", "·")), HORIZONTAL_ALIGNMENT_CENTER,
 				22.0, 14, WyrdUi.INK)
@@ -899,3 +904,26 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 			cardy += CARD_H + CARD_GAP
 		y = cardy + 12.0
 	_tab_content_h[3] = y - view.position.y
+
+
+# ---- satchel group colour helpers ----
+# Maps the five material groups to storybook accent stripe and disc tints.
+# Verdant = growing things, earthen = ore/metal, lumen = refined/radiant,
+# echo = otherworldly drops, gristle = beast trophies.
+func _group_accent(group: String) -> Color:
+	match group:
+		"verdant":  return WyrdUi.SAGE
+		"earthen":  return Color(0.60, 0.44, 0.28)   # warm oak-clay
+		"lumen":    return WyrdUi.GOLD
+		"echo":     return Color(0.44, 0.36, 0.54)   # bramble violet
+		"gristle":  return WyrdUi.TERRACOTTA
+	return WyrdUi.INK_MID
+
+func _group_disc(group: String) -> Color:
+	match group:
+		"verdant":  return Color(0.83, 0.89, 0.71)   # sage-cream
+		"earthen":  return Color(0.88, 0.82, 0.71)   # clay-cream
+		"lumen":    return Color(0.94, 0.90, 0.73)   # gold-cream
+		"echo":     return Color(0.84, 0.80, 0.87)   # lavender-cream
+		"gristle":  return Color(0.91, 0.82, 0.78)   # rose-cream
+	return Color(0.88, 0.81, 0.66)
