@@ -383,3 +383,64 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# ---- spec 45: section-rule heading ----
+# A storybook journal divider: a warm parchment band spanning the full width,
+# the section title in IM Fell SC centred between gold-diamond brackets, and
+# thin ink-ruled lines extending to both edges. Use WyrdUi.section_rule("Title")
+# wherever a bare style_section Label would go — adds the journal layout
+# language with pure vector code (no texture asset touched).
+class SectionRule extends Control:
+	var text := ""
+	var _font: Font = null
+
+	func _ready() -> void:
+		_font = WyrdUi.font_header()
+
+	func _draw() -> void:
+		var w := size.x
+		var cy := size.y * 0.5
+		var font: Font = _font if _font != null else get_theme_default_font()
+		var fs := 15
+		var dr := 3.5
+		# Warm parchment band spanning the full width.
+		draw_rect(Rect2(0.0, cy - 9.5, w, 19.0), Color(WyrdUi.KIT_PLATE, 0.48))
+		# Faint ink rules above and below the band (give it defined edges).
+		draw_line(Vector2(4.0, cy - 9.5), Vector2(w - 4.0, cy - 9.5),
+			Color(WyrdUi.KIT_EDGE, 0.18), 1.0)
+		draw_line(Vector2(4.0, cy + 9.5), Vector2(w - 4.0, cy + 9.5),
+			Color(WyrdUi.KIT_EDGE, 0.18), 1.0)
+		# Measure to anchor diamonds and rules symmetrically.
+		var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var tx := (w - tw) * 0.5
+		var pad := 8.0
+		# Left: rule from left edge to diamond, then gap before text.
+		var dl := Vector2(tx - 14.0, cy)
+		if dl.x > pad:
+			draw_line(Vector2(pad, cy), Vector2(dl.x - dr - 2.0, cy),
+				Color(WyrdUi.KIT_EDGE, 0.38), 1.0)
+			draw_colored_polygon(PackedVector2Array([
+				dl + Vector2(0.0, -dr), dl + Vector2(dr, 0.0),
+				dl + Vector2(0.0, dr), dl + Vector2(-dr, 0.0)]),
+				Color(WyrdUi.GOLD, 0.80))
+		# Section title in terracotta IM Fell SC.
+		draw_string(font, Vector2(tx, cy + fs * 0.38), text,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, fs, WyrdUi.TERRACOTTA)
+		# Right: gap after text, then diamond and rule to right edge.
+		var drv := Vector2(tx + tw + 14.0, cy)
+		if drv.x < w - pad:
+			draw_colored_polygon(PackedVector2Array([
+				drv + Vector2(0.0, -dr), drv + Vector2(dr, 0.0),
+				drv + Vector2(0.0, dr), drv + Vector2(-dr, 0.0)]),
+				Color(WyrdUi.GOLD, 0.80))
+			if drv.x + dr + 2.0 < w - pad:
+				draw_line(Vector2(drv.x + dr + 2.0, cy), Vector2(w - pad, cy),
+					Color(WyrdUi.KIT_EDGE, 0.38), 1.0)
+
+
+static func section_rule(lbl: String, min_h: float = 28.0) -> SectionRule:
+	var r := SectionRule.new()
+	r.text = lbl
+	r.custom_minimum_size = Vector2(0.0, min_h)
+	r.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return r
