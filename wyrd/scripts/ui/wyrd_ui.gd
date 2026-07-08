@@ -314,18 +314,39 @@ static func draw_carved_button(c: CanvasItem, r: Rect2, enabled := true) -> void
 	c.draw_rect(r, KIT_EDGE, false, 2.0)
 	c.draw_rect(r.grow(-3.0), Color(KIT_EDGE, 0.30), false, 1.0)
 
-# Sparse parchment grain — short sepia fibre strokes, deterministic seed
-# (no Math.random drift between redraws).
+# Parchment grain — laid fibres (horizontal), cross-chain fibres (diagonal),
+# and sparse foxing spots. Deterministic seed so callers redraw stably.
 static func draw_parchment_grain(c: CanvasItem, r: Rect2, seed_v: int = 7) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_v
 	var n := int(r.size.x * r.size.y / 2600.0)
+	# Laid fibres — primary horizontal strokes (unchanged for back-compat).
 	for _i in n:
 		var p := r.position + Vector2(rng.randf() * r.size.x,
 			rng.randf() * r.size.y)
 		var ln := 3.0 + rng.randf() * 7.0
 		c.draw_line(p, p + Vector2(ln, rng.randf_range(-1.2, 1.2)),
 			Color(0.62, 0.52, 0.38, 0.05 + rng.randf() * 0.05), 1.0)
+	# Chain fibres — sparser diagonal strokes cross the laid layer, replicating
+	# the laid-and-chain depth of real hand-made parchment paper.
+	var nc := max(1, n / 6)
+	for _i in nc:
+		var p := r.position + Vector2(rng.randf() * r.size.x,
+			rng.randf() * r.size.y)
+		var ln := 4.0 + rng.randf() * 9.0
+		var ang := 0.42 + rng.randf_range(-0.06, 0.06)
+		if rng.randf() < 0.5:
+			ang = -ang
+		c.draw_line(p, p + Vector2(ln * cos(ang), ln * sin(ang)),
+			Color(0.55, 0.44, 0.30, 0.04 + rng.randf() * 0.04), 1.0)
+	# Foxing spots — tiny sepia discs scattered across the face, suggesting
+	# age and hand-use without overwhelming the readable cream ground.
+	var nf := max(1, n / 20)
+	for _i in nf:
+		var p := r.position + Vector2(rng.randf() * r.size.x,
+			rng.randf() * r.size.y)
+		var rad := 0.8 + rng.randf() * 1.2
+		c.draw_circle(p, rad, Color(0.58, 0.46, 0.32, 0.04 + rng.randf() * 0.04))
 
 # Section flourish: ── ◆ ── centred under a header.
 static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
