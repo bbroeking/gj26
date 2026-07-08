@@ -278,29 +278,49 @@ static func draw_list_row(c: CanvasItem, r: Rect2, accent: Color) -> void:
 	c.draw_rect(Rect2(r.position + Vector2(1.5, 1.5),
 		Vector2(3.0, r.size.y - 3.0)), accent)
 
-# A recessed rectangular well: stepped inner shadow top-left, light lip
-# bottom — the socket reads as carved INTO the bench, not painted on.
+# A recessed rectangular well: stepped inner shadow on top, left, and right
+# walls + a warm light lip at the bottom — the socket reads as carved INTO
+# the bench with the light falling from above-left.
 static func draw_well(c: CanvasItem, r: Rect2, fill := KIT_WELL) -> void:
 	c.draw_rect(r, fill)
+	# top & left stepped shadow — primary carved-in shadow from above-left
 	for i in 3:
-		var a := 0.16 - 0.05 * float(i)
+		var a := 0.17 - 0.05 * float(i)
 		var inset := 1.0 + float(i) * 1.5
 		c.draw_rect(Rect2(r.position + Vector2(inset, inset),
 			Vector2(r.size.x - inset * 2.0, 2.0)), Color(0, 0, 0, a))
 		c.draw_rect(Rect2(r.position + Vector2(inset, inset),
 			Vector2(2.0, r.size.y - inset * 2.0)), Color(0, 0, 0, a))
+	# right-side inner shadow — the far wall sits in shade
+	for i in 2:
+		var a := 0.08 - 0.03 * float(i)
+		var inset := 1.0 + float(i) * 1.5
+		c.draw_rect(Rect2(
+			r.position + Vector2(r.size.x - inset - 2.0, inset),
+			Vector2(2.0, r.size.y - inset * 2.0)), Color(0, 0, 0, a))
+	# warm light lip at the bottom (the carved floor catches the page's glow)
 	c.draw_rect(Rect2(r.position + Vector2(2.0, r.size.y - 3.0),
-		Vector2(r.size.x - 4.0, 2.0)), Color(1.0, 1.0, 0.92, 0.35))
+		Vector2(r.size.x - 4.0, 2.0)), Color(1.0, 1.0, 0.92, 0.40))
+	# tiny warm catch-light at the bottom-right corner (bounced light in a deep socket)
+	c.draw_rect(Rect2(r.position + Vector2(r.size.x - 6.0, r.size.y - 5.0),
+		Vector2(4.0, 4.0)), Color(1.0, 0.97, 0.85, 0.16))
 	c.draw_rect(r, KIT_EDGE, false, 2.0)
 
-# Round well — ink sockets, pot rims.
+# Round well — ink sockets, pot rims. Two shadow arcs (outer + deeper inner)
+# plus a warm bottom-right catch-light make the socket feel truly hollowed.
 static func draw_round_well(c: CanvasItem, center: Vector2, radius: float,
 		fill := KIT_WELL) -> void:
 	c.draw_circle(center, radius, fill)
+	# outer shadow arc — top-left rim shadow
 	c.draw_arc(center, radius - 2.5, PI * 0.78, PI * 1.95, 22,
 		Color(0, 0, 0, 0.18), 3.0, true)
+	# inner shadow arc — deeper carved shadow, slightly tighter
+	c.draw_arc(center, radius - 5.0, PI * 0.90, PI * 1.80, 18,
+		Color(0, 0, 0, 0.09), 2.0, true)
+	# warm catch-light arc — bottom-right where the well floor glows
 	c.draw_arc(center, radius - 2.5, -PI * 0.22, PI * 0.30, 16,
-		Color(1.0, 1.0, 0.92, 0.30), 2.0, true)
+		Color(1.0, 1.0, 0.92, 0.34), 2.5, true)
+	# outer border
 	c.draw_arc(center, radius, 0, TAU, 40, KIT_EDGE, 2.0, true)
 
 # A carved button face: plate, light top bevel, dark bottom bevel, inner
