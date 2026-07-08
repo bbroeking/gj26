@@ -89,6 +89,15 @@ func _ready() -> void:
 	hint.offset_left = -130
 	hint.offset_top = 38
 	_panel.add_child(hint)
+	# Header ornament: flourish rule + tiny bow icon so the "Loadout" header
+	# reads as a storybook panel, not a plain label-over-parchment block.
+	var hdr_orn := _HeaderOrn.new()
+	hdr_orn.anchor_right = 1.0
+	hdr_orn.offset_left = 4.0
+	hdr_orn.offset_right = -4.0
+	hdr_orn.offset_top = 68.0
+	hdr_orn.offset_bottom = 86.0
+	_panel.add_child(hdr_orn)
 	var col := VBoxContainer.new()
 	col.anchor_right = 1.0
 	col.anchor_bottom = 1.0
@@ -262,3 +271,37 @@ class _SkillCard extends Control:
 		# --- short desc (up to two lines) ---
 		draw_multiline_string(font, Vector2(tx, 40.0), _desc,
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 16.0, 12, 2, dim)
+
+
+# Header ornament for the loadout panel: a ◆ flourish rule (spanning the
+# title's content zone) and a small bow-and-arrow icon in the left margin —
+# the same storybook header treatment as the crafting bench view. Drawn in
+# _draw so it requires no assets and scales with the panel.
+class _HeaderOrn extends Control:
+	func _draw() -> void:
+		var cy := size.y * 0.5
+		# Flourish rule: from the title's left edge (panel x=54, this control's
+		# offset_left=4 → local x=50) to the right content margin.
+		var title_x := 50.0
+		var fw := size.x - title_x - 8.0
+		WyrdUi.draw_flourish(self, Vector2(title_x + fw * 0.5, cy), fw)
+		# Bow-and-arrow icon in the 50 px left margin.
+		# Stave: a "(" arc from ~108° to ~252° (opening rightward); string:
+		# the chord across that opening; arrow: a gold shaft + arrowhead.
+		var bx := 13.0
+		var bh := minf(cy - 1.5, 7.0)
+		draw_arc(Vector2(bx, cy), bh, PI * 0.6, PI * 1.4, 12,
+			Color(WyrdUi.KIT_EDGE, 0.60), 2.0, false)
+		var str_x := bx + bh * cos(PI * 0.6)   # x of the arc's chord
+		var str_dy := bh * sin(PI * 0.6)        # half-height of the chord
+		draw_line(Vector2(str_x, cy - str_dy), Vector2(str_x, cy + str_dy),
+			Color(WyrdUi.KIT_EDGE, 0.38), 1.0)
+		# Gold arrow shaft from the string to the right, plus arrowhead barbs.
+		var shaft_r := bx + bh * 1.8
+		draw_line(Vector2(str_x - 2.0, cy), Vector2(shaft_r, cy),
+			Color(WyrdUi.GOLD, 0.68), 1.5)
+		var ah := 3.0
+		draw_line(Vector2(shaft_r, cy), Vector2(shaft_r - ah, cy - ah * 0.55),
+			Color(WyrdUi.GOLD, 0.68), 1.5)
+		draw_line(Vector2(shaft_r, cy), Vector2(shaft_r - ah, cy + ah * 0.55),
+			Color(WyrdUi.GOLD, 0.68), 1.5)
