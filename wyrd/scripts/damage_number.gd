@@ -11,6 +11,15 @@ const TIER_COLOR := {
 const TIER_SCALE := {"normal": 1.0, "crit": 1.45, "super": 1.9}
 const LIFETIME := 0.62
 
+# Storybook fonts: IM Fell SC gives damage numbers an ink-serif punch
+# (title-weight caps in the parchment tradition); Caveat keeps status verbs
+# ("singed!", "snared!") hand-jotted and distinct from the hit numbers.
+const _FONT_HIT := preload("res://assets/fonts/IMFellEnglishSC-Regular.ttf")
+const _FONT_STATUS := preload("res://assets/fonts/Caveat.ttf")
+# Sepia outline (WyrdUi.INK ≈ 0x3a2c20) — black outlines read as engine-default;
+# sepia reads as storybook ink and is easier on the eye against the 3D world.
+const _OUTLINE_COLOR := Color(0.227, 0.173, 0.125)
+
 var _age := 0.0
 var _vel := Vector3.ZERO
 var _base := 1.0
@@ -19,6 +28,8 @@ func setup(amount: int, tier: String = "normal") -> void:
 	text = str(amount)
 	modulate = TIER_COLOR.get(tier, TIER_COLOR["normal"])
 	_base = TIER_SCALE.get(tier, 1.0)
+	font = _FONT_HIT
+	outline_modulate = _OUTLINE_COLOR
 	# Scatter — up hard, with a random sideways/forward kick.
 	var ang := randf() * TAU
 	_vel = Vector3(cos(ang) * 1.2, 3.2, sin(ang) * 1.2)
@@ -38,8 +49,10 @@ func setup_apply(label: String, color: Color) -> void:
 	text = label
 	modulate = color
 	_base = 0.7
+	font = _FONT_STATUS
 	font_size = 56
 	outline_size = 12
+	outline_modulate = _OUTLINE_COLOR
 	var ang := randf() * TAU
 	_vel = Vector3(cos(ang) * 0.5, 2.2, sin(ang) * 0.5)
 	scale = Vector3.ZERO
