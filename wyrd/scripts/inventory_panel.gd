@@ -541,14 +541,37 @@ func _draw_tooltip() -> void:
 		pos.x = 0
 	if pos.y < 0:
 		pos.y = 0
-	draw_rect(Rect2(pos, Vector2(w, h)), Color(0.93, 0.88, 0.76, 0.97))
-	draw_rect(Rect2(pos, Vector2(w, h)),
-		Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+	var r := Rect2(pos, Vector2(w, h))
+	# Drop shadow — depth without weight; same convention as chip_stylebox.
+	draw_rect(Rect2(pos + Vector2(3, 3), Vector2(w, h)), Color(0, 0, 0, 0.20))
+	# Parchment face.
+	draw_rect(r, Color(0.93, 0.88, 0.76, 0.97))
+	# Top warm bevel + bottom shade — card catches the page's warm light
+	# (same language as draw_list_row so the tooltip reads as a peer of the
+	# vendor cards and skill cards, not a debug overlay dropped on top).
+	draw_rect(Rect2(pos + Vector2(2, 1), Vector2(w - 4, 2)),
+		Color(1.0, 1.0, 0.93, 0.40))
+	draw_rect(Rect2(pos + Vector2(2, h - 3), Vector2(w - 4, 2)),
+		Color(WyrdUi.KIT_EDGE, 0.18))
+	# Ink border + burnished gold inner pin-stripe — the burnished-object read
+	# shared by the hotbar tray and the mark_selected ring.
+	draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+	draw_rect(r.grow(-3.0), Color(WyrdUi.GOLD, 0.28), false, 1.0)
+	# Rarity-accent stripe down the left edge — signals quality before the
+	# player reads a single word; quiet ink-mid for normal gear so the colour
+	# lives on magic/rare/unique items only.
+	var rarity := String(item.get("rarity", "normal"))
+	var rc: Color = RARITY_COLOR.get(rarity, WyrdUi.INK_MID)
+	var left_indent := 0.0
+	if rarity != "normal":
+		draw_rect(Rect2(pos + Vector2(2, 2), Vector2(3.0, h - 4)), rc)
+		left_indent = 5.0
 	var font := get_theme_default_font()
 	var y := pos.y + ipad + 14
 	for line in lines:
-		draw_string(font, Vector2(pos.x + ipad, y), String(line.text),
-			HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2, int(line.size), line.color)
+		draw_string(font, Vector2(pos.x + ipad + left_indent, y), String(line.text),
+			HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2 - left_indent,
+			int(line.size), line.color)
 		y += line_h
 
 func _draw_held() -> void:
