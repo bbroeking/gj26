@@ -31,6 +31,13 @@ func _ready() -> void:
 	_panel.offset_right = 260
 	_panel.offset_bottom = 220
 	add_child(_panel)
+	# Lantern crest — a drawn iron lantern + flourish rule in the header gutter,
+	# giving "The Lantern" the same storybook header language as other panels.
+	var hdr_deco := _LanternHeader.new()
+	hdr_deco.anchor_right = 1.0
+	hdr_deco.offset_bottom = 90.0
+	hdr_deco.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(hdr_deco)
 	var title := Label.new()
 	title.text = "The Lantern"
 	WyrdUi.style_title(title)
@@ -190,3 +197,12 @@ func _close() -> void:
 	if _game != null:
 		_game.modal_closed()
 	queue_free()
+
+
+# Lantern crest drawn into the panel's header zone — the wrought-iron lantern
+# sits in the ~54px left gutter beside the title, and a flourish rule acts as
+# a divider between the header and the action list below it.
+class _LanternHeader extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_lantern(self, Vector2(26.0, 52.0), 46.0)
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 82.0), size.x - 72.0)
