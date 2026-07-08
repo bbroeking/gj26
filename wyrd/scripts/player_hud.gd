@@ -100,35 +100,35 @@ func _refresh_mute() -> void:
 		WyrdUi.TERRACOTTA if muted else Color(0.36, 0.29, 0.22, 0.8))
 
 # Draught counter under the meters — what Q will drink.
-var _draught_lbl: Label = null
+var _draught_chip: Control = null
 
 func _build_draught_chip() -> void:
-	_draught_lbl = Label.new()
-	_draught_lbl.anchor_left = 0.5
-	_draught_lbl.anchor_right = 0.5
-	_draught_lbl.anchor_top = 1.0
-	_draught_lbl.anchor_bottom = 1.0
-	_draught_lbl.offset_left = -300
-	_draught_lbl.offset_right = -140
-	_draught_lbl.offset_top = -22
-	_draught_lbl.offset_bottom = -4
-	_draught_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	WyrdUi.style_chip(_draught_lbl, 13)
-	add_child(_draught_lbl)
+	var dc := DraughtChip.new()
+	dc.anchor_left = 0.5
+	dc.anchor_right = 0.5
+	dc.anchor_top = 1.0
+	dc.anchor_bottom = 1.0
+	dc.offset_left = -300
+	dc.offset_right = -140
+	dc.offset_top = -22
+	dc.offset_bottom = -4
+	dc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(dc)
+	_draught_chip = dc
 	var game := get_tree().root.get_node_or_null("Game")
 	if game != null:
 		game.materials_changed.connect(_refresh_draughts)
 	_refresh_draughts()
 
 func _refresh_draughts() -> void:
-	if _draught_lbl == null:
+	if _draught_chip == null:
 		return
 	var game := get_tree().root.get_node_or_null("Game")
 	if game == null:
 		return
 	var n: int = int(game.material_count("hearth_draught")) \
 		+ int(game.material_count("deep_draught"))
-	_draught_lbl.text = "" if n == 0 else "♨ ×%d · Q" % n
+	(_draught_chip as DraughtChip).set_count(n)
 
 # ---- Wyrd overlay: objective + toasts + skill levels ----
 func _build_wyrd_overlay() -> void:
@@ -498,3 +498,39 @@ class QuestScrollArt extends Control:
 		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
 		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
 		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+
+# Draught counter chip — a drawn list-row plate with a gold accent stripe and
+# an amber bead icon so the quick-drink slot reads as a consumable, not a
+# plain status label. Invisible when count is zero.
+class DraughtChip extends Control:
+	var _count := 0
+
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func set_count(n: int) -> void:
+		_count = n
+		visible = n > 0
+		queue_redraw()
+
+	func _draw() -> void:
+		if _count == 0:
+			return
+		var r := Rect2(Vector2.ZERO, size)
+		# Gold accent stripe — tags this as a consumable, distinct from the
+		# sage (ready) and terracotta (danger) rows used elsewhere.
+		WyrdUi.draw_list_row(self, r, WyrdUi.GOLD)
+		var font := get_theme_default_font()
+		# Amber bead — a tiny warm circle evoking the draught flask.
+		var bead := Vector2(14.0, size.y * 0.5)
+		draw_circle(bead, 6.0, Color(0.84, 0.60, 0.20))
+		draw_arc(bead, 6.0, 0, TAU, 12, WyrdUi.KIT_EDGE, 1.5, true)
+		draw_circle(bead + Vector2(-2.0, -2.0), 1.5, Color(1.0, 0.96, 0.80, 0.60))
+		# Count "×N" in sepia ink.
+		draw_string(font, Vector2(26.0, size.y * 0.5 + 5.0),
+			"×%d" % _count, HORIZONTAL_ALIGNMENT_LEFT,
+			size.x - 50.0, 13, WyrdUi.INK)
+		# "Q" keybind, dim, right-anchored.
+		draw_string(font, Vector2(size.x - 24.0, size.y * 0.5 + 5.0),
+			"Q", HORIZONTAL_ALIGNMENT_CENTER, 20.0, 11, WyrdUi.INK_MID)
