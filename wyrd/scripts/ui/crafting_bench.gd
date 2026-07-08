@@ -519,7 +519,7 @@ class BenchView extends Control:
 		_draw_tray(hdr, font)
 		_draw_bench(hdr, font)
 		_draw_result(hdr, font)
-		_draw_tip(font)
+		_draw_tip(hdr, font)
 		# Drag ghost (drawn over the tooltip).
 		if not bench._held.is_empty():
 			var r := Rect2(bench._cursor - Vector2(46, 14), Vector2(92, 28))
@@ -857,23 +857,42 @@ class BenchView extends Control:
 			draw_circle(sc, 5.5, Color(0.72, 0.28, 0.22))
 			draw_arc(sc, 9.0, 0, TAU, 22, Color(0.40, 0.12, 0.10), 1.5, true)
 
-	func _draw_tip(font: Font) -> void:
+	func _draw_tip(hdr: Font, font: Font) -> void:
 		if _tip == "" or not bench._held.is_empty():
 			return
 		var lines := _tip.split("\n")
+		# Width is measured per-line with the correct font (header for line 0,
+		# body for the rest) so the slip isn't undersized on long name lines.
 		var w := 0.0
-		for ln in lines:
-			w = maxf(w, font.get_string_size(ln, HORIZONTAL_ALIGNMENT_LEFT,
-				-1, 13).x)
+		for i in lines.size():
+			var f := hdr if i == 0 else font
+			var sz := 14 if i == 0 else 13
+			w = maxf(w, f.get_string_size(lines[i], HORIZONTAL_ALIGNMENT_LEFT,
+				-1, sz).x)
 		var box := Rect2(_tip_at + Vector2(16, 12),
-			Vector2(w + 20.0, 12.0 + 19.0 * lines.size()))
+			Vector2(w + 24.0, 16.0 + 19.0 * lines.size()))
 		# Keep it on the panel.
 		box.position.x = minf(box.position.x, size.x - box.size.x - 8.0)
 		box.position.y = minf(box.position.y, size.y - box.size.y - 8.0)
+		# Soft drop shadow so the slip sits ON the bench face, not flat in it.
+		draw_rect(Rect2(box.position + Vector2(2, 3), box.size), Color(0, 0, 0, 0.14))
+		# Warm parchment face.
 		draw_rect(box, Color(0.97, 0.93, 0.80, 0.97))
-		draw_rect(box, EDGE, false, 2.0)
-		var ty := box.position.y + 17.0
-		for ln in lines:
-			draw_string(font, Vector2(box.position.x + 10.0, ty), ln,
-				HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 20.0, 13, TXT)
+		# Parchment grain — the tooltip reads as a scrap of paper torn from a
+		# journal, not a debug overlay.
+		WyrdUi.draw_parchment_grain(self, box, 3)
+		# Top honey bevel (warm light from above).
+		draw_rect(Rect2(box.position + Vector2(2.0, 1.5),
+			Vector2(box.size.x - 4.0, 1.5)), Color(1.0, 1.0, 0.93, 0.55))
+		# Ink border + gold inner inset line (the "burnished" read that the
+		# hotbar tray and carved buttons share).
+		draw_rect(box, EDGE, false, 1.5)
+		draw_rect(box.grow(-3.0), Color(WyrdUi.GOLD, 0.35), false, 1.0)
+		# First line in header font (the name/title), rest in body font.
+		var ty := box.position.y + 18.0
+		for i in lines.size():
+			var f := hdr if i == 0 else font
+			var sz := 14 if i == 0 else 13
+			draw_string(f, Vector2(box.position.x + 11.0, ty), lines[i],
+				HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 22.0, sz, TXT)
 			ty += 19.0
