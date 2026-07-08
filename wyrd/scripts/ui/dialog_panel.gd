@@ -137,9 +137,34 @@ func _finish() -> void:
 class PortraitWell extends Control:
 	func _draw() -> void:
 		var c := size * 0.5
-		var r := minf(c.x, c.y)
+		var r := minf(c.x, c.y) - 1.0   # 1px inset so the outer ring fits cleanly
 		draw_circle(c, r, Color(0.88, 0.82, 0.67))
+		# Warm top-light catch: a soft arc in the upper hemisphere reads as
+		# candlelight falling on the portrait from above.
+		draw_arc(c, r * 0.68, PI * 1.05, PI * 1.95, 20,
+			Color(1.0, 0.97, 0.88, 0.22), r * 0.20, true)
 		draw_circle(c + Vector2(0, r * 0.28), r * 0.34, Color(0.55, 0.47, 0.36, 0.55))
 		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
-		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
-		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+		# Triple ring: outer ink, burnished-gold accent, inner dim ink.
+		draw_arc(c, r, 0, TAU, 52, WyrdUi.KIT_EDGE, 2.5, true)
+		draw_arc(c, r - 3.5, 0, TAU, 52, Color(WyrdUi.GOLD, 0.60), 1.5, true)
+		draw_arc(c, r - 6.5, 0, TAU, 52, Color(WyrdUi.KIT_EDGE, 0.28), 1.0, true)
+		# Storybook leaf sprigs at 10 o'clock and 2 o'clock.
+		_draw_leaf_sprig(c, r, -PI * 5.0 / 6.0)
+		_draw_leaf_sprig(c, r, -PI / 6.0)
+
+	func _draw_leaf_sprig(c: Vector2, r: float, angle: float) -> void:
+		var out  := Vector2(cos(angle), sin(angle))
+		var perp := Vector2(-sin(angle), cos(angle))
+		var base := c + out * (r - 1.5)
+		var mid  := c + out * (r + 4.0)
+		var tip  := c + out * (r + 8.5)
+		var lw   := mid + perp * 5.0
+		var rw   := mid - perp * 5.0
+		draw_colored_polygon(PackedVector2Array([base, lw, tip]),
+			Color(WyrdUi.SAGE, 0.82))
+		draw_colored_polygon(PackedVector2Array([base, rw, tip]),
+			Color(WyrdUi.SAGE.darkened(0.12), 0.82))
+		draw_line(base, tip, WyrdUi.KIT_EDGE, 0.8)
+		draw_line(base, lw, Color(WyrdUi.KIT_EDGE, 0.5), 0.8)
+		draw_line(base, rw, Color(WyrdUi.KIT_EDGE, 0.5), 0.8)
