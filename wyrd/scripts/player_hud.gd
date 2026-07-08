@@ -418,6 +418,21 @@ class GlobeGauge extends Control:
 		draw_arc(c, R + 8.0, 0, TAU, 64, RING_WOOD, 14.0, true)
 		draw_arc(c, R + 15.0, 0, TAU, 64, RING_EDGE, 2.5, true)
 		draw_arc(c, R + 1.5, 0, TAU, 64, RING_EDGE, 2.0, true)
+		# Sage-leaf knots at the cardinal points (top/right/bottom/left) — the
+		# bramble-nest silhouette from mj_hud_bramble.png. Drawn before the
+		# rivet wells so rivets sit proud over the leafwork.
+		for i in 4:
+			var a := float(i) * TAU / 4.0
+			var outward := Vector2(cos(a), sin(a))
+			var perp := Vector2(-sin(a), cos(a))
+			var lbase := c + outward * (R + 3.5)
+			var lmid  := c + outward * (R + 8.0)
+			var ltip  := c + outward * (R + 13.5)
+			var lpts := PackedVector2Array([lbase, lmid + perp * 3.8, ltip, lmid - perp * 3.8])
+			draw_colored_polygon(lpts, Color(WyrdUi.SAGE, 0.62))
+			draw_polyline(PackedVector2Array([lpts[0], lpts[1], lpts[2], lpts[3], lpts[0]]),
+				Color(0.20, 0.28, 0.16, 0.60), 1.0, true)
+			draw_line(lbase, ltip, Color(0.20, 0.28, 0.16, 0.38), 0.8)
 		for i in 4:
 			var a := PI * 0.25 + float(i) * PI * 0.5
 			var np := c + Vector2(cos(a), sin(a)) * (R + 8.0)
