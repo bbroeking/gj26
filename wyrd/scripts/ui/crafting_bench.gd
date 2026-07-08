@@ -735,9 +735,9 @@ class BenchView extends Control:
 		draw_string(hdr, _try_rect.position + Vector2(0, 26), "Try the Mix",
 			HORIZONTAL_ALIGNMENT_CENTER, _try_rect.size.x, 13,
 			WyrdUi.INK if can_try else DIM)
-		# Spec 43 — the codex: every pot recipe, in its discovery state.
-		# Open-book glyph header + wider flourish; discovered recipes are
-		# SAGE-accented parchment cards; unknowns are quiet recessed chips.
+		# Codex — every pot recipe in its discovery state. Open-book glyph
+		# header; known = SAGE list-card + ink bottle; riddle-open = quiet
+		# INK_MID card; mystery = recessed ghost chip.
 		var cy := 462.0
 		var bk := Vector2(bx + 8.0, cy + 6.0)
 		draw_rect(Rect2(bk + Vector2(-9.0, -5.0), Vector2(8.0, 10.0)),
@@ -759,48 +759,45 @@ class BenchView extends Control:
 		draw_string(hdr, Vector2(bx + 20.0, cy + 13.0), "Codex",
 			HORIZONTAL_ALIGNMENT_LEFT, 160, 13, WyrdUi.INK)
 		WyrdUi.draw_flourish(self, Vector2(bx + 140.0, cy + 7.0), 252.0)
-		cy += 16.0
+		cy += 18.0
 		_codex_rects.clear()
+		var row_h := 20.0
+		var row_w := 330.0
 		for rid in GatherDefs.INK_RECIPE_ORDER:
 			var rec: Dictionary = GatherDefs.INK_RECIPES[rid]
-			var line := "◌ ???"
-			var col := DIM
-			var known := false
 			# Spec 45-carto — Mara's Marginalia: every riddle, plain to read.
 			var riddle_open: bool = bench._game != null \
 				and (bool((bench._game.seen_hints as Dictionary)
 					.get(String(rec.get("hint_key", "")), false))
 				or bool(bench._game.perk_active("carto", "marginalia")))
+			var row_r := Rect2(Vector2(bx, cy), Vector2(row_w, row_h))
 			if bench._game != null \
 					and bool(bench._game.ink_discovered(String(rid))):
-				known = true
 				var parts: Array = []
 				for mid in rec.inputs:
 					parts.append("%d× %s" % [int(rec.inputs[mid]),
 						GatherDefs.material_name(String(mid))])
-				line = "%s — %s" % [GatherDefs.material_name(String(rid)),
+				var line := "%s — %s" % [GatherDefs.material_name(String(rid)),
 					" + ".join(parts)]
-				col = TXT
-			elif riddle_open:
-				line = "◌ ??? — %s" % String(rec.get("riddle", ""))
-			if known:
-				# Discovered: SAGE-accented parchment card — the find is celebrated.
-				var row_r := Rect2(Vector2(bx, cy), Vector2(330.0, 15.0))
 				WyrdUi.draw_list_row(self, row_r, WyrdUi.SAGE)
-				WyrdUi.draw_ink_bottle(self, Vector2(bx + 10.0, cy + 7.5), 13.0,
-					INK_TINT.get(String(rid), Color(0.4, 0.4, 0.4)))
-				draw_string(font, Vector2(bx + 22.0, cy + 11.0), line,
-					HORIZONTAL_ALIGNMENT_LEFT, 302.0, 11, col)
+				WyrdUi.draw_ink_bottle(self, Vector2(bx + 12.0, cy + row_h * 0.5),
+					13.0, INK_TINT.get(String(rid), Color(0.4, 0.4, 0.4)))
+				draw_string(font, Vector2(bx + 22.0, cy + row_h - 5.0), line,
+					HORIZONTAL_ALIGNMENT_LEFT, row_w - 26.0, 11, TXT)
 				# Spec 45-carto — Practiced Measures: a known row is a button.
 				_codex_rects.append({"rect": row_r, "id": String(rid)})
+			elif riddle_open:
+				WyrdUi.draw_list_row(self, row_r, WyrdUi.INK_MID)
+				draw_string(font, Vector2(bx + 8.0, cy + row_h - 5.0),
+					"◌ ??? — %s" % String(rec.get("riddle", "")),
+					HORIZONTAL_ALIGNMENT_LEFT, row_w - 12.0, 11, DIM)
 			else:
-				# Quiet recessed chip — unknowns stay visually humble.
-				var row_r := Rect2(Vector2(bx, cy), Vector2(330.0, 14.0))
-				draw_rect(row_r, Color(WELL, 0.45))
+				draw_rect(row_r, Color(WELL, 0.50))
 				draw_rect(row_r, Color(EDGE, 0.18), false, 1.0)
-				draw_string(font, Vector2(bx + 6.0, cy + 10.0), line,
-					HORIZONTAL_ALIGNMENT_LEFT, 318.0, 10, Color(DIM, 0.70))
-			cy += 15.0
+				draw_string(font, Vector2(bx + 8.0, cy + row_h - 5.0),
+					"◌ ???", HORIZONTAL_ALIGNMENT_LEFT, row_w - 12.0, 11,
+					Color(DIM, 0.55))
+			cy += row_h + 2.0
 
 	func _draw_result(hdr: Font, font: Font) -> void:
 		var rx := 660.0
