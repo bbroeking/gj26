@@ -438,22 +438,18 @@ func _draw_slots() -> void:
 	for name in SLOT_OFFSET:
 		var top := _slot_top(String(name))
 		var r := Rect2(top, Vector2(SLOT_SIZE, SLOT_SIZE))
-		# Recessed slot well.
-		draw_rect(r, Color(0.80, 0.72, 0.58))
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(SLOT_SIZE - 1, 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(1, SLOT_SIZE - 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+		# Carved socket well — kit primitive gives 3-level stepped inner shadow
+		# + light bottom lip so each slot reads as carved into the doll column.
+		WyrdUi.draw_well(self, r)
 		var it = equipment.get_slot(String(name))
 		if it != null:
 			_draw_item_rect_scaled(it, top + Vector2(6, 6),
 				Vector2(SLOT_SIZE - 12, SLOT_SIZE - 12), false)
 		else:
-			# Empty slot — name ghosted in the well, Diablo-style.
-			draw_string(font, top + Vector2(0, SLOT_SIZE * 0.5 + 5),
+			# Empty slot — category name in small-caps header font, ghosted.
+			draw_string(hdr2, r.position + Vector2(0.0, r.size.y * 0.5 + 7.0),
 				String(name).capitalize(), HORIZONTAL_ALIGNMENT_CENTER,
-				SLOT_SIZE, 12, Color(0.50, 0.42, 0.32, 0.85))
+				r.size.x, 14, Color(0.50, 0.42, 0.32, 0.70))
 
 func _draw_item_in_grid(it: Dictionary) -> void:
 	var rotated: bool = it.get("rotated", false)
