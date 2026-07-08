@@ -101,6 +101,30 @@ static func style_chip(l: Label, size: int = 14) -> void:
 	l.add_theme_color_override("font_color", INK)
 	l.add_theme_font_size_override("font_size", size)
 
+# Craft recipe card — a KIT_PLATE panel behind each recipe row with a
+# 4px accent stripe on the left edge. Accent colour signals craft state:
+#   sage       = unlocked and affordable (can craft now)
+#   terracotta = unlocked but unaffordable (missing materials)
+#   ink-mid    = locked behind a trade-level gate
+# Use inside a PanelContainer so content margins are respected.
+static func recipe_card_stylebox(locked: bool, affordable: bool) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = KIT_PLATE if not locked else Color(0.84, 0.79, 0.68)
+	var accent: Color = INK_MID if locked \
+		else (SAGE.darkened(0.05) if affordable else TERRACOTTA)
+	sb.border_color = accent
+	sb.set_border_width_all(1)
+	sb.set_border_width(SIDE_LEFT, 4)
+	sb.set_corner_radius_all(3)
+	sb.shadow_color = Color(0, 0, 0, 0.12)
+	sb.shadow_size = 2
+	sb.shadow_offset = Vector2(0, 1)
+	sb.content_margin_left = 8.0
+	sb.content_margin_right = 8.0
+	sb.content_margin_top = 7.0
+	sb.content_margin_bottom = 7.0
+	return sb
+
 static func style_kit_button(b: Button) -> void:
 	b.add_theme_font_size_override("font_size", 15)
 	b.add_theme_color_override("font_color", INK)

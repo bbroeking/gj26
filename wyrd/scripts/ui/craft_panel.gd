@@ -166,7 +166,14 @@ func _render() -> void:
 			if _game != null and _game.craft(station_id, rid_s):
 				_render())
 		row.add_child(b)
-		_recipe_box.add_child(row)
+		# Wrap each row in a carved plate card — KIT_PLATE background with a
+		# 4px accent stripe on the left that reads craft-state at a glance.
+		var card := PanelContainer.new()
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		card.add_theme_stylebox_override("panel",
+			WyrdUi.recipe_card_stylebox(locked, not b.disabled))
+		card.add_child(row)
+		_recipe_box.add_child(card)
 
 	if _game == null:
 		_satchel_lbl.text = ""
