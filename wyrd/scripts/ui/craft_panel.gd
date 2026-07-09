@@ -12,7 +12,7 @@ var station_id := "cookfire"
 var _game: Node
 var _panel: Panel
 var _recipe_box: VBoxContainer
-var _satchel_lbl: Label
+var _satchel_box: VBoxContainer
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -93,10 +93,10 @@ func _ready() -> void:
 	s2.text = "Satchel"
 	WyrdUi.style_section(s2)
 	col.add_child(s2)
-	_satchel_lbl = Label.new()
-	WyrdUi.style_body(_satchel_lbl, 13)
-	_satchel_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	col.add_child(_satchel_lbl)
+	_satchel_box = VBoxContainer.new()
+	_satchel_box.add_theme_constant_override("separation", 3)
+	_satchel_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_child(_satchel_box)
 
 	get_node("/root/Game").modal_opened()
 	_render()
@@ -169,7 +169,8 @@ func _render() -> void:
 		_recipe_box.add_child(row)
 
 	if _game == null:
-		_satchel_lbl.text = ""
+		for c in _satchel_box.get_children():
+			c.queue_free()
 		return
 	_render_satchel()
 
@@ -207,8 +208,53 @@ func _recipe_tint(rec: Dictionary, locked: bool) -> Color:
 	return Color(0.88, 0.83, 0.72)
 
 func _render_satchel() -> void:
-	var parts: Array = []
+	for c in _satchel_box.get_children():
+		c.queue_free()
+	if (_game.materials as Dictionary).is_empty():
+		var l := Label.new()
+		l.text = "empty"
+		WyrdUi.style_dim(l, 13)
+		_satchel_box.add_child(l)
+		return
 	for id in _game.materials:
-		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
-			GatherDefs.material_name(String(id)), int(_game.materials[id])])
-	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+		var chip := _MatChip.new()
+		chip.setup(GatherDefs.material_icon(String(id)),
+			GatherDefs.material_name(String(id)),
+			int(_game.materials[id]))
+		_satchel_box.add_child(chip)
+
+
+# ---- drawn satchel material chip ----
+# A slim list-row with a carved glyph well on the left, the material name in
+# INK, and the count in terracotta — so the satchel reads as a craftsman's
+# tally board rather than a comma-separated dump.
+class _MatChip extends Control:
+	var _icon := ""
+	var _name := ""
+	var _count := 0
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 28.0)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func setup(icon: String, mat_name: String, count: int) -> void:
+		_icon = icon
+		_name = mat_name
+		_count = count
+		queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		WyrdUi.draw_list_row(self, r, WyrdUi.INK_MID)
+		var font := get_theme_default_font()
+		# Carved glyph well — the material's icon emoji sits in a recessed disc.
+		var dc := Vector2(16.0, 14.0)
+		WyrdUi.draw_round_well(self, dc, 11.0, Color(0.88, 0.81, 0.66))
+		draw_string(font, Vector2(dc.x - 11.0, dc.y + 5.0), _icon,
+			HORIZONTAL_ALIGNMENT_CENTER, 22.0, 13, WyrdUi.INK)
+		# Material name.
+		draw_string(font, Vector2(34.0, 19.0), _name,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - 74.0, 13, WyrdUi.INK)
+		# Stock count in terracotta so it reads distinct from the name.
+		draw_string(font, Vector2(size.x - 40.0, 19.0), "×%d" % _count,
+			HORIZONTAL_ALIGNMENT_RIGHT, 36.0, 13, WyrdUi.TERRACOTTA)
