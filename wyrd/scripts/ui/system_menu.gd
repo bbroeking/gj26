@@ -31,6 +31,12 @@ func _ready() -> void:
 	_panel.offset_right = 260
 	_panel.offset_bottom = 220
 	add_child(_panel)
+	# Ember sparks — drawn first so they sit behind all text and buttons.
+	var sparks := _LanternSparks.new()
+	sparks.anchor_right = 1.0
+	sparks.anchor_bottom = 1.0
+	sparks.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(sparks)
 	var title := Label.new()
 	title.text = "The Lantern"
 	WyrdUi.style_title(title)
@@ -190,3 +196,30 @@ func _close() -> void:
 	if _game != null:
 		_game.modal_closed()
 	queue_free()
+
+
+# Ambient ember sparks — seven small warm dots scattered across the panel's
+# header zone, suggesting embers floating up from the lantern below. Drawn
+# once (static, deterministic seed) behind all text and buttons.
+class _LanternSparks extends Control:
+	func _draw() -> void:
+		if size.x < 10.0 or size.y < 10.0:
+			return
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 83
+		# Warm amber–orange spectrum in three temperatures.
+		var palette := [
+			Color(0.92, 0.50, 0.10),   # deep amber
+			Color(0.88, 0.64, 0.14),   # golden
+			Color(0.80, 0.30, 0.08),   # ember red
+		]
+		for _i in 7:
+			var x := rng.randf_range(size.x * 0.10, size.x * 0.90)
+			var y := rng.randf_range(10.0, 78.0)
+			var r := rng.randf_range(1.6, 3.8)
+			var base: Color = palette[rng.randi() % palette.size()]
+			var a := rng.randf_range(0.20, 0.40)
+			var pos := Vector2(x, y)
+			# Soft halo so each spark reads as a glowing coal.
+			draw_circle(pos, r * 2.6, Color(base.r, base.g, base.b, a * 0.25))
+			draw_circle(pos, r, Color(base.r, base.g, base.b, a))
