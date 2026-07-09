@@ -12,7 +12,7 @@ var _game: Node
 var _selected := -1
 var _panel: Panel
 var _list_box: VBoxContainer
-var _detail: Label
+var _detail: Control
 var _go_btn: Button
 
 func _ready() -> void:
@@ -66,9 +66,7 @@ func _ready() -> void:
 	_list_box.add_theme_constant_override("separation", 6)
 	scroll.add_child(_list_box)
 
-	_detail = Label.new()
-	WyrdUi.style_body(_detail, 13)
-	_detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_detail = _DetailPane.new()
 	_detail.anchor_right = 1.0
 	_detail.anchor_top = 1.0
 	_detail.anchor_bottom = 1.0
@@ -130,21 +128,19 @@ func _render() -> void:
 	# Detail + button state.
 	if _selected >= 0 and _selected < n:
 		var chart: Dictionary = _game.charts[_selected]
-		var lines: Array = []
+		var affix_data: Array = []
 		for a in chart.get("affixes", []):
 			var aff: Dictionary = ChartsData.AFFIXES.get(String(a.get("id", "")), {})
 			if aff.is_empty():
 				continue
-			if bool(a.get("good", false)):
-				lines.append("✓ %s — %s" % [String(aff.name), String(aff.good_desc)])
-			else:
-				lines.append("✗ %s — %s" % [String(aff.bad_name), String(aff.bad_desc)])
-		if lines.is_empty():
-			lines.append("A clean chart. Nothing inked in but the way there and back.")
-		_detail.text = "\n".join(lines)
+			var good: bool = bool(a.get("good", false))
+			var text: String = "%s — %s" % [String(aff.name), String(aff.good_desc)] \
+				if good else "%s — %s" % [String(aff.bad_name), String(aff.bad_desc)]
+			affix_data.append({"text": text, "good": good})
+		_detail.set_data(affix_data, true)
 		_go_btn.disabled = false
 	else:
-		_detail.text = ""
+		_detail.set_data([], false)
 		_go_btn.disabled = true
 
 func _on_go() -> void:
@@ -154,3 +150,65 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# ---- the drawn affix detail pane ----
+# Replaces the plain body Label. Draws a parchment well with a gold flourish
+# divider, then each affix with a painted indicator: sage diamond ◆ for
+# favourable twists, terracotta × for curses — so the "deal" reads at a glance.
+class _DetailPane extends Control:
+	var _affixes: Array = []   # [{text: String, good: bool}]
+	var _selected := false
+
+	func set_data(affixes: Array, selected: bool) -> void:
+		_affixes = affixes
+		_selected = selected
+		queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		# Carved-well face so the affix card reads as inked onto aged parchment.
+		WyrdUi.draw_well(self, r)
+		WyrdUi.draw_parchment_grain(self, r, 31)
+		# Gold flourish divider marks the top of the note-card.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 14.0), size.x * 0.65)
+		var font := get_theme_default_font()
+		if not _selected:
+			draw_string(font,
+				Vector2(0.0, size.y * 0.5 + 5.0),
+				"Select a chart above to see its affixes.",
+				HORIZONTAL_ALIGNMENT_CENTER, size.x, 12, WyrdUi.INK_MID)
+			return
+		if _affixes.is_empty():
+			draw_string(font,
+				Vector2(0.0, size.y * 0.5 + 5.0),
+				"A clean chart — nothing inked but the way there and back.",
+				HORIZONTAL_ALIGNMENT_CENTER, size.x, 12, WyrdUi.INK_MID)
+			return
+		var y := 28.0
+		for a in _affixes:
+			var good: bool = bool(a.get("good", false))
+			var ix := 14.0
+			var iy := y - 5.0
+			if good:
+				# Sage diamond ◆ — a favourable tide on the run
+				var pts := PackedVector2Array([
+					Vector2(ix, iy - 5.5),
+					Vector2(ix + 5.5, iy),
+					Vector2(ix, iy + 5.5),
+					Vector2(ix - 5.5, iy)])
+				draw_colored_polygon(pts, WyrdUi.SAGE)
+				draw_polyline(pts + PackedVector2Array([pts[0]]),
+					WyrdUi.SAGE.darkened(0.3), 1.0, true)
+			else:
+				# Terracotta × — the run's inscribed curse
+				draw_line(Vector2(ix - 4.5, iy - 4.5),
+					Vector2(ix + 4.5, iy + 4.5), WyrdUi.TERRACOTTA, 2.0, true)
+				draw_line(Vector2(ix + 4.5, iy - 4.5),
+					Vector2(ix - 4.5, iy + 4.5), WyrdUi.TERRACOTTA, 2.0, true)
+			var col: Color = WyrdUi.SAGE.darkened(0.15) if good \
+				else WyrdUi.TERRACOTTA.darkened(0.05)
+			draw_string(font, Vector2(24.0, y),
+				String(a.get("text", "")),
+				HORIZONTAL_ALIGNMENT_LEFT, size.x - 30.0, 12, col)
+			y += 17.0
