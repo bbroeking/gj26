@@ -115,21 +115,27 @@ func _render() -> void:
 	for rid in st.get("recipes", []):
 		var rec: Dictionary = CraftingDefs.recipe(String(rid))
 		var locked: bool = lv < int(rec.get("req_lv", 1))
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 10)
+		# Spec 44 — carved-card language: each recipe sits on a drawn
+		# KIT_PLATE face with a left accent stripe (SAGE = craftable,
+		# TERRACOTTA = level-gated) matching the bench and loadout panels.
+		var card := RecipeCard.new()
+		card.accent = WyrdUi.TERRACOTTA if locked else WyrdUi.SAGE
+		card.add_theme_constant_override("separation", 10)
+		card.custom_minimum_size = Vector2(0, 52)
 
-		# Spec 44 — a painted icon chip in front of every recipe row.
+		# Icon chip — use KIT_WELL so the chip reads as a recessed socket
+		# against the card's KIT_PLATE face rather than blending into it.
 		var chip := Label.new()
 		chip.text = _recipe_glyph(rec)
-		chip.custom_minimum_size = Vector2(36, 36)
+		chip.custom_minimum_size = Vector2(38, 38)
 		chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		chip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		chip.add_theme_font_size_override("font_size", 17)
 		chip.add_theme_color_override("font_color",
 			WyrdUi.INK if not locked else WyrdUi.INK_MID)
 		chip.add_theme_stylebox_override("normal",
-			WyrdUi.chip_stylebox(_recipe_tint(rec, locked)))
-		row.add_child(chip)
+			WyrdUi.chip_stylebox(_recipe_chip_bg(rec, locked)))
+		card.add_child(chip)
 
 		var info := VBoxContainer.new()
 		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -154,7 +160,7 @@ func _render() -> void:
 		WyrdUi.style_dim(detail, 12)
 		detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		info.add_child(detail)
-		row.add_child(info)
+		card.add_child(info)
 
 		var b := Button.new()
 		WyrdUi.style_kit_button(b)
@@ -165,8 +171,8 @@ func _render() -> void:
 		b.pressed.connect(func():
 			if _game != null and _game.craft(station_id, rid_s):
 				_render())
-		row.add_child(b)
-		_recipe_box.add_child(row)
+		card.add_child(b)
+		_recipe_box.add_child(card)
 
 	if _game == null:
 		_satchel_lbl.text = ""
@@ -206,9 +212,30 @@ func _recipe_tint(rec: Dictionary, locked: bool) -> Color:
 		"rare":  return Color(0.93, 0.86, 0.62)
 	return Color(0.88, 0.83, 0.72)
 
+# Chip background for use inside a RecipeCard: material/rarity tints keep
+# their hue, but the plain default becomes KIT_WELL (recessed socket) so
+# the chip reads as carved INTO the card's KIT_PLATE face.
+func _recipe_chip_bg(rec: Dictionary, locked: bool) -> Color:
+	var tint := _recipe_tint(rec, locked)
+	if tint == WyrdUi.KIT_PLATE:
+		return WyrdUi.KIT_WELL
+	return tint
+
 func _render_satchel() -> void:
 	var parts: Array = []
 	for id in _game.materials:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# Drawn recipe card (spec 44 carved-card language). Each recipe sits on a
+# KIT_PLATE face with a top-light bevel, bottom shade, ink border, and a
+# left accent stripe whose colour signals availability at a glance — the
+# same visual system used by the bench tray rows and loadout skill cards.
+class RecipeCard extends HBoxContainer:
+	var accent: Color = WyrdUi.INK_MID
+	func _draw() -> void:
+		if size == Vector2.ZERO:
+			return
+		WyrdUi.draw_list_row(self, Rect2(Vector2.ZERO, size), accent)
