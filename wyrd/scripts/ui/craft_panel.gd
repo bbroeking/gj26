@@ -54,11 +54,19 @@ func _ready() -> void:
 	close_hint.offset_top = 36
 	_panel.add_child(close_hint)
 
+	# Storybook header rule between title zone and recipe content.
+	# Ivy-leaf sprigs + gold diamond echoing the vine motif from ui-refs board.
+	var rule := _HeaderRule.new()
+	rule.anchor_right = 1.0
+	rule.offset_top = 76
+	rule.custom_minimum_size = Vector2(0, 14)
+	_panel.add_child(rule)
+
 	var col := VBoxContainer.new()
 	col.anchor_right = 1.0
 	col.anchor_bottom = 1.0
 	col.offset_left = 56
-	col.offset_top = 84
+	col.offset_top = 98
 	col.offset_right = -56
 	col.offset_bottom = -56
 	col.add_theme_constant_override("separation", 10)
@@ -212,3 +220,48 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# Ink rule with ivy-leaf sprigs and a gold ◆ diamond — drawn between the
+# title zone and the recipe list so the panel reads as a crafted storybook
+# object, not a flat engine window. Three leaf pairs per side grow upward from
+# the rule, alternating lean for a natural vine feel. Pure vector, no textures.
+class _HeaderRule extends Control:
+	func _draw() -> void:
+		var cy := size.y * 0.5
+		var cx := size.x * 0.5
+		var lx0 := 56.0
+		var lx1 := size.x - 56.0
+		var edge := Color(WyrdUi.KIT_EDGE, 0.36)
+		# Ink line — two segments leaving a gap for the central diamond.
+		draw_line(Vector2(lx0, cy), Vector2(cx - 7.0, cy), edge, 1.0)
+		draw_line(Vector2(cx + 7.0, cy), Vector2(lx1, cy), edge, 1.0)
+		# Centre gold ◆ (the kit's filigree motif).
+		var d := PackedVector2Array([
+			Vector2(cx, cy - 4.5), Vector2(cx + 4.5, cy),
+			Vector2(cx, cy + 4.5), Vector2(cx - 4.5, cy)])
+		draw_colored_polygon(d, Color(WyrdUi.GOLD, 0.70))
+		# Ivy leaf pairs — three per side, nearest largest, outer smallest.
+		for s in [-1.0, 1.0]:
+			var span := (lx1 - lx0) * 0.5 - 16.0
+			for i in 3:
+				var frac := 0.16 + float(i) * 0.30
+				var lx := cx + s * (14.0 + frac * span)
+				var sc := 1.0 - float(i) * 0.20
+				_leaf(lx, cy, s, sc)
+
+	func _leaf(lx: float, cy: float, side: float, scale: float) -> void:
+		var h := 6.5 * scale
+		var w := 3.0 * scale
+		# Lean the leaf slightly inward toward the diamond for a vine-curling feel.
+		var lean := -side * w * 0.18
+		var pts := PackedVector2Array([
+			Vector2(lx, cy - 0.5),
+			Vector2(lx + side * w + lean, cy - h * 0.42),
+			Vector2(lx + lean * 0.6, cy - h),
+			Vector2(lx - side * w * 0.22 + lean, cy - h * 0.68)])
+		draw_colored_polygon(pts, Color(WyrdUi.SAGE, 0.32 + 0.13 * scale))
+		# Midrib: a faint stem from base to tip.
+		draw_line(Vector2(lx, cy - 0.5),
+			Vector2(lx + lean * 0.6, cy - h),
+			Color(WyrdUi.SAGE, 0.20 + 0.08 * scale), 1.0)
