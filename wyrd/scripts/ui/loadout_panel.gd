@@ -252,13 +252,9 @@ class _SkillCard extends Control:
 				"⚿ Huntcraft %d" % _req, HORIZONTAL_ALIGNMENT_RIGHT,
 				146.0, 13, WyrdUi.TERRACOTTA)
 		elif _focus > 0:
-			# focus-cost chip in the top-right corner
-			var chip := Rect2(Vector2(size.x - 78.0, 8.0), Vector2(66.0, 18.0))
-			draw_rect(chip, Color(0.86, 0.79, 0.66))
-			draw_rect(chip, Color(WyrdUi.KIT_EDGE, 0.6), false, 1.0)
-			draw_string(font, Vector2(chip.position.x, chip.position.y + 14.0),
-				"%d focus" % _focus, HORIZONTAL_ALIGNMENT_CENTER, chip.size.x,
-				12, WyrdUi.INK_MID)
+			# focus-cost chip — jade-tinted carved plate, ✦ rune prefix (WyrdUi kit)
+			var chip := Rect2(Vector2(size.x - 82.0, 6.0), Vector2(70.0, 22.0))
+			WyrdUi.draw_focus_chip(self, chip, _focus, font)
 		# --- short desc (up to two lines) ---
 		draw_multiline_string(font, Vector2(tx, 40.0), _desc,
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 16.0, 12, 2, dim)

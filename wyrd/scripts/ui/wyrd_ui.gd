@@ -337,6 +337,27 @@ static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 		center + Vector2(-3.5, 0)])
 	c.draw_colored_polygon(pts, Color(GOLD, 0.8))
 
+# Focus-cost chip: a soft jade-tinted raised plate with a ✦ rune prefix.
+# Skill cards use this to label mana/focus cost — the jade tint signals
+# "cool/magical resource" vs the warm parchment of the card face. A light top
+# bevel, ink border, and ✦ prefix make it read as a carved storybook tag, not
+# a debug label.
+static func draw_focus_chip(c: CanvasItem, r: Rect2, cost: int,
+		font: Font) -> void:
+	var face := Color(0.86, 0.91, 0.84)   # faint jade parchment
+	c.draw_rect(r, face)
+	# top warm-light bevel
+	c.draw_rect(Rect2(r.position + Vector2(1.0, 1.0),
+		Vector2(r.size.x - 2.0, 2.0)), Color(1.0, 1.0, 0.95, 0.55))
+	# bottom shadow so it sits ON the card face
+	c.draw_rect(Rect2(r.position + Vector2(1.0, r.size.y - 3.0),
+		Vector2(r.size.x - 2.0, 2.0)), Color(KIT_EDGE, 0.25))
+	c.draw_rect(r, Color(KIT_EDGE, 0.65), false, 1.0)
+	# ✦ rune prefix + cost in sage ink
+	c.draw_string(font, r.position + Vector2(5.0, r.size.y * 0.74),
+		"✦ %d" % cost, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 8.0,
+		12, SAGE.darkened(0.12))
+
 # A little hand-blown ink bottle — glass body, ink fill, neck, cork, and a
 # glass highlight. Replaces the bare text glyphs in sockets and trays.
 static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
