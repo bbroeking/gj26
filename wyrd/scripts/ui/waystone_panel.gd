@@ -37,6 +37,13 @@ func _ready() -> void:
 	_panel.offset_bottom = 230
 	add_child(_panel)
 
+	# Added as FIRST child so it renders behind the title and subtitle labels.
+	var hdr_art := _HeaderVineArt.new()
+	hdr_art.anchor_right = 1.0
+	hdr_art.offset_bottom = 80
+	hdr_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(hdr_art)
+
 	var title := Label.new()
 	title.text = "The Waystone"
 	WyrdUi.style_title(title)
@@ -154,3 +161,15 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+# Ivy vine corners for the panel's header band (y 0–80).
+# Fulfils the design-language "leafy ivy/vine + gold filigree on frames/headers"
+# mandate — the first vine ornament to appear on this panel.
+class _HeaderVineArt extends Control:
+	func _draw() -> void:
+		if size.x < 4.0:
+			return
+		# Left-top corner: vine grows right and down into the header.
+		WyrdUi.draw_corner_vine(self, Vector2(6.0, 6.0), 1.0, 1.0, 36.0)
+		# Right-top corner: mirrored horizontally.
+		WyrdUi.draw_corner_vine(self, Vector2(size.x - 6.0, 6.0), -1.0, 1.0, 36.0)

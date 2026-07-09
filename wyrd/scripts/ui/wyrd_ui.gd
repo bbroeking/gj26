@@ -337,6 +337,51 @@ static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 		center + Vector2(-3.5, 0)])
 	c.draw_colored_polygon(pts, Color(GOLD, 0.8))
 
+# Ivy vine corner ornament for frame headers — the first vine draw in the kit.
+# pos: exact corner point. sx=-1 mirrors horizontally (right corners).
+# sy=-1 mirrors vertically (bottom corners). reach: arm length in px.
+# Design language: leafy ivy/vine + gold filigree on frames/headers only.
+static func draw_corner_vine(c: CanvasItem, pos: Vector2,
+		sx := 1.0, sy := 1.0, reach := 42.0) -> void:
+	var stem := Color(0.42, 0.56, 0.28, 0.72)
+	var leaf := Color(0.32, 0.48, 0.20, 0.82)
+	var bud  := Color(GOLD, 0.78)
+	# Horizontal vine segment along the top edge.
+	var h1 := pos + Vector2(sx * 5.0, sy * 3.0)
+	var h2 := pos + Vector2(sx * reach, sy * 4.5)
+	c.draw_line(pos, h1, stem, 1.5)
+	c.draw_line(h1, h2, stem, 1.5)
+	# Vertical vine segment down the side.
+	var v1 := pos + Vector2(sx * 3.0, sy * 7.0)
+	var v2 := pos + Vector2(sx * 2.5, sy * reach * 0.65)
+	c.draw_line(pos, v1, stem, 1.5)
+	c.draw_line(v1, v2, stem, 1.5)
+	# Leaf on horizontal run (tips away from the edge — upward for top corners).
+	c.draw_colored_polygon(PackedVector2Array([
+		h1 + Vector2(sx * 1.0, sy * -8.0),
+		h1 + Vector2(sx * 7.0, sy * -4.0),
+		h1 + Vector2(sx * 5.0, sy * 2.0),
+		h1 + Vector2(sx * -1.0, sy * -2.0),
+	]), leaf)
+	# Leaf at horizontal vine tip.
+	c.draw_colored_polygon(PackedVector2Array([
+		h2 + Vector2(sx * 0.0, sy * -9.0),
+		h2 + Vector2(sx * 8.0, sy * -5.0),
+		h2 + Vector2(sx * 5.0, sy * 2.0),
+		h2 + Vector2(sx * -2.0, sy * -1.0),
+	]), leaf)
+	# Leaf on vertical run (tips away from the side edge).
+	c.draw_colored_polygon(PackedVector2Array([
+		v1 + Vector2(sx * -8.0, sy * 0.0),
+		v1 + Vector2(sx * -4.0, sy * -5.0),
+		v1 + Vector2(sx * 2.0, sy * -2.0),
+		v1 + Vector2(sx * 0.0, sy * 5.0),
+	]), leaf)
+	# Gold buds at the corner and vine tips.
+	c.draw_circle(pos + Vector2(sx * 2.5, sy * 2.5), 2.5, bud)
+	c.draw_circle(h2 + Vector2(sx * 2.0, sy * 0.5), 2.0, bud)
+	c.draw_circle(v2 + Vector2(sx * 0.5, sy * 1.5), 2.0, bud)
+
 # A little hand-blown ink bottle — glass body, ink fill, neck, cork, and a
 # glass highlight. Replaces the bare text glyphs in sockets and trays.
 static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
