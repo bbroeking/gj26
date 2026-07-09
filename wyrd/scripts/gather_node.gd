@@ -369,17 +369,21 @@ func _regrow() -> void:
 		t.tween_property(_body, "scale", Vector3.ONE, 0.35) \
 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
-# A small rising "+1 X" label at the node.
+# A small rising "+1 X" label at the node. Storybook font + palette colours:
+# harvest = sage green, interrupted = terracotta, so the eye reads at a glance.
 func _float_text(text: String) -> void:
 	var lbl := Label3D.new()
 	lbl.text = text
 	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lbl.no_depth_test = true
-	lbl.font_size = 40
+	lbl.font_size = 48
 	lbl.pixel_size = 0.005
-	lbl.outline_size = 10
+	lbl.outline_size = 14
 	lbl.outline_modulate = Color(0.08, 0.05, 0.06, 1.0)
-	lbl.modulate = Color(0.85, 0.95, 0.7)
+	lbl.modulate = WyrdUi.TERRACOTTA if text == "interrupted" else WyrdUi.SAGE
+	var hf := WyrdUi.font_header()
+	if hf != null:
+		lbl.font = hf
 	lbl.position = Vector3(0.0, 1.0, 0.0)
 	add_child(lbl)
 	var t := create_tween()
