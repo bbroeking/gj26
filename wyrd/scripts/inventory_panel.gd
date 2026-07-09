@@ -579,22 +579,44 @@ func _draw_held() -> void:
 
 # ---- Wyrd: tabs + the Satchel / Charts pages ----
 func _draw_tabs(win: Rect2) -> void:
-	var font: Font = WyrdUi.font_header()
-	if font == null:
-		font = get_theme_default_font()
+	var hdr: Font = WyrdUi.font_header()
+	if hdr == null:
+		hdr = get_theme_default_font()
+	# Per-tab accent colours follow the trade-colour language across the whole kit:
+	# Gear = TERRACOTTA, Satchel = SAGE, Charts = GOLD, Trades = GOLD.
+	var tab_accent := [WyrdUi.TERRACOTTA, WyrdUi.SAGE, WyrdUi.GOLD, WyrdUi.GOLD]
 	for i in TABS.size():
 		var r := _tab_rect(i)
 		var active := i == _tab
-		# Spec 40 — text-only plates; active = brighter + terracotta underline.
-		draw_rect(r, Color(0.95, 0.91, 0.80) if active else Color(0.85, 0.78, 0.64))
-		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 1.5)
+		var accent: Color = tab_accent[i] if i < tab_accent.size() else WyrdUi.INK_MID
+		# Active tab: carved raised face; inactive: recessed well.
 		if active:
-			draw_line(r.position + Vector2(2, r.size.y - 2),
-				r.position + Vector2(r.size.x - 2, r.size.y - 2),
-				WyrdUi.TERRACOTTA, 3.0)
-		draw_string(font, r.position + Vector2(0, 22), String(TABS[i]),
-			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16,
-			WyrdUi.INK if active else WyrdUi.INK_MID)
+			WyrdUi.draw_carved_button(self, r)
+		else:
+			WyrdUi.draw_well(self, r, WyrdUi.KIT_WELL.lightened(0.04))
+		# Left accent stripe — the tab's trade colour at a glance.
+		draw_rect(Rect2(r.position + Vector2(0.0, 3.0), Vector2(3.0, r.size.y - 6.0)),
+			Color(accent, 0.80 if active else 0.30))
+		# Painted icon from the preloaded cache (safe: loaded in _ready, not here).
+		var icon_path := String(TAB_ICONS[i]) if i < TAB_ICONS.size() else ""
+		var tex: Texture2D = _cached_tex(icon_path)
+		if tex != null:
+			var icon_y := (r.size.y - 16.0) * 0.5
+			var ir := Rect2(r.position + Vector2(6.0, icon_y), Vector2(16.0, 16.0))
+			draw_texture_rect(tex, ir, false,
+				Color(accent, 1.0) if active else Color(0.55, 0.46, 0.36, 0.75))
+			draw_string(hdr, r.position + Vector2(26.0, 21.0), String(TABS[i]),
+				HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 28.0, 13,
+				accent.darkened(0.1) if active else WyrdUi.INK_MID)
+		else:
+			draw_string(hdr, r.position + Vector2(0, 21), String(TABS[i]),
+				HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 13,
+				WyrdUi.INK if active else WyrdUi.INK_MID)
+		# Active underline in the tab's own accent colour.
+		if active:
+			draw_line(r.position + Vector2(4, r.size.y - 3),
+				r.position + Vector2(r.size.x - 4, r.size.y - 3),
+				Color(accent, 0.9), 2.5)
 
 # ---- Spec 45 followup: drawn-page scrolling (Satchel / Charts / Trades) ----
 # The pack window is a fixed 644×604 panel but the list pages grew past it
