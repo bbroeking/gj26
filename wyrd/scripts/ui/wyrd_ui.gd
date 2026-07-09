@@ -383,3 +383,44 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# Portrait medallion frame — illuminated-manuscript treatment for the dialog
+# portrait well. Draws the warm parchment face and a burnished gold filigree
+# ring with cardinal diamond ornaments so the circle reads as a painted locket,
+# not a plain disc. The caller draws the subject (silhouette or real portrait)
+# on top inside the face area (radius - 7 inward).
+static func draw_portrait_medallion(c: CanvasItem, center: Vector2, radius: float) -> void:
+	var face_r := radius - 7.0
+	# Warm parchment face — slightly richer cream than the panel page so it
+	# reads as a separate painted surface, not bare paper.
+	c.draw_circle(center, face_r, Color(0.93, 0.87, 0.72))
+	# Warm inner glow: a second disc at 60% radius, semi-transparent,
+	# so the portrait face brightens toward the centre like candlelit parchment.
+	c.draw_circle(center, face_r * 0.60, Color(0.97, 0.93, 0.80, 0.52))
+	# Hairline ring at the face edge (separates face from the gold ring).
+	c.draw_arc(center, face_r, 0.0, TAU, 64, Color(KIT_EDGE, 0.38), 1.2, true)
+	# Burnished gold filigree ring — a wide arc plus a pale highlight arc on
+	# top so it catches the light like hammered metal.
+	c.draw_arc(center, radius - 3.5, 0.0, TAU, 72, GOLD, 5.5, true)
+	c.draw_arc(center, radius - 2.0, 0.0, TAU, 72, Color(1.0, 1.0, 0.88, 0.22), 2.0, true)
+	# Ink borders framing the gold ring (outer edge + inner separator).
+	c.draw_arc(center, radius, 0.0, TAU, 64, KIT_EDGE, 1.5, true)
+	c.draw_arc(center, radius - 7.5, 0.0, TAU, 64, KIT_EDGE, 1.2, true)
+	# Cardinal ornament diamonds — four small 4-point jewels at N / E / S / W,
+	# echoing the ◆ section flourish language; the ring reads as a locket clasp.
+	var dirs := [Vector2.UP, Vector2.RIGHT, Vector2.DOWN, Vector2.LEFT]
+	for dir in dirs:
+		var tip := center + dir * radius
+		var perp := Vector2(-dir.y, dir.x)
+		# Diamond: tip → left wing → base → right wing.
+		var pts := PackedVector2Array([
+			tip,
+			tip - dir * 5.5 + perp * 3.5,
+			tip - dir * 7.5,
+			tip - dir * 5.5 - perp * 3.5,
+		])
+		c.draw_colored_polygon(pts, GOLD)
+		# Thin ink outline closing the diamond shape.
+		var ring := PackedVector2Array(pts)
+		ring.append(ring[0])
+		c.draw_polyline(ring, Color(KIT_EDGE, 0.68), 0.8, true)

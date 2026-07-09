@@ -132,14 +132,30 @@ func _finish() -> void:
 	queue_free()
 
 
-# Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
-# silhouette placeholder until painted portraits exist.
+# Spec 41 — the round portrait well: painted parchment medallion with a gold
+# filigree ring and a readable cloaked-figure placeholder until real portraits
+# exist. The medallion is drawn by WyrdUi.draw_portrait_medallion so every
+# portrait surface (dialog, future vendor cards) reads as one system.
 class PortraitWell extends Control:
 	func _draw() -> void:
 		var c := size * 0.5
-		var r := minf(c.x, c.y)
-		draw_circle(c, r, Color(0.88, 0.82, 0.67))
-		draw_circle(c + Vector2(0, r * 0.28), r * 0.34, Color(0.55, 0.47, 0.36, 0.55))
-		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
-		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
-		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+		# 1 px margin so the cardinal diamond tips don't clip the control edge.
+		var r := minf(c.x, c.y) - 1.0
+		WyrdUi.draw_portrait_medallion(self, c, r)
+		# Placeholder silhouette — a cloaked figure in warm sepia tones.
+		# More readable than the old twin anonymous grey blobs; hood + cape
+		# reads immediately as "NPC character" at dialog-box scale.
+		var ir := r - 9.0    # inner face disc radius
+		# Hood shadow: a large dark circle centred just below mid fills the
+		# upper-cape area and gives the hood its volume.
+		draw_circle(c + Vector2(0.0, ir * 0.10), ir * 0.40, Color(0.40, 0.32, 0.22, 0.46))
+		# Head: slightly smaller, centred above the hood circle's centre.
+		draw_circle(c - Vector2(0.0, ir * 0.14), ir * 0.22, Color(0.46, 0.38, 0.28, 0.62))
+		# Cloak body: a gentle trapezoid that tapers toward the disc base.
+		var cape := PackedVector2Array([
+			c + Vector2(-ir * 0.52, ir * 0.04),
+			c + Vector2( ir * 0.52, ir * 0.04),
+			c + Vector2( ir * 0.38, ir * 0.80),
+			c + Vector2(-ir * 0.38, ir * 0.80),
+		])
+		draw_colored_polygon(cape, Color(0.42, 0.34, 0.24, 0.48))
