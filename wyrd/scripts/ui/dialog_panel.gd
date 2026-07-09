@@ -39,6 +39,11 @@ func _ready() -> void:
 	_panel.offset_top = 70
 	_panel.offset_bottom = -70
 	add_child(_panel)
+	# Content decoration: drawn behind portrait and text (first child = lowest draw order).
+	var decor := _BodyDecor.new()
+	decor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	decor.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(decor)
 	# Portrait well (spec 41) — ghosted silhouette until painted portraits.
 	var well := PortraitWell.new()
 	well.position = Vector2(48, 104)
@@ -130,6 +135,44 @@ func _finish() -> void:
 	get_node("/root/Game").modal_closed()
 	finished.emit()
 	queue_free()
+
+
+# Decorative overlay drawn first (lowest z-order) so it sits behind the
+# portrait well and text. Adds a gold header separator rule below the speaker
+# name and a hand-drawn ivy sprig in the left column below the portrait —
+# following the design-language rule: ornament on headers/frames, body plain.
+class _BodyDecor extends Control:
+	func _draw() -> void:
+		# Header rule: a centred gold flourish below the speaker-name band.
+		# Name font=24 at offset_top=38 → baseline ≈ y 66; portrait starts
+		# at y=104; this separator sits at y=88, clear of both.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 88.0), size.x - 112.0)
+		# Ivy sprig in the left column below the portrait well
+		# (portrait: pos(48,104) size(120,120) → bottom at y≈224).
+		_draw_ivy_sprig(Vector2(88, 300))
+
+	func _draw_ivy_sprig(origin: Vector2) -> void:
+		var col := Color(WyrdUi.SAGE, 0.50)
+		var col_d := Color(WyrdUi.SAGE.darkened(0.22), 0.58)
+		var gold := Color(WyrdUi.GOLD, 0.58)
+		# Upward S-curve stem in three line segments.
+		draw_line(origin, origin + Vector2(-7, -20), col_d, 1.4, true)
+		draw_line(origin + Vector2(-7, -20), origin + Vector2(6, -38), col_d, 1.4, true)
+		draw_line(origin + Vector2(6, -38), origin + Vector2(-3, -52), col_d, 1.4, true)
+		# Leaf A — drooping left off the lower stem.
+		draw_colored_polygon(PackedVector2Array([
+			origin + Vector2(-5, -13),
+			origin + Vector2(-19, -17),
+			origin + Vector2(-10, -26),
+		]), col)
+		# Leaf B — right off the upper stem.
+		draw_colored_polygon(PackedVector2Array([
+			origin + Vector2(5, -30),
+			origin + Vector2(19, -34),
+			origin + Vector2(8, -44),
+		]), col)
+		# Gold tip bud at the apex.
+		draw_circle(origin + Vector2(-3, -54), 2.2, gold)
 
 
 # Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
