@@ -15,6 +15,7 @@ var _body: Label
 var _name_lbl: Label
 var _hint: Label
 var _lockout := 0.0
+var _dot_bar: Control
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -77,6 +78,16 @@ func _ready() -> void:
 	_hint.offset_left = -310
 	_hint.offset_top = -48
 	_panel.add_child(_hint)
+	# Page-progress dots — sage disc = current, dim disc = past, ring = unread.
+	# Centred above the hint chip; invisible for single-page dialogs.
+	_dot_bar = _PageDots.new()
+	_dot_bar.anchor_left = 0.0
+	_dot_bar.anchor_right = 1.0
+	_dot_bar.anchor_top = 1.0
+	_dot_bar.anchor_bottom = 1.0
+	_dot_bar.offset_top = -66
+	_dot_bar.offset_bottom = -50
+	_panel.add_child(_dot_bar)
 	get_node("/root/Game").modal_opened()
 	_render()
 
@@ -89,6 +100,7 @@ func _render() -> void:
 	_name_lbl.text = _speaker
 	if _idx < _pages.size():
 		_body.text = String(_pages[_idx])
+	_dot_bar.setup(_idx, _pages.size())
 
 func _process(delta: float) -> void:
 	_lockout += delta
@@ -130,6 +142,42 @@ func _finish() -> void:
 	get_node("/root/Game").modal_closed()
 	finished.emit()
 	queue_free()
+
+
+# Page-progress dot strip — drawn Control centred at the bottom of the dialog
+# panel. Shows one dot per page: sage filled disc = current page, dim filled
+# disc = already read, hollow ink ring = still to come. Nothing is drawn when
+# the conversation has only one page so single-line dialogs stay uncluttered.
+class _PageDots extends Control:
+	const DOT_R := 4.5
+	const DOT_GAP := 14.0
+
+	var _cur := 0
+	var _total := 0
+
+	func setup(cur: int, total: int) -> void:
+		_cur = cur
+		_total = total
+		queue_redraw()
+
+	func _draw() -> void:
+		if _total < 2:
+			return
+		var start_x := size.x * 0.5 - float(_total - 1) * DOT_GAP * 0.5
+		var cy := size.y * 0.5
+		for i in _total:
+			var cp := Vector2(start_x + float(i) * DOT_GAP, cy)
+			if i < _cur:
+				# already read — dim filled disc
+				draw_circle(cp, DOT_R, Color(WyrdUi.INK_MID, 0.50))
+				draw_arc(cp, DOT_R, 0, TAU, 20, Color(WyrdUi.KIT_EDGE, 0.35), 1.2, true)
+			elif i == _cur:
+				# current page — sage disc (you are here)
+				draw_circle(cp, DOT_R, WyrdUi.SAGE)
+				draw_arc(cp, DOT_R, 0, TAU, 20, WyrdUi.SAGE.darkened(0.18), 1.8, true)
+			else:
+				# unread — hollow ink ring
+				draw_arc(cp, DOT_R, 0, TAU, 20, Color(WyrdUi.INK_MID, 0.38), 1.5, true)
 
 
 # Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
