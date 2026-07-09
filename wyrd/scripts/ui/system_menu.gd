@@ -62,6 +62,12 @@ func _ready() -> void:
 	_roster = Label.new()
 	WyrdUi.style_body(_roster, 14)
 	col.add_child(_roster)
+	# Drawn section rule: a warm horizontal line with a small flame pip — ties
+	# the "Lantern" name to the divider between status text and action buttons.
+	var rule := _LanternDivider.new()
+	rule.custom_minimum_size = Vector2(0, 34)
+	rule.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_child(rule)
 
 	if NetGame.active:
 		if NetGame.is_host():
@@ -190,3 +196,41 @@ func _close() -> void:
 	if _game != null:
 		_game.modal_closed()
 	queue_free()
+
+
+# Horizontal ink rule with a small warm flame at the centre — the Lantern's
+# own symbol dividing the status readout from the action buttons below.
+class _LanternDivider extends Control:
+	func _draw() -> void:
+		var cx := size.x * 0.5
+		var cy := size.y * 0.5
+		var lc := Color(WyrdUi.KIT_EDGE, 0.28)
+		draw_line(Vector2(0.0, cy), Vector2(cx - 16.0, cy), lc, 1.0)
+		draw_line(Vector2(cx + 16.0, cy), Vector2(size.x, cy), lc, 1.0)
+		# Outer flame — warm amber teardrop pointing up.
+		var tip := Vector2(cx, cy - 11.0)
+		var flame := PackedVector2Array([
+			tip,
+			Vector2(cx + 6.5, cy + 1.0),
+			Vector2(cx + 4.0, cy + 5.0),
+			Vector2(cx - 4.0, cy + 5.0),
+			Vector2(cx - 6.5, cy + 1.0),
+		])
+		draw_colored_polygon(flame, Color(0.88, 0.50, 0.18, 0.80))
+		# Inner hot core — bright yellow-cream.
+		var core := PackedVector2Array([
+			Vector2(cx, cy - 6.5),
+			Vector2(cx + 3.0, cy + 1.0),
+			Vector2(cx, cy + 3.5),
+			Vector2(cx - 3.0, cy + 1.0),
+		])
+		draw_colored_polygon(core, Color(1.0, 0.88, 0.44, 0.92))
+		# Fine ink outline around the flame.
+		draw_polyline(PackedVector2Array([
+			tip,
+			Vector2(cx + 6.5, cy + 1.0),
+			Vector2(cx + 4.0, cy + 5.0),
+			Vector2(cx - 4.0, cy + 5.0),
+			Vector2(cx - 6.5, cy + 1.0),
+			tip,
+		]), Color(WyrdUi.KIT_EDGE, 0.55), 1.2)
