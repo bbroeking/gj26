@@ -745,9 +745,25 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 	var w := win.size.x - 148.0
 	var y := win.position.y + 134.0
 	if (game.charts as Array).is_empty():
-		draw_string(font, Vector2(x, y),
-			"No charts inscribed. The Inscribing Table awaits.",
-			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
+		# Empty-state ghost scroll: a large blank scroll centered in the view
+		# with flourishes and storybook text. Moves the "no charts yet" moment
+		# from a plain label toward the cozy invitation-to-inscribe the
+		# reference art calls for (docs/ui-refs/mj_satchel_journal.png).
+		var hf: Font = WyrdUi.font_header()
+		if hf == null:
+			hf = font
+		var cx := win.position.x + win.size.x * 0.5
+		var cy := view.position.y + view.size.y * 0.46
+		var sr := Rect2(Vector2(cx - 45.0, cy - 56.0), Vector2(90.0, 112.0))
+		WyrdUi.draw_scroll(self, sr, false)
+		WyrdUi.draw_parchment_grain(self, sr, 19)
+		WyrdUi.draw_flourish(self, Vector2(cx, cy - 74.0), 136.0)
+		draw_string(hf, Vector2(cx - 200.0, cy - 88.0), "No charts inscribed",
+			HORIZONTAL_ALIGNMENT_CENTER, 400.0, 15, Color(WyrdUi.INK_MID, 0.7))
+		WyrdUi.draw_flourish(self, Vector2(cx, cy + 74.0), 136.0)
+		draw_string(font, Vector2(cx - 200.0, cy + 88.0),
+			"Visit the Inscribing Table to seal your first chart.",
+			HORIZONTAL_ALIGNMENT_CENTER, 400.0, 13, Color(WyrdUi.INK_MID, 0.5))
 		_tab_content_h[2] = 0.0
 		return
 	# Slice C — each chart rides a list-row plate led with a drawn scroll
