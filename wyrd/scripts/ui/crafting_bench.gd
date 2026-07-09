@@ -543,11 +543,18 @@ class BenchView extends Control:
 	func _tray_row(font: Font, x: float, y: float, kind: String, id: String,
 			label: String, ok: bool) -> float:
 		var r := Rect2(Vector2(x, y), Vector2(212, 26))
-		draw_rect(r, PLATE if ok else Color(0.85, 0.79, 0.66))
-		# Spec 44 — top bevel light + a painted roundel on the left.
-		draw_rect(Rect2(r.position + Vector2(1.0, 1.0),
-			Vector2(r.size.x - 2.0, 1.5)), Color(1, 1, 0.93, 0.4))
-		draw_rect(r, EDGE if ok else Color(EDGE, 0.4), false, 1.5)
+		# Accent stripe keyed to ingredient kind so each section reads at a
+		# glance: terracotta = chart bases (Wayfinding trade), sage = gathered
+		# materials (Wilds trade), gold = boss trophies, ink-mid = inks/locked.
+		var accent: Color
+		match kind:
+			"base":   accent = WyrdUi.TERRACOTTA if ok else WyrdUi.INK_MID
+			"mat":    accent = WyrdUi.SAGE if ok else WyrdUi.INK_MID
+			"trophy": accent = Color(WyrdUi.GOLD, 0.85) if ok else WyrdUi.INK_MID
+			_:        accent = WyrdUi.INK_MID
+		WyrdUi.draw_list_row(self, r, accent)
+		if not ok:
+			draw_rect(r.grow(-1.5), Color(0.87, 0.82, 0.70, 0.35))
 		var cc := r.position + Vector2(14.0, 13.0)
 		if kind == "ink":
 			WyrdUi.draw_ink_bottle(self, cc + Vector2(0, 2.0), 18.0,
