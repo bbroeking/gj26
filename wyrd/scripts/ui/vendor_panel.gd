@@ -180,7 +180,7 @@ func _render() -> void:
 		var affordable: bool = int(_game.gold) >= price
 		var card := _VendorCard.new()
 		card.setup_buy(GatherDefs.material_name(id), price, have, affordable,
-			GatherDefs.material_icon(id))
+			GatherDefs.material_icon(id), id)
 		var bid := id
 		var bprice := price
 		card.pressed.connect(func():
@@ -197,6 +197,18 @@ func _render() -> void:
 # texture) so it never reaches back into the outer script's const tables.
 class _VendorCard extends Control:
 	const ICON_W := 40.0
+	# Ink bottle tints — mirrors BenchView.INK_TINT in crafting_bench.gd so
+	# the vendor shelf reads the same drawn-bottle language as the bench tray.
+	const INK_TINT := {
+		"hedge_ink":       Color(0.42, 0.55, 0.30),
+		"stoneground_ink": Color(0.42, 0.42, 0.46),
+		"refined_ink":     Color(0.93, 0.88, 0.62),
+		"ash_ink":         Color(0.30, 0.28, 0.26),
+		"chalkwash_ink":   Color(0.88, 0.86, 0.80),
+		"mothglow_ink":    Color(0.80, 0.84, 0.90),
+		"foxglove_ink":    Color(0.28, 0.30, 0.52),
+		"gildleaf_ink":    Color(0.90, 0.78, 0.42),
+	}
 
 	var _name := ""
 	var _price := 0
@@ -205,7 +217,8 @@ class _VendorCard extends Control:
 	var _rarity := "normal"
 	var _rc: Color = Color(0.48, 0.40, 0.30)   # rarity tint (handed in)
 	var _tex: Texture2D = null     # painted item icon (sell), else null
-	var _glyph := ""               # material glyph (buy)
+	var _glyph := ""               # material glyph (buy, non-ink)
+	var _kind_id := ""             # raw material id for ink detection
 	var _hover := false
 
 	signal pressed
@@ -224,12 +237,13 @@ class _VendorCard extends Control:
 		queue_redraw()
 
 	func setup_buy(mat_name: String, price: int, have: int, affordable: bool,
-			glyph: String) -> void:
+			glyph: String, kind_id: String = "") -> void:
 		_name = mat_name
 		_price = price
 		_price_red = not affordable
 		_sub = "have %d" % have
 		_glyph = glyph
+		_kind_id = kind_id
 		_rarity = "normal"
 		queue_redraw()
 
@@ -268,6 +282,15 @@ class _VendorCard extends Control:
 		var font := get_theme_default_font()
 		if _tex != null:
 			draw_texture_rect(_tex, ir.grow(-4.0), false)
+		elif INK_TINT.has(_kind_id):
+			# Draw a storybook ink bottle matching the bench tray language.
+			# Dim the ink colour when the ware is unaffordable so the shelf
+			# reads as "out of reach" without losing the ink identity.
+			var ink_c: Color = INK_TINT[_kind_id]
+			if _price_red:
+				ink_c = Color(ink_c, 0.45)
+			WyrdUi.draw_ink_bottle(self, ir.get_center() + Vector2(0, 2.0),
+				ICON_W * 0.88, ink_c)
 		elif _glyph != "":
 			draw_string(font, ir.position + Vector2(0, ICON_W * 0.5 + 6.0),
 				_glyph, HORIZONTAL_ALIGNMENT_CENTER, ICON_W, 18, WyrdUi.INK)
