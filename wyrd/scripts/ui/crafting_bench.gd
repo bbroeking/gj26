@@ -811,21 +811,29 @@ class BenchView extends Control:
 			for id in ids:
 				var stab: int = ChartsData.effective_stability(String(id),
 					bench._carto_lv(), bonus, bench._stab_perk_bonus())
-				draw_string(font, Vector2(rx, y),
+				# Polarity card: sage accent when the good twin is likely (≥55%),
+				# terracotta when the bad twin can bite. Matches the tray's carved
+				# shelf language so the result column reads as the same hand-made object.
+				var accent: Color = WyrdUi.SAGE.darkened(0.15) if stab >= 55 \
+					else WyrdUi.TERRACOTTA.darkened(0.10)
+				var row_r := Rect2(Vector2(rx - 4, y - 16), Vector2(224, 22))
+				WyrdUi.draw_list_row(self, row_r, accent)
+				draw_string(font, Vector2(rx + 6, y),
 					"%s — %d%% · good %d%%" % [
 						String(ChartsData.AFFIXES[id].name),
 						roundi(weights[id]), stab],
-					HORIZONTAL_ALIGNMENT_LEFT, 220, 13, TXT)
-				_odds_rows.append({"rect": Rect2(Vector2(rx, y - 14), Vector2(220, 18)),
-					"id": String(id)})
-				y += 19.0
+					HORIZONTAL_ALIGNMENT_LEFT, 212, 13, TXT)
+				_odds_rows.append({"rect": row_r, "id": String(id)})
+				y += 25.0
 			if bench.trophy != "":
 				var den: Dictionary = ChartsData.AFFIXES[
 					ChartsData.TROPHY_TO_AFFIX[bench.trophy]]
-				draw_string(font, Vector2(rx, y),
+				var trophy_r := Rect2(Vector2(rx - 4, y - 15), Vector2(224, 21))
+				WyrdUi.draw_list_row(self, trophy_r, WyrdUi.GOLD.darkened(0.10))
+				draw_string(font, Vector2(rx + 6, y),
 					"★ %s — certain" % String(den.name),
-					HORIZONTAL_ALIGNMENT_LEFT, 220, 12, WyrdUi.GOLD.darkened(0.15))
-				y += 19.0
+					HORIZONTAL_ALIGNMENT_LEFT, 212, 12, WyrdUi.GOLD.darkened(0.15))
+				y += 24.0
 		else:
 			draw_string(font, Vector2(rx, y), "A clean run — no affixes.",
 				HORIZONTAL_ALIGNMENT_LEFT, 220, 13, DIM)
