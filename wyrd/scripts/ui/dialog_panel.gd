@@ -55,6 +55,16 @@ func _ready() -> void:
 	_name_lbl.offset_right = -56
 	_name_lbl.offset_top = 38
 	_panel.add_child(_name_lbl)
+	# ── ◆ ── flourish rule between the speaker name and the body text.
+	# Adds storybook ornament to the name zone without touching the portrait
+	# or body zones — the gap at y:68–84 was empty before this.
+	var sep := _NameSep.new()
+	sep.anchor_right = 1.0
+	sep.offset_left = 56
+	sep.offset_right = -56
+	sep.offset_top = 68
+	sep.offset_bottom = 84
+	_panel.add_child(sep)
 	_body = Label.new()
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.anchor_right = 1.0
@@ -66,6 +76,11 @@ func _ready() -> void:
 	_body.add_theme_font_size_override("font_size", 21)
 	_body.add_theme_color_override("font_color", Color(0.20, 0.15, 0.11))
 	_body.add_theme_constant_override("line_spacing", 7)
+	# UI bible font for body text — IM Fell English. The existing size (21) and
+	# colour stay; only the family changes from the engine default to the serif.
+	var bf := WyrdUi.font_body()
+	if bf != null:
+		_body.add_theme_font_override("font", bf)
 	_panel.add_child(_body)
 	_hint = Label.new()
 	_hint.text = "E / Space — continue · Esc — close"
@@ -130,6 +145,13 @@ func _finish() -> void:
 	get_node("/root/Game").modal_closed()
 	finished.emit()
 	queue_free()
+
+
+# A ── ◆ ── flourish rule drawn in the gap between the speaker name and the
+# body text — the ornament that makes dialog feel like a storybook page.
+class _NameSep extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, size * 0.5, size.x * 0.55)
 
 
 # Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
