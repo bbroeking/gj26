@@ -507,12 +507,19 @@ class BenchView extends Control:
 		var font: Font = get_theme_default_font()
 		if hdr == null:
 			hdr = font
+		# Ivy corner sprigs drawn before grain so the grain fibres fall on top,
+		# integrating the ornament into the parchment surface naturally.
+		WyrdUi.draw_ivy_sprig(self, Vector2(36.0, 38.0))
+		WyrdUi.draw_ivy_sprig(self, Vector2(size.x - 36.0, 38.0), true)
 		# Spec 44 — parchment grain over the working face (vector, no tex).
 		WyrdUi.draw_parchment_grain(self,
 			Rect2(Vector2(46, 72), size - Vector2(92, 124)))
 		draw_string(hdr, Vector2(54, 56), "The Inscribing Table",
 			HORIZONTAL_ALIGNMENT_LEFT, 400, 24, WyrdUi.TERRACOTTA)
 		WyrdUi.draw_flourish(self, Vector2(146, 66), 180.0)
+		# Gold header rule — a burnished divider below the title zone.
+		draw_line(Vector2(46.0, 70.0), Vector2(size.x - 46.0, 70.0),
+			Color(WyrdUi.GOLD, 0.35), 1.0)
 		draw_string(font, Vector2(size.x - 180, 56), "Esc — close",
 			HORIZONTAL_ALIGNMENT_RIGHT, 130, 12, DIM)
 		_odds_rows.clear()
