@@ -383,3 +383,45 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# An ivy corner sprig — 3 rounded leaf lobes on a branching stem.
+# Fits a ~20×22 px zone; flip_x/flip_y mirrors to any of the four corners.
+# Design language: ornament on frames/headers only, never over body text.
+static func draw_ivy_sprig(c: CanvasItem, pos: Vector2,
+		flip_x := false, flip_y := false) -> void:
+	var sx := -1.0 if flip_x else 1.0
+	var sy := -1.0 if flip_y else 1.0
+	var stem_c := Color(0.22, 0.34, 0.15)
+	var fill_c := Color(0.38, 0.54, 0.22, 0.88)
+	var vein_c := Color(0.54, 0.68, 0.34, 0.65)
+	var edge_c := Color(0.18, 0.28, 0.11)
+	# Leaf layout: [center_offset, half_radii, rotation_deg]
+	var leaves := [
+		[Vector2(sx * 8.0,  sy * 4.0),  Vector2(6.0, 3.5),  22.0 * sx],
+		[Vector2(sx * 4.0,  sy * 11.0), Vector2(5.5, 3.0), -20.0 * sx],
+		[Vector2(sx * 12.0, sy * 14.0), Vector2(5.0, 3.0),  44.0 * sx],
+	]
+	for ld in leaves:
+		var lc: Vector2 = pos + (ld[0] as Vector2)
+		var lr: Vector2 = ld[1]
+		var la := deg_to_rad(float(ld[2]))
+		var pts := PackedVector2Array()
+		for i in 12:
+			var t := float(i) * TAU / 12.0
+			pts.append(Vector2(cos(t) * lr.x, sin(t) * lr.y).rotated(la) + lc)
+		c.draw_colored_polygon(pts, fill_c)
+		var vd := Vector2(cos(la), sin(la))
+		c.draw_line(lc - vd * lr.x * 0.7, lc + vd * lr.x * 0.7, vein_c, 1.0)
+		c.draw_polyline(pts + PackedVector2Array([pts[0]]), edge_c, 1.0, true)
+		c.draw_circle(lc + vd * (lr.x + 1.5), 1.5, Color(GOLD, 0.55))
+	# Stem and branch lines.
+	c.draw_line(pos, pos + Vector2(sx * 14.0, sy * 18.0), stem_c, 1.5)
+	c.draw_line(pos + Vector2(sx * 4.5, sy * 2.5),
+		pos + Vector2(sx * 8.0,  sy * 4.0),  stem_c, 1.0)
+	c.draw_line(pos + Vector2(sx * 2.5, sy * 7.0),
+		pos + Vector2(sx * 4.0,  sy * 11.0), stem_c, 1.0)
+	c.draw_line(pos + Vector2(sx * 8.0,  sy * 12.0),
+		pos + Vector2(sx * 12.0, sy * 14.0), stem_c, 1.0)
+	# A small curling tendril at the branch tip.
+	c.draw_arc(pos + Vector2(sx * 14.0, sy * 5.0), 3.5,
+		0.0, TAU * 0.70, 10, Color(stem_c.r, stem_c.g, stem_c.b, 0.60), 1.2, true)
