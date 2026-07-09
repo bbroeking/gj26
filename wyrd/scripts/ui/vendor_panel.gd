@@ -83,6 +83,15 @@ func _ready() -> void:
 	_gold_lbl.offset_top = 36
 	_panel.add_child(_gold_lbl)
 
+	# Ivy-accented header rule — separates the counter's identity zone (title +
+	# tagline + gold chip) from the trade columns below. Ornament on headers per
+	# the design language; drawn via WyrdUi.draw_ivy_flourish.
+	var rule := _HeaderRule.new()
+	rule.anchor_right = 1.0
+	rule.offset_top = 80
+	rule.offset_bottom = 90
+	_panel.add_child(rule)
+
 	var close_hint := Label.new()
 	close_hint.text = "Esc — close"
 	WyrdUi.style_dim(close_hint)
@@ -286,3 +295,12 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# ---- drawn header divider — ivy-accented rule for the vendor panel header ----
+# Sits between the title/tagline zone and the Sell/Wares columns. A pure-vector
+# draw (no textures touched) using WyrdUi.draw_ivy_flourish.
+class _HeaderRule extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_ivy_flourish(self,
+			Vector2(size.x * 0.5, size.y * 0.5), size.x - 70.0)

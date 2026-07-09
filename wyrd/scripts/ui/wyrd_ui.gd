@@ -337,6 +337,34 @@ static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 		center + Vector2(-3.5, 0)])
 	c.draw_colored_polygon(pts, Color(GOLD, 0.8))
 
+# A richer header section-rule: sage leaf sprays flanking the gold diamond.
+# Use on panel title-zone dividers only — ornament belongs on headers, never
+# on body text rows. Wider spread and paired leaves distinguish it from the
+# plain draw_flourish used on sub-section rules.
+static func draw_ivy_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
+	var line_col := Color(KIT_EDGE, 0.38)
+	var half := width * 0.5
+	c.draw_line(center - Vector2(half, 0), center - Vector2(26, 0), line_col, 1.0)
+	c.draw_line(center + Vector2(26, 0), center + Vector2(half, 0), line_col, 1.0)
+	# Gold diamond — slightly larger than draw_flourish for header prominence.
+	var dp := PackedVector2Array([center + Vector2(0, -4.5),
+		center + Vector2(4.5, 0), center + Vector2(0, 4.5),
+		center + Vector2(-4.5, 0)])
+	c.draw_colored_polygon(dp, Color(GOLD, 0.82))
+	# Sage leaf pairs flanking the diamond — upper + lower leaf on each side.
+	for side in [-1.0, 1.0]:
+		var ox := side * 14.0
+		var l1 := PackedVector2Array([center + Vector2(ox, 0.0),
+			center + Vector2(ox + side * 3.5, -4.5),
+			center + Vector2(ox + side * 8.5, -1.5),
+			center + Vector2(ox + side * 5.0, 1.5)])
+		c.draw_colored_polygon(l1, Color(SAGE, 0.50))
+		var l2 := PackedVector2Array([center + Vector2(ox, 0.0),
+			center + Vector2(ox + side * 3.5, 4.5),
+			center + Vector2(ox + side * 8.5, 1.5),
+			center + Vector2(ox + side * 5.0, -1.5)])
+		c.draw_colored_polygon(l2, Color(SAGE, 0.50))
+
 # A little hand-blown ink bottle — glass body, ink fill, neck, cork, and a
 # glass highlight. Replaces the bare text glyphs in sockets and trays.
 static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
