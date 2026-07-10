@@ -707,15 +707,47 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 		return
 	# Slice C — each material rides a list-row plate: an ink-disc holding its
 	# glyph on the left, name + count on the card, the lore line beneath.
+	# Accent stripe and disc are keyed to the material's group so the satchel
+	# reads as a painted field-journal: sage for verdant herbs, terracotta for
+	# earthen ores, gold for lumen inks, violet for echo trophies.
 	for id in game.materials:
 		var def: Dictionary = GatherDefs.MATERIALS.get(String(id), {})
+		var group := String(def.get("group", ""))
+		var accent: Color
+		var disc_fill: Color
+		var count_col: Color
+		match group:
+			"verdant":
+				accent    = WyrdUi.SAGE
+				disc_fill = Color(0.83, 0.89, 0.70)
+				count_col = WyrdUi.SAGE.darkened(0.12)
+			"earthen":
+				accent    = WyrdUi.TERRACOTTA
+				disc_fill = Color(0.88, 0.79, 0.70)
+				count_col = WyrdUi.TERRACOTTA
+			"lumen":
+				accent    = WyrdUi.GOLD
+				disc_fill = Color(0.93, 0.88, 0.72)
+				count_col = WyrdUi.GOLD.darkened(0.08)
+			"gristle":
+				accent    = WyrdUi.TERRACOTTA.darkened(0.25)
+				disc_fill = Color(0.82, 0.74, 0.63)
+				count_col = WyrdUi.TERRACOTTA.darkened(0.20)
+			"echo":
+				accent    = Color(0.55, 0.34, 0.66)
+				disc_fill = Color(0.86, 0.80, 0.90)
+				count_col = Color(0.55, 0.34, 0.66)
+			_:
+				accent    = WyrdUi.INK_MID
+				disc_fill = Color(0.88, 0.81, 0.66)
+				count_col = WyrdUi.TERRACOTTA
 		var row_top := y - 18.0
 		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 30.0))
 		if _span_visible(row_top, row.end.y, scroll, view):
-			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
+			WyrdUi.draw_list_row(self, row, accent)
 			# glyph disc on the left
 			var dc := Vector2(row.position.x + 19.0, row.position.y + 15.0)
-			WyrdUi.draw_round_well(self, dc, 11.0, Color(0.88, 0.81, 0.66))
+			WyrdUi.draw_round_well(self, dc, 11.0, disc_fill)
 			draw_string(font, Vector2(dc.x - 11.0, dc.y + 6.0),
 				String(def.get("icon", "·")), HORIZONTAL_ALIGNMENT_CENTER,
 				22.0, 14, WyrdUi.INK)
@@ -724,7 +756,7 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 				HORIZONTAL_ALIGNMENT_LEFT, w - 110.0, 17, WyrdUi.INK)
 			draw_string(font, Vector2(x + w - 78.0, y + 1.0),
 				"× %d" % int(game.materials[id]),
-				HORIZONTAL_ALIGNMENT_RIGHT, 70.0, 17, WyrdUi.TERRACOTTA)
+				HORIZONTAL_ALIGNMENT_RIGHT, 70.0, 17, count_col)
 		y += 34.0
 		var desc := String(def.get("desc", ""))
 		if desc != "":
