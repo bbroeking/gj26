@@ -337,6 +337,39 @@ static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 		center + Vector2(-3.5, 0)])
 	c.draw_colored_polygon(pts, Color(GOLD, 0.8))
 
+# Flourish with a tiny paired ivy-leaf sprig at the OUTER line tip — the
+# "leafy vine" design language on carved frames. Pass facing > 0 to grow
+# leaves rightward, < 0 leftward; 0 gives the plain flourish only.
+static func draw_ivy_flourish(c: CanvasItem, center: Vector2, width: float,
+		facing: float = 0.0) -> void:
+	draw_flourish(c, center, width)
+	if is_zero_approx(facing):
+		return
+	var f := sign(facing)
+	var outer := center + Vector2(f * width * 0.5, 0.0)
+	var lc := Color(SAGE.darkened(0.22), 0.72)
+	var ec := Color(SAGE.darkened(0.45), 0.55)
+	var vc := Color(GOLD, 0.30)
+	for vdir in [-1.0, 1.0]:
+		_draw_ivy_leaf(c, outer,
+			outer + Vector2(f * 5.5, vdir * 9.5), 3.0, lc, ec, vc)
+
+# Diamond leaf: base → mid-bulge → tip → mid-bulge. Shared by draw_ivy_flourish
+# and available to any panel that needs a small painted leaf glyph.
+static func _draw_ivy_leaf(c: CanvasItem, base: Vector2, tip: Vector2,
+		spread: float, fill: Color, edge: Color, vein: Color) -> void:
+	var along := (tip - base).normalized()
+	var perp := Vector2(-along.y, along.x)
+	var mid := (base + tip) * 0.5
+	var pts := PackedVector2Array([
+		base, mid + perp * spread, tip, mid - perp * spread
+	])
+	c.draw_colored_polygon(pts, fill)
+	c.draw_polyline(
+		PackedVector2Array([pts[0], pts[1], pts[2], pts[3], pts[0]]),
+		ec, 0.8, true)
+	c.draw_line(base, tip, vein, 0.7)
+
 # A little hand-blown ink bottle — glass body, ink fill, neck, cork, and a
 # glass highlight. Replaces the bare text glyphs in sockets and trays.
 static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
