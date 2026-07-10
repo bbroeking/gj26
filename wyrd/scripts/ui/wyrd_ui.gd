@@ -273,10 +273,16 @@ static func draw_list_row(c: CanvasItem, r: Rect2, accent: Color) -> void:
 	# soft bottom shade so the card sits ON the parchment
 	c.draw_rect(Rect2(r.position + Vector2(2.0, r.size.y - 2.5),
 		Vector2(r.size.x - 4.0, 1.5)), Color(KIT_EDGE, 0.22))
+	# right-edge micro-shadow — completes the bevel; the far side falls into shade
+	c.draw_rect(Rect2(r.position + Vector2(r.size.x - 2.5, 2.0),
+		Vector2(1.5, r.size.y - 4.0)), Color(KIT_EDGE, 0.16))
 	c.draw_rect(r, KIT_EDGE, false, 1.5)
 	# accent stripe down the left edge — the row's state at a glance
 	c.draw_rect(Rect2(r.position + Vector2(1.5, 1.5),
 		Vector2(3.0, r.size.y - 3.0)), accent)
+	# burnished inner pinstripe — draw_carved_button and the hotbar tray carry
+	# this; list rows were the one carved surface in the kit missing it
+	c.draw_rect(r.grow(-4.0), Color(GOLD, 0.10), false, 1.0)
 
 # A recessed rectangular well: stepped inner shadow top-left, light lip
 # bottom — the socket reads as carved INTO the bench, not painted on.
