@@ -429,6 +429,9 @@ func _draw_slots() -> void:
 	if equipment == null:
 		return
 	var font: Font = get_theme_default_font()
+	var hf_hand: Font = WyrdUi.font_hand()
+	if hf_hand == null:
+		hf_hand = font
 	# Spec 41 (Pack design) — the tool pair gets its section label.
 	var hdr2: Font = WyrdUi.font_header()
 	if hdr2 == null:
@@ -438,22 +441,27 @@ func _draw_slots() -> void:
 	for name in SLOT_OFFSET:
 		var top := _slot_top(String(name))
 		var r := Rect2(top, Vector2(SLOT_SIZE, SLOT_SIZE))
-		# Recessed slot well.
-		draw_rect(r, Color(0.80, 0.72, 0.58))
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(SLOT_SIZE - 1, 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(1, SLOT_SIZE - 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+		# Carved recessed well: stepped inner shadow, parchment grain, ink border.
+		WyrdUi.draw_well(self, r)
+		WyrdUi.draw_parchment_grain(self, r, int(top.x) ^ int(top.y))
 		var it = equipment.get_slot(String(name))
 		if it != null:
 			_draw_item_rect_scaled(it, top + Vector2(6, 6),
 				Vector2(SLOT_SIZE - 12, SLOT_SIZE - 12), false)
 		else:
-			# Empty slot — name ghosted in the well, Diablo-style.
-			draw_string(font, top + Vector2(0, SLOT_SIZE * 0.5 + 5),
+			# Empty well: ghosted gold ◆ above a hand-scribed slot name.
+			var mid_x := top.x + SLOT_SIZE * 0.5
+			var dc := Vector2(mid_x, top.y + SLOT_SIZE * 0.38)
+			var dia := PackedVector2Array([
+				dc + Vector2(0, -6.5),
+				dc + Vector2(6.0, 0),
+				dc + Vector2(0, 6.5),
+				dc + Vector2(-6.0, 0),
+			])
+			draw_colored_polygon(dia, Color(WyrdUi.GOLD, 0.28))
+			draw_string(hf_hand, top + Vector2(0, SLOT_SIZE * 0.69),
 				String(name).capitalize(), HORIZONTAL_ALIGNMENT_CENTER,
-				SLOT_SIZE, 12, Color(0.50, 0.42, 0.32, 0.85))
+				SLOT_SIZE, 11, Color(WyrdUi.INK_MID, 0.60))
 
 func _draw_item_in_grid(it: Dictionary) -> void:
 	var rotated: bool = it.get("rotated", false)
