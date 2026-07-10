@@ -383,3 +383,28 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# Parchment text input — warm KIT_PLATE face, ink border, gold focus ring,
+# terracotta caret, IM Fell body. Makes every LineEdit read as a hand-filled
+# parchment slip rather than a stock engine widget.
+static func style_line_edit(e: LineEdit) -> void:
+	var norm := StyleBoxFlat.new()
+	norm.bg_color = KIT_PLATE
+	norm.border_color = KIT_EDGE
+	norm.set_border_width_all(2)
+	norm.set_corner_radius_all(4)
+	norm.content_margin_left = 10.0
+	norm.content_margin_right = 10.0
+	norm.content_margin_top = 5.0
+	norm.content_margin_bottom = 5.0
+	e.add_theme_stylebox_override("normal", norm)
+	var foc := norm.duplicate() as StyleBoxFlat
+	foc.bg_color = KIT_PLATE.lightened(0.04)
+	foc.border_color = GOLD
+	e.add_theme_stylebox_override("focus", foc)
+	e.add_theme_color_override("font_color", INK)
+	e.add_theme_color_override("font_placeholder_color", INK_MID)
+	e.add_theme_color_override("caret_color", TERRACOTTA)
+	e.add_theme_color_override("selection_color", Color(GOLD, 0.30))
+	_set_font(e, font_body())
+	e.add_theme_font_size_override("font_size", 14)
