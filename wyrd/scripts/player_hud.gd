@@ -296,20 +296,15 @@ func _refresh_trades() -> void:
 		int(game.gold), game.trade_lv("wayfinding")]
 
 func show_toast(msg: String) -> void:
-	var l := Label.new()
-	l.text = msg
-	# Spec 41 — toasts are kit parchment chips.
-	WyrdUi.style_chip(l, 15)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_toast_box.add_child(l)
+	var note := _ToastNote.new(msg)
+	_toast_box.add_child(note)
 	var t := create_tween()
 	# Pause-immune — most toasts (mix, inscribe, level-up) fire while a modal
 	# has the tree paused; a pause-bound tween would freeze them into a stack.
 	t.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	t.tween_interval(2.4)
-	t.tween_property(l, "modulate:a", 0.0, 0.6)
-	t.tween_callback(l.queue_free)
+	t.tween_property(note, "modulate:a", 0.0, 0.6)
+	t.tween_callback(note.queue_free)
 
 func set_hp(cur: int, mx: int, status_suffix: String = "") -> void:
 	var f := clampf(float(cur) / float(max(1, mx)), 0.0, 1.0)
@@ -498,3 +493,46 @@ class QuestScrollArt extends Control:
 		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
 		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
 		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+
+# Drawn toast note — a parchment grain chip with a gold ✦ pip and the
+# message in IM Fell. Replaces the plain style_chip Label so each
+# announcement reads as a sealed proclamation, not debug output.
+class _ToastNote extends Control:
+	var _msg := ""
+	var _seed := 7
+
+	func _init(msg: String) -> void:
+		_msg = msg
+		_seed = msg.hash() & 0xffff
+		size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _get_minimum_size() -> Vector2:
+		if _msg.is_empty():
+			return Vector2(140.0, 32.0)
+		var hf := WyrdUi.font_header()
+		var font: Font = hf if hf != null else (get_theme_default_font() if is_inside_tree() else null)
+		if font == null:
+			return Vector2(140.0, 32.0)
+		var tw := font.get_string_size(_msg, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+		return Vector2(maxf(tw + 40.0, 140.0), 32.0)
+
+	func _draw() -> void:
+		if _msg.is_empty():
+			return
+		var r := Rect2(Vector2.ZERO, size)
+		var font := get_theme_default_font()
+		var hf := WyrdUi.font_header()
+		if hf == null:
+			hf = font
+		# Parchment chip body + subtle grain so the note has the kit's texture.
+		draw_rect(r, WyrdUi.KIT_PLATE)
+		WyrdUi.draw_parchment_grain(self, r, _seed)
+		draw_rect(r, Color(WyrdUi.KIT_EDGE, 0.55), false, 1.5)
+		# Gold ✦ pip — the sealed-proclamation mark used on scroll plates.
+		draw_string(font, Vector2(8.0, r.size.y * 0.5 + 6.0), "✦",
+			HORIZONTAL_ALIGNMENT_LEFT, 16.0, 11, Color(WyrdUi.GOLD, 0.9))
+		# Message in IM Fell — the kit's voice, not the engine default.
+		draw_string(hf, Vector2(24.0, r.size.y * 0.5 + 6.0), _msg,
+			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 28.0, 14, WyrdUi.INK)
