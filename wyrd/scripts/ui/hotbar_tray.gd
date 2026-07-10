@@ -20,7 +20,8 @@ func _draw() -> void:
 	# Ink border + a gold inner inset line (the "burnished" read).
 	draw_rect(r, WyrdUi.KIT_EDGE, false, 2.0)
 	draw_rect(r.grow(-4.0), Color(WyrdUi.GOLD, 0.5), false, 1.0)
-	# A flourish tucked into each end.
+	# Ivy-flourish at each end: the ── ◆ ── diamond plus two sage leaves
+	# curling outward, bringing the "leafy vine" design language to the plank.
 	var cy := r.size.y * 0.5
-	WyrdUi.draw_flourish(self, Vector2(20, cy), 24)
-	WyrdUi.draw_flourish(self, Vector2(r.size.x - 20, cy), 24)
+	WyrdUi.draw_ivy_flourish(self, Vector2(20, cy), 24, -1.0)
+	WyrdUi.draw_ivy_flourish(self, Vector2(r.size.x - 20, cy), 24, 1.0)
