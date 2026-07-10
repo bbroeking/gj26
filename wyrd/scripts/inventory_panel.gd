@@ -541,14 +541,32 @@ func _draw_tooltip() -> void:
 		pos.x = 0
 	if pos.y < 0:
 		pos.y = 0
-	draw_rect(Rect2(pos, Vector2(w, h)), Color(0.93, 0.88, 0.76, 0.97))
-	draw_rect(Rect2(pos, Vector2(w, h)),
-		Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+	var r := Rect2(pos, Vector2(w, h))
+	# Drop shadow (drawn first, behind everything).
+	draw_rect(Rect2(pos + Vector2(2.0, 3.0), Vector2(w, h)), Color(0.0, 0.0, 0.0, 0.22))
+	# Parchment plate — WyrdUi kit language: warm cream + grain + bevel + ink border.
+	draw_rect(r, WyrdUi.KIT_PLATE)
+	WyrdUi.draw_parchment_grain(self, r, 13)
+	# Top catch-light bevel + bottom shadow so the card sits on the parchment.
+	draw_rect(Rect2(r.position + Vector2(1.0, 1.0), Vector2(r.size.x - 2.0, 1.5)),
+		Color(1.0, 1.0, 0.93, 0.45))
+	draw_rect(Rect2(r.position + Vector2(2.0, r.size.y - 2.5),
+		Vector2(r.size.x - 4.0, 1.5)), Color(WyrdUi.KIT_EDGE, 0.22))
+	draw_rect(r, WyrdUi.KIT_EDGE, false, 1.5)
+	# Rarity accent stripe down the left edge — the item's grade at a glance.
+	var rc: Color = RARITY_COLOR.get(String(item.rarity), WyrdUi.INK_MID)
+	draw_rect(Rect2(r.position + Vector2(1.5, 1.5),
+		Vector2(3.0, r.size.y - 3.0)), rc)
+	# Flourish divider under the header block (name + rarity type, before stats).
+	if lines.size() >= 2:
+		WyrdUi.draw_flourish(self,
+			Vector2(pos.x + w * 0.5, pos.y + ipad + line_h * 2 + 2.0), w * 0.55)
 	var font := get_theme_default_font()
 	var y := pos.y + ipad + 14
 	for line in lines:
-		draw_string(font, Vector2(pos.x + ipad, y), String(line.text),
-			HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2, int(line.size), line.color)
+		# Offset right of the accent stripe.
+		draw_string(font, Vector2(pos.x + ipad + 6, y), String(line.text),
+			HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2 - 6, int(line.size), line.color)
 		y += line_h
 
 func _draw_held() -> void:
