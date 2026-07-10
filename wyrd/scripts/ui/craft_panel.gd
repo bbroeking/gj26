@@ -38,6 +38,14 @@ func _ready() -> void:
 	_panel.offset_right = 330
 	_panel.offset_bottom = 300
 	add_child(_panel)
+	# Parchment grain + wax-seal dressing drawn behind the panel's content.
+	# The nine-patch frame gives us carved wood; this gives us the page inside
+	# — the same language as the quest scroll and inscribing bench interior.
+	var ink := _PanelInk.new()
+	ink.anchor_right = 1.0
+	ink.anchor_bottom = 1.0
+	ink.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(ink)
 
 	var title := Label.new()
 	title.text = String(st.get("title", "Crafting"))
@@ -212,3 +220,27 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# ---- drawn interior dressing ----
+# A parchment-grain layer behind the panel's recipe list and satchel text.
+# The nine-patch carved-wood frame gives the border; this gives the page
+# inside it — matching the quest scroll and inscribing bench languages.
+# A small wax seal in the top corner signs the page like an old ledger.
+class _PanelInk extends Control:
+	func _ready() -> void:
+		resized.connect(queue_redraw)
+
+	func _draw() -> void:
+		if size.x < 8.0 or size.y < 8.0:
+			return
+		# Grain inset off the nine-patch margins (~44 px on all sides).
+		var inner := Rect2(Vector2(44.0, 44.0), size - Vector2(88.0, 88.0))
+		WyrdUi.draw_parchment_grain(self, inner, 61)
+		# Small wax seal at the top-left of the interior — an authentication
+		# mark lifted from the quest-scroll language (same radius, same tint,
+		# much lower alpha so it sits behind the title without competing).
+		var sc := Vector2(58.0, 58.0)
+		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16, 0.28))
+		draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22, 0.20))
+		draw_arc(sc, 7.0, 0, TAU, 24, Color(0.40, 0.12, 0.10, 0.30), 1.3, true)
