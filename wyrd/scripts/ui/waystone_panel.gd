@@ -115,18 +115,14 @@ func _render() -> void:
 		_list_box.add_child(l)
 	for i in n:
 		var chart: Dictionary = _game.charts[i]
-		var b := Button.new()
-		WyrdUi.style_button(b)
-		WyrdUi.mark_selected(b, i == _selected)
-		b.toggle_mode = true
-		b.button_pressed = i == _selected
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.text = ChartsData.chart_label(chart)
+		var aff_count: int = (chart.get("affixes", []) as Array).size()
+		var card := _ChartScrollCard.new()
+		card.setup(ChartsData.chart_label(chart), aff_count, i == _selected)
 		var idx := i
-		b.pressed.connect(func():
+		card.pressed.connect(func():
 			_selected = idx
 			_render())
-		_list_box.add_child(b)
+		_list_box.add_child(card)
 	# Detail + button state.
 	if _selected >= 0 and _selected < n:
 		var chart: Dictionary = _game.charts[_selected]
@@ -154,3 +150,85 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# ---- drawn chart scroll card (one row) ----
+# Replaces the flat style_button list entries. Each card draws:
+#   • draw_list_row plate (gold accent when selected, neutral otherwise)
+#   • a WyrdUi.draw_scroll icon on the left — sealed while waiting, broken
+#     open (unsealed) when chosen — so selection reads as "you've picked it up"
+#   • the chart label in ink (gold-darkened when selected)
+#   • a small affix-count chip on the right in parchment / warm gold tint
+# Template follows _VendorCard / _SkillCard to stay in kit language.
+class _ChartScrollCard extends Control:
+	const SCROLL_W := 44.0
+
+	var _label := ""
+	var _aff_count := 0
+	var _selected := false
+	var _hover := false
+
+	signal pressed
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 56.0)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
+	func setup(chart_label: String, aff_count: int, selected: bool) -> void:
+		_label = chart_label
+		_aff_count = aff_count
+		_selected = selected
+		queue_redraw()
+
+	func _gui_input(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.pressed \
+				and event.button_index == MOUSE_BUTTON_LEFT:
+			pressed.emit()
+			accept_event()
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_MOUSE_ENTER:
+			_hover = true
+			queue_redraw()
+		elif what == NOTIFICATION_MOUSE_EXIT:
+			_hover = false
+			queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		var accent: Color = WyrdUi.GOLD if _selected else WyrdUi.INK_MID
+		WyrdUi.draw_list_row(self, r, accent)
+		if _selected:
+			# warm golden wash over the selected card — it glows off the parchment
+			draw_rect(r.grow(-1.5), Color(WyrdUi.GOLD, 0.08))
+		elif _hover:
+			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.10))
+		# --- scroll icon: sealed = waiting in case; unsealed = chosen ---
+		var sr_h := SCROLL_W * 0.72
+		var sr := Rect2(Vector2(9.0, (size.y - sr_h) * 0.5),
+			Vector2(SCROLL_W, sr_h))
+		WyrdUi.draw_scroll(self, sr, not _selected)
+		if _selected:
+			draw_rect(sr, WyrdUi.GOLD.darkened(0.08), false, 2.0)
+		# --- chart label (ink; gold when selected) ---
+		var font := get_theme_default_font()
+		var tx := sr.end.x + 12.0
+		var chip_w := 0.0
+		if _aff_count > 0:
+			chip_w = 58.0
+		var label_col: Color = WyrdUi.GOLD.darkened(0.15) if _selected else WyrdUi.INK
+		draw_string(font, Vector2(tx, size.y * 0.5 + 5.0), _label,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - chip_w - 14.0, 15, label_col)
+		# --- affix-count chip on the right ---
+		if _aff_count > 0:
+			var chip_h := 20.0
+			var chip_r := Rect2(
+				Vector2(size.x - chip_w - 10.0, (size.y - chip_h) * 0.5),
+				Vector2(chip_w, chip_h))
+			var chip_bg: Color = Color(WyrdUi.GOLD, 0.22) if _selected \
+				else Color(0.86, 0.79, 0.66)
+			draw_rect(chip_r, chip_bg)
+			draw_rect(chip_r, Color(WyrdUi.KIT_EDGE, 0.5), false, 1.0)
+			var aff_txt := "%d aff." % _aff_count
+			draw_string(font, Vector2(chip_r.position.x, chip_r.position.y + 14.0),
+				aff_txt, HORIZONTAL_ALIGNMENT_CENTER, chip_w, 11, WyrdUi.INK_MID)
