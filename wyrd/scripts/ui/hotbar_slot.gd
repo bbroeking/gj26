@@ -37,6 +37,10 @@ func _draw() -> void:
 	WyrdUi.draw_carved_button(self, r, castable)
 	WyrdUi.draw_well(self, r.grow(-7.0), WyrdUi.KIT_PLATE.lightened(0.05))
 	WyrdUi.draw_parchment_grain(self, r, _seed)
+	# Gold corner pips: filigree studs on the slot's frame (dim on cooldown/
+	# not castable so the ornament echoes the slot's readiness state).
+	WyrdUi.draw_corner_pips(self, r,
+		Color(WyrdUi.GOLD, 0.62 if castable else 0.25))
 	# Radial cooldown wedge — a square-clamped pie from 12 o'clock clockwise,
 	# shrinking as the skill cools. Vertices ride the slot's own edge so it
 	# reads as the slot face darkening, with no overshoot into the gaps.
