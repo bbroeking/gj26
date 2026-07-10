@@ -93,9 +93,19 @@ func _ready() -> void:
 	s2.text = "Satchel"
 	WyrdUi.style_section(s2)
 	col.add_child(s2)
+	# A ── ◆ ── flourish rule under the section header, matching the
+	# draw_flourish vocabulary used across bench and tray panel sections.
+	var satchel_rule := _FlourishRule.new()
+	col.add_child(satchel_rule)
 	_satchel_lbl = Label.new()
 	WyrdUi.style_body(_satchel_lbl, 13)
 	_satchel_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# Recessed parchment-well background — the satchel reads as a carved
+	# inset inventory panel rather than a paragraph of plain body text.
+	var well_sb := WyrdUi.chip_stylebox(WyrdUi.KIT_WELL)
+	well_sb.content_margin_top = 8.0
+	well_sb.content_margin_bottom = 8.0
+	_satchel_lbl.add_theme_stylebox_override("normal", well_sb)
 	col.add_child(_satchel_lbl)
 
 	get_node("/root/Game").modal_opened()
@@ -212,3 +222,17 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# A thin ── ◆ ── flourish rule: the same sepia line + gold diamond ornament
+# that draw_flourish emits, sized to whatever the VBoxContainer gives it.
+# Sits between a section header Label and its content so the panel reads as
+# a chapter-based storybook layout rather than a flat scrollable list.
+class _FlourishRule extends Control:
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 14)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5),
+			size.x - 16.0)
