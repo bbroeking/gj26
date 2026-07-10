@@ -327,6 +327,20 @@ static func draw_parchment_grain(c: CanvasItem, r: Rect2, seed_v: int = 7) -> vo
 		c.draw_line(p, p + Vector2(ln, rng.randf_range(-1.2, 1.2)),
 			Color(0.62, 0.52, 0.38, 0.05 + rng.randf() * 0.05), 1.0)
 
+# Gold diamond corner pips — burnished filigree studs at the four corners of
+# a carved frame (hotbar slots, portrait wells). Drawn inward from the rect.
+static func draw_corner_pips(c: CanvasItem, r: Rect2, col: Color,
+		radius := 3.0, margin := 3.5) -> void:
+	for cx in [r.position.x + margin + radius, r.end.x - margin - radius]:
+		for cy in [r.position.y + margin + radius, r.end.y - margin - radius]:
+			var ctr := Vector2(cx, cy)
+			c.draw_colored_polygon(PackedVector2Array([
+				ctr + Vector2(0.0, -radius),
+				ctr + Vector2(radius, 0.0),
+				ctr + Vector2(0.0, radius),
+				ctr + Vector2(-radius, 0.0),
+			]), col)
+
 # Section flourish: ── ◆ ── centred under a header.
 static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 	var col := Color(KIT_EDGE, 0.45)
