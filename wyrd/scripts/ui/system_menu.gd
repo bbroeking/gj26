@@ -87,6 +87,7 @@ func _ready() -> void:
 		_ip_edit.placeholder_text = "friend's address (IP or IP:port)"
 		_ip_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_ip_edit.custom_minimum_size = Vector2(0, 40)
+		WyrdUi.style_line_edit(_ip_edit)
 		row.add_child(_ip_edit)
 		var join := Button.new()
 		WyrdUi.style_kit_button(join)
@@ -99,6 +100,10 @@ func _ready() -> void:
 		note.text = "Paste your friend's address (they copy it from their Lantern). Same network or a VPN — Tailscale works well. Friends join while you keep playing."
 		WyrdUi.style_dim(note, 12)
 		note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		var _hf := WyrdUi.font_hand()
+		if _hf != null:
+			note.add_theme_font_override("font", _hf)
+			note.add_theme_font_size_override("font_size", 14)
 		col.add_child(note)
 
 	NetGame.roster_changed.connect(_refresh)
