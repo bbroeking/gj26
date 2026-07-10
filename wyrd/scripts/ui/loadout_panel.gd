@@ -227,6 +227,9 @@ class _SkillCard extends Control:
 		elif _hover:
 			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.10))
 		var font := get_theme_default_font()
+		var hdr := WyrdUi.font_header()
+		if hdr == null:
+			hdr = font
 		var ink: Color = WyrdUi.INK if not _locked else Color(0.50, 0.43, 0.34)
 		var dim: Color = WyrdUi.INK_MID if not _locked else Color(0.56, 0.49, 0.40)
 		# --- icon plate on the left ---
@@ -241,10 +244,25 @@ class _SkillCard extends Control:
 		# picked = sage ring around the icon (WyrdUi selection language)
 		if _picked:
 			draw_rect(ir, WyrdUi.SAGE.darkened(0.08), false, 2.5)
+			# Sage diamond seal at the bottom-right corner of the icon ring —
+			# the "bound to your kit" token, matching the altar-sigil language
+			# used on shrine and chart panels.
+			var sc := ir.end - Vector2(5.0, 5.0)
+			draw_colored_polygon(PackedVector2Array([
+				sc + Vector2(0, -5.0), sc + Vector2(5.0, 0),
+				sc + Vector2(0, 5.0), sc + Vector2(-5.0, 0),
+			]), Color(WyrdUi.SAGE, 0.82))
+			draw_polyline(PackedVector2Array([
+				sc + Vector2(0, -5.0), sc + Vector2(5.0, 0),
+				sc + Vector2(0, 5.0), sc + Vector2(-5.0, 0),
+				sc + Vector2(0, -5.0),
+			]), Color(WyrdUi.SAGE.darkened(0.25), 0.65), 1.0, true)
 		# --- name + focus tag ---
 		var tx := ir.end.x + 12.0
 		var mark := "✓ " if _picked else ""
-		draw_string(font, Vector2(tx, 22.0), mark + _name,
+		# IM Fell SC gives skill names the carved-word weight matching the rest
+		# of the kit — the default engine font read generic here.
+		draw_string(hdr, Vector2(tx, 22.0), mark + _name,
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 92.0, 16, ink)
 		if _locked:
 			# padlock glyph + the gate, right-aligned
