@@ -112,6 +112,7 @@ func _ready() -> void:
 	sell_hdr.text = "Sell (he melts it down)"
 	WyrdUi.style_section(sell_hdr)
 	col1.add_child(sell_hdr)
+	col1.add_child(_ColumnRule.new())
 	# A full pack outgrows the panel — the sell list scrolls now.
 	var sell_scroll := ScrollContainer.new()
 	sell_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -130,6 +131,7 @@ func _ready() -> void:
 	buy_hdr.text = "Wares"
 	WyrdUi.style_section(buy_hdr)
 	col2.add_child(buy_hdr)
+	col2.add_child(_ColumnRule.new())
 	_buy_box = VBoxContainer.new()
 	_buy_box.add_theme_constant_override("separation", 5)
 	_buy_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -286,3 +288,22 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# ---- section-header flourish rule ----
+# Sits between each column's "Sell" / "Wares" header and its card list so the
+# headings carry the kit's ornament language (flourish on headers, not body).
+# Pure-vector: parchment grain strip + ── ◆ ── divider + hairline borders.
+class _ColumnRule extends Control:
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 18)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		WyrdUi.draw_parchment_grain(self, Rect2(Vector2.ZERO, size), 47)
+		WyrdUi.draw_flourish(self,
+			Vector2(size.x * 0.5, size.y * 0.5 + 1.5), size.x * 0.78)
+		draw_rect(Rect2(Vector2(4.0, 0.0),
+			Vector2(size.x - 8.0, 1.0)), Color(WyrdUi.KIT_EDGE, 0.14))
+		draw_rect(Rect2(Vector2(4.0, size.y - 1.0),
+			Vector2(size.x - 8.0, 1.0)), Color(WyrdUi.KIT_EDGE, 0.12))
