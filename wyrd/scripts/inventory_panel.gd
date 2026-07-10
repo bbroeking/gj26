@@ -671,23 +671,41 @@ func _draw_page_patch(win: Rect2, r: Rect2) -> void:
 	# Re-apply the warm wash the page carries (drawn at win.grow(-26)).
 	draw_rect(r, Color(0.91, 0.85, 0.70, 0.45))
 
-# A slim sage runner along the right edge marks the place in the page, and
+# A carved sage runner along the right edge marks the place in the page, and
 # the footer carries the hint — both only when there is more to read.
 func _draw_scroll_marker(win: Rect2, view: Rect2, font: Font) -> void:
 	var content_h: float = float(_tab_content_h.get(_tab, 0.0))
 	if content_h <= view.size.y:
 		return
-	var track := Rect2(Vector2(win.end.x - 52.0, view.position.y),
-		Vector2(4.0, view.size.y))
-	draw_rect(track, Color(WyrdUi.KIT_EDGE, 0.18))
+	# Track: recessed groove — shadow behind, warm face, ink border.
+	var track := Rect2(Vector2(win.end.x - 54.0, view.position.y + 8.0),
+		Vector2(8.0, view.size.y - 16.0))
+	draw_rect(track.grow(1.5), Color(WyrdUi.KIT_EDGE, 0.28))
+	draw_rect(track, Color(WyrdUi.KIT_PLATE).darkened(0.10))
+	draw_rect(Rect2(track.position, Vector2(track.size.x, 2.0)),
+		Color(WyrdUi.KIT_EDGE, 0.22))
+	draw_rect(track, Color(WyrdUi.KIT_EDGE, 0.45), false, 1.0)
+	# Small gold diamonds at track ends (kit ornament language).
+	var dx := track.position.x + track.size.x * 0.5
+	for dy in [track.position.y - 1.0, track.end.y + 1.0]:
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(dx, dy - 4.5), Vector2(dx + 3.5, dy),
+			Vector2(dx, dy + 4.5), Vector2(dx - 3.5, dy)]),
+			PackedColorArray([WyrdUi.GOLD, WyrdUi.GOLD, WyrdUi.GOLD, WyrdUi.GOLD]))
+	# Thumb: bevelled sage grip — top-light, bottom-shadow, ink border.
 	var th: float = maxf(34.0, track.size.y * view.size.y / content_h)
 	var max_s: float = maxf(1.0, content_h - view.size.y)
 	var s: float = float(_tab_scroll.get(_tab, 0.0))
-	var thumb := Rect2(Vector2(track.position.x - 1.5,
-		track.position.y + (track.size.y - th) * (s / max_s)),
-		Vector2(7.0, th))
-	draw_rect(thumb, WyrdUi.SAGE.darkened(0.08))
-	draw_rect(thumb, Color(WyrdUi.KIT_EDGE, 0.7), false, 1.0)
+	var ty: float = track.position.y + (track.size.y - th) * (s / max_s)
+	var thumb := Rect2(Vector2(track.position.x, ty), Vector2(track.size.x, th))
+	draw_rect(thumb, WyrdUi.SAGE.darkened(0.12))
+	# Top honey bevel.
+	draw_rect(Rect2(thumb.position + Vector2(1.0, 1.0),
+		Vector2(thumb.size.x - 2.0, 2.0)), Color(1.0, 1.0, 0.88, 0.45))
+	# Bottom ink shadow.
+	draw_rect(Rect2(Vector2(thumb.position.x + 1.0, thumb.end.y - 3.0),
+		Vector2(thumb.size.x - 2.0, 2.0)), Color(WyrdUi.KIT_EDGE, 0.30))
+	draw_rect(thumb, Color(WyrdUi.KIT_EDGE, 0.65), false, 1.0)
 	draw_string(font, Vector2(view.position.x, view.end.y + 34.0),
 		"scroll to read on · I close", HORIZONTAL_ALIGNMENT_CENTER,
 		view.size.x, 13, WyrdUi.INK_MID)
