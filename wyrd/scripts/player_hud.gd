@@ -420,8 +420,22 @@ class GlobeGauge extends Control:
 		draw_arc(c, R + 1.5, 0, TAU, 64, RING_EDGE, 2.0, true)
 		for i in 4:
 			var a := PI * 0.25 + float(i) * PI * 0.5
-			var np := c + Vector2(cos(a), sin(a)) * (R + 8.0)
-			WyrdUi.draw_round_well(self, np, 8.0, Color(0.93, 0.88, 0.74))
+			var out := Vector2(cos(a), sin(a))
+			var tan := Vector2(-sin(a), cos(a))
+			var np := c + out * (R + 8.0)
+			# Berry knot (smaller now — the leaf sits over it).
+			WyrdUi.draw_round_well(self, np, 5.5, Color(0.93, 0.88, 0.74))
+			# Ivy leaf at each ring knot — bramble-nest cradle (mj_hud_bramble ref).
+			# Pointed-oval: tip outward, base inward, shoulders at ±45°.
+			var leaf_pts := PackedVector2Array([
+				np + out * 9.5,
+				np + tan * 4.0 + out * 1.5,
+				np - out * 4.5,
+				np - tan * 4.0 + out * 1.5,
+			])
+			draw_colored_polygon(leaf_pts, Color(0.36, 0.52, 0.22, 0.80))
+			draw_line(np - out * 4.5, np + out * 9.5,
+				Color(0.22, 0.35, 0.12, 0.55), 1.0)
 		# --- glass orb ---
 		draw_circle(c, R, Color(0.12, 0.10, 0.09))
 		if frac > 0.003:
