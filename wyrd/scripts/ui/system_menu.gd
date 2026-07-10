@@ -31,6 +31,10 @@ func _ready() -> void:
 	_panel.offset_right = 260
 	_panel.offset_bottom = 220
 	add_child(_panel)
+	var fire_panel := _FirePanel.new()
+	fire_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	fire_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(fire_panel)
 	var title := Label.new()
 	title.text = "The Lantern"
 	WyrdUi.style_title(title)
@@ -190,3 +194,24 @@ func _close() -> void:
 	if _game != null:
 		_game.modal_closed()
 	queue_free()
+
+
+# Drawn interior for the Lantern: a warm amber hearthfire bloom, parchment
+# grain over the working face, and a closing flourish at the bottom.
+# Sits as the panel's first child so it renders behind all labels and buttons.
+class _FirePanel extends Control:
+	func _draw() -> void:
+		# Warm hearthfire glow — a soft amber ellipse centred in the lower
+		# half so the action area feels lit by the fire the player just lit.
+		var gc := Vector2(size.x * 0.5, size.y * 0.55)
+		draw_set_transform(gc, 0.0, Vector2(1.0, 0.52))
+		for i in 5:
+			var radius := 196.0 - float(i) * 34.0
+			var alpha := 0.030 - float(i) * 0.004
+			draw_circle(Vector2.ZERO, radius, Color(0.95, 0.76, 0.44, alpha))
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		# Parchment grain over the whole face.
+		WyrdUi.draw_parchment_grain(self, Rect2(Vector2.ZERO, size), 31)
+		# Closing flourish tucked into the bottom centre.
+		WyrdUi.draw_flourish(self,
+			Vector2(size.x * 0.5, size.y - 20.0), size.x * 0.36)
