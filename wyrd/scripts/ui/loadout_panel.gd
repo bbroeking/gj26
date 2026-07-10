@@ -252,11 +252,16 @@ class _SkillCard extends Control:
 				"⚿ Huntcraft %d" % _req, HORIZONTAL_ALIGNMENT_RIGHT,
 				146.0, 13, WyrdUi.TERRACOTTA)
 		elif _focus > 0:
-			# focus-cost chip in the top-right corner
-			var chip := Rect2(Vector2(size.x - 78.0, 8.0), Vector2(66.0, 18.0))
-			draw_rect(chip, Color(0.86, 0.79, 0.66))
-			draw_rect(chip, Color(WyrdUi.KIT_EDGE, 0.6), false, 1.0)
-			draw_string(font, Vector2(chip.position.x, chip.position.y + 14.0),
+			# Focus-cost chip — WyrdUi carved-chip language: KIT_PLATE face,
+			# top honey bevel, bottom ink shadow, soft ink border.
+			var chip := Rect2(Vector2(size.x - 82.0, 7.0), Vector2(70.0, 20.0))
+			draw_rect(chip, WyrdUi.KIT_PLATE)
+			draw_rect(Rect2(chip.position + Vector2(1.5, 1.5),
+				Vector2(chip.size.x - 3.0, 1.5)), Color(1.0, 1.0, 0.92, 0.50))
+			draw_rect(Rect2(chip.position + Vector2(1.5, chip.size.y - 3.0),
+				Vector2(chip.size.x - 3.0, 1.5)), Color(WyrdUi.KIT_EDGE, 0.22))
+			draw_rect(chip, Color(WyrdUi.KIT_EDGE, 0.55), false, 1.0)
+			draw_string(font, Vector2(chip.position.x, chip.position.y + 15.0),
 				"%d focus" % _focus, HORIZONTAL_ALIGNMENT_CENTER, chip.size.x,
 				12, WyrdUi.INK_MID)
 		# --- short desc (up to two lines) ---
