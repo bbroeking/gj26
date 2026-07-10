@@ -12,7 +12,7 @@ var _game: Node
 var _selected := -1
 var _panel: Panel
 var _list_box: VBoxContainer
-var _detail: Label
+var _detail_well: Control
 var _go_btn: Button
 
 func _ready() -> void:
@@ -66,17 +66,15 @@ func _ready() -> void:
 	_list_box.add_theme_constant_override("separation", 6)
 	scroll.add_child(_list_box)
 
-	_detail = Label.new()
-	WyrdUi.style_body(_detail, 13)
-	_detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_detail.anchor_right = 1.0
-	_detail.anchor_top = 1.0
-	_detail.anchor_bottom = 1.0
-	_detail.offset_left = 52
-	_detail.offset_right = -52
-	_detail.offset_top = -150
-	_detail.offset_bottom = -64
-	_panel.add_child(_detail)
+	_detail_well = _AffixDetailWell.new()
+	_detail_well.anchor_right = 1.0
+	_detail_well.anchor_top = 1.0
+	_detail_well.anchor_bottom = 1.0
+	_detail_well.offset_left = 52
+	_detail_well.offset_right = -52
+	_detail_well.offset_top = -150
+	_detail_well.offset_bottom = -64
+	_panel.add_child(_detail_well)
 
 	_go_btn = Button.new()
 	WyrdUi.style_button(_go_btn)
@@ -130,21 +128,25 @@ func _render() -> void:
 	# Detail + button state.
 	if _selected >= 0 and _selected < n:
 		var chart: Dictionary = _game.charts[_selected]
-		var lines: Array = []
+		var rows: Array = []
 		for a in chart.get("affixes", []):
 			var aff: Dictionary = ChartsData.AFFIXES.get(String(a.get("id", "")), {})
 			if aff.is_empty():
 				continue
-			if bool(a.get("good", false)):
-				lines.append("✓ %s — %s" % [String(aff.name), String(aff.good_desc)])
-			else:
-				lines.append("✗ %s — %s" % [String(aff.bad_name), String(aff.bad_desc)])
-		if lines.is_empty():
-			lines.append("A clean chart. Nothing inked in but the way there and back.")
-		_detail.text = "\n".join(lines)
+			var is_good := bool(a.get("good", false))
+			rows.append({
+				"text": "%s — %s" % [
+					String(aff.name if is_good else aff.get("bad_name", aff.name)),
+					String(aff.good_desc if is_good else aff.get("bad_desc", ""))],
+				"good": is_good
+			})
+		if rows.is_empty():
+			rows.append({"text": "A clean chart. Nothing inked in but the way there and back.",
+				"good": true})
+		_detail_well.set_affixes(rows)
 		_go_btn.disabled = false
 	else:
-		_detail.text = ""
+		_detail_well.set_affixes([])
 		_go_btn.disabled = true
 
 func _on_go() -> void:
@@ -154,3 +156,44 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# Drawn affix-detail well. A recessed parchment well that shows each chart
+# affix as a coloured chip row: sage for boons, terracotta for curses, with a
+# gold flourish divider at the top. Replaces the bare _detail Label so the
+# affix summary reads as a carved inset panel rather than a paragraph dump.
+class _AffixDetailWell extends Control:
+	var _rows: Array = []
+
+	func set_affixes(rows: Array) -> void:
+		_rows = rows
+		queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		WyrdUi.draw_well(self, r)
+		if _rows.is_empty():
+			return
+		var font := WyrdUi.font_body()
+		if font == null:
+			font = get_theme_default_font()
+		# Gold flourish divider at the top of the well.
+		WyrdUi.draw_flourish(self, Vector2(r.size.x * 0.5, 11.0), r.size.x * 0.55)
+		var row_h := 20.0
+		var gap := 3.0
+		var y := 19.0
+		for row in _rows:
+			var is_good: bool = bool(row.get("good", true))
+			if y + row_h > r.size.y - 5.0:
+				break
+			var rr := Rect2(Vector2(6.0, y), Vector2(r.size.x - 12.0, row_h))
+			WyrdUi.draw_affix_chip(self, rr, is_good)
+			var glyph := "✓" if is_good else "✗"
+			var gcol: Color = WyrdUi.SAGE.darkened(0.10) if is_good \
+				else WyrdUi.TERRACOTTA
+			draw_string(font, Vector2(10.0, y + row_h * 0.76),
+				glyph, HORIZONTAL_ALIGNMENT_LEFT, 16, 13, gcol)
+			draw_string(font, Vector2(23.0, y + row_h * 0.76),
+				String(row.get("text", "")),
+				HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 30.0, 12, WyrdUi.INK)
+			y += row_h + gap

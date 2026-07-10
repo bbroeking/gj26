@@ -337,6 +337,16 @@ static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 		center + Vector2(-3.5, 0)])
 	c.draw_colored_polygon(pts, Color(GOLD, 0.8))
 
+# Affix chip row — a soft coloured face with a 3 px accent stripe.
+# Used in the waystone chart-detail well and the result-affix summary.
+# SAGE face for a good affix (boon); TERRACOTTA for a curse.
+static func draw_affix_chip(c: CanvasItem, r: Rect2, good: bool) -> void:
+	var tint: Color = SAGE if good else TERRACOTTA
+	c.draw_rect(r, Color(tint, 0.10))
+	c.draw_rect(Rect2(r.position + Vector2(1.5, 1.5),
+		Vector2(3.5, r.size.y - 3.0)), tint)
+	c.draw_rect(r, Color(KIT_EDGE, 0.22), false, 1.0)
+
 # A little hand-blown ink bottle — glass body, ink fill, neck, cork, and a
 # glass highlight. Replaces the bare text glyphs in sockets and trays.
 static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
