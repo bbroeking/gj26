@@ -31,10 +31,15 @@ func _ready() -> void:
 	_panel.offset_right = 260
 	_panel.offset_bottom = 220
 	add_child(_panel)
+	# Small lit lantern hung in the header — storybook identity for this panel.
+	var deco := LanternDeco.new()
+	deco.position = Vector2(34, 22)
+	deco.size = Vector2(18, 52)
+	_panel.add_child(deco)
 	var title := Label.new()
 	title.text = "The Lantern"
 	WyrdUi.style_title(title)
-	title.position = Vector2(54, 36)
+	title.position = Vector2(60, 36)
 	_panel.add_child(title)
 	var hint := Label.new()
 	hint.text = "Esc — close"
@@ -44,6 +49,12 @@ func _ready() -> void:
 	hint.offset_left = -130
 	hint.offset_top = 38
 	_panel.add_child(hint)
+	# Gold ── ◆ ── section rule separating the header zone from content.
+	var rule := HeaderRule.new()
+	rule.anchor_right = 1.0
+	rule.offset_top = 76
+	rule.offset_bottom = 88
+	_panel.add_child(rule)
 	var col := VBoxContainer.new()
 	col.anchor_right = 1.0
 	col.anchor_bottom = 1.0
@@ -190,3 +201,54 @@ func _close() -> void:
 	if _game != null:
 		_game.modal_closed()
 	queue_free()
+
+
+# A hand-drawn hanging lantern: amber glass glow, candle flame, dark wood
+# frame, and a short hanging rod — gives the Lantern panel its icon identity.
+class LanternDeco extends Control:
+	func _draw() -> void:
+		var cx := size.x * 0.5
+		var body_top := size.y * 0.40
+		var bw := size.x * 0.84
+		var bh := size.y * 0.43
+		var bx := cx - bw * 0.5
+		# Hanging rod from the panel frame down to the lantern body.
+		draw_rect(Rect2(cx - 1.5, 0, 3.0, body_top + 1.0),
+			Color(0.26, 0.19, 0.13))
+		# Dark carved-wood body.
+		var body := Rect2(bx, body_top, bw, bh)
+		draw_rect(body, Color(0.26, 0.19, 0.13))
+		# Amber glass pane fill — warm candlelight glow.
+		draw_rect(body.grow(-2.5), Color(0.97, 0.80, 0.36, 0.88))
+		# Candle flame inside the glass (outer teardrop + bright inner core).
+		var fc := Vector2(cx, body_top + bh * 0.24)
+		draw_colored_polygon(PackedVector2Array([
+			fc + Vector2(0.0, -6.5),
+			fc + Vector2(-3.0,  2.0),
+			fc + Vector2( 0.0,  3.5),
+			fc + Vector2( 3.0,  2.0),
+		]), Color(1.0, 0.94, 0.56, 0.95))
+		draw_colored_polygon(PackedVector2Array([
+			fc + Vector2( 0.0, -2.8),
+			fc + Vector2(-1.2,  0.9),
+			fc + Vector2( 0.0,  1.7),
+			fc + Vector2( 1.2,  0.9),
+		]), Color(1.0, 0.99, 0.88, 0.95))
+		# Wood frame border drawn over the glass.
+		draw_rect(body, WyrdUi.KIT_EDGE, false, 1.5)
+		# Foot plate (wider base so the lantern reads as hanging, not floating).
+		var foot_y := body_top + bh
+		draw_rect(Rect2(bx - 2.0, foot_y, bw + 4.0, 3.5),
+			Color(0.26, 0.19, 0.13))
+		draw_rect(Rect2(bx - 2.0, foot_y, bw + 4.0, 3.5),
+			WyrdUi.KIT_EDGE, false, 1.0)
+		# Soft gold halo behind the lantern body — warm ambience.
+		draw_arc(Vector2(cx, body_top + bh * 0.5), bw * 0.9,
+			0.0, TAU, 20, Color(WyrdUi.GOLD, 0.08), 7.0)
+
+
+# A gold ── ◆ ── section rule reusing the shared WyrdUi flourish primitive.
+class HeaderRule extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5),
+			size.x - 108.0)
