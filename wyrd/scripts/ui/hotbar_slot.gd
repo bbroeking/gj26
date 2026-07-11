@@ -38,22 +38,48 @@ func _draw() -> void:
 	WyrdUi.draw_well(self, r.grow(-7.0), WyrdUi.KIT_PLATE.lightened(0.05))
 	WyrdUi.draw_parchment_grain(self, r, _seed)
 	# Radial cooldown wedge — a square-clamped pie from 12 o'clock clockwise,
-	# shrinking as the skill cools. Vertices ride the slot's own edge so it
-	# reads as the slot face darkening, with no overshoot into the gaps.
+	# shrinking as the skill cools. Drawn as a two-layer ink wash so it reads
+	# as pigment (a storybook "sealed with ink" cover) rather than a flat
+	# engine mask. A thin brush-tip arc at the leading edge marks the frontier.
 	if cd_ratio > 0.001:
 		var c := size * 0.5
 		var h := size.x * 0.5
 		var a0 := -PI * 0.5
 		var a1 := a0 + TAU * clampf(cd_ratio, 0.0, 1.0)
+		var steps := 40
+		# --- outer wash: full depth, pooled at the rim ---
 		var pts := PackedVector2Array()
 		pts.append(c)
-		var steps := 40
 		for i in steps + 1:
 			var a := lerpf(a0, a1, float(i) / float(steps))
 			var dx := cos(a)
 			var dy := sin(a)
 			var d := h / maxf(absf(dx), absf(dy))
 			pts.append(c + Vector2(dx, dy) * d)
-		draw_colored_polygon(pts, Color(0.10, 0.08, 0.07, 0.52))
+		draw_colored_polygon(pts, Color(0.10, 0.08, 0.07, 0.48))
+		# --- inner wash: the watercolour bleed from the centre, lighter ---
+		# A smaller pie at 65% radius gives the "ink pooling at the rim,
+		# thinning toward the centre" read of a real watercolour wash.
+		var inner := PackedVector2Array()
+		inner.append(c)
+		var inner_r := h * 0.65
+		for i in steps + 1:
+			var a := lerpf(a0, a1, float(i) / float(steps))
+			inner.append(c + Vector2(cos(a), sin(a)) * inner_r)
+		draw_colored_polygon(inner, Color(0.14, 0.11, 0.09, 0.18))
+		# --- brush-tip arc at the leading edge ---
+		# A short sepia stroke spanning ≈15° before the frontier — the
+		# "last brushstroke" that tells the eye the wedge is sweeping, not
+		# static. Fades as cd_ratio approaches 1 (full wash, no frontier).
+		var arc_span := minf(0.26, TAU * cd_ratio * 0.22)
+		if arc_span > 0.04:
+			var arc_pts := PackedVector2Array()
+			for i in 8:
+				var a := lerpf(a1 - arc_span, a1, float(i) / 7.0)
+				var dx := cos(a)
+				var dy := sin(a)
+				var d := h / maxf(absf(dx), absf(dy))
+				arc_pts.append(c + Vector2(dx, dy) * (d - 1.5))
+			draw_polyline(arc_pts, Color(WyrdUi.INK, 0.50), 2.0, true)
 	if _flash > 0.0:
 		draw_rect(r.grow(-1.5), Color(WyrdUi.GOLD, _flash * 0.85), false, 3.0)
