@@ -48,6 +48,10 @@ func _ready() -> void:
 	WyrdUi.style_dim(sub, 13)
 	sub.position = Vector2(54, 66)
 	_panel.add_child(sub)
+	var rule := _FlourishRule.new()
+	rule.position = Vector2(54, 84)
+	rule.size = Vector2(260, 6)
+	_panel.add_child(rule)
 
 	# A full chart case outgrows the panel — the list scrolls now,
 	# bounded above the detail block.
@@ -117,6 +121,7 @@ func _render() -> void:
 		var chart: Dictionary = _game.charts[i]
 		var card := _ChartCard.new()
 		card.setup(chart, i == _selected)
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var idx := i
 		card.pressed.connect(func():
 			_selected = idx
@@ -152,12 +157,10 @@ func _on_go() -> void:
 
 
 # ---- drawn chart scroll card (one row in the case list) ----
-# A clickable Control: draw_list_row plate (gold accent when selected, quiet
-# ink otherwise), a draw_scroll icon in a recessed well on the left (sealed
-# when the chart carries affixes — the wax seal means "something inked in"),
-# the chart name in TERRACOTTA when selected or INK when not, a small tier
-# chip top-right, and a dim one-line affix summary below the name.
-# Fully self-contained — callers hand it everything it draws.
+# draw_list_row plate (gold accent when selected), scroll-in-a-well on the
+# left (sealed when affixes are inked), chart name in IM Fell SC, tier chip
+# top-right, and sage/terracotta pip dots on the right for an instant risk
+# read. Fully self-contained — callers hand it everything it draws.
 class _ChartCard extends Control:
 	const WELL_W := 34.0
 	const WELL_H := 44.0
@@ -209,11 +212,13 @@ class _ChartCard extends Control:
 		if _selected:
 			draw_rect(ir, WyrdUi.GOLD, false, 2.0)
 
-		# --- chart name ---
-		var font := get_theme_default_font()
+		# --- chart name in IM Fell SC (storybook header language) ---
+		var font: Font = WyrdUi.font_header()
+		if font == null:
+			font = get_theme_default_font()
 		var tx := ir.end.x + 11.0
 		var name_col: Color = WyrdUi.TERRACOTTA if _selected else WyrdUi.INK
-		draw_string(font, Vector2(tx, 25.0), String(_chart.get("name", "Chart")),
+		draw_string(font, Vector2(tx, 26.0), String(_chart.get("name", "Chart")),
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 44.0, 16, name_col)
 
 		# --- tier chip (top-right corner) ---
@@ -224,18 +229,33 @@ class _ChartCard extends Control:
 			"T%d" % int(_chart.get("tier", 1)),
 			HORIZONTAL_ALIGNMENT_CENTER, chip.size.x, 11, WyrdUi.INK_MID)
 
-		# --- affix summary (one dim line below the name) ---
+		# --- affix pips: sage circles = good affixes, terracotta = bad ---
+		# Two rows on the right; gives an instant risk read without text.
 		var affixes: Array = _chart.get("affixes", [])
-		var aff_parts: Array = []
+		var good_count := 0
+		var bad_count := 0
 		for a in affixes:
-			var aff: Dictionary = ChartsData.AFFIXES.get(String(a.get("id", "")), {})
-			if aff.is_empty():
-				continue
 			if bool(a.get("good", false)):
-				aff_parts.append(String(aff.name))
+				good_count += 1
 			else:
-				aff_parts.append(String(aff.bad_name))
-		var aff_line: String = "  ".join(aff_parts) if not aff_parts.is_empty() \
-			else "Clean run — no affixes inked"
-		draw_string(font, Vector2(tx, 44.0), aff_line,
-			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 14.0, 12, WyrdUi.INK_MID)
+				bad_count += 1
+		_draw_pips(WyrdUi.SAGE, good_count, size.y * 0.32)
+		_draw_pips(WyrdUi.TERRACOTTA, bad_count, size.y * 0.68)
+
+	func _draw_pips(col: Color, count: int, py: float) -> void:
+		if count == 0:
+			return
+		var pip_r := 4.5
+		var gap := 11.0
+		var total_w := float(count - 1) * gap + pip_r * 2.0
+		var px_start := size.x - 14.0 - total_w + pip_r
+		for i in count:
+			var cx := px_start + float(i) * gap
+			draw_circle(Vector2(cx, py), pip_r, col)
+			draw_arc(Vector2(cx, py), pip_r, 0.0, TAU, 16, WyrdUi.KIT_EDGE, 1.0, true)
+
+
+# ---- header flourish rule drawn under the Waystone subtitle ----
+class _FlourishRule extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, size * 0.5, size.x * 0.72)
