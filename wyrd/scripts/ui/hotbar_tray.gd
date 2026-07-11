@@ -24,3 +24,17 @@ func _draw() -> void:
 	var cy := r.size.y * 0.5
 	WyrdUi.draw_flourish(self, Vector2(20, cy), 24)
 	WyrdUi.draw_flourish(self, Vector2(r.size.x - 20, cy), 24)
+	# Center quatrefoil between the slots: four sage leaf-pips at 45° and a gold
+	# diamond heart. The ornament peeks between skill slots 2 and 3, giving the
+	# plank the "ivy + filigree" note from the design language.
+	var cx := r.size.x * 0.5
+	var pr := 3.5
+	for i in 4:
+		var a := PI * 0.25 + PI * 0.5 * float(i)
+		draw_circle(Vector2(cx + cos(a) * (pr + 1.0), cy + sin(a) * (pr + 1.0)),
+			pr, Color(WyrdUi.SAGE, 0.38))
+	var pip := PackedVector2Array([
+		Vector2(cx, cy - 4.5), Vector2(cx + 4.5, cy),
+		Vector2(cx, cy + 4.5), Vector2(cx - 4.5, cy)])
+	draw_colored_polygon(pip, Color(WyrdUi.GOLD, 0.85))
+	draw_arc(Vector2(cx, cy), 9.0, 0, TAU, 20, Color(WyrdUi.KIT_EDGE, 0.28), 1.0, true)
