@@ -735,69 +735,59 @@ class BenchView extends Control:
 		draw_string(hdr, _try_rect.position + Vector2(0, 26), "Try the Mix",
 			HORIZONTAL_ALIGNMENT_CENTER, _try_rect.size.x, 13,
 			WyrdUi.INK if can_try else DIM)
-		# Codex — every pot recipe in its discovery state. Open-book glyph
-		# header; known = SAGE list-card + ink bottle; riddle-open = quiet
-		# INK_MID card; mystery = recessed ghost chip.
+		# Spec 43 — the codex: every pot recipe, in its discovery state.
 		var cy := 462.0
-		var bk := Vector2(bx + 8.0, cy + 6.0)
-		draw_rect(Rect2(bk + Vector2(-9.0, -5.0), Vector2(8.0, 10.0)),
-			Color(0.97, 0.93, 0.78))
-		draw_rect(Rect2(bk + Vector2(-9.0, -5.0), Vector2(8.0, 10.0)),
-			Color(EDGE, 0.55), false, 1.0)
-		draw_rect(Rect2(bk + Vector2(1.0, -5.0), Vector2(8.0, 10.0)),
-			Color(0.97, 0.93, 0.78))
-		draw_rect(Rect2(bk + Vector2(1.0, -5.0), Vector2(8.0, 10.0)),
-			Color(EDGE, 0.55), false, 1.0)
-		draw_line(bk + Vector2(-0.5, -5.5), bk + Vector2(-0.5, 5.5), EDGE, 1.5)
-		draw_line(bk + Vector2(0.5, -5.5), bk + Vector2(0.5, 5.5), EDGE, 1.5)
-		draw_line(bk + Vector2(2.5, -2.0), bk + Vector2(8.5, -2.0),
-			Color(EDGE, 0.30), 1.0)
-		draw_line(bk + Vector2(2.5, 0.5), bk + Vector2(8.5, 0.5),
-			Color(EDGE, 0.30), 1.0)
-		draw_line(bk + Vector2(2.5, 3.0), bk + Vector2(8.5, 3.0),
-			Color(EDGE, 0.30), 1.0)
-		draw_string(hdr, Vector2(bx + 20.0, cy + 13.0), "Codex",
-			HORIZONTAL_ALIGNMENT_LEFT, 160, 13, WyrdUi.INK)
-		WyrdUi.draw_flourish(self, Vector2(bx + 140.0, cy + 7.0), 252.0)
-		cy += 18.0
+		draw_string(hdr, Vector2(bx, cy), "Codex", HORIZONTAL_ALIGNMENT_LEFT,
+			200, 13, WyrdUi.INK)
+		# Flourish under the Codex header — matches the tray/bench/result
+		# section headers so all four columns read as a unified document.
+		WyrdUi.draw_flourish(self, Vector2(bx + 110.0, cy + 4.0), 210.0)
+		cy += 20.0
 		_codex_rects.clear()
-		var row_h := 20.0
-		var row_w := 330.0
 		for rid in GatherDefs.INK_RECIPE_ORDER:
 			var rec: Dictionary = GatherDefs.INK_RECIPES[rid]
+			var line := "◌ ???"
+			var col := DIM
+			var known := false
 			# Spec 45-carto — Mara's Marginalia: every riddle, plain to read.
 			var riddle_open: bool = bench._game != null \
 				and (bool((bench._game.seen_hints as Dictionary)
 					.get(String(rec.get("hint_key", "")), false))
 				or bool(bench._game.perk_active("carto", "marginalia")))
-			var row_r := Rect2(Vector2(bx, cy), Vector2(row_w, row_h))
 			if bench._game != null \
 					and bool(bench._game.ink_discovered(String(rid))):
+				known = true
 				var parts: Array = []
 				for mid in rec.inputs:
 					parts.append("%d× %s" % [int(rec.inputs[mid]),
 						GatherDefs.material_name(String(mid))])
-				var line := "%s — %s" % [GatherDefs.material_name(String(rid)),
+				line = "%s — %s" % [GatherDefs.material_name(String(rid)),
 					" + ".join(parts)]
-				WyrdUi.draw_list_row(self, row_r, WyrdUi.SAGE)
-				WyrdUi.draw_ink_bottle(self, Vector2(bx + 12.0, cy + row_h * 0.5),
-					13.0, INK_TINT.get(String(rid), Color(0.4, 0.4, 0.4)))
-				draw_string(font, Vector2(bx + 22.0, cy + row_h - 5.0), line,
-					HORIZONTAL_ALIGNMENT_LEFT, row_w - 26.0, 11, TXT)
+				col = TXT
+			elif riddle_open:
+				line = "◌ ??? — %s" % String(rec.get("riddle", ""))
+			# Each codex entry rides a drawn parchment card — the same carved-
+			# plate language as the tray rows. Sage stripe = discovered recipe;
+			# muted INK_MID stripe = still unknown; no rows look like bare text.
+			var row_r := Rect2(Vector2(bx - 2.0, cy - 1.0), Vector2(332.0, 16.0))
+			var accent: Color
+			if known:
+				accent = WyrdUi.SAGE.darkened(0.08)
+			else:
+				accent = Color(WyrdUi.INK_MID, 0.45)
+			WyrdUi.draw_list_row(self, row_r, accent)
+			if known:
+				# Spec 44 — a tiny bottle in the ink's color marks the find.
+				WyrdUi.draw_ink_bottle(self, Vector2(bx + 8.0, cy + 7.0), 13.0,
+					INK_TINT.get(String(rid), Color(0.4, 0.4, 0.4)))
+				draw_string(font, Vector2(bx + 18.0, cy + 11.0), line,
+					HORIZONTAL_ALIGNMENT_LEFT, 312, 11, col)
 				# Spec 45-carto — Practiced Measures: a known row is a button.
 				_codex_rects.append({"rect": row_r, "id": String(rid)})
-			elif riddle_open:
-				WyrdUi.draw_list_row(self, row_r, WyrdUi.INK_MID)
-				draw_string(font, Vector2(bx + 8.0, cy + row_h - 5.0),
-					"◌ ??? — %s" % String(rec.get("riddle", "")),
-					HORIZONTAL_ALIGNMENT_LEFT, row_w - 12.0, 11, DIM)
 			else:
-				draw_rect(row_r, Color(WELL, 0.50))
-				draw_rect(row_r, Color(EDGE, 0.18), false, 1.0)
-				draw_string(font, Vector2(bx + 8.0, cy + row_h - 5.0),
-					"◌ ???", HORIZONTAL_ALIGNMENT_LEFT, row_w - 12.0, 11,
-					Color(DIM, 0.55))
-			cy += row_h + 2.0
+				draw_string(font, Vector2(bx + 6.0, cy + 11.0), line,
+					HORIZONTAL_ALIGNMENT_LEFT, 326, 11, col)
+			cy += 16.0
 
 	func _draw_result(hdr: Font, font: Font) -> void:
 		var rx := 660.0
