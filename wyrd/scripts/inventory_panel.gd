@@ -409,18 +409,9 @@ func _draw_grid() -> void:
 		for x in COLS:
 			var r := Rect2(grid_origin + Vector2(x * CELL, y * CELL),
 				Vector2(CELL, CELL))
-			draw_rect(r.grow(-1), Color(0.84, 0.77, 0.62))
-			# Inner shadow: dark top/left, light bottom/right → sunken cell.
-			draw_line(r.position + Vector2(1, 1),
-				r.position + Vector2(CELL - 1, 1), Color(0.45, 0.37, 0.27, 0.7), 2.0)
-			draw_line(r.position + Vector2(1, 1),
-				r.position + Vector2(1, CELL - 1), Color(0.45, 0.37, 0.27, 0.7), 2.0)
-			draw_line(r.position + Vector2(1, CELL - 1),
-				r.position + Vector2(CELL - 1, CELL - 1),
-				Color(0.97, 0.93, 0.82, 0.8), 1.5)
-			draw_line(r.position + Vector2(CELL - 1, 1),
-				r.position + Vector2(CELL - 1, CELL - 1),
-				Color(0.97, 0.93, 0.82, 0.8), 1.5)
+			# Carved socket well — 3-pass stepped inner shadow replaces the
+			# manual draw_lines; reads as properly recessed into the shelf.
+			WyrdUi.draw_well(self, r.grow(-1), Color(0.84, 0.77, 0.62))
 	if inventory != null:
 		for it in inventory.items:
 			_draw_item_in_grid(it)
