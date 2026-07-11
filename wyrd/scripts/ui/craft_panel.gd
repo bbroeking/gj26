@@ -115,8 +115,15 @@ func _render() -> void:
 	for rid in st.get("recipes", []):
 		var rec: Dictionary = CraftingDefs.recipe(String(rid))
 		var locked: bool = lv < int(rec.get("req_lv", 1))
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 10)
+		var affordable: bool = not locked and _game != null \
+			and _game.can_afford(rec.inputs)
+		var row := _RecipeRow.new()
+		row.set_accent(WyrdUi.TERRACOTTA if locked \
+			else (WyrdUi.SAGE if affordable else WyrdUi.INK_MID))
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var inner := HBoxContainer.new()
+		inner.add_theme_constant_override("separation", 10)
+		row.add_child(inner)
 
 		# Spec 44 — a painted icon chip in front of every recipe row.
 		var chip := Label.new()
@@ -129,7 +136,7 @@ func _render() -> void:
 			WyrdUi.INK if not locked else WyrdUi.INK_MID)
 		chip.add_theme_stylebox_override("normal",
 			WyrdUi.chip_stylebox(_recipe_tint(rec, locked)))
-		row.add_child(chip)
+		inner.add_child(chip)
 
 		var info := VBoxContainer.new()
 		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -154,7 +161,7 @@ func _render() -> void:
 		WyrdUi.style_dim(detail, 12)
 		detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		info.add_child(detail)
-		row.add_child(info)
+		inner.add_child(info)
 
 		var b := Button.new()
 		WyrdUi.style_kit_button(b)
@@ -165,7 +172,7 @@ func _render() -> void:
 		b.pressed.connect(func():
 			if _game != null and _game.craft(station_id, rid_s):
 				_render())
-		row.add_child(b)
+		inner.add_child(b)
 		_recipe_box.add_child(row)
 
 	if _game == null:
@@ -212,3 +219,24 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# A drawn recipe card: KIT_PLATE face, top honey bevel, bottom ink shadow, ink
+# border, and a 3px accent stripe on the left edge. Accent encodes status:
+# SAGE = affordable (craftable now), TERRACOTTA = trade-locked, INK_MID = need
+# more materials. Wraps an HBoxContainer so content sizes drive the row height.
+class _RecipeRow extends MarginContainer:
+	var _accent: Color = WyrdUi.INK_MID
+
+	func _init() -> void:
+		add_theme_constant_override("margin_left", 8)
+		add_theme_constant_override("margin_right", 8)
+		add_theme_constant_override("margin_top", 6)
+		add_theme_constant_override("margin_bottom", 6)
+
+	func set_accent(c: Color) -> void:
+		_accent = c
+		queue_redraw()
+
+	func _draw() -> void:
+		WyrdUi.draw_list_row(self, Rect2(Vector2.ZERO, size), _accent)
