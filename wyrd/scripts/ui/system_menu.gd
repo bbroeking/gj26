@@ -31,6 +31,8 @@ func _ready() -> void:
 	_panel.offset_right = 260
 	_panel.offset_bottom = 220
 	add_child(_panel)
+	# Ornamental overlay drawn behind the Labels/Buttons.
+	_panel.add_child(_LanternDeco.new())
 	var title := Label.new()
 	title.text = "The Lantern"
 	WyrdUi.style_title(title)
@@ -190,3 +192,54 @@ func _close() -> void:
 	if _game != null:
 		_game.modal_closed()
 	queue_free()
+
+
+# ---- ornamental overlay ----
+# Drawn as the first child of _panel so it sits behind all Labels/Buttons.
+# Adds parchment grain, a ── ◆ ── flourish rule under the title, and a small
+# hand-drawn hanging lantern glyph to the left of the title — the storybook
+# "page illumination" read that the plain text layout was missing.
+class _LanternDeco extends Control:
+	func _init() -> void:
+		anchor_right = 1.0
+		anchor_bottom = 1.0
+		mouse_filter = Control.MOUSE_FILTER_PASS
+
+	func _draw() -> void:
+		# Parchment grain over the body (below the flourish rule).
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(Vector2(46.0, 82.0), size - Vector2(92.0, 134.0)), 31)
+		# Flourish rule separating the title header from the content well.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 74.0), size.x - 120.0)
+		# Small hanging-lantern glyph in the left margin beside the title.
+		_draw_lantern(Vector2(30.0, 44.0), 28.0)
+
+	# A hand-drawn hanging glass lantern: glow halos, bail handle, glass globe,
+	# amber flame core, bright tip, catchlight, ink border, bottom cap.
+	func _draw_lantern(center: Vector2, h: float) -> void:
+		var edge := WyrdUi.KIT_EDGE
+		# Warm glow halos (drawn first so everything else sits on top).
+		draw_circle(center, h * 0.58, Color(WyrdUi.GOLD, 0.06))
+		draw_circle(center, h * 0.44, Color(WyrdUi.GOLD, 0.09))
+		# Bail handle — PI*1.25→PI*1.75 sweeps upper-left→top→upper-right in
+		# Godot screen space (Y-down, clockwise with increasing angle).
+		draw_arc(center, h * 0.38, PI * 1.25, PI * 1.75, 14,
+			Color(edge, 0.65), 1.5, true)
+		# Hanging stem above the bail peak.
+		draw_line(center - Vector2(0.0, h * 0.38),
+			center - Vector2(0.0, h * 0.46), Color(edge, 0.50), 1.0)
+		# Glass globe.
+		draw_circle(center, h * 0.30, Color(0.94, 0.91, 0.78, 0.55))
+		# Amber flame core.
+		draw_circle(center + Vector2(0.0, h * 0.06), h * 0.15,
+			Color(0.96, 0.68, 0.18, 0.88))
+		# Bright flame tip.
+		draw_circle(center - Vector2(0.0, h * 0.04), h * 0.08,
+			Color(1.0, 0.92, 0.60, 0.92))
+		# Glass catchlight (upper-left sparkle).
+		draw_circle(center - Vector2(h * 0.09, h * 0.09), h * 0.05,
+			Color(1.0, 1.0, 0.96, 0.52))
+		# Globe ink border.
+		draw_arc(center, h * 0.30, 0.0, TAU, 28, Color(edge, 0.72), 1.5, true)
+		# Bottom cap.
+		draw_circle(center + Vector2(0.0, h * 0.30), h * 0.08, Color(edge, 0.50))
