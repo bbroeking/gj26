@@ -350,6 +350,9 @@ func _draw() -> void:
 	# Warm parchment wash over the frame's pale page so the window never
 	# reads as bare white.
 	draw_rect(win.grow(-26), Color(0.91, 0.85, 0.70, 0.45))
+	# Sparse parchment grain — every other code-drawn surface in the kit has
+	# it; the pack window was the only panel without aged-paper texture.
+	WyrdUi.draw_parchment_grain(self, win.grow(-30.0), 41)
 	var hdr_font: Font = WyrdUi.font_header()
 	if hdr_font == null:
 		hdr_font = get_theme_default_font()
@@ -381,6 +384,10 @@ func _draw() -> void:
 	draw_string(hdr_font, win.position + Vector2(52, 58),
 		"Adventurer's Pack", HORIZONTAL_ALIGNMENT_LEFT, win.size.x - 104, 24,
 		WyrdUi.TERRACOTTA)
+	# Flourish rule under the header — the same ── ◆ ── ornament the bench and
+	# vendor column headers use; the pack was the only panel without one.
+	WyrdUi.draw_flourish(self,
+		win.position + Vector2(win.size.x * 0.5, 65.0), 220.0)
 	_draw_tabs(win)
 	if _tab == 0:
 		# Gold readout lives with the paper-doll — Gear tab only, else it
