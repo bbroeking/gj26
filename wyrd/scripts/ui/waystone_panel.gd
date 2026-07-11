@@ -49,6 +49,23 @@ func _ready() -> void:
 	sub.position = Vector2(54, 66)
 	_panel.add_child(sub)
 
+	# Carved compass seal — left of the panel title, embedded in the frame edge.
+	# A stone-parchment ring with a four-point gold compass rose (the Wayfinding
+	# star) marks the portal threshold without crowding the chart list below.
+	var glyph := _WaystoneGlyph.new()
+	glyph.position = Vector2(10, 20)
+	glyph.size = Vector2(38, 38)
+	_panel.add_child(glyph)
+
+	# Flourish rule — ── ◆ ── separator below the subtitle before the chart list.
+	var hrule := _HRule.new()
+	hrule.anchor_right = 1.0
+	hrule.offset_left = 52
+	hrule.offset_right = -52
+	hrule.offset_top = 83
+	hrule.offset_bottom = 90
+	_panel.add_child(hrule)
+
 	# A full chart case outgrows the panel — the list scrolls now,
 	# bounded above the detail block.
 	var scroll := ScrollContainer.new()
@@ -154,3 +171,44 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# ── Decorative helpers ──────────────────────────────────────────────────────
+
+# Flourish rule: ── ◆ ── centred below the panel subtitle using the shared helper.
+class _HRule extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, size * 0.5, size.x * 0.85)
+
+
+# Carved waystone compass seal drawn left of the panel title.
+# A pale stone-parchment ring holds a four-point gold compass rose (the
+# Wayfinding star) — marking the portal without cluttering the chart list.
+# Pure vector, no texture loads (draw/load white-rect gotcha stays impossible).
+class _WaystoneGlyph extends Control:
+	func _draw() -> void:
+		var cx := size.x * 0.5
+		var cy := size.y * 0.5
+		var r := minf(cx, cy) - 1.5
+		# Parchment-stone ring face.
+		draw_circle(Vector2(cx, cy), r, WyrdUi.KIT_PLATE.darkened(0.12))
+		# Top highlight bevel — the stone badge catches warm light from above.
+		# Arc PI*1.15→PI*1.85 sweeps counterclockwise through the upper half.
+		draw_arc(Vector2(cx, cy), r - 3.5, PI * 1.15, PI * 1.85, 18,
+				Color(1.0, 1.0, 0.92, 0.38), 2.5, true)
+		# Ink border + carved inner ring for depth.
+		draw_arc(Vector2(cx, cy), r, 0, TAU, 40, WyrdUi.KIT_EDGE, 2.0, true)
+		draw_arc(Vector2(cx, cy), r * 0.70, 0, TAU, 32,
+				Color(WyrdUi.KIT_EDGE, 0.32), 1.0, true)
+		# Four-point compass rose in burnished gold (8-vert star alternating long/short).
+		var sc := Vector2(cx, cy)
+		var sr := r * 0.50
+		var pts := PackedVector2Array()
+		for i in 8:
+			var a := TAU * float(i) / 8.0 - PI * 0.5
+			var d := sr if i % 2 == 0 else sr * 0.36
+			pts.append(sc + Vector2(cos(a), sin(a)) * d)
+		draw_colored_polygon(pts, Color(WyrdUi.GOLD, 0.88))
+		# Centre pearl — a cream dot so the star doesn't read as a starburst.
+		draw_circle(sc, sr * 0.22, WyrdUi.KIT_PLATE)
+		draw_arc(sc, sr * 0.22, 0, TAU, 16, Color(WyrdUi.KIT_EDGE, 0.50), 1.0, true)
