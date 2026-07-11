@@ -44,11 +44,18 @@ class CursorMark extends Control:
 		# Ink ring + cream inner lip.
 		draw_arc(m, rad, 0.0, TAU, 28, ring_c, 2.2, true)
 		draw_arc(m, rad - 2.0, 0.0, TAU, 24, Color(WyrdUi.CREAM, 0.7), 1.0, true)
-		# Four short ticks (NE/NW/SE/SW so they never read as a crosshair).
+		# Four short ticks (NE/NW/SE/SW so they never read as a crosshair),
+		# each tipped with a tiny ink-rimmed bead in pip_c — compass-rose
+		# jewels that make the pointer read as a storybook artefact, not a
+		# bare reticle. Beads scatter outward with fire recoil.
 		for i in 4:
 			var a := PI * 0.25 + float(i) * PI * 0.5
 			var d := Vector2(cos(a), sin(a))
 			draw_line(m + d * (rad + 1.0), m + d * (rad + 4.0), ring_c, 1.6)
+			var bead_r := 1.2 + recoil * 0.6
+			var bead_p := m + d * (rad + 6.0 + recoil * 1.5)
+			draw_circle(bead_p, bead_r + 0.7, Color(WyrdUi.INK, 0.75))
+			draw_circle(bead_p, bead_r, pip_c)
 		# Burnished center pip — a tiny gold diamond.
 		var s := 2.6 + recoil * 1.6
 		draw_colored_polygon(PackedVector2Array([
