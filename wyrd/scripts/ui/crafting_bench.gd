@@ -519,7 +519,7 @@ class BenchView extends Control:
 		_draw_tray(hdr, font)
 		_draw_bench(hdr, font)
 		_draw_result(hdr, font)
-		_draw_tip(font)
+		_draw_tip(font, hdr)
 		# Drag ghost (drawn over the tooltip).
 		if not bench._held.is_empty():
 			var r := Rect2(bench._cursor - Vector2(46, 14), Vector2(92, 28))
@@ -857,23 +857,49 @@ class BenchView extends Control:
 			draw_circle(sc, 5.5, Color(0.72, 0.28, 0.22))
 			draw_arc(sc, 9.0, 0, TAU, 22, Color(0.40, 0.12, 0.10), 1.5, true)
 
-	func _draw_tip(font: Font) -> void:
+	func _draw_tip(font: Font, hdr_font: Font) -> void:
 		if _tip == "" or not bench._held.is_empty():
 			return
 		var lines := _tip.split("\n")
+		var has_hdr := lines.size() > 1
+		# Measure width — header in IM Fell SC (size 15), body in default (size 13).
 		var w := 0.0
-		for ln in lines:
-			w = maxf(w, font.get_string_size(ln, HORIZONTAL_ALIGNMENT_LEFT,
-				-1, 13).x)
-		var box := Rect2(_tip_at + Vector2(16, 12),
-			Vector2(w + 20.0, 12.0 + 19.0 * lines.size()))
-		# Keep it on the panel.
+		if has_hdr:
+			w = hdr_font.get_string_size(lines[0],
+				HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
+		for i in range(1 if has_hdr else 0, lines.size()):
+			w = maxf(w, font.get_string_size(lines[i],
+				HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x)
+		# Height: top-pad + header-band (21 text + 12 flourish, if any) + body + bottom-pad.
+		var hdr_band := 33.0 if has_hdr else 0.0
+		var body_n := float((lines.size() - 1) if has_hdr else lines.size())
+		var box := Rect2(_tip_at + Vector2(16.0, 12.0),
+			Vector2(w + 24.0, 16.0 + hdr_band + 18.0 * body_n))
 		box.position.x = minf(box.position.x, size.x - box.size.x - 8.0)
 		box.position.y = minf(box.position.y, size.y - box.size.y - 8.0)
-		draw_rect(box, Color(0.97, 0.93, 0.80, 0.97))
-		draw_rect(box, EDGE, false, 2.0)
-		var ty := box.position.y + 17.0
-		for ln in lines:
-			draw_string(font, Vector2(box.position.x + 10.0, ty), ln,
+		# Storybook card: parchment face, honey bevel, ink shadow, grain, gold pinstripe.
+		draw_rect(box, WyrdUi.KIT_PLATE)
+		draw_rect(Rect2(box.position + Vector2(1.5, 1.5),
+			Vector2(box.size.x - 3.0, 2.0)), Color(1.0, 1.0, 0.93, 0.45))
+		draw_rect(Rect2(box.position + Vector2(2.0, box.size.y - 3.0),
+			Vector2(box.size.x - 4.0, 2.0)), Color(EDGE, 0.25))
+		WyrdUi.draw_parchment_grain(self, box, 33)
+		draw_rect(box, EDGE, false, 1.5)
+		draw_rect(box.grow(-3.0), Color(WyrdUi.GOLD, 0.38), false, 1.0)
+		# Text: header (IM Fell SC, terracotta) + ── ◆ ── flourish divider, then body.
+		var ty := box.position.y + 15.0
+		if has_hdr:
+			draw_string(hdr_font, Vector2(box.position.x + 10.0, ty), lines[0],
+				HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 20.0, 15, WyrdUi.TERRACOTTA)
+			ty += 21.0
+			WyrdUi.draw_flourish(self,
+				Vector2(box.position.x + box.size.x * 0.5, ty - 1.0),
+				box.size.x - 20.0)
+			ty += 12.0
+			for i in range(1, lines.size()):
+				draw_string(font, Vector2(box.position.x + 10.0, ty), lines[i],
+					HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 20.0, 13, TXT)
+				ty += 18.0
+		else:
+			draw_string(font, Vector2(box.position.x + 10.0, ty), lines[0],
 				HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 20.0, 13, TXT)
-			ty += 19.0
