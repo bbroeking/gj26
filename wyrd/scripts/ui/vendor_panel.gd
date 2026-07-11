@@ -31,7 +31,7 @@ const RARITY_COLOR := {
 
 var _game: Node
 var _panel: Panel
-var _gold_lbl: Label
+var _gold_badge          # _GoldBadge — drawn coin-stack balance ornament
 var _sell_box: VBoxContainer
 var _buy_box: VBoxContainer
 var _tex_cache := {}
@@ -74,14 +74,12 @@ func _ready() -> void:
 	sub.position = Vector2(54, 66)
 	_panel.add_child(sub)
 
-	_gold_lbl = Label.new()
-	WyrdUi.style_chip(_gold_lbl, 15)
-	_gold_lbl.add_theme_color_override("font_color", WyrdUi.GOLD)
-	_gold_lbl.anchor_left = 1.0
-	_gold_lbl.anchor_right = 1.0
-	_gold_lbl.offset_left = -200
-	_gold_lbl.offset_top = 36
-	_panel.add_child(_gold_lbl)
+	_gold_badge = _GoldBadge.new()
+	_gold_badge.anchor_left = 1.0
+	_gold_badge.anchor_right = 1.0
+	_gold_badge.offset_left = -195
+	_gold_badge.offset_top = 28
+	_panel.add_child(_gold_badge)
 
 	var close_hint := Label.new()
 	close_hint.text = "Esc — close"
@@ -146,7 +144,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _render() -> void:
 	if _game == null:
 		return
-	_gold_lbl.text = "%d gold" % int(_game.gold)
+	_gold_badge.refresh(int(_game.gold))
 	for c in _sell_box.get_children():
 		c.queue_free()
 	var items: Array = _game.inventory.items if _game.inventory != null else []
@@ -286,3 +284,50 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# A hand-drawn gold balance badge: three stacked coin circles + the amount in
+# gold ink. Replaces the plain style_chip label so the merchant's till reads as
+# a physical pile of coins rather than a status-line string. Purely code-drawn.
+class _GoldBadge extends Control:
+	var _gold := 0
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(175, 34)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func refresh(g: int) -> void:
+		_gold = g
+		queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		# Parchment chip backing — same bevel language as chip_stylebox
+		draw_rect(r, WyrdUi.KIT_PLATE)
+		draw_rect(Rect2(r.position + Vector2(1, 1), Vector2(r.size.x - 2, 1.5)),
+			Color(1.0, 1.0, 0.93, 0.45))
+		draw_rect(Rect2(r.position + Vector2(2, r.size.y - 2.5),
+			Vector2(r.size.x - 4, 1.5)), Color(WyrdUi.KIT_EDGE, 0.22))
+		draw_rect(r, WyrdUi.KIT_EDGE, false, 1.5)
+		# Three stacked gold coins — drawn back-to-front so the front coin sits
+		# on top. Each coin: gold disc, ink rim, a short gleam line upper-left.
+		var cr := size.y * 0.28
+		var cy := size.y * 0.5
+		for i in 3:
+			var cx := 11.0 + float(i) * 7.0
+			var oy := float(2 - i) * 2.0
+			draw_circle(Vector2(cx, cy + oy),
+				cr, WyrdUi.GOLD.darkened(0.06 * float(2 - i)))
+			draw_arc(Vector2(cx, cy + oy), cr, 0, TAU, 24,
+				WyrdUi.KIT_EDGE, 1.5, true)
+			# gleam: a short bright line on the upper-left of each coin face
+			draw_line(
+				Vector2(cx - cr * 0.45, cy + oy - cr * 0.52),
+				Vector2(cx - cr * 0.32, cy + oy + cr * 0.18),
+				Color(1.0, 0.97, 0.75, 0.52), 1.5)
+		# Amount text — starts just after the rightmost coin edge
+		var font := get_theme_default_font()
+		var tx := 11.0 + 2.0 * 7.0 + cr + 9.0
+		draw_string(font, Vector2(tx, cy + 6.0), "%d g" % _gold,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 4.0, 16,
+			WyrdUi.GOLD.darkened(0.22))
