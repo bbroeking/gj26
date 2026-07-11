@@ -323,11 +323,24 @@ func _show_bar() -> void:
 	_bar_root = Node3D.new()
 	_bar_root.position = Vector3(0.0, 1.15, 0.0)
 	add_child(_bar_root)
-	var bg := _bar_quad(Vector2(0.7, 0.1), Color(0.10, 0.08, 0.06, 0.85))
+	# Ink border — carved-frame read matching the UI kit.
+	var border := _bar_quad(Vector2(0.74, 0.14), Color(0.22, 0.16, 0.10, 0.92))
+	_bar_root.add_child(border)
+	# Warm parchment face — kit palette honey instead of near-black.
+	var bg := _bar_quad(Vector2(0.70, 0.10), Color(0.85, 0.78, 0.58, 0.96))
+	bg.position.z = 0.003
 	_bar_root.add_child(bg)
-	_bar_fill = _bar_quad(Vector2(0.66, 0.06), Color(0.78, 0.92, 0.62))
-	_bar_fill.position.z = 0.01     # in front of the bg quad
+	# Sage fill — kit green, richer than the old lime.
+	_bar_fill = _bar_quad(Vector2(0.66, 0.06), Color(0.44, 0.58, 0.28, 1.0))
+	_bar_fill.position.z = 0.007
 	_bar_root.add_child(_bar_fill)
+	# Three gold diamond pips — visual rail at quarter, half, three-quarter.
+	for i in 3:
+		var pip := _bar_quad(Vector2(0.018, 0.018), Color(0.71, 0.53, 0.22, 0.82))
+		pip.position.x = -0.165 + float(i) * 0.165
+		pip.position.z = 0.012
+		pip.rotation.z = PI * 0.25
+		_bar_root.add_child(pip)
 	_set_bar(0.0)
 
 func _bar_quad(size: Vector2, color: Color) -> MeshInstance3D:
