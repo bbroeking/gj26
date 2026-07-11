@@ -55,6 +55,15 @@ func _ready() -> void:
 	_name_lbl.offset_right = -56
 	_name_lbl.offset_top = 38
 	_panel.add_child(_name_lbl)
+	# Flourish rule under the speaker name — the same ── ◆ ── ornament used on
+	# craft bench / vendor column headers, now on the dialog header too.
+	var name_rule := _NameRule.new()
+	name_rule.anchor_right = 1.0
+	name_rule.offset_left = 56
+	name_rule.offset_right = -56
+	name_rule.offset_top = 70
+	name_rule.offset_bottom = 82
+	_panel.add_child(name_rule)
 	_body = Label.new()
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.anchor_right = 1.0
@@ -132,14 +141,46 @@ func _finish() -> void:
 	queue_free()
 
 
+# ── ◆ ── divider under the speaker name — 160 px centered, same ornament
+# as the craft bench / vendor column headers.
+class _NameRule extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, size * 0.5, 160.0)
+
+
 # Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
 # silhouette placeholder until painted portraits exist.
+# Art pass — adds a burnished gold accent ring (portrait-medallion read) and
+# four small gold diamond ornaments at the 12/3/6/9 o'clock positions.
 class PortraitWell extends Control:
 	func _draw() -> void:
 		var c := size * 0.5
 		var r := minf(c.x, c.y)
+		# Warm parchment disc.
 		draw_circle(c, r, Color(0.88, 0.82, 0.67))
+		# Ghosted silhouette: torso (lower) + head (upper).
 		draw_circle(c + Vector2(0, r * 0.28), r * 0.34, Color(0.55, 0.47, 0.36, 0.55))
 		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
+		# Burnished gold accent ring — the portrait-medallion read.
+		draw_arc(c, r - 4.5, 0, TAU, 56, Color(WyrdUi.GOLD, 0.62), 2.0, true)
+		# Four small gold diamond ornaments at 12 / 3 / 6 / 9 o'clock,
+		# sitting on the gold ring like bezel-set stones in a storybook locket.
+		var gd := Color(WyrdUi.GOLD, 0.90)
+		var gd_ink := Color(WyrdUi.KIT_EDGE, 0.70)
+		for i in 4:
+			var a := -PI * 0.5 + PI * 0.5 * float(i)
+			var dp := c + Vector2(cos(a), sin(a)) * (r - 4.5)
+			var dpts := PackedVector2Array([
+				dp + Vector2(0.0, -3.5),
+				dp + Vector2(3.5, 0.0),
+				dp + Vector2(0.0, 3.5),
+				dp + Vector2(-3.5, 0.0),
+			])
+			draw_colored_polygon(dpts, gd)
+			draw_polyline(PackedVector2Array([
+				dpts[0], dpts[1], dpts[2], dpts[3], dpts[0],
+			]), gd_ink, 1.0)
+		# Outer ink ring (on top — the clean medallion border).
 		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
-		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+		# Inner ink ring (subtle recessed depth).
+		draw_arc(c, r - 9.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.18), 1.0, true)
