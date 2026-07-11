@@ -585,15 +585,27 @@ func _draw_tabs(win: Rect2) -> void:
 	for i in TABS.size():
 		var r := _tab_rect(i)
 		var active := i == _tab
-		# Spec 40 — text-only plates; active = brighter + terracotta underline.
+		# Spec 40 — plates; active = brighter + terracotta underline.
 		draw_rect(r, Color(0.95, 0.91, 0.80) if active else Color(0.85, 0.78, 0.64))
 		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 1.5)
 		if active:
 			draw_line(r.position + Vector2(2, r.size.y - 2),
 				r.position + Vector2(r.size.x - 2, r.size.y - 2),
 				WyrdUi.TERRACOTTA, 3.0)
-		draw_string(font, r.position + Vector2(0, 22), String(TABS[i]),
-			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16,
+		# Painted tab icon — preloaded in _ready (white-rect gotcha avoidance).
+		# Active: full ink; inactive: half-opacity so the dim plate reads quiet.
+		var icon_tex: Texture2D = _cached_tex(String(TAB_ICONS[i]))
+		var text_ox := 0.0
+		if icon_tex != null:
+			var isz := 18.0
+			var icon_rect := Rect2(
+				r.position + Vector2(8.0, (r.size.y - isz) * 0.5),
+				Vector2(isz, isz))
+			draw_texture_rect(icon_tex, icon_rect, false,
+				Color.WHITE if active else Color(1.0, 1.0, 1.0, 0.45))
+			text_ox = icon_rect.size.x + 12.0
+		draw_string(font, r.position + Vector2(text_ox, 22), String(TABS[i]),
+			HORIZONTAL_ALIGNMENT_CENTER, r.size.x - text_ox, 16,
 			WyrdUi.INK if active else WyrdUi.INK_MID)
 
 # ---- Spec 45 followup: drawn-page scrolling (Satchel / Charts / Trades) ----
