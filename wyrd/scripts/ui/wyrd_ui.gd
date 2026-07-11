@@ -363,23 +363,36 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 	var face := Rect2(r.position + Vector2(r.size.x * 0.08, r.size.y * 0.12),
 		Vector2(r.size.x * 0.84, r.size.y * 0.76))
 	c.draw_rect(face, Color(0.96, 0.91, 0.78))
-	# rolled ends — darker cylinders at left + right
-	var roll_w := r.size.x * 0.07
-	c.draw_rect(Rect2(face.position - Vector2(roll_w * 0.6, 2.0),
-		Vector2(roll_w, face.size.y + 4.0)), Color(0.86, 0.78, 0.62))
-	c.draw_rect(Rect2(Vector2(face.end.x - roll_w * 0.4, face.position.y - 2.0),
-		Vector2(roll_w, face.size.y + 4.0)), Color(0.86, 0.78, 0.62))
+	# Ruled chart lines — evenly spaced, margin-indented, reads as paper.
+	var indent := face.size.x * 0.08
+	for i in 4:
+		var ry := face.position.y + face.size.y * (0.22 + float(i) * 0.19)
+		c.draw_line(Vector2(face.position.x + indent, ry),
+			Vector2(face.end.x - indent, ry), Color(KIT_EDGE, 0.13), 0.8)
+	# Rolled end cylinders — honey face with left highlight + right shadow banding
+	# so each tube reads as a 3-D form catching the warm storybook light.
+	var roll_w := r.size.x * 0.10
+	for side in [-1, 1]:
+		var rx := face.position.x - roll_w * 0.5 if side < 0 \
+			else face.end.x - roll_w * 0.5
+		var rr := Rect2(Vector2(rx, face.position.y - 2.0),
+			Vector2(roll_w, face.size.y + 4.0))
+		c.draw_rect(rr, Color(0.84, 0.74, 0.56))
+		c.draw_rect(Rect2(rr.position + Vector2(1.0, 1.5),
+			Vector2(rr.size.x * 0.28, rr.size.y - 3.0)),
+			Color(1.0, 1.0, 0.88, 0.28))
+		c.draw_rect(Rect2(rr.position + Vector2(rr.size.x * 0.68, 1.5),
+			Vector2(rr.size.x * 0.32, rr.size.y - 3.0)),
+			Color(KIT_EDGE, 0.22))
+		c.draw_rect(rr, KIT_EDGE, false, 1.0)
 	c.draw_rect(face, KIT_EDGE, false, 1.5)
-	# faint chart scratches
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 11
-	for _i in 4:
-		var y := face.position.y + face.size.y * (0.25 + rng.randf() * 0.5)
-		c.draw_line(Vector2(face.position.x + 6.0, y),
-			Vector2(face.position.x + 6.0 + rng.randf() * face.size.x * 0.5, y),
-			Color(KIT_EDGE, 0.25), 1.0)
 	if sealed:
 		var sc := Vector2(face.end.x - 10.0, face.end.y - 8.0)
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+		# Wax stamp impression — cross-hash so the seal reads as pressed.
+		c.draw_line(sc + Vector2(-2.5, 0), sc + Vector2(2.5, 0),
+			Color(0.40, 0.12, 0.10, 0.65), 1.0)
+		c.draw_line(sc + Vector2(0, -2.5), sc + Vector2(0, 2.5),
+			Color(0.40, 0.12, 0.10, 0.65), 1.0)
