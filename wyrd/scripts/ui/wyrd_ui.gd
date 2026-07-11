@@ -328,14 +328,34 @@ static func draw_parchment_grain(c: CanvasItem, r: Rect2, seed_v: int = 7) -> vo
 			Color(0.62, 0.52, 0.38, 0.05 + rng.randf() * 0.05), 1.0)
 
 # Section flourish: ── ◆ ── centred under a header.
+# When width >= 48 a pair of small sage ivy-leaf pips flank the diamond so
+# the rule reads as leafy-vine ornament (design language: "leafy ivy/vine +
+# gold filigree ornament on frames/headers"). Narrow flourishes (hotbar tray
+# end-marks, width=24) stay plain so they don't crowd the slot row.
 static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 	var col := Color(KIT_EDGE, 0.45)
-	c.draw_line(center - Vector2(width * 0.5, 0), center - Vector2(7, 0), col, 1.0)
-	c.draw_line(center + Vector2(7, 0), center + Vector2(width * 0.5, 0), col, 1.0)
+	var half := width * 0.5
+	c.draw_line(center - Vector2(half, 0), center - Vector2(7, 0), col, 1.0)
+	c.draw_line(center + Vector2(7, 0), center + Vector2(half, 0), col, 1.0)
 	var pts := PackedVector2Array([center + Vector2(0, -3.5),
 		center + Vector2(3.5, 0), center + Vector2(0, 3.5),
 		center + Vector2(-3.5, 0)])
 	c.draw_colored_polygon(pts, Color(GOLD, 0.8))
+	# Ivy-leaf pips — one small pointed leaf on each side of the diamond.
+	# Each leaf is a quad: outer tip, top shoulder, inner base, bottom shoulder.
+	if half >= 24.0:
+		for side in [-1.0, 1.0]:
+			var lp := center + Vector2(side * 11.0, 0)
+			var lpts := PackedVector2Array([
+				lp + Vector2(side * 4.5,  0.0),   # outer tip (pointed)
+				lp + Vector2(side * 0.5, -3.5),   # top shoulder
+				lp + Vector2(side * -2.5, 0.0),   # inner base (toward diamond)
+				lp + Vector2(side * 0.5,  3.5),   # bottom shoulder
+			])
+			c.draw_colored_polygon(lpts, Color(SAGE, 0.55))
+			c.draw_polyline(PackedVector2Array([
+				lpts[0], lpts[1], lpts[2], lpts[3], lpts[0]
+			]), Color(KIT_EDGE, 0.22), 0.7, true)
 
 # A little hand-blown ink bottle — glass body, ink fill, neck, cork, and a
 # glass highlight. Replaces the bare text glyphs in sockets and trays.
