@@ -588,6 +588,12 @@ func _draw_tabs(win: Rect2) -> void:
 		var active := i == _tab
 		# Spec 40 — icon+label plates; active = brighter + terracotta underline.
 		draw_rect(r, Color(0.95, 0.91, 0.80) if active else Color(0.85, 0.78, 0.64))
+		# Active tab: a warm honey bevel along the top edge — the carved plate
+		# catches the page's ambient light; inactive tabs stay flat (unlit).
+		if active:
+			draw_rect(Rect2(r.position + Vector2(2.0, 1.5),
+				Vector2(r.size.x - 4.0, 2.5)),
+				Color(1.0, 1.0, 0.93, 0.40))
 		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 1.5)
 		if active:
 			draw_line(r.position + Vector2(2, r.size.y - 2),
