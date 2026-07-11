@@ -80,17 +80,40 @@ func _build_beacon() -> void:
 
 func _build_label() -> void:
 	var col: Color = RARITY_COLOR.get(String(_item.rarity), Color.WHITE)
+	# Parchment scrap plate behind the name — a handwritten slip dropped with
+	# the loot, matching the interactable prompt's language (Label3D on a
+	# cream QuadMesh plate, billboarded, no depth test).
+	var plate := MeshInstance3D.new()
+	plate.name = "LabelPlate"
+	var pmesh := QuadMesh.new()
+	var char_count: int = String(_item.get("name", "")).length()
+	pmesh.size = Vector2(maxf(0.68, char_count * 0.034 + 0.20), 0.28)
+	plate.mesh = pmesh
+	var pmat := StandardMaterial3D.new()
+	pmat.albedo_color = Color(0.93, 0.88, 0.74, 0.88)
+	pmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	pmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	pmat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	pmat.no_depth_test = true
+	pmat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	plate.material_override = pmat
+	plate.position = Vector3(0, 1.14, 0)
+	add_child(plate)
 	var lbl := Label3D.new()
 	lbl.name = "Label"
 	lbl.text = String(_item.name)
 	lbl.modulate = col
+	# Storybook typeface — the same IM Fell used on interactable prompts.
+	var pfont := WyrdUi.font_header()
+	if pfont != null:
+		lbl.font = pfont
 	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lbl.no_depth_test = true
 	lbl.font_size = 64
 	lbl.pixel_size = 0.005
-	lbl.outline_size = 16
-	lbl.outline_modulate = Color(0.08, 0.05, 0.06, 1)
-	lbl.position = Vector3(0, 1.15, 0)
+	lbl.outline_size = 18
+	lbl.outline_modulate = Color(0.10, 0.07, 0.05, 1)
+	lbl.position = Vector3(0, 1.15, 0.004)   # fractionally in front of plate
 	add_child(lbl)
 
 # Spec 32a — full take transaction. Returns true on success, false if the
@@ -141,8 +164,14 @@ func _play_pickup_vfx() -> void:
 	t.set_parallel(true)
 	var beacon := get_node_or_null("Beacon")
 	var lbl := get_node_or_null("Label")
+	var plate := get_node_or_null("LabelPlate")
 	if beacon != null:
 		t.tween_property(beacon, "scale", Vector3(2.0, 2.0, 2.0), 0.20)
 	if lbl != null:
 		t.tween_property(lbl, "position:y", 1.7, 0.20)
 		t.tween_property(lbl, "modulate:a", 0.0, 0.20)
+	if plate != null:
+		var pm := plate.material_override as StandardMaterial3D
+		if pm != null:
+			t.tween_method(func(a: float): pm.albedo_color.a = a,
+				0.88, 0.0, 0.18)
