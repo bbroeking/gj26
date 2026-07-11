@@ -289,11 +289,11 @@ class _VendorCard extends Control:
 
 
 # ---- drawn section plaque (column header) ----
-# Carved parchment header for each vendor column: the same KIT_PLATE face and
-# ink border as draw_list_row so "Sell" and "Wares" read as carved shelf labels
-# rather than floating text. Accent stripe convention: TERRACOTTA = outgoing
-# (sell), GOLD = incoming (wares). A small diamond finial on the right echoes
-# the draw_flourish ◆ motif already used as a section divider throughout the kit.
+# Carved parchment header for each vendor column: KIT_PLATE face + bevel +
+# ink border + left accent stripe, same language as draw_list_row so the plaque
+# reads as the shelf label above its rows. Accent convention: TERRACOTTA =
+# outgoing (sell), GOLD = incoming (wares). A ── ◆ ── flourish rule to the right
+# of the title unifies the plaque with the crafting bench's section dividers.
 class _SectionPlaque extends Control:
 	var _text := ""
 	var _accent: Color = WyrdUi.GOLD
@@ -324,13 +324,12 @@ class _SectionPlaque extends Control:
 		var font := _font if _font != null else get_theme_default_font()
 		draw_string(font, Vector2(14.0, 26.0), _text,
 			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 34.0, 16, WyrdUi.TERRACOTTA)
-		# small diamond finial on the right — echoes the draw_flourish ◆ jewel
-		var cx := r.size.x - 14.0
-		var cy := r.size.y * 0.5
-		var pts := PackedVector2Array([
-			Vector2(cx, cy - 4.5), Vector2(cx + 4.5, cy),
-			Vector2(cx, cy + 4.5), Vector2(cx - 4.5, cy)])
-		draw_colored_polygon(pts, Color(_accent, 0.70))
-		draw_polyline(
-			PackedVector2Array([pts[0], pts[1], pts[2], pts[3], pts[0]]),
-			Color(WyrdUi.KIT_EDGE, 0.45), 1.0)
+		# ── ◆ ── flourish rule from text end to right margin — same kit rhythm as
+		# the crafting bench's _tray_section() so every section header reads alike.
+		var tw: float = font.get_string_size(_text,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
+		var rule_start := 14.0 + tw + 10.0
+		var span := r.size.x - 14.0 - rule_start
+		if span > 28.0:
+			WyrdUi.draw_flourish(self,
+				Vector2(rule_start + span * 0.5, r.size.y * 0.5), span)
