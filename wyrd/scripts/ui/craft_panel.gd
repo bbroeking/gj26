@@ -53,6 +53,16 @@ func _ready() -> void:
 	close_hint.offset_left = -130
 	close_hint.offset_top = 36
 	_panel.add_child(close_hint)
+	# Drawn flourish under the station title — matches the bench's section
+	# header language (WyrdUi.draw_flourish under every header). Without this
+	# the title floated unanchored on cream; now it has an ink rule below it.
+	var title_rule := _FlourishRule.new()
+	title_rule.anchor_right = 1.0
+	title_rule.offset_left = 54
+	title_rule.offset_right = -54
+	title_rule.offset_top = 66
+	title_rule.offset_bottom = 80
+	_panel.add_child(title_rule)
 
 	var col := VBoxContainer.new()
 	col.anchor_right = 1.0
@@ -68,6 +78,10 @@ func _ready() -> void:
 	section.text = "Recipes"
 	WyrdUi.style_section(section)
 	col.add_child(section)
+	var recipes_rule := _FlourishRule.new()
+	recipes_rule.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	recipes_rule.custom_minimum_size = Vector2(0, 10)
+	col.add_child(recipes_rule)
 
 	# A7-full grew the forge to 14 recipes — the list scrolls now.
 	var scroll := ScrollContainer.new()
@@ -93,6 +107,10 @@ func _ready() -> void:
 	s2.text = "Satchel"
 	WyrdUi.style_section(s2)
 	col.add_child(s2)
+	var satchel_rule := _FlourishRule.new()
+	satchel_rule.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	satchel_rule.custom_minimum_size = Vector2(0, 10)
+	col.add_child(satchel_rule)
 	_satchel_lbl = Label.new()
 	WyrdUi.style_body(_satchel_lbl, 13)
 	_satchel_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -212,3 +230,11 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# A thin horizontal rule drawn as the kit's ── ◆ ── flourish. Used here
+# under the station title and section headers to match the bench's visual
+# language (crafting_bench.gd draws a flourish under every section label).
+class _FlourishRule extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5), size.x * 0.72)
