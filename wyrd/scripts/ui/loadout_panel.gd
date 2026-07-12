@@ -44,7 +44,7 @@ var _game: Node
 var _panel: Panel
 var _picks: Array = []
 var _rows: VBoxContainer
-var _slots_lbl: Label
+var _preview: _HotbarPreview
 var _apply: Button
 var _tex_cache := {}
 
@@ -111,9 +111,8 @@ func _ready() -> void:
 	_rows.add_theme_constant_override("separation", 6)
 	_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_rows)
-	_slots_lbl = Label.new()
-	WyrdUi.style_body(_slots_lbl, 14)
-	col.add_child(_slots_lbl)
+	_preview = _HotbarPreview.new()
+	col.add_child(_preview)
 	_apply = Button.new()
 	WyrdUi.style_kit_button(_apply)
 	_apply.text = "Take up this kit"
@@ -156,8 +155,7 @@ func _render() -> void:
 					_picks.append(sid)
 				_render())
 		_rows.add_child(card)
-	_slots_lbl.text = "Slots 2–4:  %s" % (" · ".join(_picks) \
-		if not _picks.is_empty() else "—")
+	_preview.refresh(_picks, _tex_cache, SKILL_ICON)
 	_apply.disabled = _picks.size() != 3
 
 
@@ -262,3 +260,72 @@ class _SkillCard extends Control:
 		# --- short desc (up to two lines) ---
 		draw_multiline_string(font, Vector2(tx, 40.0), _desc,
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 16.0, 12, 2, dim)
+
+
+# ---- the drawn hotbar preview strip ----
+# Four carved slot wells — slot 1 always Bow (fixed), slots 2-4 the three
+# chosen skills. Filled wells are warm plate cream with a sage ring; empty
+# wells are quiet recessed cream so the eye reads the gap immediately.
+# A flourish rule above the strip acts as a section divider between the
+# picker list and the kit summary.
+class _HotbarPreview extends Control:
+	const SLOT_W := 60.0
+	const SLOT_H := 52.0
+	const GAP := 8.0
+	const SLOT_TOP := 18.0
+	const BOW_ICON := "res://assets/ui/icons/skill_basic.png"
+
+	var _picks: Array = []
+	var _tex_cache: Dictionary = {}
+	var _icon_map: Dictionary = {}
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, SLOT_TOP + SLOT_H + 20.0)
+
+	func refresh(picks: Array, tex_cache: Dictionary, icon_map: Dictionary) -> void:
+		_picks = picks
+		_tex_cache = tex_cache
+		_icon_map = icon_map
+		queue_redraw()
+
+	func _draw() -> void:
+		var font := get_theme_default_font()
+		var hfont := WyrdUi.font_header()
+		if hfont == null:
+			hfont = font
+		# Flourish rule as a visual section divider above the slot wells.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 8.0), size.x * 0.55)
+		var total_w := 4.0 * SLOT_W + 3.0 * GAP
+		var ox := maxf(0.0, (size.x - total_w) * 0.5)
+		for i in 4:
+			var sx := ox + float(i) * (SLOT_W + GAP)
+			var r := Rect2(Vector2(sx, SLOT_TOP), Vector2(SLOT_W, SLOT_H))
+			var skill := ""
+			var tex: Texture2D = null
+			if i == 0:
+				skill = "Bow"
+				tex = _tex_cache.get(BOW_ICON, null) as Texture2D
+			elif i - 1 < _picks.size():
+				skill = String(_picks[i - 1])
+				var path := String(_icon_map.get(skill, ""))
+				if path != "":
+					tex = _tex_cache.get(path, null) as Texture2D
+			var filled := skill != ""
+			WyrdUi.draw_well(self, r,
+				WyrdUi.KIT_PLATE if filled else WyrdUi.KIT_WELL)
+			if tex != null:
+				draw_texture_rect(tex, r.grow(-8.0), false)
+			elif filled:
+				draw_string(hfont,
+					r.position + Vector2(0.0, SLOT_H * 0.60),
+					skill.substr(0, 4).to_upper(),
+					HORIZONTAL_ALIGNMENT_CENTER, SLOT_W, 13, WyrdUi.INK)
+			# Sage ring = filled; dim ink ring = empty
+			draw_rect(r,
+				WyrdUi.SAGE.darkened(0.08) if filled \
+					else Color(WyrdUi.KIT_EDGE, 0.25),
+				false, 2.5 if filled else 1.5)
+			# Slot number below each well
+			draw_string(font, Vector2(r.position.x, r.end.y + 14.0),
+				"%d" % (i + 1), HORIZONTAL_ALIGNMENT_CENTER,
+				SLOT_W, 11, WyrdUi.INK_MID)
