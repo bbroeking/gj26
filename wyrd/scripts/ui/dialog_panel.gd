@@ -132,14 +132,60 @@ func _finish() -> void:
 	queue_free()
 
 
-# Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
-# silhouette placeholder until painted portraits exist.
+# Spec 41 — portrait well: warm vellum disc inside a gold filigree ring and
+# ink border, with ivy leaf sprigs at the four compass points. The sepia
+# silhouette is a placeholder until painted portraits land.
 class PortraitWell extends Control:
 	func _draw() -> void:
 		var c := size * 0.5
-		var r := minf(c.x, c.y)
-		draw_circle(c, r, Color(0.88, 0.82, 0.67))
-		draw_circle(c + Vector2(0, r * 0.28), r * 0.34, Color(0.55, 0.47, 0.36, 0.55))
-		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
-		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
-		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+		# Shrink from the well edge so the ivy sprigs fit without clipping.
+		var r := minf(c.x, c.y) - 10.0
+
+		# Background disc — warm aged vellum.
+		draw_circle(c, r, Color(0.93, 0.87, 0.72))
+		# Soft warm-light wash near center: parchment catching the page-light.
+		draw_circle(c, r * 0.55, Color(0.97, 0.93, 0.80, 0.32))
+
+		# Ghosted figure placeholder — sepia-warm, more illustrative than grey.
+		var fig := Color(0.60, 0.48, 0.36, 0.38)
+		draw_circle(c + Vector2(0.0, r * 0.30), r * 0.38, fig)
+		draw_circle(c + Vector2(0.0, r * 0.06), r * 0.27, Color(0.60, 0.48, 0.36, 0.36))
+		draw_circle(c - Vector2(0.0, r * 0.18), r * 0.23, fig)
+
+		# Gold filigree band — locket-style richness just inside the ink ring.
+		draw_arc(c, r - 5.5, 0.0, TAU, 48, Color(WyrdUi.GOLD, 0.45), 1.5, true)
+		# Outer ink ring.
+		draw_arc(c, r, 0.0, TAU, 64, WyrdUi.KIT_EDGE, 3.0, true)
+
+		# Ivy leaf sprigs at N / E / S / W of the portrait ring.
+		var dirs := PackedVector2Array([
+				Vector2.UP, Vector2.RIGHT, Vector2.DOWN, Vector2.LEFT])
+		for d in dirs:
+			_draw_leaf_sprig(c + d * r, d)
+
+	# Three-leaf sprig: one central leaf along `dir`, two angled ±40°.
+	func _draw_leaf_sprig(anchor: Vector2, dir: Vector2) -> void:
+		var sage := Color(WyrdUi.SAGE, 0.72)
+		var pull := dir * (-3.5)   # pull side leaves slightly inward along the ring
+		_draw_leaf(anchor, dir, 9.0, sage)
+		_draw_leaf(anchor + pull, dir.rotated(deg_to_rad(40.0)), 6.5, sage)
+		_draw_leaf(anchor + pull, dir.rotated(deg_to_rad(-40.0)), 6.5, sage)
+
+	# Pointed oval leaf blade with a midrib vein.
+	func _draw_leaf(center: Vector2, dir: Vector2, half_len: float,
+			col: Color) -> void:
+		var perp := Vector2(-dir.y, dir.x)
+		var w := half_len * 0.45
+		var pts := PackedVector2Array([
+			center + dir * half_len,
+			center + perp * w + dir * half_len * 0.28,
+			center + perp * w * 0.45 - dir * half_len * 0.18,
+			center - dir * half_len * 0.35,
+			center - perp * w * 0.45 - dir * half_len * 0.18,
+			center - perp * w + dir * half_len * 0.28,
+		])
+		draw_colored_polygon(pts, col)
+		draw_polyline(PackedVector2Array([pts[0], pts[1], pts[2], pts[3],
+				pts[4], pts[5], pts[0]]), Color(WyrdUi.KIT_EDGE, 0.28), 1.0)
+		draw_line(center + dir * half_len * 0.9, center - dir * half_len * 0.25,
+				Color(WyrdUi.KIT_EDGE, 0.20), 0.8)
