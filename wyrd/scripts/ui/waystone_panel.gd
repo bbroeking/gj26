@@ -93,6 +93,13 @@ func _ready() -> void:
 	_go_btn.pressed.connect(_on_go)
 	_panel.add_child(_go_btn)
 
+	# Drawn decoration: parchment grain + flourish divider + waystone compass.
+	var view := _WaystoneView.new()
+	view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	view.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(view)
+	_panel.move_child(view, 0)
+
 	get_node("/root/Game").modal_opened()
 	_render()
 
@@ -154,3 +161,46 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+# ---- drawn decoration layer ----
+# Sits at child-index 0 (behind all labels/buttons) with mouse_filter IGNORE.
+class _WaystoneView extends Control:
+	func _draw() -> void:
+		# Parchment grain over the list and detail area — gives the panel body
+		# the aged-paper feel rather than reading as a flat digital rectangle.
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(Vector2(46.0, 84.0), size - Vector2(92.0, 140.0)), 13)
+		# Section flourish — a ── ◆ ── rule that separates the header block
+		# from the chart list, anchoring the eye before the choices begin.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 82.0), size.x - 120.0)
+		# Compass emblem in the header's right quarter — a waystone is a
+		# navigation threshold, so a hand-drawn compass here reads as the
+		# panel's personality mark without intruding on the readable list.
+		_draw_compass(Vector2(size.x - 72.0, 44.0), 26.0)
+
+	func _draw_compass(center: Vector2, r: float) -> void:
+		# Parchment face.
+		draw_circle(center, r, WyrdUi.KIT_PLATE)
+		# Eight spokes: cardinal (longer, more opaque) and intercardinal
+		# (shorter, softer) — the classic rose read without serifs.
+		for i in 8:
+			var a := float(i) * TAU / 8.0 - PI * 0.5
+			var inner := r * (0.36 if i % 2 == 0 else 0.52)
+			var alpha := 0.65 if i % 2 == 0 else 0.38
+			draw_line(center + Vector2(cos(a), sin(a)) * inner,
+				center + Vector2(cos(a), sin(a)) * (r - 3.5),
+				Color(WyrdUi.KIT_EDGE, alpha), 1.5)
+		# Gold north needle — points toward the dungeon threshold.
+		draw_line(center, center + Vector2(0.0, -(r * 0.70)),
+			Color(WyrdUi.GOLD, 0.90), 2.5)
+		# South tail — thinner, ink-dark so the asymmetry reads immediately.
+		draw_line(center, center + Vector2(0.0, r * 0.44),
+			Color(WyrdUi.KIT_EDGE, 0.55), 1.5)
+		# Inner concentric ring — a delicate inner border, compass-chart style.
+		draw_arc(center, r * 0.78, 0.0, TAU, 40,
+			Color(WyrdUi.KIT_EDGE, 0.28), 1.0, true)
+		# Pivot dot: parchment fill with a gold centre so it catches the eye.
+		draw_circle(center, 4.0, WyrdUi.KIT_PLATE)
+		draw_circle(center, 3.2, Color(WyrdUi.GOLD, 0.85))
+		# Outer ink ring.
+		draw_arc(center, r, 0.0, TAU, 52, WyrdUi.KIT_EDGE, 1.5, true)
