@@ -802,6 +802,9 @@ class BenchView extends Control:
 			String(t.get("desc", "")), HORIZONTAL_ALIGNMENT_CENTER,
 			_result_rect.size.x, 11, DIM)
 		# Odds (same math as before: weights + stability).
+		# Each entry is a mini parchment card (plate, top bevel, ink border,
+		# left accent stripe) so the odds strip reads as carved entries, not a
+		# plain text list. Stripe hue: gold when dominant (>33%), sage otherwise.
 		if bench.affix_slots() > 0:
 			var weights: Dictionary = ChartsData.compute_weights(int(t.tier), bench.inks,
 				bench._carto_lv())
@@ -811,25 +814,44 @@ class BenchView extends Control:
 			for id in ids:
 				var stab: int = ChartsData.effective_stability(String(id),
 					bench._carto_lv(), bonus, bench._stab_perk_bonus())
-				draw_string(font, Vector2(rx, y),
+				var pct: int = roundi(float(weights[id]))
+				var cr := Rect2(Vector2(rx, y - 13.0), Vector2(220, 22.0))
+				draw_rect(cr, PLATE)
+				draw_rect(Rect2(cr.position + Vector2(1.0, 1.0),
+					Vector2(cr.size.x - 2.0, 1.5)), Color(1.0, 1.0, 0.93, 0.35))
+				draw_rect(Rect2(cr.position + Vector2(1.0, cr.size.y - 2.5),
+					Vector2(cr.size.x - 2.0, 1.5)), Color(EDGE, 0.18))
+				draw_rect(cr, EDGE, false, 1.0)
+				var stripe := WyrdUi.GOLD if pct > 33 else WyrdUi.SAGE
+				draw_rect(Rect2(cr.position + Vector2(1.5, 1.5),
+					Vector2(2.5, cr.size.y - 3.0)), stripe)
+				draw_string(font, Vector2(rx + 10.0, y),
 					"%s — %d%% · good %d%%" % [
-						String(ChartsData.AFFIXES[id].name),
-						roundi(weights[id]), stab],
-					HORIZONTAL_ALIGNMENT_LEFT, 220, 13, TXT)
-				_odds_rows.append({"rect": Rect2(Vector2(rx, y - 14), Vector2(220, 18)),
-					"id": String(id)})
-				y += 19.0
+						String(ChartsData.AFFIXES[id].name), pct, stab],
+					HORIZONTAL_ALIGNMENT_LEFT, 206, 12, TXT)
+				_odds_rows.append({"rect": cr, "id": String(id)})
+				y += 25.0
 			if bench.trophy != "":
 				var den: Dictionary = ChartsData.AFFIXES[
 					ChartsData.TROPHY_TO_AFFIX[bench.trophy]]
-				draw_string(font, Vector2(rx, y),
+				var trophy_cr := Rect2(Vector2(rx, y - 13.0), Vector2(220, 22.0))
+				draw_rect(trophy_cr, Color(PLATE.lightened(0.04)))
+				draw_rect(Rect2(trophy_cr.position + Vector2(1.0, 1.0),
+					Vector2(trophy_cr.size.x - 2.0, 1.5)), Color(1.0, 1.0, 0.93, 0.45))
+				draw_rect(trophy_cr, Color(EDGE, 0.80), false, 1.0)
+				draw_rect(Rect2(trophy_cr.position + Vector2(1.5, 1.5),
+					Vector2(2.5, trophy_cr.size.y - 3.0)), Color(WyrdUi.GOLD, 0.90))
+				draw_string(font, Vector2(rx + 10.0, y),
 					"★ %s — certain" % String(den.name),
-					HORIZONTAL_ALIGNMENT_LEFT, 220, 12, WyrdUi.GOLD.darkened(0.15))
-				y += 19.0
+					HORIZONTAL_ALIGNMENT_LEFT, 206, 12, WyrdUi.GOLD.darkened(0.15))
+				y += 25.0
 		else:
-			draw_string(font, Vector2(rx, y), "A clean run — no affixes.",
-				HORIZONTAL_ALIGNMENT_LEFT, 220, 13, DIM)
-			y += 19.0
+			var clean_cr := Rect2(Vector2(rx, y - 13.0), Vector2(220, 22.0))
+			draw_rect(clean_cr, Color(PLATE, 0.65))
+			draw_rect(clean_cr, Color(EDGE, 0.35), false, 1.0)
+			draw_string(font, Vector2(rx + 10.0, y), "A clean run — no affixes.",
+				HORIZONTAL_ALIGNMENT_LEFT, 206, 12, DIM)
+			y += 25.0
 		# Cost + craft button.
 		var cost: Dictionary = ChartsData.craft_cost(bench.base_id,
 			bench.inks, bench.trophy, bench._hedge_discount())
