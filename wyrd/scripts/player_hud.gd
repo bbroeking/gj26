@@ -422,6 +422,38 @@ class GlobeGauge extends Control:
 			var a := PI * 0.25 + float(i) * PI * 0.5
 			var np := c + Vector2(cos(a), sin(a)) * (R + 8.0)
 			WyrdUi.draw_round_well(self, np, 8.0, Color(0.93, 0.88, 0.74))
+		# --- bramble wreath: ivy-leaf sprigs + berries at the ring's compass gaps ---
+		# The spec promised "leaf + berry knots wound around the ring"; the plain
+		# carved arc delivers the ring but not the organic overgrowth. Four sprigs
+		# sit at N/E/S/W (the gaps between the diagonal round wells), each a pair
+		# of almond leaves in sage-green flanking a terracotta berry — so the
+		# globe reads as a hand-painted potion cradled in living bramble, as in
+		# the mj_hud_bramble.png reference, rather than a smooth turned ring.
+		var lf_col := Color(0.50, 0.68, 0.26, 0.90)
+		var lf_dark := Color(0.33, 0.48, 0.17, 0.82)
+		var br_col := Color(0.63, 0.21, 0.13, 0.88)
+		var lr := R + 14.5          # outer face of the wood ring
+		for ni in 4:
+			var ba := float(ni) * PI * 0.5          # 0 / 90 / 180 / 270 °
+			for side in [-1, 1]:
+				var la := ba + float(side) * 0.48   # ±27° off the compass radial
+				var lc := c + Vector2(cos(la), sin(la)) * lr
+				var fwd := Vector2(cos(la), sin(la))
+				var perp := Vector2(-sin(la), cos(la)) * float(side)
+				# Almond leaf: tip points outward, base inward, sides tangential.
+				var lpts := PackedVector2Array([
+					lc + fwd * 6.5,
+					lc + perp * 3.2 + fwd * 1.5,
+					lc - fwd * 2.5,
+					lc - perp * 2.2 + fwd * 0.5,
+				])
+				draw_colored_polygon(lpts, lf_col)
+				draw_line(lc - fwd * 1.5, lc + fwd * 5.5, lf_dark, 0.8)
+			# Terracotta berry at the sprig centre.
+			var bc := c + Vector2(cos(ba), sin(ba)) * lr
+			draw_circle(bc, 2.8, br_col)
+			draw_arc(bc, 2.8, 0, TAU, 12, Color(0.40, 0.10, 0.08, 0.85), 1.2, true)
+			draw_circle(bc + Vector2(-0.7, -0.7), 0.9, Color(1.0, 0.55, 0.45, 0.40))
 		# --- glass orb ---
 		draw_circle(c, R, Color(0.12, 0.10, 0.09))
 		if frac > 0.003:
