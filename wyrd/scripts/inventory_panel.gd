@@ -541,14 +541,35 @@ func _draw_tooltip() -> void:
 		pos.x = 0
 	if pos.y < 0:
 		pos.y = 0
-	draw_rect(Rect2(pos, Vector2(w, h)), Color(0.93, 0.88, 0.76, 0.97))
-	draw_rect(Rect2(pos, Vector2(w, h)),
-		Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+	var box := Rect2(pos, Vector2(w, h))
+	# Soft drop shadow — two layered halos lift the card off the world.
+	draw_rect(box.grow(3), Color(0, 0, 0, 0.10))
+	draw_rect(box.grow(1), Color(0, 0, 0, 0.14))
+	draw_rect(box, Color(0.93, 0.88, 0.76, 0.97))
+	# Rarity-tinted header stripe so quality reads before the name.
+	var rc: Color = RARITY_COLOR.get(String(item.get("rarity", "normal")),
+		WyrdUi.INK_MID)
+	draw_rect(Rect2(pos, Vector2(w, 3.0)), rc)
+	draw_rect(box, Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+	var hdr_font: Font = WyrdUi.font_header()
+	if hdr_font == null:
+		hdr_font = get_theme_default_font()
 	var font := get_theme_default_font()
 	var y := pos.y + ipad + 14
-	for line in lines:
-		draw_string(font, Vector2(pos.x + ipad, y), String(line.text),
-			HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2, int(line.size), line.color)
+	for i in lines.size():
+		var line: Dictionary = lines[i]
+		var txt := String(line.text)
+		if i == 0:
+			# Item name in IM Fell SC — the storybook entry-title register.
+			draw_string(hdr_font, Vector2(pos.x + ipad, y), txt,
+				HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2, int(line.size), rc)
+		elif txt == "":
+			# Empty separator → WyrdUi flourish (── ◆ ──).
+			WyrdUi.draw_flourish(self, Vector2(pos.x + w * 0.5, y - 4.0),
+				w - 32.0)
+		else:
+			draw_string(font, Vector2(pos.x + ipad, y), txt,
+				HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2, int(line.size), line.color)
 		y += line_h
 
 func _draw_held() -> void:
