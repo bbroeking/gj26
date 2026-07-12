@@ -39,6 +39,16 @@ func _ready() -> void:
 	_panel.offset_bottom = 300
 	add_child(_panel)
 
+	# Ivy sprig in the top-left inner corner — design language ornament pass.
+	var ivy := _CornerIvy.new()
+	ivy.anchor_right = 0.0
+	ivy.offset_left = WyrdUi.PANEL_MARGIN_L - 10.0
+	ivy.offset_top = WyrdUi.PANEL_MARGIN_T - 10.0
+	ivy.offset_right = WyrdUi.PANEL_MARGIN_L + 54.0
+	ivy.offset_bottom = WyrdUi.PANEL_MARGIN_T + 54.0
+	ivy.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(ivy)
+
 	var title := Label.new()
 	title.text = String(st.get("title", "Crafting"))
 	WyrdUi.style_title(title)
@@ -212,3 +222,10 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# Ivy corner sprig: a 64×64 code-drawn Control placed at the panel's inner
+# top-left corner. Draws via the shared WyrdUi.draw_corner_ivy primitive.
+class _CornerIvy extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_corner_ivy(self, Vector2.ZERO, minf(size.x, size.y))
