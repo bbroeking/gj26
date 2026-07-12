@@ -383,3 +383,56 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# A hand-drawn wrought-iron lantern: warm glass body divided by frame posts
+# and rails, a candle with a two-layer flame, cap + base plates, hanging ring.
+# h governs total height; width is ~0.52 × h. No textures — draw-call only.
+# Used by system_menu.gd's Lantern header crest.
+static func draw_lantern(c: CanvasItem, center: Vector2, h: float) -> void:
+	var w := h * 0.52
+	var iron := Color(0.24, 0.19, 0.14)
+	var glass := Color(0.97, 0.91, 0.72, 0.85)
+	# warm glow — two concentric halos behind the lit glass
+	c.draw_circle(center + Vector2(0, h * 0.12), h * 0.52, Color(GOLD, 0.09))
+	c.draw_circle(center + Vector2(0, h * 0.12), h * 0.32, Color(GOLD, 0.07))
+	# glass body
+	var body_top := center.y - h * 0.30
+	var body := Rect2(Vector2(center.x - w * 0.5, body_top), Vector2(w, h * 0.62))
+	c.draw_rect(body, glass)
+	# candle inside the lower half of the body
+	var candle_top_y := body.end.y - 4.0 - h * 0.22
+	var cx := center.x
+	c.draw_rect(Rect2(Vector2(cx - 3.0, candle_top_y), Vector2(6.0, h * 0.22)),
+		Color(0.96, 0.92, 0.82))
+	c.draw_rect(Rect2(Vector2(cx - 3.0, candle_top_y), Vector2(6.0, h * 0.22)),
+		Color(iron, 0.25), false, 1.0)
+	# flame — outer amber then bright inner core
+	c.draw_colored_polygon(PackedVector2Array([
+		Vector2(cx, candle_top_y - h * 0.14),
+		Vector2(cx - 4.5, candle_top_y - h * 0.03),
+		Vector2(cx, candle_top_y),
+		Vector2(cx + 4.5, candle_top_y - h * 0.03),
+	]), Color(1.0, 0.68, 0.16))
+	c.draw_colored_polygon(PackedVector2Array([
+		Vector2(cx, candle_top_y - h * 0.09),
+		Vector2(cx - 2.8, candle_top_y - h * 0.015),
+		Vector2(cx, candle_top_y),
+		Vector2(cx + 2.8, candle_top_y - h * 0.015),
+	]), Color(1.0, 0.96, 0.72))
+	# iron frame: left, right, centre vertical posts
+	c.draw_rect(Rect2(body.position, Vector2(3.0, body.size.y)), iron)
+	c.draw_rect(Rect2(body.end - Vector2(3.0, body.size.y), Vector2(3.0, body.size.y)), iron)
+	c.draw_rect(Rect2(body.position + Vector2(w * 0.5 - 1.5, 0), Vector2(3.0, body.size.y)), iron)
+	# horizontal rails: top, mid, bottom
+	c.draw_rect(Rect2(body.position, Vector2(body.size.x, 3.0)), iron)
+	c.draw_rect(Rect2(body.position + Vector2(0, body.size.y * 0.5 - 1.5),
+		Vector2(body.size.x, 3.0)), iron)
+	c.draw_rect(Rect2(body.end - Vector2(body.size.x, 3.0), Vector2(body.size.x, 3.0)), iron)
+	# top cap plate, base plate
+	var cap_h := h * 0.08
+	c.draw_rect(Rect2(Vector2(center.x - w * 0.5 - 3.0, body_top - cap_h),
+		Vector2(w + 6.0, cap_h)), iron)
+	c.draw_rect(Rect2(Vector2(center.x - w * 0.5 - 3.0, body.end.y),
+		Vector2(w + 6.0, cap_h)), iron)
+	# hanging ring at the very top
+	c.draw_arc(Vector2(cx, body_top - cap_h - 6.0), 6.0, PI, TAU, 16, iron, 2.5, true)

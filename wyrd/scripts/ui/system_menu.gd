@@ -31,6 +31,13 @@ func _ready() -> void:
 	_panel.offset_right = 260
 	_panel.offset_bottom = 220
 	add_child(_panel)
+	# Spec 46 art pass — a hand-drawn lantern crest + parchment grain + flourish
+	# rule so the header reads as a crafted object, not a plain label field.
+	var art := _LanternHeaderArt.new()
+	art.anchor_right = 1.0
+	art.offset_bottom = 84
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(art)
 	var title := Label.new()
 	title.text = "The Lantern"
 	WyrdUi.style_title(title)
@@ -190,3 +197,58 @@ func _close() -> void:
 	if _game != null:
 		_game.modal_closed()
 	queue_free()
+
+
+# Header-band art: parchment grain, a drawn lantern crest in the left badge
+# zone, and a flourish rule along the bottom edge.  Sits below the wooden
+# frame ornament, left of "The Lantern" title.
+class _LanternHeaderArt extends Control:
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		WyrdUi.draw_parchment_grain(self, r, 19)
+		WyrdUi.draw_flourish(self, Vector2(r.size.x * 0.5, r.size.y - 5.0),
+			r.size.x * 0.68)
+		_draw_lantern(Vector2(28.0, r.size.y * 0.5 - 2.0), r.size.y * 0.62)
+
+	func _draw_lantern(ctr: Vector2, h: float) -> void:
+		var w := h * 0.54
+		var ink := Color(WyrdUi.KIT_EDGE, 0.85)
+		# Hanging loop.
+		draw_arc(ctr + Vector2(0.0, -h * 0.46), h * 0.12, PI, TAU, 10, ink, 1.5)
+		# Top cap.
+		var cap_r := Rect2(ctr + Vector2(-w * 0.46, -h * 0.38),
+			Vector2(w * 0.92, h * 0.12))
+		draw_rect(cap_r, WyrdUi.KIT_PLATE)
+		draw_rect(cap_r, ink, false, 1.5)
+		# Glass cage body.
+		var body_r := Rect2(ctr + Vector2(-w * 0.5, -h * 0.26),
+			Vector2(w, h * 0.50))
+		draw_rect(body_r, Color(0.90, 0.87, 0.74, 0.65))
+		# Warm flame teardrop.
+		var fc := ctr + Vector2(0.0, -h * 0.04)
+		var fw := w * 0.36
+		var fh := h * 0.28
+		var flame := PackedVector2Array([
+			fc + Vector2(0.0, -fh),
+			fc + Vector2(fw * 0.7, -fh * 0.2),
+			fc + Vector2(fw, fh * 0.5),
+			fc + Vector2(0.0, fh * 0.7),
+			fc + Vector2(-fw, fh * 0.5),
+			fc + Vector2(-fw * 0.7, -fh * 0.2),
+		])
+		draw_colored_polygon(flame, Color(WyrdUi.GOLD, 0.78))
+		# Horizontal cage bars.
+		draw_line(Vector2(body_r.position.x + 2.0, fc.y - fh * 0.35),
+			Vector2(body_r.end.x - 2.0, fc.y - fh * 0.35),
+			Color(WyrdUi.KIT_EDGE, 0.30), 1.0)
+		draw_line(Vector2(body_r.position.x + 2.0, fc.y + fh * 0.62),
+			Vector2(body_r.end.x - 2.0, fc.y + fh * 0.62),
+			Color(WyrdUi.KIT_EDGE, 0.30), 1.0)
+		# Cage outline.
+		draw_rect(body_r, ink, false, 1.5)
+		# Bottom base plate.
+		var base_y := body_r.end.y
+		var base_r := Rect2(Vector2(ctr.x - w * 0.38, base_y),
+			Vector2(w * 0.76, h * 0.10))
+		draw_rect(base_r, WyrdUi.KIT_PLATE)
+		draw_rect(base_r, ink, false, 1.5)
