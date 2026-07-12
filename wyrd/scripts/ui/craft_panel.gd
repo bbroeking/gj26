@@ -68,6 +68,7 @@ func _ready() -> void:
 	section.text = "Recipes"
 	WyrdUi.style_section(section)
 	col.add_child(section)
+	col.add_child(_SectionDivider.new())
 
 	# A7-full grew the forge to 14 recipes — the list scrolls now.
 	var scroll := ScrollContainer.new()
@@ -93,6 +94,7 @@ func _ready() -> void:
 	s2.text = "Satchel"
 	WyrdUi.style_section(s2)
 	col.add_child(s2)
+	col.add_child(_SectionDivider.new())
 	_satchel_lbl = Label.new()
 	WyrdUi.style_body(_satchel_lbl, 13)
 	_satchel_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -212,3 +214,17 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# Drawn ── ◆ ── flourish rule — anchors the section header above it so the
+# "Recipes" and "Satchel" headings read as storybook chapter openers, not
+# just coloured text floating in a column.
+class _SectionDivider extends Control:
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 16)
+		size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5),
+			size.x * 0.52)
