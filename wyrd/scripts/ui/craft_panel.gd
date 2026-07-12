@@ -12,7 +12,7 @@ var station_id := "cookfire"
 var _game: Node
 var _panel: Panel
 var _recipe_box: VBoxContainer
-var _satchel_lbl: Label
+var _satchel_strip
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -93,10 +93,10 @@ func _ready() -> void:
 	s2.text = "Satchel"
 	WyrdUi.style_section(s2)
 	col.add_child(s2)
-	_satchel_lbl = Label.new()
-	WyrdUi.style_body(_satchel_lbl, 13)
-	_satchel_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	col.add_child(_satchel_lbl)
+	_satchel_strip = _SatchelStrip.new()
+	_satchel_strip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_satchel_strip.custom_minimum_size = Vector2(0, 36)
+	col.add_child(_satchel_strip)
 
 	get_node("/root/Game").modal_opened()
 	_render()
@@ -169,7 +169,7 @@ func _render() -> void:
 		_recipe_box.add_child(row)
 
 	if _game == null:
-		_satchel_lbl.text = ""
+		_satchel_strip.set_entries([])
 		return
 	_render_satchel()
 
@@ -207,8 +207,65 @@ func _recipe_tint(rec: Dictionary, locked: bool) -> Color:
 	return Color(0.88, 0.83, 0.72)
 
 func _render_satchel() -> void:
-	var parts: Array = []
+	var entries: Array = []
 	for id in _game.materials:
-		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
-			GatherDefs.material_name(String(id)), int(_game.materials[id])])
-	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+		var count: int = int(_game.materials[id])
+		if count > 0:
+			entries.append({
+				"icon": GatherDefs.material_icon(String(id)),
+				"name": GatherDefs.material_name(String(id)),
+				"count": count
+			})
+	_satchel_strip.set_entries(entries)
+
+
+# A horizontal strip of small parchment chips — one per satchel material.
+# Each chip: a KIT_PLATE card with a round icon well on the left carrying the
+# material glyph, and "Name ×N" in ink on the right. Replaces the flat joined
+# text label so the footer reads as a warm tally, not a spreadsheet row.
+class _SatchelStrip extends Control:
+	var _entries: Array = []
+
+	func set_entries(entries: Array) -> void:
+		_entries = entries
+		queue_redraw()
+
+	func _draw() -> void:
+		var font := get_theme_default_font()
+		if _entries.is_empty():
+			draw_string(font, Vector2(0, 22), "empty",
+				HORIZONTAL_ALIGNMENT_LEFT, size.x, 14, WyrdUi.INK_MID)
+			return
+		var x := 0.0
+		var cy := size.y * 0.5
+		for e in _entries:
+			var icon := String(e.icon)
+			var lbl := "%s ×%d" % [String(e.name), int(e.count)]
+			var lbl_w := font.get_string_size(lbl, HORIZONTAL_ALIGNMENT_LEFT,
+				-1, 13).x
+			# chip: 6 left pad + 18 icon circle + 8 gap + text + 10 right pad
+			var chip_w := 42.0 + lbl_w + 10.0
+			if x + chip_w > size.x:
+				break
+			var r := Rect2(Vector2(x, cy - 14.0), Vector2(chip_w, 28.0))
+			# parchment face + top bevel + ink border
+			draw_rect(r, WyrdUi.KIT_PLATE)
+			draw_rect(Rect2(r.position + Vector2(1.0, 1.0),
+				Vector2(r.size.x - 2.0, 1.5)), Color(1.0, 1.0, 0.93, 0.38))
+			draw_rect(Rect2(r.position + Vector2(2.0, r.size.y - 2.5),
+				Vector2(r.size.x - 4.0, 1.5)), Color(WyrdUi.KIT_EDGE, 0.18))
+			draw_rect(r, WyrdUi.KIT_EDGE, false, 1.5)
+			# icon well — small recessed circle carrying the glyph
+			var ic := r.position + Vector2(15.0, 14.0)
+			draw_circle(ic, 9.0, WyrdUi.KIT_WELL)
+			draw_arc(ic, 7.0, PI * 0.75, PI * 1.85, 14,
+				Color(0.0, 0.0, 0.0, 0.14), 2.5, true)
+			draw_arc(ic, 7.0, -PI * 0.25, PI * 0.30, 10,
+				Color(1.0, 1.0, 0.92, 0.28), 1.5, true)
+			draw_arc(ic, 9.0, 0, TAU, 24, WyrdUi.KIT_EDGE, 1.5, true)
+			draw_string(font, r.position + Vector2(7.0, 19.0),
+				icon, HORIZONTAL_ALIGNMENT_CENTER, 17, 11, WyrdUi.INK)
+			# name + count
+			draw_string(font, Vector2(r.position.x + 28.0, r.position.y + 19.0),
+				lbl, HORIZONTAL_ALIGNMENT_LEFT, chip_w - 34.0, 13, WyrdUi.INK)
+			x += chip_w + 6.0
