@@ -435,25 +435,25 @@ func _draw_slots() -> void:
 		hdr2 = font
 	draw_string(hdr2, _slot_top("pickaxe") + Vector2(0, -10), "Trade Tools",
 		HORIZONTAL_ALIGNMENT_LEFT, 160.0, 14, WyrdUi.INK)
+	# Flourish rule under the Trade Tools header — echoes the design language
+	# used on bench/vendor section dividers (ornament on frames/headers only).
+	WyrdUi.draw_flourish(self, _slot_top("pickaxe") + Vector2(56.0, -2.0), 100.0)
 	for name in SLOT_OFFSET:
 		var top := _slot_top(String(name))
 		var r := Rect2(top, Vector2(SLOT_SIZE, SLOT_SIZE))
-		# Recessed slot well.
-		draw_rect(r, Color(0.80, 0.72, 0.58))
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(SLOT_SIZE - 1, 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(1, SLOT_SIZE - 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+		# Carved socket well — replaces manual 2-line shadow with the kit's
+		# stepped inner shadow (3 passes), warm light lip, and ink border.
+		WyrdUi.draw_well(self, r)
 		var it = equipment.get_slot(String(name))
 		if it != null:
 			_draw_item_rect_scaled(it, top + Vector2(6, 6),
 				Vector2(SLOT_SIZE - 12, SLOT_SIZE - 12), false)
 		else:
-			# Empty slot — name ghosted in the well, Diablo-style.
-			draw_string(font, top + Vector2(0, SLOT_SIZE * 0.5 + 5),
+			# Empty socket — ghost label in IM Fell SC so it reads as engraved
+			# into the stone rather than a plain flat string.
+			draw_string(hdr2, top + Vector2(0, SLOT_SIZE * 0.5 + 7),
 				String(name).capitalize(), HORIZONTAL_ALIGNMENT_CENTER,
-				SLOT_SIZE, 12, Color(0.50, 0.42, 0.32, 0.85))
+				SLOT_SIZE, 12, Color(WyrdUi.INK_MID, 0.65))
 
 func _draw_item_in_grid(it: Dictionary) -> void:
 	var rotated: bool = it.get("rotated", false)
