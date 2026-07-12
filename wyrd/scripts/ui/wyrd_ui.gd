@@ -383,3 +383,45 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# A hand-drawn ivy corner sprig for panel inner frames: a curved stem with
+# two teardrop leaves, a tendril curl, and a gilded bud at the root.
+# Place a Control sized e.g. 64×64 at the panel inner-corner and call this
+# from its _draw() with corner=Vector2.ZERO, sz=min(w,h).
+# flip_h mirrors left→right; flip_v mirrors top→bottom.
+static func draw_corner_ivy(c: CanvasItem, corner: Vector2, sz: float,
+		flip_h := false, flip_v := false) -> void:
+	var dx := -1.0 if flip_h else 1.0
+	var dy := -1.0 if flip_v else 1.0
+	var sg := SAGE
+	# Curved stem — two knot segments from the corner curling into the interior.
+	var k0 := corner + Vector2(dx * sz * 0.12, dy * sz * 0.12)
+	var k1 := corner + Vector2(dx * sz * 0.30, dy * sz * 0.16)
+	var k2 := corner + Vector2(dx * sz * 0.36, dy * sz * 0.40)
+	c.draw_line(k0, k1, Color(sg.darkened(0.35), 0.88), 1.4)
+	c.draw_line(k1, k2, Color(sg.darkened(0.35), 0.88), 1.4)
+	# Large leaf — fans away from the stem tip toward the panel interior.
+	var l1 := PackedVector2Array([k2,
+		k2 + Vector2(dx * sz * 0.15, -dy * sz * 0.22),
+		k2 + Vector2(dx * sz * 0.08, -dy * sz * 0.34),
+		k2 + Vector2(-dx * sz * 0.05, -dy * sz * 0.19)])
+	c.draw_colored_polygon(l1, Color(sg, 0.72))
+	c.draw_line(k2, k2 + Vector2(dx * sz * 0.08, -dy * sz * 0.34),
+		Color(sg.darkened(0.45), 0.50), 0.9)
+	# Side leaf — spreads horizontally from the same stem tip.
+	var l2 := PackedVector2Array([k2,
+		k2 + Vector2(dx * sz * 0.26, -dy * sz * 0.09),
+		k2 + Vector2(dx * sz * 0.34, dy * sz * 0.06),
+		k2 + Vector2(dx * sz * 0.16, dy * sz * 0.13)])
+	c.draw_colored_polygon(l2, Color(sg.lightened(0.10), 0.62))
+	c.draw_line(k2, k2 + Vector2(dx * sz * 0.34, dy * sz * 0.06),
+		Color(sg.darkened(0.40), 0.45), 0.9)
+	# Tiny tendril curl branching off the mid-stem kink.
+	c.draw_line(k1, k1 + Vector2(-dx * sz * 0.11, dy * sz * 0.15),
+		Color(sg.darkened(0.30), 0.60), 0.9)
+	c.draw_line(k1 + Vector2(-dx * sz * 0.11, dy * sz * 0.15),
+		k1 + Vector2(-dx * sz * 0.17, dy * sz * 0.10),
+		Color(sg.darkened(0.30), 0.45), 0.9)
+	# Gilded bud at the stem root — ties the sprig to the corner accent.
+	c.draw_circle(k0, sz * 0.058, Color(GOLD, 0.82))
+	c.draw_arc(k0, sz * 0.058, 0, TAU, 12, Color(KIT_EDGE, 0.55), 0.9, true)
