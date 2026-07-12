@@ -745,9 +745,21 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 	var w := win.size.x - 148.0
 	var y := win.position.y + 134.0
 	if (game.charts as Array).is_empty():
-		draw_string(font, Vector2(x, y),
-			"No charts inscribed. The Inscribing Table awaits.",
-			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
+		# Storybook empty-state: a sealed scroll centred in the viewport,
+		# a flourish rule beneath, then the prompt — "a place to fill"
+		# rather than a bare dim sentence on a blank parchment face.
+		var hdr: Font = WyrdUi.font_header()
+		if hdr == null:
+			hdr = font
+		# When the tab is empty the scroll offset is always 0, so adding
+		# it here is harmless and keeps the maths consistent if that changes.
+		var mx := view.get_center().x
+		var my := view.get_center().y + scroll
+		WyrdUi.draw_scroll(self, Rect2(mx - 42.0, my - 64.0, 84.0, 100.0), true)
+		WyrdUi.draw_flourish(self, Vector2(mx, my + 48.0), 220.0)
+		draw_string(hdr, Vector2(mx - 140.0, my + 68.0),
+			"No charts yet — the Inscribing Table awaits.",
+			HORIZONTAL_ALIGNMENT_CENTER, 280.0, 14, WyrdUi.INK_MID)
 		_tab_content_h[2] = 0.0
 		return
 	# Slice C — each chart rides a list-row plate led with a drawn scroll
