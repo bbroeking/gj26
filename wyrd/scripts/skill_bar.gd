@@ -212,22 +212,6 @@ func _make_slot(i: int, total_w: int, label: String, cost: int) -> Control:
 	nm.offset_bottom = SLOT_SIZE / 2.0 + 8
 	nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	s.add_child(nm)
-	# Focus cost (bottom-right, only if non-zero).
-	if cost > 0:
-		var c := Label.new()
-		c.name = "Cost"
-		c.text = "%d" % cost
-		c.add_theme_font_size_override("font_size", 13)
-		c.add_theme_color_override("font_color", Color(0.32, 0.44, 0.50))
-		c.add_theme_color_override("font_outline_color", Color(0.97, 0.93, 0.82))
-		c.add_theme_constant_override("outline_size", 4)
-		c.anchor_left = 1.0
-		c.anchor_right = 1.0
-		c.anchor_top = 1.0
-		c.anchor_bottom = 1.0
-		c.offset_left = -22
-		c.offset_top = -18
-		c.offset_right = -2
-		c.offset_bottom = -2
-		s.add_child(c)
+	# Focus cost — handed to the slot so its _draw renders the carved gem chip.
+	s.focus_cost = cost
 	return s

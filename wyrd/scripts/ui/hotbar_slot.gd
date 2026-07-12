@@ -2,12 +2,14 @@ extends Control
 
 # A carved storybook hotbar slot. Draws its own face (carved button + recessed
 # icon well + parchment grain), a true RADIAL cooldown wedge (square-clamped so
-# it never bulges past the slot), and a gold ready-flash when a skill comes off
-# cooldown. The icon/glyph/keybind/cost are children added by skill_bar.gd and
-# render over this _draw. Pure-vector (no texture in _draw — gotcha-safe).
+# it never bulges past the slot), a gold ready-flash when a skill comes off
+# cooldown, and a jade focus-cost gem in the bottom-right corner. The
+# icon/glyph/keybind children are added by skill_bar.gd and render over _draw.
+# Pure-vector (no texture in _draw — gotcha-safe).
 
 var cd_ratio: float = 0.0      # 1 = just cast (full dark wedge) → 0 = ready
 var castable: bool = true
+var focus_cost: int = 0        # drawn as a jade gem chip in the bottom-right corner
 var _flash: float = 0.0        # gold rim pulse, 0..1, on coming off cooldown
 var _seed: int = 7
 var _last_ratio: float = -1.0
@@ -57,3 +59,13 @@ func _draw() -> void:
 		draw_colored_polygon(pts, Color(0.10, 0.08, 0.07, 0.52))
 	if _flash > 0.0:
 		draw_rect(r.grow(-1.5), Color(WyrdUi.GOLD, _flash * 0.85), false, 3.0)
+	# Focus-cost gem — a carved jade disc in the bottom-right corner so the
+	# cost reads at a glance without floating over the icon. Drawn last so it
+	# sits above the cooldown wash.
+	if focus_cost > 0:
+		var gem := Vector2(size.x - 11.0, size.y - 11.0)
+		WyrdUi.draw_round_well(self, gem, 10.0, Color(0.18, 0.38, 0.58))
+		var f := get_theme_default_font()
+		draw_string(f, Vector2(gem.x - 10.0, gem.y + 5.0),
+			"%d" % focus_cost, HORIZONTAL_ALIGNMENT_CENTER, 20.0, 11,
+			Color(0.88, 0.95, 1.0))
