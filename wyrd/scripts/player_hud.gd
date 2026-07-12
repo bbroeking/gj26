@@ -498,3 +498,36 @@ class QuestScrollArt extends Control:
 		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
 		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
 		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+		# Ivy sprig at the top-right — two sage leaves + a berry knot mirror
+		# the wax seal on the left, framing the banner as a living storybook piece.
+		# Bramble ornament language (mj_hud_bramble.png ref): leaves on frames only.
+		var leaf_fill := WyrdUi.SAGE.darkened(0.20)
+		var twig_ink := Color(WyrdUi.KIT_EDGE.r, WyrdUi.KIT_EDGE.g, WyrdUi.KIT_EDGE.b, 0.68)
+		var sx := size.x - 34.0
+		var sy := 13.0
+		# Fork — two short stems meeting at a knot
+		draw_line(Vector2(sx - 2.0, sy + 1.0), Vector2(sx + 8.0, sy + 14.0),
+			twig_ink, 1.4, true)
+		draw_line(Vector2(sx + 2.0, sy + 5.0), Vector2(sx + 14.0, sy + 1.0),
+			twig_ink, 1.2, true)
+		# Leaf A: elongated diamond along the main stem (≈45° down-right axis)
+		var la := Vector2(sx + 5.0, sy + 9.0)
+		var la_pts := PackedVector2Array([
+			la + Vector2(-4.5, -4.5), la + Vector2(-2.0, 2.8),
+			la + Vector2( 4.5,  4.5), la + Vector2( 2.0, -2.8)])
+		draw_colored_polygon(la_pts, leaf_fill)
+		draw_polyline(la_pts + PackedVector2Array([la_pts[0]]), twig_ink, 0.8, true)
+		draw_line(la + Vector2(-4.5, -4.5), la + Vector2(4.5, 4.5),
+			Color(twig_ink.r, twig_ink.g, twig_ink.b, 0.38), 0.7)
+		# Leaf B: smaller diamond on the side tendril (≈-20° right-upward axis)
+		var lb := Vector2(sx + 12.0, sy + 2.5)
+		var lb_pts := PackedVector2Array([
+			lb + Vector2(-4.0,  0.8), lb + Vector2( 0.5, -3.8),
+			lb + Vector2( 4.0, -0.8), lb + Vector2(-0.5,  3.8)])
+		draw_colored_polygon(lb_pts, leaf_fill)
+		draw_polyline(lb_pts + PackedVector2Array([lb_pts[0]]), twig_ink, 0.8, true)
+		draw_line(lb + Vector2(-4.0, 0.8), lb + Vector2(4.0, -0.8),
+			Color(twig_ink.r, twig_ink.g, twig_ink.b, 0.38), 0.7)
+		# Berry knot where the twig forks
+		draw_circle(Vector2(sx + 2.5, sy + 5.5), 2.8, WyrdUi.SAGE.darkened(0.08))
+		draw_arc(Vector2(sx + 2.5, sy + 5.5), 2.8, 0, TAU, 12, twig_ink, 1.0, true)
