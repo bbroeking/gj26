@@ -49,6 +49,18 @@ const SKILL_GLYPH := {
 	"HeartwoodWard": "❦",
 	"MercyShot":     "✜",
 }
+# Storybook ink colors per skill family — each glyph reads as a hand-painted
+# sigil: nature skills are sage-green, the mark is burnished gold, the ward
+# is bark-blue, the kill is terracotta. Plain sepia for the precision shot.
+# These intentionally mirror the WyrdUi palette constants.
+static func _glyph_color(skill_name: String) -> Color:
+	match skill_name:
+		"RainOfThorns", "Thornburst": return Color("6f8a3f")  # WyrdUi.SAGE
+		"HuntersMark":                return Color("b58637")  # WyrdUi.GOLD
+		"HeartwoodWard":              return Color("3d7080")  # bark-ward blue
+		"MercyShot":                  return Color("b14c33")  # WyrdUi.TERRACOTTA
+	return Color("3a2c20")                                    # WyrdUi.INK (default)
+
 const SKILL_DESC := {
 	"BasicShot":     "A quick arrow. No Focus cost — your bread and butter (also on F).",
 	"PowerShot":     "A heavy, slower arrow that hits much harder.",
@@ -127,8 +139,10 @@ func bind_to_player(p: Node) -> void:
 			if nm != null:
 				nm.visible = false   # the icon IS the name now
 		elif SKILL_GLYPH.has(skill.name):
-			# No painted icon yet — the inked glyph reads as the icon, with
-			# the short label tucked beneath it.
+			# No painted icon yet — the inked glyph reads as the icon.
+			# Each glyph is tinted to its skill family (nature/mark/ward/kill)
+			# and given an ink-stamp outline so it reads as a hand-painted sigil
+			# on the carved parchment face, not a bare text character.
 			var gl := Label.new()
 			gl.name = "Glyph"
 			gl.text = String(SKILL_GLYPH[skill.name])
@@ -136,7 +150,11 @@ func bind_to_player(p: Node) -> void:
 			if ghdr != null:
 				gl.add_theme_font_override("font", ghdr)
 			gl.add_theme_font_size_override("font_size", 30)
-			gl.add_theme_color_override("font_color", WyrdUi.INK)
+			var gc: Color = _glyph_color(skill.name)
+			gl.add_theme_color_override("font_color", gc)
+			gl.add_theme_color_override("font_outline_color",
+				Color(0.12, 0.09, 0.06, 0.65))
+			gl.add_theme_constant_override("outline_size", 4)
 			gl.anchor_right = 1.0
 			gl.offset_top = 4
 			gl.offset_bottom = 44
@@ -147,6 +165,9 @@ func bind_to_player(p: Node) -> void:
 			var nm := slot.get_node_or_null("SkillName")
 			if nm != null:
 				nm.add_theme_font_size_override("font_size", 13)
+				# Tint the name cap to echo the glyph's family color — lightly
+				# so it reads as a label, not a competing accent.
+				nm.add_theme_color_override("font_color", gc.lightened(0.18))
 				nm.offset_top = SLOT_SIZE - 28
 				nm.offset_bottom = SLOT_SIZE - 8
 		_slots.append(slot)
