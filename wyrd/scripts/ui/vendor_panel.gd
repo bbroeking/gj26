@@ -61,6 +61,11 @@ func _ready() -> void:
 	_panel.offset_right = 380
 	_panel.offset_bottom = 260
 	add_child(_panel)
+	var art := _VendorArt.new()
+	art.anchor_right = 1.0
+	art.anchor_bottom = 1.0
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(art)
 
 	var title := Label.new()
 	title.text = "Hod's Counter"
@@ -286,3 +291,30 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# ---- header dressing behind the title band ----
+# Parchment grain across the full panel interior, a ── ◆ ── flourish rule
+# just below the subtitle (y≈88), and a wax-seal corner mark in the top-left
+# to dress the counter ticket. Added as the first child of _panel so it
+# renders behind every Label and Button (Godot draws children in add order).
+# Pure vector — no texture loads in _draw (white-rect gotcha). Follows the
+# QuestScrollArt pattern in player_hud.gd.
+class _VendorArt extends Control:
+	func _ready() -> void:
+		resized.connect(queue_redraw)
+
+	func _draw() -> void:
+		if size.x < 2.0 or size.y < 2.0:
+			return
+		# Sparse parchment grain across the full panel interior.
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(Vector2(36.0, 36.0), size - Vector2(72.0, 72.0)), 19)
+		# Flourish rule centred just below the title/subtitle band.
+		# Title sits y≈34–64, subtitle y≈66–82; columns begin at ~y=94.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 88.0), 280.0)
+		# Small wax seal at the top-left corner — the counter-ticket ornament.
+		var sc := Vector2(26.0, 26.0)
+		draw_circle(sc, 8.0, Color(0.62, 0.20, 0.16))
+		draw_circle(sc, 4.8, Color(0.72, 0.28, 0.22))
+		draw_arc(sc, 8.0, 0.0, TAU, 22, Color(0.40, 0.12, 0.10), 1.5, true)
