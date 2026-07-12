@@ -39,6 +39,11 @@ func _ready() -> void:
 	_panel.offset_top = 70
 	_panel.offset_bottom = -70
 	add_child(_panel)
+	# Decorative layer: body-text scroll well + divider flourish (rendered
+	# beneath portrait and labels; pure-vector, no textures inside _draw).
+	var decor := _DialogDecor.new()
+	decor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_panel.add_child(decor)
 	# Portrait well (spec 41) — ghosted silhouette until painted portraits.
 	var well := PortraitWell.new()
 	well.position = Vector2(48, 104)
@@ -130,6 +135,27 @@ func _finish() -> void:
 	get_node("/root/Game").modal_closed()
 	finished.emit()
 	queue_free()
+
+
+# A code-drawn decoration layer rendered behind the panel's portrait and
+# labels. Draws a recessed reading-scroll well behind the body text (so the
+# story reads as ink on parchment, not text floating on bare wood) and a
+# flourish rule below the speaker name. Pure-vector — no texture loads inside
+# _draw, safe from the load-in-_draw white-rect gotcha.
+class _DialogDecor extends Control:
+	func _draw() -> void:
+		# Body-text reading well: a cream scroll face set into the carved frame.
+		# Matches _body's anchor region with an 8–10 px margin on every side so
+		# the ink border is visible outside the text run.
+		var body_r := Rect2(Vector2(190.0, 96.0), size - Vector2(254.0, 152.0))
+		WyrdUi.draw_well(self, body_r, Color(0.96, 0.91, 0.80))
+		WyrdUi.draw_parchment_grain(self, body_r, 23)
+		# Gilded hem — the scroll's upper border, echoing the wax seal / trophy ring.
+		draw_line(body_r.position + Vector2(6.0, 3.0),
+			Vector2(body_r.end.x - 6.0, body_r.position.y + 3.0),
+			Color(WyrdUi.GOLD, 0.38), 1.2)
+		# Flourish rule below the speaker name, separating header from text.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 82.0), size.x - 112.0)
 
 
 # Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
