@@ -438,22 +438,76 @@ func _draw_slots() -> void:
 	for name in SLOT_OFFSET:
 		var top := _slot_top(String(name))
 		var r := Rect2(top, Vector2(SLOT_SIZE, SLOT_SIZE))
-		# Recessed slot well.
-		draw_rect(r, Color(0.80, 0.72, 0.58))
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(SLOT_SIZE - 1, 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(1, SLOT_SIZE - 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+		# Carved well: stepped inner shadow + light lip + ink border — consistent
+		# with bench sockets and the kit drawing language (replaces the old flat
+		# rect + two basic shadow lines).
+		WyrdUi.draw_well(self, r)
 		var it = equipment.get_slot(String(name))
 		if it != null:
 			_draw_item_rect_scaled(it, top + Vector2(6, 6),
 				Vector2(SLOT_SIZE - 12, SLOT_SIZE - 12), false)
 		else:
-			# Empty slot — name ghosted in the well, Diablo-style.
-			draw_string(font, top + Vector2(0, SLOT_SIZE * 0.5 + 5),
+			# Empty slots are QUIET recessed cream — per design language.
+			# A ghosted category silhouette + dim label hint at the slot's purpose
+			# without competing with the colour on filled items.
+			_draw_slot_hint(String(name), r.get_center())
+			draw_string(hdr2, top + Vector2(0, SLOT_SIZE - 8),
 				String(name).capitalize(), HORIZONTAL_ALIGNMENT_CENTER,
-				SLOT_SIZE, 12, Color(0.50, 0.42, 0.32, 0.85))
+				SLOT_SIZE, 10, Color(WyrdUi.INK, 0.22))
+
+# Ghosted ink silhouette for an empty equipment slot. Each shape hints at the
+# slot's purpose at low alpha so filled items own all the visual weight.
+func _draw_slot_hint(slot_name: String, center: Vector2) -> void:
+	var col := Color(WyrdUi.INK, 0.15)
+	var sz := 16.0
+	match slot_name:
+		"ring":
+			# A simple ring — unmistakeable.
+			draw_arc(center, sz * 0.72, 0.0, TAU, 28, col, 2.5, true)
+		"helmet":
+			# Dome arc + a brim bar.
+			draw_arc(center + Vector2(0, sz * 0.22), sz, PI, TAU, 20, col, 2.5, true)
+			draw_line(center + Vector2(-sz, sz * 0.22),
+				center + Vector2(sz, sz * 0.22), col, 2.5)
+		"chest":
+			# A rectangular plate with a V-neckline.
+			draw_rect(Rect2(center - Vector2(sz * 0.85, sz * 0.68),
+				Vector2(sz * 1.7, sz * 1.32)), col, false, 2.0)
+			draw_line(center + Vector2(-sz * 0.3, -sz * 0.68),
+				center + Vector2(0, -sz * 0.18), col, 1.8)
+			draw_line(center + Vector2(sz * 0.3, -sz * 0.68),
+				center + Vector2(0, -sz * 0.18), col, 1.8)
+		"boots":
+			# Two boot outlines, sole extended on the outside.
+			for s in [-1.0, 1.0]:
+				var bc := center + Vector2(s * sz * 0.55, 0.0)
+				draw_rect(Rect2(bc - Vector2(sz * 0.32, sz * 0.62),
+					Vector2(sz * 0.64, sz * 0.88)), col, false, 2.0)
+				draw_line(bc + Vector2(-sz * 0.32, sz * 0.26),
+					bc + Vector2(s * sz * 0.42, sz * 0.26), col, 2.0)
+		"weapon":
+			# Bow arc facing left + the bowstring.
+			draw_arc(center + Vector2(sz * 0.18, 0.0), sz * 0.9,
+				PI * 0.65, PI * 1.35, 14, col, 2.5, true)
+			draw_line(center + Vector2(sz * 0.18, -sz * 0.8),
+				center + Vector2(sz * 0.18, sz * 0.8), col, 1.5)
+		"pickaxe":
+			# A diagonal handle with an angled pick head at the top.
+			draw_line(center + Vector2(sz * 0.55, sz * 0.65),
+				center - Vector2(sz * 0.3, sz * 0.55), col, 2.5)
+			draw_line(center - Vector2(sz * 0.3, sz * 0.55),
+				center + Vector2(-sz * 0.85, sz * 0.1), col, 2.5)
+			draw_line(center - Vector2(sz * 0.3, sz * 0.55),
+				center + Vector2(-sz * 0.1, -sz * 0.85), col, 2.5)
+		"axe":
+			# Vertical handle + a wedge blade on one side.
+			draw_line(center + Vector2(0, -sz * 0.8),
+				center + Vector2(0, sz * 0.8), col, 2.5)
+			var pts := PackedVector2Array([
+				center + Vector2(0, -sz * 0.5),
+				center + Vector2(-sz * 0.78, 0.0),
+				center + Vector2(0, sz * 0.42)])
+			draw_polyline(pts, col, 2.0, true)
 
 func _draw_item_in_grid(it: Dictionary) -> void:
 	var rotated: bool = it.get("rotated", false)
