@@ -115,7 +115,12 @@ func _render() -> void:
 	for rid in st.get("recipes", []):
 		var rec: Dictionary = CraftingDefs.recipe(String(rid))
 		var locked: bool = lv < int(rec.get("req_lv", 1))
-		var row := HBoxContainer.new()
+		var can_craft: bool = not locked and _game != null \
+			and _game.can_afford(rec.inputs)
+		var row_accent: Color = WyrdUi.TERRACOTTA if locked \
+			else (WyrdUi.SAGE if can_craft else WyrdUi.INK_MID)
+		var row := _RecipeRow.new()
+		row.setup(row_accent, locked)
 		row.add_theme_constant_override("separation", 10)
 
 		# Spec 44 — a painted icon chip in front of every recipe row.
@@ -160,7 +165,7 @@ func _render() -> void:
 		WyrdUi.style_kit_button(b)
 		b.text = String(st.get("verb", "Craft"))
 		b.custom_minimum_size = Vector2(96, 40)
-		b.disabled = locked or _game == null or not _game.can_afford(rec.inputs)
+		b.disabled = not can_craft
 		var rid_s := String(rid)
 		b.pressed.connect(func():
 			if _game != null and _game.craft(station_id, rid_s):
@@ -212,3 +217,25 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# Each recipe row draws its own "carved list-row" plate — the same storybook
+# language as vendor, loadout, and pack rows — so the recipe list reads as
+# cards on a shelf rather than widgets floating on bare parchment.
+# Accent stripe: SAGE = craft-ready, TERRACOTTA = level-locked, INK_MID = not yet affordable.
+class _RecipeRow extends HBoxContainer:
+	var _accent := WyrdUi.INK_MID
+	var _locked := false
+
+	func _ready() -> void:
+		resized.connect(queue_redraw)
+
+	func setup(accent: Color, locked: bool) -> void:
+		_accent = accent
+		_locked = locked
+
+	func _draw() -> void:
+		WyrdUi.draw_list_row(self, Rect2(Vector2.ZERO, size), _accent)
+		if _locked:
+			draw_rect(Rect2(Vector2.ZERO, size).grow(-1.5),
+				Color(0.80, 0.74, 0.62, 0.40))
