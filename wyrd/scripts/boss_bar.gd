@@ -14,6 +14,7 @@ const FILL_FULL_W := 592.0
 var _hp_max := 100
 
 var _meter: Dictionary = {}
+var _dressing: Control = null
 
 func _ready() -> void:
 	visible = false
@@ -28,6 +29,16 @@ func _ready() -> void:
 		root.offset_left = -300
 		root.offset_top = 18
 		add_child(root)
+		# Ornamental endcaps drawn on top of the meter trough.
+		_dressing = BossBarDressing.new()
+		_dressing.anchor_left = 0.5
+		_dressing.anchor_right = 0.5
+		_dressing.offset_left = -320
+		_dressing.offset_right = 320
+		_dressing.offset_top = 14
+		_dressing.offset_bottom = 58
+		_dressing.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(_dressing)
 
 # Called at build — set max HP and fill the bar.
 func prime(mx: int) -> void:
@@ -57,3 +68,31 @@ func set_phase(phase: int) -> void:
 
 func hide_boss() -> void:
 	visible = false
+
+
+# Storybook endcap dressing — wax seal at left, gold ◆ at right, parchment
+# grain over the trough — so the most dramatic HUD moment reads as a crafted
+# object rather than a raw health bar.
+class BossBarDressing extends Control:
+	func _draw() -> void:
+		var w := size.x
+		# Parchment grain across the trough interior.
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(Vector2(20.0, 4.0), Vector2(w - 40.0, 36.0)), 41)
+		# Left endcap — terracotta wax seal (two concentric circles + ink ring).
+		var lc := Vector2(10.0, 22.0)
+		draw_circle(lc, 8.0, Color(0.62, 0.20, 0.16))
+		draw_circle(lc, 5.0, Color(0.72, 0.28, 0.22))
+		draw_arc(lc, 8.0, 0.0, TAU, 24, Color(0.40, 0.12, 0.10), 1.5, true)
+		# Right endcap — burnished gold ◆ diamond pip.
+		var rc := Vector2(w - 10.0, 22.0)
+		var s := 6.0
+		draw_colored_polygon(PackedVector2Array([
+			rc + Vector2(0.0, -s), rc + Vector2(s, 0.0),
+			rc + Vector2(0.0, s),  rc + Vector2(-s, 0.0)]),
+			Color(WyrdUi.GOLD, 0.85))
+		draw_polyline(PackedVector2Array([
+			rc + Vector2(0.0, -s), rc + Vector2(s, 0.0),
+			rc + Vector2(0.0, s),  rc + Vector2(-s, 0.0),
+			rc + Vector2(0.0, -s)]),
+			WyrdUi.INK, 1.0)
