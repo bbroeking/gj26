@@ -61,6 +61,13 @@ func _ready() -> void:
 	_panel.offset_right = 380
 	_panel.offset_bottom = 260
 	add_child(_panel)
+	# Header ornament — forge-crest medallion + gold separator rule (renders
+	# first so it sits behind the title/sub labels).
+	var header_decor := _VendorHeader.new()
+	header_decor.anchor_right = 1.0
+	header_decor.offset_bottom = 92.0
+	header_decor.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(header_decor)
 
 	var title := Label.new()
 	title.text = "Hod's Counter"
@@ -112,6 +119,7 @@ func _ready() -> void:
 	sell_hdr.text = "Sell (he melts it down)"
 	WyrdUi.style_section(sell_hdr)
 	col1.add_child(sell_hdr)
+	col1.add_child(_SectionRule.new())
 	# A full pack outgrows the panel — the sell list scrolls now.
 	var sell_scroll := ScrollContainer.new()
 	sell_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -130,6 +138,7 @@ func _ready() -> void:
 	buy_hdr.text = "Wares"
 	WyrdUi.style_section(buy_hdr)
 	col2.add_child(buy_hdr)
+	col2.add_child(_SectionRule.new())
 	_buy_box = VBoxContainer.new()
 	_buy_box.add_theme_constant_override("separation", 5)
 	_buy_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -286,3 +295,58 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# Drawn header ornament for Hod's Counter: a forge-anvil crest medallion +
+# a gold-and-sepia ruled separator at the header/content boundary.
+class _VendorHeader extends Control:
+	func _draw() -> void:
+		# Sparse parchment grain warms the header band.
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(Vector2.ZERO, size), 37)
+		# Gold ruled separator above the content columns with a diamond flourish.
+		var ry := 88.0
+		var mx := 52.0
+		draw_line(Vector2(mx, ry), Vector2(size.x - mx, ry),
+			Color(WyrdUi.GOLD, 0.55), 1.5)
+		draw_line(Vector2(mx, ry + 2.0), Vector2(size.x - mx, ry + 2.0),
+			Color(WyrdUi.KIT_EDGE, 0.18), 1.0)
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, ry), size.x - mx * 2.0)
+		# Forge-anvil crest medallion at the left frame edge.
+		_draw_forge_crest(Vector2(26.0, 50.0))
+
+	func _draw_forge_crest(c: Vector2) -> void:
+		# Parchment disc backing + double gold ring (the crest medallion).
+		draw_circle(c, 17.0, WyrdUi.KIT_WELL)
+		draw_arc(c, 17.0, 0, TAU, 36, Color(WyrdUi.GOLD, 0.70), 2.0, true)
+		draw_arc(c, 13.5, 0, TAU, 30, Color(WyrdUi.GOLD, 0.28), 1.0, true)
+		# Anvil body (wide flat top).
+		var body := Rect2(c - Vector2(9.0, 4.0), Vector2(18.0, 7.0))
+		draw_rect(body, WyrdUi.KIT_EDGE)
+		draw_rect(Rect2(body.position + Vector2(1.0, 1.0),
+			Vector2(16.0, 1.5)), Color(1, 1, 0.92, 0.35))
+		# Anvil base (narrower, sits below the body).
+		draw_rect(Rect2(c - Vector2(6.5, -3.0), Vector2(13.0, 5.0)),
+			WyrdUi.KIT_EDGE)
+		# Hammer handle (diagonal line from top-left down to the anvil face).
+		draw_line(c - Vector2(8.0, 9.0), c - Vector2(2.0, 3.0),
+			WyrdUi.KIT_EDGE, 2.0)
+		# Hammer head (terracotta — the hot-metal tint).
+		var hh := Rect2(c - Vector2(13.0, 13.0), Vector2(7.0, 5.0))
+		draw_rect(hh, WyrdUi.TERRACOTTA.darkened(0.15))
+		draw_rect(Rect2(hh.position + Vector2(1.0, 1.0), Vector2(5.0, 1.5)),
+			Color(1, 1, 0.9, 0.30))
+		draw_rect(hh, WyrdUi.KIT_EDGE, false, 1.0)
+
+
+# A thin double-rule (gold + sepia) drawn below "Sell" and "Wares" headers.
+class _SectionRule extends Control:
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 8.0)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		draw_line(Vector2(0, 3.0), Vector2(size.x, 3.0),
+			Color(WyrdUi.GOLD, 0.40), 1.0)
+		draw_line(Vector2(0, 4.5), Vector2(size.x, 4.5),
+			Color(WyrdUi.KIT_EDGE, 0.20), 1.0)
