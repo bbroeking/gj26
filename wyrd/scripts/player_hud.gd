@@ -298,10 +298,15 @@ func _refresh_trades() -> void:
 func show_toast(msg: String) -> void:
 	var l := Label.new()
 	l.text = msg
-	# Spec 41 — toasts are kit parchment chips.
+	# Spec 41 — toasts are kit parchment chips with a drawn vine-leaf sprig
+	# in the left margin so each notice reads as a storybook slip.
 	WyrdUi.style_chip(l, 15)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var sprig := _ToastSprig.new()
+	sprig.set_anchors_preset(Control.PRESET_FULL_RECT)
+	sprig.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	l.add_child(sprig)
 	_toast_box.add_child(l)
 	var t := create_tween()
 	# Pause-immune — most toasts (mix, inscribe, level-up) fire while a modal
@@ -473,6 +478,35 @@ class GlobeGauge extends Control:
 				HORIZONTAL_ALIGNMENT_CENTER, size.x, 11, 4, Color(0.12, 0.09, 0.06))
 			draw_string(f, Vector2(0, c.y - 16), status,
 				HORIZONTAL_ALIGNMENT_CENTER, size.x, 11, Color(0.95, 0.78, 0.5))
+
+
+# ---- toast vine-leaf sprig ----
+# Drawn into the left margin of each parchment chip toast. Two opposing
+# sage leaf-ovals + a gold berry tip + a connecting stem give the ephemeral
+# notice slips the storybook-framed read without competing with the text.
+# Sits within the chip_stylebox's 10 px content_margin_left so the
+# center-aligned text is never obscured.
+class _ToastSprig extends Control:
+	func _ready() -> void:
+		resized.connect(queue_redraw)
+
+	func _draw() -> void:
+		if size.x < 1.0 or size.y < 1.0:
+			return
+		var cx := 7.0
+		var cy := size.y * 0.5
+		# Connecting stem.
+		draw_line(Vector2(cx, cy + 6.0), Vector2(cx, cy - 5.5),
+			WyrdUi.SAGE.darkened(0.05), 1.3)
+		# Lower-left leaf — filled sage oval, darker centre vein.
+		draw_circle(Vector2(cx - 2.8, cy + 2.5), 2.8, WyrdUi.SAGE)
+		draw_circle(Vector2(cx - 1.9, cy + 1.7), 1.2, WyrdUi.SAGE.darkened(0.25))
+		# Upper-right leaf.
+		draw_circle(Vector2(cx + 2.2, cy - 2.0), 2.3, WyrdUi.SAGE.lightened(0.08))
+		draw_circle(Vector2(cx + 1.5, cy - 1.4), 1.0, WyrdUi.SAGE.darkened(0.15))
+		# Gold berry at the stem tip.
+		draw_circle(Vector2(cx, cy - 5.5), 2.1, WyrdUi.GOLD)
+		draw_circle(Vector2(cx + 0.6, cy - 6.3), 0.9, Color(1.0, 1.0, 1.0, 0.45))
 
 
 # Slice B — the quest plate's scroll dressing, drawn over the painted-wood
