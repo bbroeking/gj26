@@ -801,7 +801,10 @@ class BenchView extends Control:
 		draw_string(font, _result_rect.position + Vector2(0, 72),
 			String(t.get("desc", "")), HORIZONTAL_ALIGNMENT_CENTER,
 			_result_rect.size.x, 11, DIM)
-		# Odds (same math as before: weights + stability).
+		# Odds — drawn shelf cards (KIT_PLATE face + accent stripe) replace the
+		# bare text so each affix probability reads as a carved ledger entry.
+		# Stripe convention: SAGE = stab ≥ 65 (good twin likely), TERRACOTTA =
+		# stab ≤ 35 (bad twin likely), INK_MID = balanced, GOLD = trophy-certain.
 		if bench.affix_slots() > 0:
 			var weights: Dictionary = ChartsData.compute_weights(int(t.tier), bench.inks,
 				bench._carto_lv())
@@ -811,21 +814,32 @@ class BenchView extends Control:
 			for id in ids:
 				var stab: int = ChartsData.effective_stability(String(id),
 					bench._carto_lv(), bonus, bench._stab_perk_bonus())
-				draw_string(font, Vector2(rx, y),
-					"%s — %d%% · good %d%%" % [
-						String(ChartsData.AFFIXES[id].name),
-						roundi(weights[id]), stab],
-					HORIZONTAL_ALIGNMENT_LEFT, 220, 13, TXT)
-				_odds_rows.append({"rect": Rect2(Vector2(rx, y - 14), Vector2(220, 18)),
-					"id": String(id)})
-				y += 19.0
+				var row_r := Rect2(Vector2(rx, y), Vector2(220.0, 22.0))
+				var stripe: Color = WyrdUi.SAGE if stab >= 65 \
+					else (WyrdUi.TERRACOTTA if stab <= 35 else WyrdUi.INK_MID)
+				WyrdUi.draw_list_row(self, row_r, stripe)
+				draw_string(hdr, row_r.position + Vector2(9.0, 15.0),
+					String(ChartsData.AFFIXES[id].name),
+					HORIZONTAL_ALIGNMENT_LEFT, row_r.size.x - 82.0, 12, TXT)
+				var pct_col: Color = stripe if stripe != WyrdUi.INK_MID else DIM
+				draw_string(font, row_r.position + Vector2(0.0, 15.0),
+					"%d%% · %d%%" % [roundi(weights[id]), stab],
+					HORIZONTAL_ALIGNMENT_RIGHT, row_r.size.x - 6.0, 11, pct_col)
+				_odds_rows.append({"rect": row_r, "id": String(id)})
+				y += 26.0
 			if bench.trophy != "":
 				var den: Dictionary = ChartsData.AFFIXES[
 					ChartsData.TROPHY_TO_AFFIX[bench.trophy]]
-				draw_string(font, Vector2(rx, y),
-					"★ %s — certain" % String(den.name),
-					HORIZONTAL_ALIGNMENT_LEFT, 220, 12, WyrdUi.GOLD.darkened(0.15))
-				y += 19.0
+				var trophy_r := Rect2(Vector2(rx, y), Vector2(220.0, 22.0))
+				WyrdUi.draw_list_row(self, trophy_r, WyrdUi.GOLD)
+				draw_string(hdr, trophy_r.position + Vector2(9.0, 15.0),
+					String(den.name),
+					HORIZONTAL_ALIGNMENT_LEFT, trophy_r.size.x - 72.0, 12, TXT)
+				draw_string(font, trophy_r.position + Vector2(0.0, 15.0),
+					"★ certain",
+					HORIZONTAL_ALIGNMENT_RIGHT, trophy_r.size.x - 6.0, 11,
+					WyrdUi.GOLD.darkened(0.10))
+				y += 26.0
 		else:
 			draw_string(font, Vector2(rx, y), "A clean run — no affixes.",
 				HORIZONTAL_ALIGNMENT_LEFT, 220, 13, DIM)
