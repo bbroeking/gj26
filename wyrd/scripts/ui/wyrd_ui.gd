@@ -327,7 +327,10 @@ static func draw_parchment_grain(c: CanvasItem, r: Rect2, seed_v: int = 7) -> vo
 		c.draw_line(p, p + Vector2(ln, rng.randf_range(-1.2, 1.2)),
 			Color(0.62, 0.52, 0.38, 0.05 + rng.randf() * 0.05), 1.0)
 
-# Section flourish: ── ◆ ── centred under a header.
+# Section flourish: ── ◆ ── centred under a header, with tiny sage-green ivy
+# bud trefoils at each rule end (three circles: one base + two branch buds above).
+# The vine ornament fulfils the design-language "leafy ivy on frames/headers" rule
+# without any texture — pure vector, safe in _draw.
 static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 	var col := Color(KIT_EDGE, 0.45)
 	c.draw_line(center - Vector2(width * 0.5, 0), center - Vector2(7, 0), col, 1.0)
@@ -336,6 +339,13 @@ static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 		center + Vector2(3.5, 0), center + Vector2(0, 3.5),
 		center + Vector2(-3.5, 0)])
 	c.draw_colored_polygon(pts, Color(GOLD, 0.8))
+	# Ivy-bud trefoil at each rule end: base bud + two branch buds above it.
+	var bud := Color(SAGE, 0.60)
+	for side in [-1.0, 1.0]:
+		var tip := center + Vector2(side * width * 0.5, 0)
+		c.draw_circle(tip, 2.5, bud)
+		c.draw_circle(tip + Vector2(-2.2, -2.8), 1.6, bud)
+		c.draw_circle(tip + Vector2(2.2, -2.8), 1.6, bud)
 
 # A little hand-blown ink bottle — glass body, ink fill, neck, cork, and a
 # glass highlight. Replaces the bare text glyphs in sockets and trays.
