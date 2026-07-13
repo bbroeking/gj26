@@ -383,3 +383,40 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# A hand-blown iron lantern with amber glass panels and a warm flame inside.
+# Used in the Lantern (system) menu header so the modal's name has a face.
+static func draw_lantern(c: CanvasItem, center: Vector2, h: float) -> void:
+	var iron := Color(0.27, 0.21, 0.15)
+	var w := h * 0.60
+	# hanging bail — a small arc loop above the cap
+	c.draw_arc(center + Vector2(0.0, -h * 0.46), h * 0.12,
+		PI, TAU, 12, Color(iron, 0.85), 2.0, true)
+	# cap: flat iron bar across the top
+	c.draw_rect(Rect2(center + Vector2(-w * 0.46, -h * 0.37),
+		Vector2(w * 0.92, h * 0.09)), iron)
+	# glass body — warm amber fill
+	var body := Rect2(center + Vector2(-w * 0.40, -h * 0.28),
+		Vector2(w * 0.80, h * 0.50))
+	c.draw_rect(body, Color(0.97, 0.86, 0.56, 0.65))
+	# glow pool around the flame
+	c.draw_circle(center + Vector2(0.0, h * 0.02), h * 0.17,
+		Color(0.98, 0.78, 0.30, 0.28))
+	# flame: outer orange teardrop, bright gold core
+	c.draw_circle(center + Vector2(0.0, h * 0.06), h * 0.14,
+		Color(0.94, 0.48, 0.12, 0.90))
+	c.draw_circle(center + Vector2(0.0, h * 0.01), h * 0.07,
+		Color(0.99, 0.90, 0.46, 0.97))
+	# vertical glass-pane dividers (two bars)
+	for mul in [-1.0, 1.0]:
+		var bx := body.position.x + body.size.x * (0.5 + mul * 0.27)
+		c.draw_line(Vector2(bx, body.position.y + 1.5),
+			Vector2(bx, body.end.y - 1.5), Color(iron, 0.26), 1.2)
+	# iron frame outline
+	c.draw_rect(body, iron, false, 1.8)
+	# base bar
+	c.draw_rect(Rect2(center + Vector2(-w * 0.46, h * 0.21),
+		Vector2(w * 0.92, h * 0.09)), iron)
+	# foot — slightly wider stand
+	c.draw_rect(Rect2(center + Vector2(-w * 0.34, h * 0.30),
+		Vector2(w * 0.68, h * 0.07)), iron)
