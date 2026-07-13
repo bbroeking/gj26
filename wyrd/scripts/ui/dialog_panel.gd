@@ -55,6 +55,13 @@ func _ready() -> void:
 	_name_lbl.offset_right = -56
 	_name_lbl.offset_top = 38
 	_panel.add_child(_name_lbl)
+	var name_rule := _NameRule.new()
+	name_rule.anchor_right = 1.0
+	name_rule.offset_left = 120
+	name_rule.offset_right = -56
+	name_rule.offset_top = 68
+	name_rule.offset_bottom = 76
+	_panel.add_child(name_rule)
 	_body = Label.new()
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.anchor_right = 1.0
@@ -143,3 +150,13 @@ class PortraitWell extends Control:
 		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
 		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
 		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+
+
+# A sepia rule with a gold diamond centrepiece, drawn between the speaker name
+# and the portrait / body area so the voice identity reads as a headed block.
+class _NameRule extends Control:
+	func _draw() -> void:
+		if size.x < 4.0:
+			return
+		var span := minf(size.x * 0.55, 320.0)
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5), span)
