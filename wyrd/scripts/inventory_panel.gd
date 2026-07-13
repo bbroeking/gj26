@@ -834,10 +834,24 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 			var hi: int = game.xp_for_level(lv + 1)
 			var frac := clampf(float(xp - lo) / float(max(1, hi - lo)), 0.0, 1.0)
 			var bar := Rect2(Vector2(cx, y + 26.0), Vector2(w * 0.56, 12.0))
-			draw_rect(bar, Color(0.80, 0.72, 0.58))
-			draw_rect(Rect2(bar.position + Vector2(1, 1),
-				Vector2((bar.size.x - 2.0) * frac, bar.size.y - 2.0)),
-				(row.color as Color).lightened(0.12))
+			# Carved trough: dark sunken fill so the bar reads as a routed groove
+			# in the wooden panel — shadow top/left, light bottom rim, trade-coloured
+			# liquid inside, catch-light on the fill surface.
+			draw_rect(bar, Color(0.52, 0.46, 0.36))
+			if frac > 0.0:
+				var fill := Rect2(bar.position,
+					Vector2(bar.size.x * frac, bar.size.y))
+				draw_rect(fill, (row.color as Color).lightened(0.08))
+				draw_rect(Rect2(fill.position, Vector2(fill.size.x, 2.0)),
+					Color(1.0, 1.0, 0.92, 0.34))
+			# Shadow overlay: top + left edges give the sunken carved read.
+			draw_rect(Rect2(bar.position, Vector2(bar.size.x, 2.0)),
+				Color(0.0, 0.0, 0.0, 0.22))
+			draw_rect(Rect2(bar.position, Vector2(2.0, bar.size.y)),
+				Color(0.0, 0.0, 0.0, 0.16))
+			# Highlight: bottom rim catches the overhead light.
+			draw_rect(Rect2(bar.position + Vector2(2.0, bar.size.y - 2.0),
+				Vector2(bar.size.x - 4.0, 2.0)), Color(1.0, 1.0, 0.92, 0.30))
 			draw_rect(bar, Color(0.42, 0.34, 0.25, 0.9), false, 1.5)
 			draw_string(font, Vector2(bar.end.x + 10.0, y + 37.0),
 				"%d / %d xp" % [xp, hi],
