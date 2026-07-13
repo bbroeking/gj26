@@ -668,19 +668,52 @@ class BenchView extends Control:
 		if bench.affix_slots() > 0:
 			_trophy_rect = Rect2(Vector2(bx + 250, 236), Vector2(52, 52))
 			var c := _trophy_rect.get_center()
-			var pts := PackedVector2Array([c + Vector2(0, -30), c + Vector2(30, 0),
-				c + Vector2(0, 30), c + Vector2(-30, 0)])
-			draw_colored_polygon(pts, WELL if bench.trophy == "" else PLATE)
-			# Spec 44 — inner shadow + pinstripe; a gold ring when charged.
-			var inner := PackedVector2Array([c + Vector2(0, -24), c + Vector2(24, 0),
-				c + Vector2(0, 24), c + Vector2(-24, 0)])
-			draw_polyline(inner + PackedVector2Array([inner[0]]),
-				Color(EDGE, 0.30), 1.0, true)
-			draw_line(c + Vector2(0, -27), c + Vector2(-27, 0), Color(0, 0, 0, 0.15), 3.0)
+			var filled := bench.trophy != ""
+			var rd := 30.0
+			# Diamond face: four cardinal points.
+			var pts := PackedVector2Array([c + Vector2(0, -rd), c + Vector2(rd, 0),
+				c + Vector2(0, rd), c + Vector2(-rd, 0)])
+			draw_colored_polygon(pts, WELL if not filled else PLATE)
+			# Carved depth: warm light on top-left faces, ink shadow bottom-right.
+			draw_line(c + Vector2(0, -rd), c + Vector2(-rd, 0),
+				Color(1.0, 0.98, 0.90, 0.40), 3.0)
+			draw_line(c + Vector2(-rd, 0), c + Vector2(0, rd),
+				Color(1.0, 0.98, 0.90, 0.18), 2.0)
+			draw_line(c + Vector2(0, -rd), c + Vector2(rd, 0),
+				Color(EDGE, 0.22), 2.0)
+			draw_line(c + Vector2(rd, 0), c + Vector2(0, rd),
+				Color(EDGE, 0.42), 3.0)
+			# Inner pinstripe diamond.
+			var inner := PackedVector2Array([c + Vector2(0, -(rd - 5)), c + Vector2(rd - 5, 0),
+				c + Vector2(0, rd - 5), c + Vector2(-(rd - 5), 0)])
+			draw_polyline(inner + PackedVector2Array([inner[0]]), Color(EDGE, 0.22), 1.0, true)
+			# Outer border.
 			draw_polyline(pts + PackedVector2Array([pts[0]]), EDGE, 2.0, true)
-			if bench.trophy != "":
-				draw_arc(c, 21.0, 0, TAU, 32, Color(WyrdUi.GOLD, 0.85), 2.0, true)
-			if bench.trophy != "":
+			# Filigree: four small gold spear-point accents at each cardinal tip.
+			var gold_a := 0.88 if filled else 0.52
+			for i in 4:
+				var a := -PI * 0.5 + float(i) * PI * 0.5
+				var tip := c + Vector2(cos(a), sin(a)) * (rd + 6.5)
+				var lp := c + Vector2(cos(a), sin(a)) * rd \
+					+ Vector2(-sin(a), cos(a)) * 4.5
+				var rp := c + Vector2(cos(a), sin(a)) * rd \
+					- Vector2(-sin(a), cos(a)) * 4.5
+				draw_colored_polygon(PackedVector2Array([tip, lp, rp]),
+					Color(WyrdUi.GOLD, gold_a))
+			# When empty: a carved 8-arm compass rose etched into the socket face.
+			if not filled:
+				var sage := Color(WyrdUi.SAGE, 0.28)
+				var arm := rd * 0.38
+				for i in 4:
+					var a := -PI * 0.5 + float(i) * PI * 0.5
+					draw_line(c, c + Vector2(cos(a), sin(a)) * arm, sage, 1.2)
+				for i in 4:
+					var a := -PI * 0.25 + float(i) * PI * 0.5
+					draw_line(c, c + Vector2(cos(a), sin(a)) * arm * 0.60, sage, 1.0)
+				draw_circle(c, 2.5, sage)
+			# Gold ring + trophy glyph when charged.
+			if filled:
+				draw_arc(c, rd - 9.0, 0, TAU, 40, Color(WyrdUi.GOLD, 0.85), 2.0, true)
 				draw_string(font, _trophy_rect.position + Vector2(0, 32),
 					GatherDefs.material_icon(bench.trophy),
 					HORIZONTAL_ALIGNMENT_CENTER, _trophy_rect.size.x, 16, TXT)
