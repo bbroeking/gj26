@@ -238,11 +238,23 @@ static func style_title(l: Label) -> void:
 	_set_font(l, font_header())
 	l.add_theme_font_size_override("font_size", 30)
 	l.add_theme_color_override("font_color", TERRACOTTA)
+	# Letterpress shadow — the heading reads as hand-blocked onto the carved
+	# wood panel rather than floating above it. 1px right + 2px down traces
+	# the top-left light source shared by the bevel and draw_well primitives;
+	# the alpha is light enough that the warm cream shows through.
+	l.add_theme_color_override("font_shadow_color", Color(KIT_EDGE, 0.28))
+	l.add_theme_constant_override("shadow_offset_x", 1)
+	l.add_theme_constant_override("shadow_offset_y", 2)
 
 static func style_section(l: Label) -> void:
 	_set_font(l, font_header())
 	l.add_theme_font_size_override("font_size", 17)
 	l.add_theme_color_override("font_color", TERRACOTTA)
+	# Matching shadow at half the depth — section headers sit on parchment, not
+	# carved wood; the lighter offset keeps them subordinate to panel titles.
+	l.add_theme_color_override("font_shadow_color", Color(KIT_EDGE, 0.20))
+	l.add_theme_constant_override("shadow_offset_x", 1)
+	l.add_theme_constant_override("shadow_offset_y", 1)
 
 static func style_body(l: Label, size: int = 13) -> void:
 	# Clean default font for body text (usability pass) — IM Fell stays on
