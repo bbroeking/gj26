@@ -337,16 +337,28 @@ static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 		center + Vector2(-3.5, 0)])
 	c.draw_colored_polygon(pts, Color(GOLD, 0.8))
 
-# A little hand-blown ink bottle — glass body, ink fill, neck, cork, and a
-# glass highlight. Replaces the bare text glyphs in sockets and trays.
+# A hand-blown ink bottle — glass body, ink fill with a liquid meniscus,
+# neck, cork with a wax-bead crown, and two glass highlights for depth.
+# Replaces the bare text glyphs in sockets and trays.
 static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
 		ink: Color) -> void:
 	var w := h * 0.62
 	var body := Rect2(center + Vector2(-w * 0.5, -h * 0.18),
 		Vector2(w, h * 0.62))
 	c.draw_rect(body, Color(0.88, 0.92, 0.90, 0.55))
+	# Ink fill.
+	var fill_top_y := body.position.y + body.size.y * 0.28
 	c.draw_rect(Rect2(body.position + Vector2(1.5, body.size.y * 0.28),
 		Vector2(body.size.x - 3.0, body.size.y * 0.72 - 1.5)), ink)
+	# Liquid meniscus — two strokes meeting at a centre dip so the ink reads
+	# as a true liquid surface (concave V from the glass walls to the centre).
+	var dip := maxf(1.0, h * 0.045)
+	c.draw_line(Vector2(body.position.x + 1.5, fill_top_y),
+		Vector2(center.x, fill_top_y + dip),
+		Color(ink.darkened(0.18), 0.55), 1.0)
+	c.draw_line(Vector2(center.x, fill_top_y + dip),
+		Vector2(body.end.x - 1.5, fill_top_y),
+		Color(ink.darkened(0.18), 0.55), 1.0)
 	c.draw_rect(body, KIT_EDGE, false, 1.5)
 	var neck := Rect2(center + Vector2(-w * 0.18, -h * 0.42),
 		Vector2(w * 0.36, h * 0.26))
@@ -354,9 +366,17 @@ static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
 	c.draw_rect(neck, KIT_EDGE, false, 1.5)
 	c.draw_rect(Rect2(center + Vector2(-w * 0.24, -h * 0.54),
 		Vector2(w * 0.48, h * 0.13)), Color(0.62, 0.46, 0.30))
+	# Wax bead at the cork crown — storybook charm read.
+	c.draw_circle(Vector2(center.x, center.y - h * 0.54),
+		maxf(1.5, h * 0.048), Color(0.55, 0.18, 0.14, 0.88))
+	# Primary glass highlight — left edge of body.
 	c.draw_line(body.position + Vector2(2.5, 2.0),
 		body.position + Vector2(2.5, body.size.y - 3.0),
 		Color(1, 1, 1, 0.45), 1.5)
+	# Secondary catch-light — short glint on the neck's left face.
+	c.draw_line(neck.position + Vector2(2.0, 3.0),
+		neck.position + Vector2(2.0, neck.size.y * 0.55),
+		Color(1, 1, 1, 0.28), 1.0)
 
 # A rolled parchment scroll with a wax seal — the chart-in-a-socket read.
 static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
