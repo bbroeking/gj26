@@ -244,8 +244,10 @@ func _refresh_objective() -> void:
 	_quest_progress.text = prog
 	_quest_progress.visible = prog != ""
 
-# Bottom-right action bar — Pack (I) and Satchel (M) as clickable parchment
-# buttons, so the systems are discoverable without reading the guide.
+# Bottom-right action bar — Gear / Satchel / Trades as drawn parchment chips
+# so the systems are discoverable. Each chip is a carved icon well + IM Fell
+# label + a small key-hint inset, following the card language from the vendor
+# and loadout panels.
 func _build_action_bar() -> void:
 	var bar := HBoxContainer.new()
 	bar.anchor_left = 1.0
@@ -261,32 +263,27 @@ func _build_action_bar() -> void:
 	for spec in [["Gear", "I", "toggle_inventory", "gear"],
 			["Satchel", "M", "toggle_satchel", "satchel"],
 			["Trades", "K", "toggle_trades", "trades"]]:
-		var b := Button.new()
-		WyrdUi.style_kit_button(b)
-		# Carry the trade-color language: Gear terracotta, Satchel sage, Trades gold.
 		var accent: Color = WyrdUi.TERRACOTTA
 		if spec[3] == "satchel":
 			accent = WyrdUi.SAGE
 		elif spec[3] == "trades":
 			accent = WyrdUi.GOLD
-		b.add_theme_color_override("font_color", accent.darkened(0.12))
-		b.add_theme_color_override("font_hover_color", accent)
-		b.text = "%s (%s)" % [spec[0], spec[1]]
-		var icon_path := "res://assets/ui/icons/%s.png" % spec[3]
+		var icon_path := "res://assets/ui/icons/%s.png" % String(spec[3])
+		var tex: Texture2D = null
 		if ResourceLoader.exists(icon_path):
-			b.icon = load(icon_path)
-			b.add_theme_constant_override("icon_max_width", 22)
-			b.expand_icon = false
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var method: String = spec[2]
-		b.pressed.connect(func():
+			tex = load(icon_path)
+		var chip := _ActionChip.new()
+		chip.setup(String(spec[0]), String(spec[1]), accent, tex)
+		chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var method: String = String(spec[2])
+		chip.pressed.connect(func():
 			# Spec 46 — route HUD buttons to the LOCAL player in co-op.
 			var game := get_tree().root.get_node_or_null("Game")
 			var player: Node = game.local_player() if game != null \
 				else get_tree().get_first_node_in_group("player")
 			if player != null and player.has_method(method):
 				player.call(method))
-		bar.add_child(b)
+		bar.add_child(chip)
 
 func _refresh_trades() -> void:
 	var game := get_tree().root.get_node_or_null("Game")
@@ -498,3 +495,72 @@ class QuestScrollArt extends Control:
 		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
 		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
 		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+
+# ---- drawn action-bar chip (Gear / Satchel / Trades) ----
+# Replaces the plain kit-style Button nodes. Each chip is a draw_list_row
+# parchment plate with a carved icon well on the left, the panel name in
+# IM Fell body text, and a small key-hint inset chip in the top-right corner.
+# The accent colour follows the trade-colour language (terracotta / sage / gold).
+class _ActionChip extends Control:
+	const ICON_W := 26.0
+
+	var _label := ""
+	var _key := ""
+	var _accent: Color = WyrdUi.INK_MID
+	var _tex: Texture2D = null
+	var _hover := false
+
+	signal pressed
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(90.0, 40.0)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
+	func setup(lbl: String, key: String, accent: Color, tex: Texture2D) -> void:
+		_label = lbl
+		_key = key
+		_accent = accent
+		_tex = tex
+		queue_redraw()
+
+	func _gui_input(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.pressed \
+				and event.button_index == MOUSE_BUTTON_LEFT:
+			pressed.emit()
+			accept_event()
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_MOUSE_ENTER:
+			_hover = true
+			queue_redraw()
+		elif what == NOTIFICATION_MOUSE_EXIT:
+			_hover = false
+			queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		WyrdUi.draw_list_row(self, r, _accent)
+		if _hover:
+			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.12))
+		# Carved icon well
+		var iy := (size.y - ICON_W) * 0.5
+		var ir := Rect2(Vector2(7.0, iy), Vector2(ICON_W, ICON_W))
+		WyrdUi.draw_well(self, ir, Color(0.95, 0.91, 0.80))
+		if _tex != null:
+			draw_texture_rect(_tex, ir.grow(-4.0), false)
+		var font := WyrdUi.font_body()
+		if font == null:
+			font = get_theme_default_font()
+		# Panel name — tinted to accent on hover, ink at rest
+		var tx := ir.end.x + 7.0
+		draw_string(font, Vector2(tx, size.y * 0.5 + 5.0), _label,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 22.0, 12,
+			_accent if _hover else WyrdUi.INK)
+		# Key-hint inset chip — top-right corner
+		var kw := 18.0
+		var chip := Rect2(Vector2(size.x - kw - 3.0, 4.0), Vector2(kw, 14.0))
+		draw_rect(chip, Color(0.86, 0.79, 0.66))
+		draw_rect(chip, Color(WyrdUi.KIT_EDGE, 0.55), false, 1.0)
+		draw_string(font, Vector2(chip.position.x, chip.position.y + 10.0),
+			_key, HORIZONTAL_ALIGNMENT_CENTER, chip.size.x, 10, WyrdUi.INK_MID)
