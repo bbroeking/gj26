@@ -596,9 +596,17 @@ func _draw_tabs(win: Rect2) -> void:
 				Color(1.0, 1.0, 0.93, 0.40))
 		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 1.5)
 		if active:
+			# Terracotta underline convention — active indicator.
 			draw_line(r.position + Vector2(2, r.size.y - 2),
 				r.position + Vector2(r.size.x - 2, r.size.y - 2),
 				WyrdUi.TERRACOTTA, 3.0)
+			# Gold ◆ ornament centred on the top border — storybook jewel.
+			var cx := r.position.x + r.size.x * 0.5
+			var ty := r.position.y
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(cx, ty - 3.5), Vector2(cx + 3.5, ty),
+				Vector2(cx, ty + 3.5), Vector2(cx - 3.5, ty)]),
+				Color(WyrdUi.GOLD, 0.90))
 		# Hand-painted tab icon — textures preloaded in _ready to avoid the
 		# _draw-load white-rect gotcha. Active tab is full opacity; inactive
 		# dims to 0.50 so the colour lives on the selected tab only.
