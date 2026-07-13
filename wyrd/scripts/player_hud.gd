@@ -398,6 +398,10 @@ class GlobeGauge extends Control:
 	const RING_WOOD := Color(0.85, 0.74, 0.52)   # pale carved honey
 	const RING_EDGE := Color(0.26, 0.19, 0.13)
 	var _t := 0.0                                # animation clock (low-warn pulse)
+	var _font: Font = null                       # IM Fell cached in _ready
+
+	func _ready() -> void:
+		_font = WyrdUi.font_body()
 
 	func update_to(p_frac: float, p_label: String, p_status: String) -> void:
 		frac = clampf(p_frac, 0.0, 1.0)
@@ -462,8 +466,8 @@ class GlobeGauge extends Control:
 			var pulse := 0.30 + 0.40 * (0.5 + 0.5 * sin(_t * 6.5))
 			draw_arc(c, R + 4.0, 0, TAU, 64,
 				Color(liquid.lightened(0.15), pulse), 3.0, true)
-		# --- numbers ---
-		var f := get_theme_default_font()
+		# --- numbers — IM Fell gives the kit's hand-set letterpress quality ---
+		var f := _font if _font != null else get_theme_default_font()
 		draw_string_outline(f, Vector2(0, c.y + 5), label,
 			HORIZONTAL_ALIGNMENT_CENTER, size.x, 15, 5, Color(0.12, 0.09, 0.06))
 		draw_string(f, Vector2(0, c.y + 5), label,
