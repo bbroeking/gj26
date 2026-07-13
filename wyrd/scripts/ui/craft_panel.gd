@@ -39,6 +39,15 @@ func _ready() -> void:
 	_panel.offset_bottom = 300
 	add_child(_panel)
 
+	# Drawn header band: parchment grain + station crest + flourish divider.
+	# Added before the title so it draws behind all labels.
+	var hdr := _CraftHeaderArt.new()
+	hdr.station_id = station_id
+	hdr.anchor_right = 1.0
+	hdr.offset_bottom = 82.0
+	hdr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(hdr)
+
 	var title := Label.new()
 	title.text = String(st.get("title", "Crafting"))
 	WyrdUi.style_title(title)
@@ -212,3 +221,70 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# ---- drawn header band ----
+# Parchment grain across the title zone, a station crest to the left of the
+# title text, and a flourish ── ◆ ── at the foot — so each station reads as a
+# distinct proclamation rather than a flat label. Pure-vector; no textures.
+class _CraftHeaderArt extends Control:
+	var station_id := "cookfire"
+
+	func _draw() -> void:
+		if size.x < 8.0 or size.y < 8.0:
+			return
+		# Warm parchment grain (inset off the carved-wood frame margins).
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(Vector2(36.0, 8.0), Vector2(size.x - 72.0, size.y - 16.0)), 41)
+		# Flourish ── ◆ ── at the foot of the header, closing the title band.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y - 9.0),
+			size.x * 0.48)
+		# Station crest — a carved roundel just left of the title text.
+		_draw_crest(Vector2(43.0, size.y * 0.5 - 2.0), 15.0)
+
+	func _draw_crest(c: Vector2, r: float) -> void:
+		# Parchment face with a double ink ring — the "carved seal" read.
+		draw_circle(c, r, WyrdUi.KIT_PLATE)
+		draw_arc(c, r - 3.0, 0, TAU, 36, Color(WyrdUi.KIT_EDGE, 0.22), 2.0, true)
+		draw_arc(c, r, 0, TAU, 36, WyrdUi.KIT_EDGE, 2.0, true)
+		match station_id:
+			"cookfire", "still":
+				_draw_leaf_sprig(c, r * 0.58)
+			_:  # forge and any future station
+				_draw_hammer_mark(c, r * 0.58)
+
+	func _draw_leaf_sprig(c: Vector2, s: float) -> void:
+		# A jade-green diamond leaf with midrib + stem — Wildcraft / hearth trade.
+		var pts := PackedVector2Array([
+			c + Vector2(0.0, -s),
+			c + Vector2(s * 0.60, -s * 0.05),
+			c + Vector2(0.0, s * 0.65),
+			c + Vector2(-s * 0.60, -s * 0.05),
+		])
+		draw_colored_polygon(pts, Color(WyrdUi.SAGE, 0.78))
+		draw_polyline(PackedVector2Array([pts[0], pts[1], pts[2], pts[3], pts[0]]),
+			Color(WyrdUi.SAGE.darkened(0.30), 0.85), 1.0, true)
+		draw_line(c + Vector2(0.0, -s), c + Vector2(0.0, s * 0.65),
+			Color(WyrdUi.SAGE.darkened(0.35), 0.65), 1.0)
+		draw_line(c + Vector2(0.0, s * 0.65), c + Vector2(0.0, s * 1.05),
+			Color(WyrdUi.SAGE.darkened(0.20), 0.75), 1.5)
+
+	func _draw_hammer_mark(c: Vector2, s: float) -> void:
+		# A hammer head + handle — Earthcraft / forge trade read.
+		var hw := s * 0.90
+		var hh := s * 0.42
+		var hy := c.y - s * 0.35
+		# Head: wide steel rectangle with a thin top highlight.
+		draw_rect(Rect2(Vector2(c.x - hw, hy - hh * 0.5), Vector2(hw * 2.0, hh)),
+			Color(0.52, 0.50, 0.48))
+		draw_rect(Rect2(Vector2(c.x - hw + 1.5, hy - hh * 0.5 + 1.5),
+			Vector2(hw * 2.0 - 3.0, 2.0)), Color(1.0, 1.0, 1.0, 0.22))
+		draw_rect(Rect2(Vector2(c.x - hw, hy - hh * 0.5), Vector2(hw * 2.0, hh)),
+			Color(WyrdUi.KIT_EDGE, 0.65), false, 1.0)
+		# Handle: warm-wood rectangle, joined below the head.
+		var handle_w := s * 0.24
+		var handle_h := s * 0.90
+		draw_rect(Rect2(Vector2(c.x - handle_w * 0.5, hy + hh * 0.5 - 1.0),
+			Vector2(handle_w, handle_h)), Color(0.62, 0.46, 0.30))
+		draw_rect(Rect2(Vector2(c.x - handle_w * 0.5, hy + hh * 0.5 - 1.0),
+			Vector2(handle_w, handle_h)), Color(WyrdUi.KIT_EDGE, 0.55), false, 1.0)
