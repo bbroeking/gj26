@@ -113,6 +113,10 @@ func _render() -> void:
 		l.text = "Your chart case is empty. Inscribe one at the table."
 		WyrdUi.style_body(l, 14)
 		_list_box.add_child(l)
+		var art := _EmptyScrollPlate.new()
+		art.custom_minimum_size = Vector2(0, 88.0)
+		art.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_list_box.add_child(art)
 	for i in n:
 		var chart: Dictionary = _game.charts[i]
 		var b := Button.new()
@@ -154,3 +158,32 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# Drawn art plate shown when the chart case is empty — a ghosted parchment
+# scroll awaiting inscription, a faint compass rose, and a flourish rule.
+# Replaces the naked Label-only state with something that reads as a crafted
+# surface in the Waystone's carved-wood language.
+class _EmptyScrollPlate extends Control:
+	func _draw() -> void:
+		if size.x < 40.0 or size.y < 40.0:
+			return
+		var c := size * 0.5
+		# Parchment scroll centred in the plate — unsealed (no wax), awaiting
+		# an inscription from the Cartography table.
+		var scroll_r := Rect2(c - Vector2(38.0, 26.0), Vector2(76.0, 52.0))
+		WyrdUi.draw_scroll(self, scroll_r, false)
+		# Compass rose ghost: four cardinal spokes (longer) and four intercardinal
+		# (shorter), all dimmed so the scroll reads first.
+		var cr := c + Vector2(0.0, 16.0)
+		for a in 8:
+			var ang := a * TAU / 8.0 - PI * 0.5
+			var spoke := 15.0 if a % 2 == 0 else 9.0
+			var alpha := 0.30 if a % 2 == 0 else 0.16
+			draw_line(cr, cr + Vector2(cos(ang), sin(ang)) * spoke,
+				Color(WyrdUi.KIT_EDGE, alpha), 1.0)
+		draw_circle(cr, 3.5, Color(WyrdUi.GOLD, 0.38))
+		draw_arc(cr, 3.5, 0, TAU, 16, Color(WyrdUi.KIT_EDGE, 0.45), 1.2, true)
+		# A narrow flourish rule sitting just above the scroll — punctuates the
+		# space and carries the panel's ornament vocabulary downward.
+		WyrdUi.draw_flourish(self, Vector2(c.x, c.y - 34.0), size.x * 0.38)
