@@ -31,6 +31,12 @@ func _ready() -> void:
 	_panel.offset_right = 260
 	_panel.offset_bottom = 220
 	add_child(_panel)
+	# Art pass: lantern emblem + parchment grain + flourish rule so the panel
+	# reads as the cosy-fire surface it is, not just a text form.
+	var dressing := _LanternDressing.new()
+	dressing.anchor_right = 1.0
+	dressing.anchor_bottom = 1.0
+	_panel.add_child(dressing)
 	var title := Label.new()
 	title.text = "The Lantern"
 	WyrdUi.style_title(title)
@@ -190,3 +196,68 @@ func _close() -> void:
 	if _game != null:
 		_game.modal_closed()
 	queue_free()
+
+
+# Decorative dressing for The Lantern panel header. Drawn behind all other
+# children: sparse parchment grain on the cream face, a small hand-drawn lantern
+# emblem to the left of the title, and a flourish rule below the header area.
+class _LanternDressing extends Control:
+	func _draw() -> void:
+		var m := WyrdUi.PANEL_MARGIN
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(m, m, size.x - m * 2.0, size.y - m * 2.0), 53)
+		_draw_lantern(Vector2(28.0, 55.0), 42.0)
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 80.0), size.x * 0.52)
+
+	func _draw_lantern(center: Vector2, h: float) -> void:
+		var w := h * 0.56
+		var edge := WyrdUi.KIT_EDGE
+		# warm ambient glow pool behind the lantern
+		draw_circle(center, h * 0.74, Color(WyrdUi.GOLD, 0.10))
+		# bail hook arc at the top
+		draw_arc(center - Vector2(0.0, h * 0.52), h * 0.17,
+			PI, 0.0, 12, Color(edge, 0.72), 1.5, true)
+		# top cap (flat trapezoidal lid)
+		var cap_x := center.x - w * 0.38
+		var cap_y := center.y - h * 0.44
+		draw_rect(Rect2(cap_x, cap_y, w * 0.76, h * 0.13),
+			Color(0.58, 0.47, 0.30))
+		draw_rect(Rect2(cap_x, cap_y, w * 0.76, h * 0.13),
+			Color(edge, 0.80), false, 1.5)
+		# glass body — amber-washed interior
+		var bx := center.x - w * 0.5
+		var by := center.y - h * 0.33
+		var bw := w
+		var bh := h * 0.62
+		draw_rect(Rect2(bx, by, bw, bh), Color(0.96, 0.82, 0.44, 0.20))
+		# flame polygon (outer warm orange, inner bright yellow tip)
+		var fc := Vector2(center.x, by + bh * 0.44)
+		var fw := w * 0.30
+		var fh := h * 0.32
+		draw_colored_polygon(PackedVector2Array([
+			fc + Vector2(0.0, -fh),
+			fc + Vector2(fw * 0.52, -fh * 0.22),
+			fc + Vector2(fw * 0.42, fh * 0.38),
+			fc + Vector2(0.0,  fh * 0.50),
+			fc + Vector2(-fw * 0.42, fh * 0.38),
+			fc + Vector2(-fw * 0.52, -fh * 0.22),
+		]), Color(0.88, 0.56, 0.15, 0.92))
+		draw_colored_polygon(PackedVector2Array([
+			fc + Vector2(0.0, -fh * 0.80),
+			fc + Vector2(fw * 0.26, -fh * 0.08),
+			fc + Vector2(0.0,  fh * 0.22),
+			fc + Vector2(-fw * 0.26, -fh * 0.08),
+		]), Color(1.0, 0.92, 0.52, 0.88))
+		# two horizontal cage bars across the glass
+		for i in 2:
+			var bar_y := by + bh * (0.28 + float(i) * 0.30)
+			draw_line(Vector2(bx + 2.0, bar_y),
+				Vector2(bx + bw - 2.0, bar_y), Color(edge, 0.38), 1.2)
+		# ink border on body
+		draw_rect(Rect2(bx, by, bw, bh), edge, false, 1.5)
+		# base plate
+		var base_y := by + bh
+		draw_rect(Rect2(center.x - w * 0.40, base_y, w * 0.80, h * 0.09),
+			Color(0.58, 0.47, 0.30))
+		draw_rect(Rect2(center.x - w * 0.40, base_y, w * 0.80, h * 0.09),
+			Color(edge, 0.80), false, 1.5)
