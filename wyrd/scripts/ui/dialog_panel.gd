@@ -132,14 +132,37 @@ func _finish() -> void:
 	queue_free()
 
 
-# Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
-# silhouette placeholder until painted portraits exist.
+# Spec 41 — the round portrait well: parchment disc, candlelight glow from
+# below, ghosted silhouette, and ink ring. The warm amber pool evokes a
+# character seen by lantern-light — every NPC shares this placeholder until
+# a painted portrait replaces it. All draw_* calls use CanvasItem primitives
+# only (no load() — avoids the white-rect-in-_draw gotcha).
 class PortraitWell extends Control:
 	func _draw() -> void:
 		var c := size * 0.5
 		var r := minf(c.x, c.y)
-		draw_circle(c, r, Color(0.88, 0.82, 0.67))
-		draw_circle(c + Vector2(0, r * 0.28), r * 0.34, Color(0.55, 0.47, 0.36, 0.55))
-		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
+		# Parchment disc — the vellum face of the medallion.
+		draw_circle(c, r, Color(0.89, 0.83, 0.68))
+		# Candlelight pool: a large warm amber circle rising from below,
+		# softly illuminating the silhouette from beneath (lantern-light read).
+		draw_circle(c + Vector2(0.0, r * 0.55), r * 0.72,
+			Color(0.92, 0.72, 0.34, 0.22))
+		draw_circle(c + Vector2(0.0, r * 0.45), r * 0.48,
+			Color(0.94, 0.78, 0.42, 0.18))
+		# Parchment grain — sparse sepia strokes inside the disc.
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(c - Vector2(r, r), Vector2(r * 2.0, r * 2.0)), 41)
+		# Silhouette: torso oval, then head — sepia ink, not pure grey,
+		# so the figure reads as warmly lit rather than dead-flat.
+		draw_circle(c + Vector2(0, r * 0.30), r * 0.34,
+			Color(0.48, 0.38, 0.28, 0.60))
+		draw_circle(c - Vector2(0, r * 0.16), r * 0.22,
+			Color(0.48, 0.38, 0.28, 0.60))
+		# Candlelight edge on head — a pale warm arc on the upper-right,
+		# where the light catches the crown.
+		draw_arc(c - Vector2(0, r * 0.16) + Vector2(r * 0.06, -r * 0.06),
+			r * 0.22, -PI * 0.65, PI * 0.10, 14,
+			Color(0.94, 0.80, 0.52, 0.35), 2.5, true)
+		# Ink ring — outer border, double-ring for a carved-medallion feel.
 		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
-		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.30), 1.2, true)
