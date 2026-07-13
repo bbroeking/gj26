@@ -76,6 +76,10 @@ func _ready() -> void:
 	_panel.offset_right = 330
 	_panel.offset_bottom = 300
 	add_child(_panel)
+	var hdr_stripe := _HeaderStripe.new()
+	hdr_stripe.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	hdr_stripe.offset_bottom = 76.0
+	_panel.add_child(hdr_stripe)
 	var title := Label.new()
 	title.text = "Loadout"
 	WyrdUi.style_title(title)
@@ -252,13 +256,47 @@ class _SkillCard extends Control:
 				"⚿ Huntcraft %d" % _req, HORIZONTAL_ALIGNMENT_RIGHT,
 				146.0, 13, WyrdUi.TERRACOTTA)
 		elif _focus > 0:
-			# focus-cost chip in the top-right corner
-			var chip := Rect2(Vector2(size.x - 78.0, 8.0), Vector2(66.0, 18.0))
-			draw_rect(chip, Color(0.86, 0.79, 0.66))
-			draw_rect(chip, Color(WyrdUi.KIT_EDGE, 0.6), false, 1.0)
-			draw_string(font, Vector2(chip.position.x, chip.position.y + 14.0),
-				"%d focus" % _focus, HORIZONTAL_ALIGNMENT_CENTER, chip.size.x,
-				12, WyrdUi.INK_MID)
+			# Focus chip — sage-tinted carved token with jade sigil dot so the
+			# focus resource reads its own colour language (jade = flow/skill).
+			var chip := Rect2(Vector2(size.x - 84.0, 6.0), Vector2(72.0, 20.0))
+			var cbg := WyrdUi.SAGE.lerp(WyrdUi.KIT_PLATE, 0.72)
+			draw_rect(chip, cbg)
+			draw_rect(Rect2(chip.position + Vector2(1.0, 1.0),
+				Vector2(chip.size.x - 2.0, 1.5)), Color(1.0, 1.0, 0.93, 0.45))
+			draw_rect(chip, Color(WyrdUi.SAGE.darkened(0.3), 0.70), false, 1.0)
+			var dot := chip.position + Vector2(10.0, chip.size.y * 0.5)
+			draw_circle(dot, 3.5, Color(WyrdUi.SAGE, 0.78))
+			draw_arc(dot, 3.5, 0, TAU, 12,
+				Color(WyrdUi.SAGE.darkened(0.4), 0.90), 1.0, true)
+			draw_string(font, chip.position + Vector2(18.0, 15.0),
+				"%d focus" % _focus, HORIZONTAL_ALIGNMENT_LEFT,
+				chip.size.x - 20.0, 12, WyrdUi.SAGE.darkened(0.40))
 		# --- short desc (up to two lines) ---
 		draw_multiline_string(font, Vector2(tx, 40.0), _desc,
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 16.0, 12, 2, dim)
+
+
+# A drawn header band placed at the top of the loadout panel. Draws parchment
+# grain, a compass-rose medallion left of the title, and a flourish rule below.
+class _HeaderStripe extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(Vector2(WyrdUi.PANEL_MARGIN_L, 6.0),
+				Vector2(size.x - WyrdUi.PANEL_MARGIN_L - WyrdUi.PANEL_MARGIN_R, 64.0)), 42)
+		# Burnished-gold medallion — a compass-rose inside a parchment disc with
+		# an ink ring. Sits left of the "Loadout" text as a kit-room crest.
+		var cc := Vector2(28.0, 42.0)
+		var cr := 13.0
+		draw_circle(cc, cr, WyrdUi.KIT_PLATE)
+		draw_circle(cc, cr - 3.5, Color(WyrdUi.GOLD, 0.45))
+		var inner := cr - 4.0
+		var pts := PackedVector2Array([
+			cc + Vector2(0.0, -inner),
+			cc + Vector2(inner * 0.62, 0.0),
+			cc + Vector2(0.0, inner),
+			cc + Vector2(-inner * 0.62, 0.0)])
+		draw_colored_polygon(pts, Color(WyrdUi.KIT_EDGE, 0.60))
+		draw_arc(cc, cr, 0, TAU, 32, WyrdUi.KIT_EDGE, 1.5, true)
+		draw_arc(cc, cr - 3.5, 0, TAU, 32, Color(WyrdUi.GOLD, 0.50), 1.0, true)
+		# Flourish rule spanning the header width below the title.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 70.0), size.x - 100.0)
