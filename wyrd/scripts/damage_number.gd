@@ -6,8 +6,11 @@ extends Label3D
 const TIER_COLOR := {
 	"normal": Color(1.00, 0.96, 0.82),   # cream
 	"crit":   Color(1.00, 0.80, 0.20),   # gold
-	"super":  Color(0.80, 0.46, 1.00),   # purple
+	"super":  Color(0.98, 0.52, 0.18),   # ember orange — bonfire glow replaces off-palette purple
 }
+# Warm sepia-ink outline: hand-stamped storybook quality, consistent across tiers.
+const OUTLINE_INK := Color(0.22, 0.16, 0.12)
+const OUTLINE_SZ  := 14
 const TIER_SCALE := {"normal": 1.0, "crit": 1.45, "super": 1.9}
 const LIFETIME := 0.62
 
@@ -19,6 +22,8 @@ func setup(amount: int, tier: String = "normal") -> void:
 	text = str(amount)
 	modulate = TIER_COLOR.get(tier, TIER_COLOR["normal"])
 	_base = TIER_SCALE.get(tier, 1.0)
+	outline_size = OUTLINE_SZ
+	outline_color = OUTLINE_INK
 	# Scatter — up hard, with a random sideways/forward kick.
 	var ang := randf() * TAU
 	_vel = Vector3(cos(ang) * 1.2, 3.2, sin(ang) * 1.2)
@@ -39,7 +44,8 @@ func setup_apply(label: String, color: Color) -> void:
 	modulate = color
 	_base = 0.7
 	font_size = 56
-	outline_size = 12
+	outline_size = OUTLINE_SZ
+	outline_color = OUTLINE_INK
 	var ang := randf() * TAU
 	_vel = Vector3(cos(ang) * 0.5, 2.2, sin(ang) * 0.5)
 	scale = Vector3.ZERO
