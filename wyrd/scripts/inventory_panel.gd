@@ -383,6 +383,9 @@ func _draw() -> void:
 		WyrdUi.TERRACOTTA)
 	_draw_tabs(win)
 	if _tab == 0:
+		# Ghosted ink sketch of the ranger behind the equipment wells — the
+		# classic paper-doll read, code-drawn so no asset is needed.
+		_draw_doll_silhouette()
 		# Gold readout lives with the paper-doll — Gear tab only, else it
 		# stamps over the other pages' text.
 		var game := get_tree().root.get_node_or_null("Game")
@@ -399,6 +402,41 @@ func _draw() -> void:
 			HORIZONTAL_ALIGNMENT_CENTER, COLS * CELL, 13, WyrdUi.INK_MID)
 		# Hover tooltip — drawn last so it sits on top of everything.
 		_draw_tooltip()
+
+func _draw_doll_silhouette() -> void:
+	# A faint ink-sketch of the ranger's body behind the equipment wells.
+	# Everything stays at low alpha so the wells read clearly on top.
+	# Coordinates are in the same space as SLOT_OFFSET (relative to doll_origin).
+	var ink := Color(WyrdUi.INK, 0.16)
+	var wash := Color(WyrdUi.KIT_PLATE, 0.28)
+	var o := doll_origin
+
+	# Head — centered in the helmet slot (slot center = o + (124, 36))
+	var hc := o + Vector2(124.0, 36.0)
+	draw_circle(hc, 24.0, wash)
+	draw_arc(hc, 24.0, 0.0, TAU, 32, ink, 1.5, true)
+
+	# Neck — short pillar linking head to shoulder yoke
+	draw_line(hc + Vector2(0.0, 22.0), o + Vector2(124.0, 90.0), ink, 3.0)
+
+	# Shoulder yoke — horizontal bar; extends left toward the weapon-slot side
+	draw_line(o + Vector2(60.0, 100.0), o + Vector2(162.0, 100.0), ink, 2.5)
+
+	# Torso — a filled parchment rect roughly filling the chest-slot area,
+	# inset a little so the slot well sits clearly in front of it
+	var torso := Rect2(o + Vector2(96.0, 100.0), Vector2(56.0, 66.0))
+	draw_rect(torso, wash)
+	draw_rect(torso, ink, false, 1.5)
+
+	# Left arm (weapon side) — from the left shoulder tip down toward weapon slot
+	draw_line(o + Vector2(60.0, 100.0), o + Vector2(50.0, 154.0), ink, 2.0)
+
+	# Hip arc — widens the figure at the base of the torso
+	draw_arc(o + Vector2(124.0, 166.0), 30.0, 0.0, PI, 16, ink, 1.8, true)
+
+	# Legs — two slight-outward lines from hip down through the boots slot
+	draw_line(o + Vector2(112.0, 166.0), o + Vector2(106.0, 248.0), ink, 2.2)
+	draw_line(o + Vector2(136.0, 166.0), o + Vector2(142.0, 248.0), ink, 2.2)
 
 func _draw_grid() -> void:
 	var grid_size := Vector2(COLS * CELL, ROWS * CELL)
