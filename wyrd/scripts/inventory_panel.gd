@@ -696,6 +696,9 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 	var game := get_tree().root.get_node_or_null("Game")
 	if game == null:
 		return
+	var hdr: Font = WyrdUi.font_header()
+	if hdr == null:
+		hdr = font
 	var x := win.position.x + 76.0
 	var w := win.size.x - 148.0
 	var y := win.position.y + 134.0
@@ -705,36 +708,54 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
 		_tab_content_h[1] = 0.0
 		return
-	# Slice C — each material rides a list-row plate: an ink-disc holding its
-	# glyph on the left, name + count on the card, the lore line beneath.
-	for id in game.materials:
-		var def: Dictionary = GatherDefs.MATERIALS.get(String(id), {})
-		var row_top := y - 18.0
-		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 30.0))
-		if _span_visible(row_top, row.end.y, scroll, view):
-			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
-			# glyph disc on the left
-			var dc := Vector2(row.position.x + 19.0, row.position.y + 15.0)
-			WyrdUi.draw_round_well(self, dc, 11.0, Color(0.88, 0.81, 0.66))
-			draw_string(font, Vector2(dc.x - 11.0, dc.y + 6.0),
-				String(def.get("icon", "·")), HORIZONTAL_ALIGNMENT_CENTER,
-				22.0, 14, WyrdUi.INK)
-			draw_string(font, Vector2(x + 28.0, y + 1.0),
-				String(def.get("name", id)),
-				HORIZONTAL_ALIGNMENT_LEFT, w - 110.0, 17, WyrdUi.INK)
-			draw_string(font, Vector2(x + w - 78.0, y + 1.0),
-				"× %d" % int(game.materials[id]),
-				HORIZONTAL_ALIGNMENT_RIGHT, 70.0, 17, WyrdUi.TERRACOTTA)
-		y += 34.0
-		var desc := String(def.get("desc", ""))
-		if desc != "":
-			var dh: float = font.get_multiline_string_size(desc,
-				HORIZONTAL_ALIGNMENT_LEFT, w - 30, 14).y
-			if _span_visible(y - 13.0, y + dh, scroll, view):
-				draw_multiline_string(font, Vector2(x + 30, y), desc,
-					HORIZONTAL_ALIGNMENT_LEFT, w - 30, 14, -1, Color(0.30, 0.24, 0.19))
-			y += dh + 4.0
-		y += 10.0
+	# Group materials into journal sections (verdant / earthen / lumen / echo /
+	# gristle) so the satchel reads as a hand-written field guide, not a flat
+	# list. Each occupied group gets a tinted section header + flourish rule.
+	for grp in GROUP_ORDER:
+		var gc: Color = GROUP_COLOR.get(grp, WyrdUi.INK_MID)
+		var gl: String = GROUP_LABEL.get(grp, grp.capitalize())
+		var ids: Array = []
+		for id in game.materials:
+			var def2: Dictionary = GatherDefs.MATERIALS.get(String(id), {})
+			if String(def2.get("group", "gristle")) == grp:
+				ids.append(String(id))
+		if ids.is_empty():
+			continue
+		if _span_visible(y - 4.0, y + 26.0, scroll, view):
+			draw_string(hdr, Vector2(x, y + 14.0), gl,
+				HORIZONTAL_ALIGNMENT_LEFT, 100.0, 13, gc)
+			WyrdUi.draw_flourish(self,
+				Vector2(x + w * 0.5, y + 14.0), w - 90.0)
+		y += 26.0
+		for id in ids:
+			var def: Dictionary = GatherDefs.MATERIALS.get(id, {})
+			var row_top := y - 18.0
+			var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 30.0))
+			if _span_visible(row_top, row.end.y, scroll, view):
+				WyrdUi.draw_list_row(self, row, gc)
+				var dc := Vector2(row.position.x + 19.0, row.position.y + 15.0)
+				WyrdUi.draw_round_well(self, dc, 11.0, Color(0.88, 0.81, 0.66))
+				draw_string(font, Vector2(dc.x - 11.0, dc.y + 6.0),
+					String(def.get("icon", "·")), HORIZONTAL_ALIGNMENT_CENTER,
+					22.0, 14, WyrdUi.INK)
+				draw_string(font, Vector2(x + 28.0, y + 1.0),
+					String(def.get("name", id)),
+					HORIZONTAL_ALIGNMENT_LEFT, w - 110.0, 17, WyrdUi.INK)
+				draw_string(font, Vector2(x + w - 78.0, y + 1.0),
+					"× %d" % int(game.materials[id]),
+					HORIZONTAL_ALIGNMENT_RIGHT, 70.0, 17, WyrdUi.TERRACOTTA)
+			y += 34.0
+			var desc := String(def.get("desc", ""))
+			if desc != "":
+				var dh: float = font.get_multiline_string_size(desc,
+					HORIZONTAL_ALIGNMENT_LEFT, w - 30, 14).y
+				if _span_visible(y - 13.0, y + dh, scroll, view):
+					draw_multiline_string(font, Vector2(x + 30, y), desc,
+						HORIZONTAL_ALIGNMENT_LEFT, w - 30, 14, -1,
+						Color(0.30, 0.24, 0.19))
+				y += dh + 4.0
+			y += 10.0
+		y += 8.0
 	_tab_content_h[1] = y - view.position.y
 
 func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> void:
@@ -794,6 +815,19 @@ const TRADE_ROWS := [
 # Mastery-ladder card dimensions (the skill tree, level 1→17).
 const CARD_H := 66.0
 const CARD_GAP := 10.0
+# Satchel tab — material groups from gather.gd, painted as journal sections.
+const GROUP_ORDER := ["verdant", "earthen", "lumen", "echo", "gristle"]
+const GROUP_LABEL := {
+	"verdant": "Verdant", "earthen": "Earthen", "lumen": "Lumen",
+	"echo": "Echo", "gristle": "Gristle",
+}
+const GROUP_COLOR := {
+	"verdant": Color(0.38, 0.54, 0.22),
+	"earthen": Color(0.52, 0.37, 0.18),
+	"lumen":   Color(0.68, 0.50, 0.14),
+	"echo":    Color(0.58, 0.28, 0.48),
+	"gristle": Color(0.40, 0.32, 0.25),
+}
 
 func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> void:
 	var game := get_tree().root.get_node_or_null("Game")
