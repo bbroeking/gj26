@@ -115,18 +115,13 @@ func _render() -> void:
 		_list_box.add_child(l)
 	for i in n:
 		var chart: Dictionary = _game.charts[i]
-		var b := Button.new()
-		WyrdUi.style_button(b)
-		WyrdUi.mark_selected(b, i == _selected)
-		b.toggle_mode = true
-		b.button_pressed = i == _selected
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.text = ChartsData.chart_label(chart)
+		var card := _ChartCard.new()
+		card.setup(chart, i == _selected)
 		var idx := i
-		b.pressed.connect(func():
+		card.pressed.connect(func():
 			_selected = idx
 			_render())
-		_list_box.add_child(b)
+		_list_box.add_child(card)
 	# Detail + button state.
 	if _selected >= 0 and _selected < n:
 		var chart: Dictionary = _game.charts[_selected]
@@ -154,3 +149,105 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# ---- drawn chart card (one row in the list) ----
+# A parchment scroll card: a recessed scroll socket on the left (draw_scroll),
+# the chart's name in IM Fell ink with its scope/tier below in INK_MID, and a
+# row of affix colour dots on the right (SAGE ◆ = good, TERRACOTTA ◆ = bad).
+# Selected: gold border ring. Hover: warm cream wash. All drawing is vector
+# (no texture loads in _draw — avoids the white-rect gotcha).
+class _ChartCard extends Control:
+	const SCROLL_W := 52.0
+	const ROW_H := 58.0
+
+	var _chart: Dictionary = {}
+	var _selected := false
+	var _hover := false
+
+	signal pressed
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, ROW_H)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
+	func setup(chart: Dictionary, selected: bool) -> void:
+		_chart = chart
+		_selected = selected
+		queue_redraw()
+
+	func _gui_input(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.pressed \
+				and event.button_index == MOUSE_BUTTON_LEFT:
+			pressed.emit()
+			accept_event()
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_MOUSE_ENTER:
+			_hover = true
+			queue_redraw()
+		elif what == NOTIFICATION_MOUSE_EXIT:
+			_hover = false
+			queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+
+		# Row plate — GOLD accent when selected, INK_MID neutral otherwise.
+		var accent: Color = WyrdUi.GOLD if _selected else WyrdUi.INK_MID
+		WyrdUi.draw_list_row(self, r, accent)
+
+		# Hover wash.
+		if _hover and not _selected:
+			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.88, 0.09))
+		if _selected:
+			draw_rect(r.grow(-1.5), Color(WyrdUi.GOLD, 0.08))
+
+		# ── scroll socket ──────────────────────────────────────────────
+		var scroll_r := Rect2(Vector2(9.0, (ROW_H - 42.0) * 0.5),
+			Vector2(42.0, 42.0))
+		WyrdUi.draw_well(self, scroll_r, Color(0.93, 0.88, 0.74))
+		# A sealed scroll — the chart is inked and ready to socket.
+		WyrdUi.draw_scroll(self, scroll_r.grow(-4.0), true)
+		# Gold ring when selected (the socket "lights up").
+		if _selected:
+			draw_rect(scroll_r, WyrdUi.GOLD, false, 1.5)
+
+		# ── chart name + scope ─────────────────────────────────────────
+		var tx := scroll_r.end.x + 12.0
+		var font := WyrdUi.font_header()
+		if font == null:
+			font = get_theme_default_font()
+		var name_col: Color = WyrdUi.GOLD.darkened(0.15) if _selected else WyrdUi.INK
+		var chart_name := String(_chart.get("name", "Chart"))
+		draw_string(font, Vector2(tx, ROW_H * 0.5 - 2.0), chart_name,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 90.0, 16, name_col)
+		var scope := String(_chart.get("scope", ""))
+		var tier := int(_chart.get("tier", 1))
+		var sub := "Tier %d" % tier
+		if scope != "":
+			sub += "  ·  " + scope.replace("_", " ").capitalize()
+		draw_string(get_theme_default_font(),
+			Vector2(tx, ROW_H * 0.5 + 15.0), sub,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 90.0, 11, WyrdUi.INK_MID)
+
+		# ── affix dots (right side) ────────────────────────────────────
+		var affixes: Array = _chart.get("affixes", [])
+		if not affixes.is_empty():
+			var dot_x := size.x - 14.0
+			var dot_y := ROW_H * 0.5
+			var dot_r := 4.5
+			var spacing := 12.0
+			# Draw right-to-left so the first affix is closest to centre.
+			for i in range(affixes.size() - 1, -1, -1):
+				var aff: Dictionary = affixes[i]
+				var good: bool = bool(aff.get("good", false))
+				var col: Color = WyrdUi.SAGE if good else WyrdUi.TERRACOTTA
+				draw_circle(Vector2(dot_x, dot_y), dot_r, col)
+				draw_arc(Vector2(dot_x, dot_y), dot_r, 0, TAU, 12,
+					WyrdUi.KIT_EDGE, 1.0, true)
+				dot_x -= spacing
+
+		# Selected gold border ring over the whole card.
+		if _selected:
+			draw_rect(r.grow(-1.0), WyrdUi.GOLD, false, 2.0)
