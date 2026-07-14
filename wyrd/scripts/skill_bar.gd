@@ -65,6 +65,7 @@ const SKILL_DESC := {
 var _player: Node = null
 var _slots: Array = []           # 4 HotbarSlot nodes — built on bind
 var _plate: Control = null       # spec 38 — the carved tray under the row
+var _tooltip = null   # _SkillTooltip — inner class declared below
 
 func _ready() -> void:
 	layer = 50
@@ -80,6 +81,9 @@ func bind_to_player(p: Node) -> void:
 	if _plate != null and is_instance_valid(_plate):
 		_plate.queue_free()
 		_plate = null
+	if _tooltip != null and is_instance_valid(_tooltip):
+		_tooltip.queue_free()
+		_tooltip = null
 	if _player == null or _player.get("skills") == null:
 		return
 	var total_w := 4 * SLOT_SIZE + 3 * SLOT_GAP
@@ -98,16 +102,32 @@ func bind_to_player(p: Node) -> void:
 	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(plate)
 	_plate = plate
+	# Parchment tooltip card — one shared instance, shown/hidden per slot hover.
+	_tooltip = _SkillTooltip.new()
+	add_child(_tooltip)
 	for i in 4:
 		if i >= _player.skills.size():
 			break
 		var skill = _player.skills[i]
 		var label: String = SKILL_LABEL.get(skill.name, skill.name.substr(0, 3))
 		var slot := _make_slot(i, total_w, label, int(skill.cost))
-		slot.tooltip_text = "%s — %s\nCost %d Focus · %.1fs cooldown" % [
-			skill.name, String(SKILL_DESC.get(skill.name, "")),
-			int(skill.cost), float(skill.base_cd)]
 		slot.mouse_filter = Control.MOUSE_FILTER_STOP
+		# Suppress the engine's default dark-box tooltip; we draw our own card.
+		slot.tooltip_text = ""
+		# Closure captures — GDScript 4 binds variable references, not values.
+		var _sn  := skill.name
+		var _sd  := String(SKILL_DESC.get(skill.name, ""))
+		var _sc  := int(skill.cost)
+		var _scd := float(skill.base_cd)
+		var _tip := _tooltip
+		var _sr  := slot
+		slot.mouse_entered.connect(func():
+			var sr_rect := _sr.get_global_rect()
+			_tip.position = Vector2(
+				sr_rect.position.x + sr_rect.size.x * 0.5 - 130.0,
+				sr_rect.position.y - 144.0)
+			_tip.show_for(_sn, _sd, _sc, _scd))
+		slot.mouse_exited.connect(func(): _tip.hide())
 		var icon_path := String(SKILL_ICON.get(skill.name, ""))
 		if ResourceLoader.exists(icon_path):
 			var tr := TextureRect.new()
@@ -170,6 +190,77 @@ func _process(_delta: float) -> void:
 		var slot: HotbarSlot = _slots[i]
 		var ratio: float = clampf(cd / max(0.05, base_cd), 0.0, 1.0) if on_cd else 0.0
 		slot.set_state(ratio, not (on_cd or no_focus))
+
+class _SkillTooltip extends Control:
+	const W := 260.0
+	const H := 140.0
+	var _sname: String = ""
+	var _sdesc: String = ""
+	var _scost: int    = 0
+	var _scd:   float  = 0.0
+
+	func _ready() -> void:
+		custom_minimum_size = Vector2(W, H)
+		size = custom_minimum_size
+		mouse_filter = MOUSE_FILTER_IGNORE
+		hide()
+
+	func show_for(sname: String, sdesc: String, scost: int, scd: float) -> void:
+		_sname = sname
+		_sdesc = sdesc
+		_scost = scost
+		_scd   = scd
+		queue_redraw()
+		show()
+
+	func _draw() -> void:
+		var r := Rect2(4.0, 4.0, W - 8.0, H - 8.0)
+		# Drop shadow
+		draw_rect(Rect2(r.position + Vector2(3, 3), r.size), Color(WyrdUi.INK, 0.32))
+		# Parchment face
+		draw_rect(r, WyrdUi.KIT_PLATE)
+		WyrdUi.draw_parchment_grain(self, r, 13)
+		# Ink border + top cream bevel
+		draw_rect(r, WyrdUi.KIT_EDGE, false, 1.5)
+		draw_line(r.position + Vector2(2, 1), r.position + Vector2(r.size.x - 2, 1),
+			Color(WyrdUi.CREAM, 0.55), 1.0)
+		# Skill name in terracotta, IM Fell header font
+		var hfont := WyrdUi.font_header()
+		var tx := r.position.x + 12.0
+		var ty := r.position.y
+		if hfont != null:
+			draw_string(hfont, Vector2(tx, ty + 20.0),
+				_sname, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, WyrdUi.TERRACOTTA)
+		# Ink flourish divider
+		WyrdUi.draw_flourish(self, Vector2(r.position.x + r.size.x * 0.5, ty + 30.0),
+			r.size.x * 0.6)
+		# Description body — soft word-wrap at ~36 chars
+		var bfont := ThemeDB.fallback_font
+		var lines := _wrap(_sdesc, 36)
+		for li in lines.size():
+			draw_string(bfont, Vector2(tx, ty + 48.0 + float(li) * 16.0),
+				lines[li], HORIZONTAL_ALIGNMENT_LEFT, -1, 12, WyrdUi.INK)
+		# Focus cost + cooldown in muted ink at bottom
+		var stat := "Focus %d · %.1fs cooldown" % [_scost, _scd]
+		draw_string(bfont, Vector2(tx, ty + H - 20.0),
+			stat, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, WyrdUi.INK_MID)
+
+	static func _wrap(text: String, col: int) -> Array:
+		var words := text.split(" ")
+		var lines: Array = []
+		var cur := ""
+		for w in words:
+			if cur.is_empty():
+				cur = w
+			elif (cur + " " + w).length() <= col:
+				cur += " " + w
+			else:
+				lines.append(cur)
+				cur = w
+		if not cur.is_empty():
+			lines.append(cur)
+		return lines
+
 
 func _make_slot(i: int, total_w: int, label: String, cost: int) -> Control:
 	# A HotbarSlot draws its own carved face + radial cooldown wedge + ready
