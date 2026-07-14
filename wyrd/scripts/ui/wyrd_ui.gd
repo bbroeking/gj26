@@ -382,4 +382,11 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		var sc := Vector2(face.end.x - 10.0, face.end.y - 8.0)
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
+		# Pressed compass-cross sigil — the Wayfinder's mark stamped in the wax.
+		var imp := Color(0.40, 0.12, 0.10, 0.72)
+		c.draw_line(sc + Vector2(-2.5, 0.0), sc + Vector2(2.5, 0.0), imp, 1.2)
+		c.draw_line(sc + Vector2(0.0, -2.5), sc + Vector2(0.0, 2.5), imp, 1.2)
+		# Wax glint — upper-left moon where the warm light catches the pooled surface.
+		c.draw_arc(sc + Vector2(-1.5, -1.5), 2.8, PI * 1.0, PI * 1.45, 7,
+			Color(0.90, 0.56, 0.42, 0.48), 1.5, true)
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)

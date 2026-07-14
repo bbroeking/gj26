@@ -497,4 +497,11 @@ class QuestScrollArt extends Control:
 		var sc := Vector2(28.0, 24.0)
 		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
 		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
+		# Pressed compass-cross sigil — matched to the draw_scroll helper.
+		var imp := Color(0.40, 0.12, 0.10, 0.72)
+		draw_line(sc + Vector2(-2.3, 0.0), sc + Vector2(2.3, 0.0), imp, 1.2)
+		draw_line(sc + Vector2(0.0, -2.3), sc + Vector2(0.0, 2.3), imp, 1.2)
+		# Wax glint — upper-left moon.
+		draw_arc(sc + Vector2(-1.4, -1.4), 2.6, PI * 1.0, PI * 1.45, 7,
+			Color(0.90, 0.56, 0.42, 0.48), 1.5, true)
 		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
