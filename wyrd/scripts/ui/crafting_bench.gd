@@ -739,6 +739,7 @@ class BenchView extends Control:
 		var cy := 462.0
 		draw_string(hdr, Vector2(bx, cy), "Codex", HORIZONTAL_ALIGNMENT_LEFT,
 			200, 13, WyrdUi.INK)
+		WyrdUi.draw_flourish(self, Vector2(bx + 52.0, cy + 7.0), 278.0)
 		cy += 16.0
 		_codex_rects.clear()
 		for rid in GatherDefs.INK_RECIPE_ORDER:
@@ -763,19 +764,26 @@ class BenchView extends Control:
 				col = TXT
 			elif riddle_open:
 				line = "◌ ??? — %s" % String(rec.get("riddle", ""))
+			var row := Rect2(Vector2(bx, cy), Vector2(330.0, 20.0))
 			if known:
+				var tint: Color = INK_TINT.get(String(rid), Color(0.4, 0.4, 0.4))
+				draw_rect(row, PLATE)
+				draw_rect(Rect2(row.position, Vector2(3.0, row.size.y)), tint)
+				draw_rect(Rect2(row.position + Vector2(1.0, 1.0),
+					Vector2(row.size.x - 2.0, 1.5)), Color(1.0, 1.0, 0.93, 0.4))
+				draw_rect(row, EDGE, false, 1.0)
 				# Spec 44 — a tiny bottle in the ink's color marks the find.
-				WyrdUi.draw_ink_bottle(self, Vector2(bx + 6.0, cy + 7.0), 13.0,
-					INK_TINT.get(String(rid), Color(0.4, 0.4, 0.4)))
-				draw_string(font, Vector2(bx + 16.0, cy + 11.0), line,
-					HORIZONTAL_ALIGNMENT_LEFT, 314, 11, col)
+				WyrdUi.draw_ink_bottle(self, Vector2(bx + 10.0, cy + 10.0), 13.0, tint)
+				draw_string(font, Vector2(bx + 22.0, cy + 14.0), line,
+					HORIZONTAL_ALIGNMENT_LEFT, 302, 11, col)
 				# Spec 45-carto — Practiced Measures: a known row is a button.
-				_codex_rects.append({"rect": Rect2(Vector2(bx, cy),
-					Vector2(330.0, 15.0)), "id": String(rid)})
+				_codex_rects.append({"rect": row, "id": String(rid)})
 			else:
-				draw_string(font, Vector2(bx, cy + 11.0), line,
-					HORIZONTAL_ALIGNMENT_LEFT, 330, 11, col)
-			cy += 15.0
+				draw_rect(row, Color(0.85, 0.79, 0.66, 0.7))
+				draw_rect(row, Color(EDGE, 0.35), false, 1.0)
+				draw_string(font, Vector2(bx + 8.0, cy + 14.0), line,
+					HORIZONTAL_ALIGNMENT_LEFT, 322, 11, col)
+			cy += 20.0
 
 	func _draw_result(hdr: Font, font: Font) -> void:
 		var rx := 660.0
