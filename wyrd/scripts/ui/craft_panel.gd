@@ -12,7 +12,7 @@ var station_id := "cookfire"
 var _game: Node
 var _panel: Panel
 var _recipe_box: VBoxContainer
-var _satchel_lbl: Label
+var _satchel_box: FlowContainer
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -93,10 +93,13 @@ func _ready() -> void:
 	s2.text = "Satchel"
 	WyrdUi.style_section(s2)
 	col.add_child(s2)
-	_satchel_lbl = Label.new()
-	WyrdUi.style_body(_satchel_lbl, 13)
-	_satchel_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	col.add_child(_satchel_lbl)
+	# Art pass — one carved chip per material (group-tinted) instead of a flat
+	# inline string. FlowContainer wraps naturally when materials fill up.
+	_satchel_box = FlowContainer.new()
+	_satchel_box.add_theme_constant_override("h_separation", 6)
+	_satchel_box.add_theme_constant_override("v_separation", 4)
+	_satchel_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_child(_satchel_box)
 
 	get_node("/root/Game").modal_opened()
 	_render()
@@ -169,7 +172,6 @@ func _render() -> void:
 		_recipe_box.add_child(row)
 
 	if _game == null:
-		_satchel_lbl.text = ""
 		return
 	_render_satchel()
 
@@ -207,8 +209,34 @@ func _recipe_tint(rec: Dictionary, locked: bool) -> Color:
 	return Color(0.88, 0.83, 0.72)
 
 func _render_satchel() -> void:
-	var parts: Array = []
+	for c in _satchel_box.get_children():
+		_satchel_box.remove_child(c)
+		c.queue_free()
+	if (_game.materials as Dictionary).is_empty():
+		var lbl := Label.new()
+		WyrdUi.style_dim(lbl, 13)
+		lbl.text = "empty"
+		_satchel_box.add_child(lbl)
+		return
 	for id in _game.materials:
-		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
-			GatherDefs.material_name(String(id)), int(_game.materials[id])])
-	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+		var def: Dictionary = GatherDefs.MATERIALS.get(String(id), {})
+		var chip := Label.new()
+		chip.text = "%s %s ×%d" % [
+			String(def.get("icon", "·")),
+			GatherDefs.material_name(String(id)),
+			int(_game.materials[id])]
+		WyrdUi.style_chip(chip, 12)
+		chip.add_theme_stylebox_override("normal",
+			WyrdUi.chip_stylebox(_satchel_chip_tint(String(def.get("group", "")))))
+		_satchel_box.add_child(chip)
+
+# Material-group tints for satchel chips — echo and gristle drop materials
+# rarely so their purples/greys help players identify trophies at a glance.
+func _satchel_chip_tint(group: String) -> Color:
+	match group:
+		"verdant": return Color(0.82, 0.88, 0.69)
+		"earthen": return Color(0.89, 0.82, 0.70)
+		"lumen":   return Color(0.93, 0.89, 0.76)
+		"echo":    return Color(0.82, 0.77, 0.91)
+		"gristle": return Color(0.84, 0.80, 0.74)
+	return WyrdUi.KIT_PLATE
