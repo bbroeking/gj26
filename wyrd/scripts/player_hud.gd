@@ -31,7 +31,7 @@ var _skills_lbl: Label
 # bar, Focus blue bottom-right. The liquid level IS the meter.
 var _hp_globe: GlobeGauge = null
 var _focus_globe: GlobeGauge = null
-var _mute_lbl: Label = null
+var _mute_chip: _MuteChip = null
 # Slice B — a radial hurt-vignette: transparent center darkening to a
 # terracotta rim, flashed on the player taking damage (richer than the flat
 # full-screen red _flash). A TextureRect fed by a radial GradientTexture2D —
@@ -73,31 +73,28 @@ func _place_globe(g: GlobeGauge, cx: float) -> void:
 
 # Spec 38 — the mute state, by the Focus globe. F10 flips it.
 func _build_mute_indicator() -> void:
-	_mute_lbl = Label.new()
-	_mute_lbl.anchor_left = 0.5
-	_mute_lbl.anchor_right = 0.5
-	_mute_lbl.anchor_top = 1.0
-	_mute_lbl.anchor_bottom = 1.0
-	_mute_lbl.offset_left = 140
-	_mute_lbl.offset_right = 300
-	_mute_lbl.offset_top = -22
-	_mute_lbl.offset_bottom = -4
-	_mute_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	WyrdUi.style_chip(_mute_lbl, 12)
-	add_child(_mute_lbl)
+	_mute_chip = _MuteChip.new()
+	_mute_chip.anchor_left = 0.5
+	_mute_chip.anchor_right = 0.5
+	_mute_chip.anchor_top = 1.0
+	_mute_chip.anchor_bottom = 1.0
+	_mute_chip.offset_left = 140
+	_mute_chip.offset_right = 300
+	_mute_chip.offset_top = -22
+	_mute_chip.offset_bottom = -4
+	_mute_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_mute_chip)
 	var game := get_tree().root.get_node_or_null("Game")
 	if game != null and game.has_signal("mute_changed"):
 		game.mute_changed.connect(func(_m): _refresh_mute())
 	_refresh_mute()
 
 func _refresh_mute() -> void:
-	if _mute_lbl == null:
+	if _mute_chip == null:
 		return
 	var game := get_tree().root.get_node_or_null("Game")
 	var muted: bool = game != null and bool(game.get("muted"))
-	_mute_lbl.text = "MUTED · F10" if muted else "F10 mutes"
-	_mute_lbl.add_theme_color_override("font_color",
-		WyrdUi.TERRACOTTA if muted else Color(0.36, 0.29, 0.22, 0.8))
+	_mute_chip.set_muted(muted)
 
 # Draught counter under the meters — what Q will drink.
 var _draught_lbl: Label = null
@@ -498,3 +495,66 @@ class QuestScrollArt extends Control:
 		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
 		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
 		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+
+# Mute indicator — hand-painted parchment chip with a speaker-horn glyph.
+# Terracotta fill + warm cream text when muted; quiet parchment grain with
+# a dim ink hint when sound is on. Replaces the plain style_chip Label.
+class _MuteChip extends Control:
+	var muted := false
+	var _font: Font = null
+
+	func set_muted(m: bool) -> void:
+		muted = m
+		queue_redraw()
+
+	func _ready() -> void:
+		_font = WyrdUi.font_body()
+		resized.connect(queue_redraw)
+
+	func _draw() -> void:
+		if size.x < 4.0 or size.y < 4.0:
+			return
+		var h := size.y
+		var w := size.x
+		var r := Rect2(Vector2.ZERO, size)
+		# Plate — terracotta when muted, parchment when quiet.
+		draw_rect(r, WyrdUi.TERRACOTTA if muted else WyrdUi.KIT_PLATE, true)
+		if not muted:
+			WyrdUi.draw_parchment_grain(self,
+				Rect2(Vector2(1, 1), size - Vector2(2, 2)), 31)
+		# Ink border.
+		draw_rect(r,
+			WyrdUi.INK if muted else Color(WyrdUi.KIT_EDGE, 0.55),
+			false, 1.0)
+		# Speaker-horn glyph (left edge, vertically centred).
+		var txt_col: Color = Color(0.98, 0.94, 0.86, 0.92) if muted \
+			else Color(WyrdUi.INK, 0.52)
+		var pad := 4.0
+		var hs := h * 0.22      # ~4 px at h = 18
+		var bx := pad
+		var by := h * 0.5
+		# Boxy horn body.
+		draw_rect(Rect2(Vector2(bx, by - hs),
+			Vector2(hs * 1.2, hs * 2.0)), txt_col, true)
+		# Flared bell.
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(bx + hs * 1.2, by - hs),
+			Vector2(bx + hs * 1.2, by + hs),
+			Vector2(bx + hs * 3.0, by + hs * 2.2),
+			Vector2(bx + hs * 3.0, by - hs * 2.2),
+		]), txt_col)
+		# Mute X cross over the bell when silenced.
+		if muted:
+			var xc := Vector2(bx + hs * 4.0, by)
+			draw_line(xc + Vector2(-hs * 0.9, -hs * 0.9),
+				xc + Vector2(hs * 0.9, hs * 0.9), txt_col, 1.5)
+			draw_line(xc + Vector2(hs * 0.9, -hs * 0.9),
+				xc + Vector2(-hs * 0.9, hs * 0.9), txt_col, 1.5)
+		# Text — IM Fell body font if loaded, Godot default otherwise.
+		var f: Font = _font if _font != null else get_theme_default_font()
+		var txt := "MUTED · F10" if muted else "F10 mutes"
+		var ix := bx + (hs * 5.5 if muted else hs * 4.0)
+		draw_string(f, Vector2(ix, h * 0.76),
+			txt, HORIZONTAL_ALIGNMENT_LEFT,
+			int(w - ix - pad), int(h * 0.65), txt_col)
