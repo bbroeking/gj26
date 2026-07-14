@@ -58,10 +58,10 @@ func _win_rect() -> Rect2:
 func _tab_rect(i: int) -> Rect2:
 	var win := _win_rect()
 	# Spec 40 — four equal tabs spanning the content width, butt-joined.
-	# Tabs are 44px tall to accommodate the painted icon above the label.
+	# Taller (44px) to hold the painted icon above the label.
 	var inset := 52.0
 	var tw := (win.size.x - inset * 2.0) / 4.0
-	return Rect2(win.position + Vector2(inset + i * tw, 68), Vector2(tw, 44))
+	return Rect2(win.position + Vector2(inset + i * tw, 72), Vector2(tw, 44))
 
 func _update_layout() -> void:
 	var vp := get_viewport_rect().size
@@ -583,42 +583,27 @@ func _draw_tabs(win: Rect2) -> void:
 	var font: Font = WyrdUi.font_header()
 	if font == null:
 		font = get_theme_default_font()
+	const ICON_SZ := 16.0
 	for i in TABS.size():
 		var r := _tab_rect(i)
 		var active := i == _tab
-		# Spec 40 — icon+label plates; active = brighter + terracotta underline.
 		draw_rect(r, Color(0.95, 0.91, 0.80) if active else Color(0.85, 0.78, 0.64))
-		# Active tab: a warm honey bevel along the top edge — the carved plate
-		# catches the page's ambient light; inactive tabs stay flat (unlit).
-		if active:
-			draw_rect(Rect2(r.position + Vector2(2.0, 1.5),
-				Vector2(r.size.x - 4.0, 2.5)),
-				Color(1.0, 1.0, 0.93, 0.40))
 		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 1.5)
 		if active:
-			# Terracotta underline convention — active indicator.
 			draw_line(r.position + Vector2(2, r.size.y - 2),
 				r.position + Vector2(r.size.x - 2, r.size.y - 2),
 				WyrdUi.TERRACOTTA, 3.0)
-			# Gold ◆ ornament centred on the top border — storybook jewel.
-			var cx := r.position.x + r.size.x * 0.5
-			var ty := r.position.y
-			draw_colored_polygon(PackedVector2Array([
-				Vector2(cx, ty - 3.5), Vector2(cx + 3.5, ty),
-				Vector2(cx, ty + 3.5), Vector2(cx - 3.5, ty)]),
-				Color(WyrdUi.GOLD, 0.90))
-		# Hand-painted tab icon — textures preloaded in _ready to avoid the
-		# _draw-load white-rect gotcha. Active tab is full opacity; inactive
-		# dims to 0.50 so the colour lives on the selected tab only.
-		var tex: Texture2D = _cached_tex(String(TAB_ICONS[i]))
-		if tex != null:
-			var icon_sz := 22.0
-			var ix := r.position.x + (r.size.x - icon_sz) * 0.5
-			draw_texture_rect(tex,
-				Rect2(Vector2(ix, r.position.y + 3.0), Vector2(icon_sz, icon_sz)),
+		# Painted icon centred in the upper half of the 44px tab plate; dim
+		# when inactive so the selected tab's icon pops against the field.
+		var icon_tex: Texture2D = _cached_tex(String(TAB_ICONS[i]))
+		if icon_tex != null:
+			var ix := r.position.x + (r.size.x - ICON_SZ) * 0.5
+			draw_texture_rect(icon_tex,
+				Rect2(Vector2(ix, r.position.y + 5.0), Vector2(ICON_SZ, ICON_SZ)),
 				false,
-				Color(1.0, 1.0, 1.0, 1.0) if active else Color(1.0, 1.0, 1.0, 0.50))
-		draw_string(font, r.position + Vector2(0, r.size.y - 4.0), String(TABS[i]),
+				Color.WHITE if active else Color(1.0, 1.0, 1.0, 0.45))
+		# Label beneath the icon; size 12 to match the shorter bottom band.
+		draw_string(font, r.position + Vector2(0, 38.0), String(TABS[i]),
 			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 12,
 			WyrdUi.INK if active else WyrdUi.INK_MID)
 
@@ -636,9 +621,10 @@ var _tab_content_h: Dictionary = {}   # tab index -> content height (set in draw
 # bands above/below stay deeper (72px+) than the tallest single element a
 # page draws (the trade emblem cluster) so skipped spans never peek past.
 func _view_rect(win: Rect2) -> Rect2:
-	# View starts 6px below the taller (44px) tab row bottom (68+44=112 → 118).
-	return Rect2(win.position.x + 40.0, win.position.y + 118.0,
-		win.size.x - 84.0, win.size.y - 230.0)
+	# y-offset bumped from 110 → 120 to clear the taller 44px tab row (bottom
+	# at win.y + 116); the 10px gap gives breathing room above the content.
+	return Rect2(win.position.x + 40.0, win.position.y + 120.0,
+		win.size.x - 84.0, win.size.y - 222.0)
 
 func _scroll_offset(tab: int, view: Rect2) -> float:
 	var max_s: float = maxf(0.0,
