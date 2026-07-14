@@ -872,7 +872,15 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 				var cr := Rect2(Vector2(card_x, cardy), Vector2(card_w, CARD_H))
 				if ok:
 					draw_rect(cr, Color(0.93, 0.88, 0.74))
+					# Honey top catch-light: light grazing the raised parchment face
+					# (same language as the hotbar tray and active-tab bevel).
+					draw_rect(Rect2(cr.position + Vector2(3, 2),
+						Vector2(cr.size.x - 6, 3)), Color(1.0, 0.97, 0.86, 0.55))
+					WyrdUi.draw_parchment_grain(self, cr, 37)
 					draw_rect(cr, WyrdUi.SAGE.darkened(0.12), false, 2.0)
+					# Burnished gold inner inset — earned cards read as illuminated
+					# manuscript pages; locked cards stay dim and flat.
+					draw_rect(cr.grow(-3.5), Color(WyrdUi.GOLD, 0.35), false, 1.0)
 				else:
 					draw_rect(cr, Color(0.78, 0.72, 0.60, 0.85))
 					draw_rect(cr, Color(0.50, 0.42, 0.32, 0.7), false, 1.5)
