@@ -87,11 +87,40 @@ func _build_label() -> void:
 	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lbl.no_depth_test = true
 	lbl.font_size = 64
+	var pf := WyrdUi.font_header()
+	if pf != null:
+		lbl.font = pf
 	lbl.pixel_size = 0.005
 	lbl.outline_size = 16
 	lbl.outline_modulate = Color(0.08, 0.05, 0.06, 1)
 	lbl.position = Vector3(0, 1.15, 0)
 	add_child(lbl)
+	_build_label_plate(lbl)
+
+func _build_label_plate(lbl: Label3D) -> void:
+	await get_tree().process_frame
+	if not is_instance_valid(lbl):
+		return
+	var char_h := float(lbl.font_size) * lbl.pixel_size
+	var est_w := float(lbl.text.length()) * char_h * 0.42
+	var aabb := lbl.get_aabb()
+	var w := maxf(aabb.size.x, est_w)
+	var h := maxf(aabb.size.y, char_h)
+	var plate := MeshInstance3D.new()
+	plate.name = "LabelPlate"
+	var qmesh := QuadMesh.new()
+	qmesh.size = Vector2(w + 0.18, h + 0.08)
+	plate.mesh = qmesh
+	var pmat := StandardMaterial3D.new()
+	pmat.albedo_color = Color(0.20, 0.15, 0.11, 0.88)
+	pmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	pmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	pmat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	pmat.no_depth_test = true
+	pmat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	plate.material_override = pmat
+	plate.position = lbl.position - Vector3(0, 0, 0.004)
+	add_child(plate)
 
 # Spec 32a — full take transaction. Returns true on success, false if the
 # player's inventory is full (pickup stays on the ground) or if we've
@@ -141,8 +170,12 @@ func _play_pickup_vfx() -> void:
 	t.set_parallel(true)
 	var beacon := get_node_or_null("Beacon")
 	var lbl := get_node_or_null("Label")
+	var plate := get_node_or_null("LabelPlate")
 	if beacon != null:
 		t.tween_property(beacon, "scale", Vector3(2.0, 2.0, 2.0), 0.20)
 	if lbl != null:
 		t.tween_property(lbl, "position:y", 1.7, 0.20)
 		t.tween_property(lbl, "modulate:a", 0.0, 0.20)
+	if plate != null:
+		t.tween_property(plate, "position:y", 1.7, 0.20)
+		t.tween_property(plate, "modulate:a", 0.0, 0.20)
