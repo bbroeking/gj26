@@ -32,24 +32,41 @@ func _ready() -> void:
 	# Floating prompt — built by base, parameterised by subclass.
 	# Wyrd — playtest: the old 48px prompt washed out against the world.
 	# Bigger, heavier outline, and a soft bob so the eye finds it.
-	# Slice B — a parchment plate behind the prompt so it reads as a tooltip
-	# on a scrap of parchment, not floating text. Built first so it draws
-	# behind the label; sized to the text in _size_prompt_plate, toggled with
-	# the prompt in show_prompt. Billboarded + no-depth like the label.
+	# Slice B / art pass — a parchment plate + sepia ink border behind the
+	# prompt so it reads as a hand-cut tooltip card, not a plain floating blob.
+	# Frame (slightly larger ink quad) sits 2mm behind the fill quad; the
+	# visible border is the ink peeking around all four edges.
+	# Billboarded + no-depth like the label; both resized in _size_prompt_plate.
+	var frame := MeshInstance3D.new()
+	frame.name = "PromptFrame"
+	var fmesh := QuadMesh.new()
+	fmesh.size = Vector2(1.0, 0.34)            # provisional — resized below
+	frame.mesh = fmesh
+	var fmat := StandardMaterial3D.new()
+	fmat.albedo_color = Color(0.10, 0.07, 0.04, 0.96)   # sepia ink edge
+	fmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	fmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	fmat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	fmat.no_depth_test = true
+	fmat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	frame.material_override = fmat
+	frame.position = get_prompt_position() - Vector3(0.0, 0.0, 0.002)
+	frame.visible = false
+	add_child(frame)
 	var plate := MeshInstance3D.new()
 	plate.name = "PromptPlate"
 	var pmesh := QuadMesh.new()
 	pmesh.size = Vector2(1.0, 0.34)            # provisional — resized to text below
 	plate.mesh = pmesh
 	var pmat := StandardMaterial3D.new()
-	pmat.albedo_color = Color(0.20, 0.15, 0.11, 0.90)   # dark parchment scrap
+	pmat.albedo_color = Color(0.18, 0.13, 0.08, 0.92)   # warm amber parchment scrap
 	pmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	pmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	pmat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
 	pmat.no_depth_test = true
 	pmat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	plate.material_override = pmat
-	plate.position = get_prompt_position()
+	plate.position = get_prompt_position() + Vector3(0.0, 0.0, 0.002)
 	plate.visible = false
 	add_child(plate)
 	var lbl := Label3D.new()
@@ -100,10 +117,13 @@ func show_prompt(on: bool) -> void:
 	var lbl := get_node_or_null("PromptLabel") as Label3D
 	if lbl != null:
 		lbl.visible = shown
-	# The parchment plate tracks the label.
+	# The parchment plate and its ink border frame track the label.
 	var plate := get_node_or_null("PromptPlate") as MeshInstance3D
 	if plate != null:
 		plate.visible = shown
+	var frame := get_node_or_null("PromptFrame") as MeshInstance3D
+	if frame != null:
+		frame.visible = shown
 	# The marker hands off to the prompt up close, and dies with one-shots.
 	var mark := get_node_or_null("Marker") as Label3D
 	if mark != null:
@@ -126,7 +146,12 @@ func _size_prompt_plate(lbl: Label3D, plate: MeshInstance3D) -> void:
 	var h: float = maxf(aabb.size.y, char_h)
 	var pad_x := 0.16
 	var pad_y := 0.10
-	(plate.mesh as QuadMesh).size = Vector2(w + pad_x * 2.0, h + pad_y * 2.0)
+	var plate_size := Vector2(w + pad_x * 2.0, h + pad_y * 2.0)
+	(plate.mesh as QuadMesh).size = plate_size
+	# Resize the ink border frame to 6cm wider/taller than the fill plate.
+	var frame := get_node_or_null("PromptFrame") as MeshInstance3D
+	if is_instance_valid(frame) and frame.mesh != null:
+		(frame.mesh as QuadMesh).size = plate_size + Vector2(0.06, 0.06)
 
 # ---- Virtual hooks (override in subclasses) ----
 
