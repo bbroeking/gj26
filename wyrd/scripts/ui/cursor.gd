@@ -44,11 +44,25 @@ class CursorMark extends Control:
 		# Ink ring + cream inner lip.
 		draw_arc(m, rad, 0.0, TAU, 28, ring_c, 2.2, true)
 		draw_arc(m, rad - 2.0, 0.0, TAU, 24, Color(WyrdUi.CREAM, 0.7), 1.0, true)
-		# Four short ticks (NE/NW/SE/SW so they never read as a crosshair).
+		# Faint carved-channel ring — a second inner groove between the cream lip
+		# and the center pip; gives the mark a sense of carved depth.
+		draw_arc(m, rad - 4.5, 0.0, TAU, 20, Color(WyrdUi.KIT_WELL, 0.42), 0.8, true)
+		# Four diagonal ticks with trefoil-bud tips (NE/NW/SE/SW — not a crosshair).
+		# Each bud is three circles in pip_c: a forward lead-bead and two flanking
+		# side-beads, so the mark reads as a hand-inscribed runic flower rather than
+		# a geometric reticle.
 		for i in 4:
 			var a := PI * 0.25 + float(i) * PI * 0.5
 			var d := Vector2(cos(a), sin(a))
-			draw_line(m + d * (rad + 1.0), m + d * (rad + 4.0), ring_c, 1.6)
+			var perp := Vector2(-d.y, d.x)
+			draw_line(m + d * (rad + 1.5), m + d * (rad + 5.5), ring_c, 1.5)
+			# Trefoil bud at the tick tip.
+			var bud := m + d * (rad + 7.5)
+			var br := 2.0 + recoil * 0.7
+			draw_circle(bud, br, Color(pip_c, 0.82))
+			draw_circle(bud + perp * br * 0.9, br * 0.65, Color(pip_c, 0.55))
+			draw_circle(bud - perp * br * 0.9, br * 0.65, Color(pip_c, 0.55))
+			draw_arc(bud, br, 0.0, TAU, 10, Color(ring_c, 0.52), 0.7, true)
 		# Burnished center pip — a tiny gold diamond.
 		var s := 2.6 + recoil * 1.6
 		draw_colored_polygon(PackedVector2Array([
