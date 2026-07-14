@@ -132,14 +132,53 @@ func _finish() -> void:
 	queue_free()
 
 
-# Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
-# silhouette placeholder until painted portraits exist.
+# Spec 41 — the round portrait well: a carved wooden frame ring with ivy-leaf
+# trefoil ornaments at compass points, a gold inner pinstripe, and a hooded
+# storybook silhouette on a warm parchment face. Placeholder until painted
+# character portraits exist.
 class PortraitWell extends Control:
 	func _draw() -> void:
 		var c := size * 0.5
-		var r := minf(c.x, c.y)
-		draw_circle(c, r, Color(0.88, 0.82, 0.67))
-		draw_circle(c + Vector2(0, r * 0.28), r * 0.34, Color(0.55, 0.47, 0.36, 0.55))
-		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
-		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
-		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+		var r := minf(c.x, c.y) - 2.0
+
+		# Carved wood frame ring: ink base disc → warm wood face → catch-light.
+		draw_circle(c, r, Color(0.22, 0.16, 0.10))
+		draw_circle(c, r - 2.5, Color(0.68, 0.54, 0.36))
+		draw_arc(c, r - 5.0, PI * 1.05, PI * 1.55, 14,
+			Color(1.0, 0.94, 0.76, 0.40), 4.0, true)
+
+		# Warm parchment portrait face.
+		draw_circle(c, r - 10.0, Color(0.90, 0.85, 0.71))
+
+		# Ghosted storybook figure: hooded head + cloaked shoulders.
+		var fr := r - 10.0
+		var hood_c := c + Vector2(0.0, -fr * 0.15)
+		draw_circle(hood_c, fr * 0.26, Color(0.50, 0.42, 0.31, 0.52))
+		var sh := fr * 0.52
+		var hy := hood_c.y + fr * 0.24
+		var by_ := c.y + fr * 0.72
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(c.x - sh * 0.45, hy), Vector2(c.x + sh * 0.45, hy),
+			Vector2(c.x + sh, by_),       Vector2(c.x - sh, by_),
+		]), Color(0.50, 0.42, 0.31, 0.44))
+
+		# Gold inner pinstripe inside the frame ring.
+		draw_arc(c, r - 12.0, 0, TAU, 48, Color(WyrdUi.GOLD, 0.55), 1.2, true)
+
+		# Ivy-leaf trefoil ornaments at N / E / S / W on the frame ring.
+		for i in 4:
+			var ang := PI * 0.5 * float(i)
+			_draw_leaf(c + Vector2(cos(ang), sin(ang)) * (r - 5.5), ang)
+
+		# Outer ink edge.
+		draw_arc(c, r, 0, TAU, 64, Color(0.22, 0.16, 0.10), 2.0, true)
+
+	# Three-lobe sage trefoil + gold centre dot pressed into the carved frame
+	# ring at each compass point — the illustrated-border language.
+	func _draw_leaf(oc: Vector2, angle: float) -> void:
+		var lr := 3.2
+		for j in 3:
+			var la := angle + TAU / 3.0 * float(j)
+			draw_circle(oc + Vector2(cos(la), sin(la)) * lr, lr,
+				Color(WyrdUi.SAGE, 0.72))
+		draw_circle(oc, 1.4, Color(WyrdUi.GOLD, 0.85))
