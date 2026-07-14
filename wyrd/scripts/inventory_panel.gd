@@ -527,29 +527,63 @@ func _draw_tooltip() -> void:
 	if item == null:
 		return
 	var lines: Array = _tooltip_lines(item)
-	var line_h := 18
-	var ipad := 8
-	var w := 280.0
-	var h: float = ipad * 2 + lines.size() * line_h
+	# lines: 0=name, 1=type/rarity, 2=blank spacer, 3+=stat affixes.
+	var stat_count := maxi(0, lines.size() - 3)
+	var ipad := 10
+	var stat_h := 17
+	var w := 288.0
+	# header band (name+type) = 51px; flourish gap = 12; stats + 10px bottom.
+	var h := 73.0 + float(stat_count * stat_h)
 	var pos := _cursor_screen + Vector2(16, 16)
 	var screen := get_viewport_rect().size
 	if pos.x + w > screen.x:
 		pos.x = _cursor_screen.x - w - 16
 	if pos.y + h > screen.y:
 		pos.y = screen.y - h - 8
-	if pos.x < 0:
-		pos.x = 0
-	if pos.y < 0:
-		pos.y = 0
-	draw_rect(Rect2(pos, Vector2(w, h)), Color(0.93, 0.88, 0.76, 0.97))
-	draw_rect(Rect2(pos, Vector2(w, h)),
-		Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
-	var font := get_theme_default_font()
-	var y := pos.y + ipad + 14
-	for line in lines:
-		draw_string(font, Vector2(pos.x + ipad, y), String(line.text),
-			HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2, int(line.size), line.color)
-		y += line_h
+	pos.x = maxf(0.0, pos.x)
+	pos.y = maxf(0.0, pos.y)
+	var r := Rect2(pos, Vector2(w, h))
+	var rc: Color = RARITY_COLOR.get(String(item.rarity), WyrdUi.INK_MID)
+	# Soft drop shadow so the tooltip floats off the parchment.
+	draw_rect(Rect2(pos + Vector2(3, 5), Vector2(w, h)), Color(0, 0, 0, 0.18))
+	# Parchment base + sparse fibre grain.
+	draw_rect(r, Color(0.93, 0.88, 0.76, 0.98))
+	WyrdUi.draw_parchment_grain(self, r, 42)
+	# Rarity-tinted header band (subtle wash, not a hard block of colour).
+	draw_rect(Rect2(pos, Vector2(w, 53.0)), rc.lerp(Color(0.93, 0.88, 0.76, 1.0), 0.82))
+	# 3px rarity accent stripe down the left edge — state at a glance.
+	draw_rect(Rect2(pos + Vector2(1, 1), Vector2(3, h - 2)), rc.darkened(0.10))
+	# Rarity-coloured outer border + faint inner inset line.
+	draw_rect(r, rc.darkened(0.32), false, 2.0)
+	draw_rect(r.grow(-4.0), Color(rc, 0.24), false, 1.0)
+	var hdr_font: Font = WyrdUi.font_header()
+	if hdr_font == null:
+		hdr_font = get_theme_default_font()
+	var body_font: Font = get_theme_default_font()
+	var tx := pos.x + float(ipad) + 7.0  # indent past the accent stripe
+	var tw := w - float(ipad) * 2.0 - 7.0
+	# Item name — IM Fell English, 18pt, rarity colour.
+	if lines.size() > 0:
+		draw_string(hdr_font, Vector2(tx, pos.y + float(ipad) + 19.0),
+			String(lines[0].text), HORIZONTAL_ALIGNMENT_LEFT, tw, 18, lines[0].color)
+	# Type / rarity subtitle.
+	if lines.size() > 1:
+		draw_string(body_font, Vector2(tx, pos.y + float(ipad) + 36.0),
+			String(lines[1].text), HORIZONTAL_ALIGNMENT_LEFT, tw, 12, lines[1].color)
+	# ── ◆ ── flourish rule separating header from stats.
+	WyrdUi.draw_flourish(self, Vector2(pos.x + w * 0.5, pos.y + 54.0),
+		w - float(ipad) * 2.0)
+	# Stat lines (index 2 is the blank spacer — skip it).
+	var sy := pos.y + 64.0
+	for i in range(3, lines.size()):
+		var line: Dictionary = lines[i]
+		if String(line.text) == "":
+			sy += 4.0
+			continue
+		draw_string(body_font, Vector2(tx, sy + float(int(line.size))),
+			String(line.text), HORIZONTAL_ALIGNMENT_LEFT, tw,
+			int(line.size), line.color)
+		sy += float(stat_h)
 
 func _draw_held() -> void:
 	var fp: Vector2i = Inventory.footprint(_held_item, _held_rotated)
