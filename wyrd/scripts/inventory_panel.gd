@@ -745,9 +745,33 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 	var w := win.size.x - 148.0
 	var y := win.position.y + 134.0
 	if (game.charts as Array).is_empty():
-		draw_string(font, Vector2(x, y),
-			"No charts inscribed. The Inscribing Table awaits.",
-			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
+		# Storybook empty state: compass rose + blank scroll + ink bottle +
+		# a centred note. The scroll is unsealed (no wax) — it waits to be
+		# inscribed at the Inscribing Table. Scroll is 0 here so the
+		# draw_set_transform(0,-scroll) above is identity; absolute coords ok.
+		var cx := win.position.x + win.size.x * 0.5
+		var ey := win.position.y + 214.0
+		_draw_compass_rose(Vector2(cx, ey), 36.0)
+		ey += 62.0
+		var scroll_w := 100.0
+		var scroll_h := 68.0
+		WyrdUi.draw_scroll(self,
+			Rect2(Vector2(cx - scroll_w * 0.5, ey), Vector2(scroll_w, scroll_h)),
+			false)
+		WyrdUi.draw_ink_bottle(self,
+			Vector2(cx + scroll_w * 0.5 + 28.0, ey + scroll_h * 0.5),
+			46.0, Color(0.32, 0.58, 0.38, 0.85))
+		ey += scroll_h + 24.0
+		var hfont := WyrdUi.font_header()
+		if hfont == null:
+			hfont = font
+		draw_string(hfont, Vector2(cx, ey), "No charts inscribed.",
+			HORIZONTAL_ALIGNMENT_CENTER, w, 17, WyrdUi.INK)
+		ey += 22.0
+		draw_string(font, Vector2(cx, ey), "The Inscribing Table awaits.",
+			HORIZONTAL_ALIGNMENT_CENTER, w, 14, WyrdUi.INK_MID)
+		ey += 22.0
+		WyrdUi.draw_flourish(self, Vector2(cx, ey), 110.0)
 		_tab_content_h[2] = 0.0
 		return
 	# Slice C — each chart rides a list-row plate led with a drawn scroll
@@ -782,6 +806,23 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 func _draw_squiggle(from: Vector2, width: float, color: Color) -> void:
 	# Usability pass — a quiet straight rule beats the wobbly one.
 	draw_line(from, from + Vector2(width, 0.0), color, 1.2)
+
+# Wayfinder compass rose: outer double ring, four diamond arms (north = gold),
+# centre disc. Used as the Charts-tab empty-state motif.
+func _draw_compass_rose(center: Vector2, radius: float) -> void:
+	draw_arc(center, radius, 0, TAU, 48, Color(WyrdUi.KIT_EDGE, 0.30), 1.5, true)
+	draw_arc(center, radius - 5.0, 0, TAU, 48, Color(WyrdUi.GOLD, 0.18), 1.0, true)
+	var arm := radius * 0.78
+	for i in 4:
+		var angle := float(i) * PI * 0.5
+		var dir := Vector2(sin(angle), -cos(angle))
+		var perp := Vector2(cos(angle), sin(angle)) * (arm * 0.20)
+		var tip := center + dir * arm
+		var pts := PackedVector2Array([center + perp, tip, center - perp])
+		draw_colored_polygon(pts,
+			WyrdUi.GOLD if i == 0 else Color(WyrdUi.KIT_EDGE, 0.58))
+	draw_circle(center, radius * 0.16, WyrdUi.CREAM)
+	draw_arc(center, radius * 0.16, 0, TAU, 16, WyrdUi.KIT_EDGE, 1.5, true)
 
 # Spec 39 — the Trades page: the Wayfinding band (round emblem, name + level,
 # XP bar) followed by the mastery ladder — a level 1→17 skill tree of every
