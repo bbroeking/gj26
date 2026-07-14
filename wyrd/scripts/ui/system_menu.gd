@@ -31,6 +31,13 @@ func _ready() -> void:
 	_panel.offset_right = 260
 	_panel.offset_bottom = 220
 	add_child(_panel)
+	# Storybook header: lantern crest on the left + flourish rule at y=88.
+	# Rendered first so title and buttons sit on top.
+	var hdr := _LanternHeader.new()
+	hdr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hdr.anchor_right = 1.0
+	hdr.offset_bottom = 92.0
+	_panel.add_child(hdr)
 	var title := Label.new()
 	title.text = "The Lantern"
 	WyrdUi.style_title(title)
@@ -190,3 +197,94 @@ func _close() -> void:
 	if _game != null:
 		_game.modal_closed()
 	queue_free()
+
+
+# ---- storybook header decoration ----
+# A hand-drawn lantern icon on the left + a ── ◆ ── flourish rule at the
+# bottom of the header zone. Purely decorative — mouse_filter IGNORE so it
+# can't steal clicks from the buttons beneath.
+#
+# Lantern form: iron-frame glass body (panes) with a warm amber flame,
+# trapezoidal cap, flat base plate, and a side handle loop. A soft gold glow
+# halo behind it evokes the "Light a fire" invite text above.
+class _LanternHeader extends Control:
+	func _draw() -> void:
+		var cx := 28.0
+		var cy := 44.0
+		var h  := 58.0
+		var w  := h * 0.58   # ≈ 33.6
+
+		# Warm glow halo — ambient light spilling onto the parchment.
+		draw_circle(Vector2(cx, cy + h * 0.06), h * 0.54, Color(WyrdUi.GOLD, 0.09))
+		draw_circle(Vector2(cx, cy + h * 0.06), h * 0.32, Color(WyrdUi.GOLD, 0.06))
+
+		# Hanging ring at top.
+		var ring_c := Vector2(cx, cy - h * 0.44)
+		draw_arc(ring_c, h * 0.09, PI * 1.12, PI * 1.88, 10,
+			WyrdUi.KIT_EDGE, 1.5, false)
+		draw_line(ring_c + Vector2(0, h * 0.09), ring_c + Vector2(0, h * 0.15),
+			WyrdUi.KIT_EDGE, 1.5)
+
+		# Trapezoidal iron cap (roof of the lamp chamber).
+		var cap_base_y := cy - h * 0.26
+		var cap_top_y  := cy - h * 0.40
+		var cap := PackedVector2Array([
+			Vector2(cx - w * 0.60, cap_base_y),
+			Vector2(cx + w * 0.60, cap_base_y),
+			Vector2(cx + w * 0.30, cap_top_y),
+			Vector2(cx - w * 0.30, cap_top_y),
+		])
+		draw_colored_polygon(cap, Color(0.32, 0.24, 0.15))
+		draw_polyline(PackedVector2Array([cap[0], cap[1], cap[2], cap[3], cap[0]]),
+			WyrdUi.KIT_EDGE, 1.2)
+
+		# Glass body — amber-tinted warm parchment panels.
+		var body := Rect2(Vector2(cx - w * 0.5, cy - h * 0.26),
+			Vector2(w, h * 0.48))
+		draw_rect(body, Color(0.97, 0.90, 0.70, 0.80))
+		# Iron pane dividers: two vertical + one horizontal mid bar.
+		var bx := body.position.x
+		var by := body.position.y
+		var bw := body.size.x
+		var bh := body.size.y
+		draw_line(Vector2(bx + bw * 0.33, by), Vector2(bx + bw * 0.33, by + bh),
+			Color(WyrdUi.KIT_EDGE, 0.55), 1.2)
+		draw_line(Vector2(bx + bw * 0.67, by), Vector2(bx + bw * 0.67, by + bh),
+			Color(WyrdUi.KIT_EDGE, 0.55), 1.2)
+		draw_line(Vector2(bx, by + bh * 0.5), Vector2(bx + bw, by + bh * 0.5),
+			Color(WyrdUi.KIT_EDGE, 0.45), 1.2)
+		draw_rect(body, WyrdUi.KIT_EDGE, false, 1.5)
+
+		# Flame — outer amber-orange shell, inner warm-yellow core.
+		var fc := body.get_center() - Vector2(0, bh * 0.08)
+		var fp := PackedVector2Array([
+			fc + Vector2(0,        -h * 0.18),
+			fc + Vector2(-w * 0.15, -h * 0.05),
+			fc + Vector2(-w * 0.12,  h * 0.10),
+			fc + Vector2(0,          h * 0.08),
+			fc + Vector2( w * 0.12,  h * 0.10),
+			fc + Vector2( w * 0.15, -h * 0.05),
+		])
+		draw_colored_polygon(fp, Color(0.94, 0.56, 0.12, 0.90))
+		var ip := PackedVector2Array([
+			fc + Vector2(0,        -h * 0.10),
+			fc + Vector2(-w * 0.07, h * 0.01),
+			fc + Vector2(-w * 0.05, h * 0.06),
+			fc + Vector2(0,         h * 0.04),
+			fc + Vector2( w * 0.05, h * 0.06),
+			fc + Vector2( w * 0.07, h * 0.01),
+		])
+		draw_colored_polygon(ip, Color(0.99, 0.87, 0.52, 0.92))
+
+		# Flat iron base plate.
+		var base := Rect2(Vector2(cx - w * 0.60, cy - h * 0.26 + h * 0.48),
+			Vector2(w * 1.20, h * 0.09))
+		draw_rect(base, Color(0.32, 0.24, 0.15))
+		draw_rect(base, WyrdUi.KIT_EDGE, false, 1.2)
+
+		# Side handle loop — an open arc on the right.
+		draw_arc(Vector2(cx + w * 0.60 + h * 0.12, cy), h * 0.14,
+			-PI * 0.52, PI * 0.52, 10, WyrdUi.KIT_EDGE, 1.3, false)
+
+		# Flourish rule — ── ◆ ── centred at the bottom of the header zone.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 86.0), size.x - 120.0)
