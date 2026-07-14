@@ -35,6 +35,7 @@ var _channel_start_pos := Vector3.ZERO
 var _channel_start_hp := 0
 var _bar_root: Node3D = null
 var _bar_fill: MeshInstance3D = null
+var _bar_shine: MeshInstance3D = null
 
 func setup(p_kind: String, p_item: String, p_respawns: bool = false) -> void:
 	kind = p_kind
@@ -263,6 +264,7 @@ func _end_channel() -> void:
 		_bar_root.queue_free()
 		_bar_root = null
 		_bar_fill = null
+		_bar_shine = null
 
 func _harvest(player: Node) -> void:
 	if _depleted or player == null:
@@ -323,11 +325,21 @@ func _show_bar() -> void:
 	_bar_root = Node3D.new()
 	_bar_root.position = Vector3(0.0, 1.15, 0.0)
 	add_child(_bar_root)
-	var bg := _bar_quad(Vector2(0.7, 0.1), Color(0.10, 0.08, 0.06, 0.85))
+	# Ink border ring — behind the parchment face, matching the UI kit's ink frame.
+	var border := _bar_quad(Vector2(0.74, 0.14), Color(0.23, 0.17, 0.13, 0.92))
+	border.position.z = -0.005
+	_bar_root.add_child(border)
+	# Warm parchment trough — KIT_PLATE read, carved-wood not raw dark.
+	var bg := _bar_quad(Vector2(0.70, 0.10), Color(0.93, 0.88, 0.74, 0.97))
 	_bar_root.add_child(bg)
-	_bar_fill = _bar_quad(Vector2(0.66, 0.06), Color(0.78, 0.92, 0.62))
-	_bar_fill.position.z = 0.01     # in front of the bg quad
+	# Sage-green fill — WyrdUi.SAGE (0.44, 0.54, 0.25), the nature-trade colour.
+	_bar_fill = _bar_quad(Vector2(0.66, 0.06), Color(0.44, 0.54, 0.25))
+	_bar_fill.position.z = 0.01
 	_bar_root.add_child(_bar_fill)
+	# Catch-light — a thin pale stripe along the top of the fill as it rises.
+	_bar_shine = _bar_quad(Vector2(0.66, 0.012), Color(0.97, 0.95, 0.88, 0.32))
+	_bar_shine.position = Vector3(0.0, 0.024, 0.02)
+	_bar_root.add_child(_bar_shine)
 	_set_bar(0.0)
 
 func _bar_quad(size: Vector2, color: Color) -> MeshInstance3D:
@@ -345,8 +357,11 @@ func _bar_quad(size: Vector2, color: Color) -> MeshInstance3D:
 	return mi
 
 func _set_bar(frac: float) -> void:
+	var f := clampf(frac, 0.0, 1.0)
 	if _bar_fill != null:
-		_bar_fill.scale = Vector3(clampf(frac, 0.0, 1.0), 1.0, 1.0)
+		_bar_fill.scale = Vector3(f, 1.0, 1.0)
+	if _bar_shine != null:
+		_bar_shine.scale = Vector3(f, 1.0, 1.0)
 
 func _deplete() -> void:
 	_depleted = true
@@ -379,7 +394,7 @@ func _float_text(text: String) -> void:
 	lbl.pixel_size = 0.005
 	lbl.outline_size = 10
 	lbl.outline_modulate = Color(0.08, 0.05, 0.06, 1.0)
-	lbl.modulate = Color(0.85, 0.95, 0.7)
+	lbl.modulate = Color(0.95, 0.90, 0.78)
 	lbl.position = Vector3(0.0, 1.0, 0.0)
 	add_child(lbl)
 	var t := create_tween()
