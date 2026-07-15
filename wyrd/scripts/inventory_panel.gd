@@ -767,13 +767,24 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 			var aff: Dictionary = ChartsData.AFFIXES.get(String(a.get("id", "")), {})
 			if aff.is_empty():
 				continue
-			if _span_visible(y - 14.0, y + 5.0, scroll, view):
-				var good: bool = bool(a.get("good", false))
-				draw_string(font, Vector2(x + 30, y),
-					("✓ " + String(aff.name)) if good else ("✗ " + String(aff.bad_name)),
-					HORIZONTAL_ALIGNMENT_LEFT, w - 30, 13,
-					WyrdUi.SAGE.darkened(0.2) if good else WyrdUi.TERRACOTTA)
-			y += 20.0
+			var good: bool = bool(a.get("good", false))
+			var ac: Color = WyrdUi.SAGE if good else WyrdUi.TERRACOTTA
+			if _span_visible(y - 13.0, y + 9.0, scroll, view):
+				# Affix chip — cream pill with a polarity pip; reads as a
+				# hand-stamped ledger entry, not bare text.
+				var chip := Rect2(Vector2(x + 28.0, y - 11.0),
+					Vector2(w - 36.0, 18.0))
+				draw_rect(chip, Color(0.90, 0.85, 0.70, 0.55))
+				draw_rect(chip, Color(ac, 0.28), false, 1.0)
+				var pip_c := Vector2(chip.position.x + 10.0, chip.position.y + 9.0)
+				draw_circle(pip_c, 4.5, ac)
+				draw_arc(pip_c, 4.5, 0.0, TAU, 16,
+					Color(0.25, 0.18, 0.12, 0.65), 1.0, true)
+				draw_string(font, Vector2(pip_c.x + 11.0, y + 1.0),
+					String(aff.name) if good else String(aff.bad_name),
+					HORIZONTAL_ALIGNMENT_LEFT, chip.size.x - 22.0, 13,
+					ac.darkened(0.12))
+			y += 22.0
 		y += 10.0
 	_tab_content_h[2] = y - view.position.y
 
