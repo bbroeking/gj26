@@ -132,14 +132,53 @@ func _finish() -> void:
 	queue_free()
 
 
-# Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
-# silhouette placeholder until painted portraits exist.
+# Spec 41 — the round portrait well: a storybook ink medallion. Warm
+# parchment disc with a cloaked-wayfinder silhouette (hood, cloak,
+# longbow) so the portrait reads as a character icon, not a placeholder.
 class PortraitWell extends Control:
 	func _draw() -> void:
 		var c := size * 0.5
 		var r := minf(c.x, c.y)
+		# Warm parchment ground.
 		draw_circle(c, r, Color(0.88, 0.82, 0.67))
-		draw_circle(c + Vector2(0, r * 0.28), r * 0.34, Color(0.55, 0.47, 0.36, 0.55))
-		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
+		# Soft vignette ring — the figure has depth inside the medallion.
+		draw_arc(c, r - 5.0, 0, TAU, 48, Color(0.55, 0.42, 0.28, 0.12), 10.0, true)
+		# --- storybook silhouette: a cloaked wayfinder with longbow ---
+		var ink := Color(0.27, 0.20, 0.14)
+		# Cast shadow grounds the figure on the page.
+		draw_colored_polygon(PackedVector2Array([
+			c + Vector2(-r * 0.34, r * 0.44),
+			c + Vector2(r * 0.34, r * 0.44),
+			c + Vector2(r * 0.24, r * 0.52),
+			c + Vector2(-r * 0.24, r * 0.52),
+		]), Color(0.18, 0.13, 0.09, 0.24))
+		# Flowing cloak body.
+		draw_colored_polygon(PackedVector2Array([
+			c + Vector2(-r * 0.24, -r * 0.22),
+			c + Vector2(r * 0.24, -r * 0.22),
+			c + Vector2(r * 0.36, r * 0.42),
+			c + Vector2(-r * 0.36, r * 0.42),
+		]), ink)
+		# Head.
+		draw_circle(c + Vector2(0.0, -r * 0.36), r * 0.13, ink)
+		# Pointed hood — the wayfinder mark.
+		draw_colored_polygon(PackedVector2Array([
+			c + Vector2(0.0, -r * 0.64),
+			c + Vector2(-r * 0.22, -r * 0.20),
+			c + Vector2(r * 0.22, -r * 0.20),
+		]), ink)
+		# Longbow stave: a curved arc peeking right of the cloak.
+		var bow_ox := r * 0.18
+		var bow_r := r * 0.38
+		var bow_a := PI * 0.25
+		draw_arc(c + Vector2(bow_ox, 0.0), bow_r, -bow_a, bow_a, 14, ink, 3.0, true)
+		# Bowstring: a straight line between the bow tips.
+		var str_x := bow_ox + bow_r * cos(bow_a)
+		var str_dy := bow_r * sin(bow_a)
+		draw_line(c + Vector2(str_x, -str_dy), c + Vector2(str_x, str_dy),
+			Color(ink.r, ink.g, ink.b, 0.48), 1.2, true)
+		# A tiny warm catch-light at the hood tip (storybook shine).
+		draw_circle(c + Vector2(0.0, -r * 0.64), 1.5, Color(0.92, 0.86, 0.72, 0.32))
+		# Ink border rings.
 		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
 		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
