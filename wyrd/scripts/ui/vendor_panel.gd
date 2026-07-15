@@ -82,6 +82,16 @@ func _ready() -> void:
 	_gold_lbl.offset_left = -200
 	_gold_lbl.offset_top = 36
 	_panel.add_child(_gold_lbl)
+	# Flourish rule — a ◆ divider between the title block and the trade columns.
+	# Breaks the monotony of the bare gap (y ≈ 78–90) and signals a chapter
+	# break in the storybook layout.
+	var hd := _HeaderRule.new()
+	hd.anchor_right = 1.0
+	hd.offset_left = 54
+	hd.offset_right = -54
+	hd.offset_top = 78
+	hd.offset_bottom = 90
+	_panel.add_child(hd)
 
 	var close_hint := Label.new()
 	close_hint.text = "Esc — close"
@@ -108,10 +118,7 @@ func _ready() -> void:
 	col1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col1.add_theme_constant_override("separation", 6)
 	columns.add_child(col1)
-	var sell_hdr := Label.new()
-	sell_hdr.text = "Sell (he melts it down)"
-	WyrdUi.style_section(sell_hdr)
-	col1.add_child(sell_hdr)
+	col1.add_child(_SectionHead.new("Sell (he melts it down)"))
 	# A full pack outgrows the panel — the sell list scrolls now.
 	var sell_scroll := ScrollContainer.new()
 	sell_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -126,10 +133,7 @@ func _ready() -> void:
 	col2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col2.add_theme_constant_override("separation", 6)
 	columns.add_child(col2)
-	var buy_hdr := Label.new()
-	buy_hdr.text = "Wares"
-	WyrdUi.style_section(buy_hdr)
-	col2.add_child(buy_hdr)
+	col2.add_child(_SectionHead.new("Wares"))
 	_buy_box = VBoxContainer.new()
 	_buy_box.add_theme_constant_override("separation", 5)
 	_buy_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -286,3 +290,34 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# Thin drawn rule: a centred ◆ flourish spanning the control's width.
+# Used as a visual chapter-break between the header block and the trade columns.
+class _HeaderRule extends Control:
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5), size.x)
+
+
+# A drawn column section heading: IM Fell SC text in TERRACOTTA with a ◆
+# flourish rule below it. Replaces plain style_section Labels so each column
+# header reads like a storybook chapter title rather than an engine label.
+class _SectionHead extends Control:
+	var _text := ""
+
+	func _init(txt: String) -> void:
+		_text = txt
+		custom_minimum_size = Vector2(0, 34.0)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		var hf := WyrdUi.font_header()
+		var f: Font = hf if hf != null else get_theme_default_font()
+		draw_string(f, Vector2(0, 18.0), _text,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x, 15, WyrdUi.TERRACOTTA)
+		# Flourish rule sits 9 px below the text baseline — mimics how
+		# draw_flourish is used under section titles in the crafting bench tray.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 27.0), size.x - 8.0)
