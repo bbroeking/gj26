@@ -422,6 +422,23 @@ class GlobeGauge extends Control:
 			var a := PI * 0.25 + float(i) * PI * 0.5
 			var np := c + Vector2(cos(a), sin(a)) * (R + 8.0)
 			WyrdUi.draw_round_well(self, np, 8.0, Color(0.93, 0.88, 0.74))
+		# Bramble sprigs — four ivy leaves at the cardinal positions (N/E/S/W)
+		# between the diagonal knots, fulfilling the mj_hud_bramble.png "bramble
+		# nest" spec. Radius: outer ink ring sits at R+15; leaves grow outward
+		# from there to R+25, comfortably within the 66px half-width.
+		for i in 4:
+			var sa := float(i) * PI * 0.5
+			var sout := Vector2(cos(sa), sin(sa))
+			var sperp := sout.rotated(PI * 0.5)
+			var stem_base := c + sout * (R + 16.0)
+			var stem_tip := c + sout * (R + 19.5)
+			draw_line(stem_base, stem_tip, Color(WyrdUi.SAGE, 0.65), 1.2)
+			var base_l := stem_tip + sperp * 3.2
+			var base_r := stem_tip - sperp * 3.2
+			var leaf_tip := c + sout * (R + 25.5)
+			draw_colored_polygon(PackedVector2Array([base_l, leaf_tip, base_r]),
+				Color(WyrdUi.SAGE, 0.72))
+			draw_line(stem_tip, leaf_tip, Color(0.30, 0.42, 0.18, 0.65), 0.9)
 		# --- glass orb ---
 		draw_circle(c, R, Color(0.12, 0.10, 0.09))
 		if frac > 0.003:
