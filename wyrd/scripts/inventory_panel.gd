@@ -833,13 +833,25 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 			var lo: int = game.xp_for_level(lv)
 			var hi: int = game.xp_for_level(lv + 1)
 			var frac := clampf(float(xp - lo) / float(max(1, hi - lo)), 0.0, 1.0)
-			var bar := Rect2(Vector2(cx, y + 26.0), Vector2(w * 0.56, 12.0))
-			draw_rect(bar, Color(0.80, 0.72, 0.58))
-			draw_rect(Rect2(bar.position + Vector2(1, 1),
-				Vector2((bar.size.x - 2.0) * frac, bar.size.y - 2.0)),
-				(row.color as Color).lightened(0.12))
-			draw_rect(bar, Color(0.42, 0.34, 0.25, 0.9), false, 1.5)
-			draw_string(font, Vector2(bar.end.x + 10.0, y + 37.0),
+			var bar := Rect2(Vector2(cx, y + 26.0), Vector2(w * 0.56, 16.0))
+			# Recessed parchment well: trough, fill + catch-light, inner shadow, ink border.
+			draw_rect(bar, WyrdUi.KIT_WELL)
+			if frac > 0.005:
+				var fill_w := maxf(0.0, (bar.size.x - 4.0) * frac)
+				var fill_r := Rect2(bar.position + Vector2(2.0, 2.0),
+					Vector2(fill_w, bar.size.y - 4.0))
+				draw_rect(fill_r, (row.color as Color).lightened(0.08))
+				draw_rect(Rect2(fill_r.position,
+					Vector2(fill_r.size.x, fill_r.size.y * 0.38)),
+					Color(1.0, 0.97, 0.86, 0.30))
+			draw_rect(Rect2(bar.position + Vector2(1.5, 1.5),
+				Vector2(bar.size.x - 3.0, 2.0)), Color(0, 0, 0, 0.13))
+			draw_rect(Rect2(bar.position + Vector2(1.5, 1.5),
+				Vector2(2.0, bar.size.y - 3.0)), Color(0, 0, 0, 0.13))
+			draw_rect(Rect2(bar.position + Vector2(2.0, bar.size.y - 3.0),
+				Vector2(bar.size.x - 4.0, 2.0)), Color(1.0, 1.0, 0.92, 0.28))
+			draw_rect(bar, WyrdUi.KIT_EDGE, false, 2.0)
+			draw_string(font, Vector2(bar.end.x + 10.0, y + 43.0),
 				"%d / %d xp" % [xp, hi],
 				HORIZONTAL_ALIGNMENT_LEFT, 120.0, 13, Color(0.30, 0.24, 0.19))
 		# --- the mastery ladder (level 1→17): every perk, locked or earned ---
@@ -850,12 +862,13 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 			if lv >= int(p.lv):
 				earned += 1
 		var sy := y + 72.0
-		if _span_visible(sy - 18.0, sy + 4.0, scroll, view):
+		if _span_visible(sy - 18.0, sy + 14.0, scroll, view):
 			draw_string(hdr, Vector2(cx, sy), "Masteries",
 				HORIZONTAL_ALIGNMENT_LEFT, w - 78.0, 18, WyrdUi.TERRACOTTA)
 			draw_string(font, Vector2(cx, sy),
 				"%d / %d earned" % [earned, perks.size()],
 				HORIZONTAL_ALIGNMENT_RIGHT, w - 78.0, 13, Color(0.40, 0.34, 0.27))
+			WyrdUi.draw_flourish(self, Vector2(x + w * 0.5, sy + 10.0), w * 0.55)
 		# cards march down a spine in the left gutter; the disc lights when earned
 		var lx := x + 18.0
 		var card_x := x + 42.0
