@@ -39,6 +39,14 @@ func _ready() -> void:
 	_panel.offset_bottom = 300
 	add_child(_panel)
 
+	# Station-crest header: drawn first so it sits behind all other children.
+	var header_art := _CraftHeaderArt.new()
+	header_art.station = station_id
+	header_art.anchor_right = 1.0
+	header_art.offset_bottom = 84.0
+	header_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(header_art)
+
 	var title := Label.new()
 	title.text = String(st.get("title", "Crafting"))
 	WyrdUi.style_title(title)
@@ -212,3 +220,43 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# Drawn station-crest header — parchment grain over the header band, a small
+# trade-tinted seal roundel left of the title, and a flourish rule beneath.
+# Drawn first (lowest z) so it sits behind the Label children; covers the
+# 84px header band only (content starts at y 84 in the panel's local space).
+class _CraftHeaderArt extends Control:
+	var station := ""
+
+	func _ready() -> void:
+		resized.connect(queue_redraw)
+
+	func _draw() -> void:
+		if size.x < 2.0:
+			return
+		# Parchment grain across the inner header face (inside the wooden frame).
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(Vector2(36.0, 36.0), Vector2(size.x - 72.0, 50.0)), 31)
+		# Trade-tinted station roundel left of the title (right edge at x≈34,
+		# title starts at x=54 — 20px breathing room).
+		var cc := Vector2(20.0, 51.0)
+		var cr := 14.0
+		draw_circle(cc, cr, WyrdUi.KIT_PLATE)
+		var accent: Color = WyrdUi.GOLD
+		match station:
+			"forge":    accent = WyrdUi.TERRACOTTA.darkened(0.08)
+			"cookfire": accent = WyrdUi.SAGE
+			"still":    accent = WyrdUi.SAGE.darkened(0.08)
+		draw_arc(cc, cr - 4.0, 0.0, TAU, 24, Color(accent, 0.55), 3.0, true)
+		draw_arc(cc, cr, 0.0, TAU, 32, WyrdUi.KIT_EDGE, 2.0, true)
+		# Station glyph centred inside the disc.
+		var glyph := "⚒"   # ⚒ hammer — forge default
+		match station:
+			"cookfire": glyph = "♨"   # ♨ hot spring (cooking steam)
+			"still":    glyph = "⚗"   # ⚗ alembic
+		var font := get_theme_default_font()
+		draw_string(font, Vector2(cc.x - cr + 1.0, cc.y + 5.5),
+			glyph, HORIZONTAL_ALIGNMENT_CENTER, (cr - 1.0) * 2.0, 12, WyrdUi.INK)
+		# Flourish rule under the station title (title baseline ≈ y 64).
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 73.0), size.x - 120.0)
