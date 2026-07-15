@@ -166,7 +166,17 @@ func _render() -> void:
 			if _game != null and _game.craft(station_id, rid_s):
 				_render())
 		row.add_child(b)
-		_recipe_box.add_child(row)
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var accent: Color
+		if locked:
+			accent = WyrdUi.TERRACOTTA
+		elif _game != null and _game.can_afford(rec.inputs):
+			accent = WyrdUi.SAGE
+		else:
+			accent = WyrdUi.INK_MID
+		var card := _RecipeRow.new(accent)
+		card.add_child(row)
+		_recipe_box.add_child(card)
 
 	if _game == null:
 		_satchel_lbl.text = ""
@@ -212,3 +222,25 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# Carved recipe card — a MarginContainer that draws a draw_list_row plate so
+# every recipe reads as a carved parchment card rather than a flat text row.
+# Accent colour-codes the card's state at a glance (shared convention with
+# vendor wares and bench rows):
+#   SAGE       = can craft right now
+#   INK_MID    = unlocked but missing materials
+#   TERRACOTTA = level-gated / locked
+class _RecipeRow extends MarginContainer:
+	var _accent: Color
+
+	func _init(accent: Color) -> void:
+		_accent = accent
+		size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		add_theme_constant_override("margin_left", 12)
+		add_theme_constant_override("margin_top", 8)
+		add_theme_constant_override("margin_right", 8)
+		add_theme_constant_override("margin_bottom", 8)
+
+	func _draw() -> void:
+		WyrdUi.draw_list_row(self, Rect2(Vector2.ZERO, size), _accent)
