@@ -54,7 +54,30 @@ func _ready() -> void:
 	_name_lbl.offset_left = 56
 	_name_lbl.offset_right = -56
 	_name_lbl.offset_top = 38
+	# Spec (ui/artistic-dialog-speaker-nameplate) — a warm parchment chip
+	# behind the speaker name so each character introduces with a storybook
+	# title-card feel: soft cream plate, gold bottom rule, ink corners.
+	var nb := StyleBoxFlat.new()
+	nb.bg_color = Color(0.92, 0.86, 0.72, 0.55)
+	nb.set_border_width_all(0)
+	nb.border_width_bottom = 2
+	nb.border_color = Color(WyrdUi.GOLD, 0.50)
+	nb.set_corner_radius_all(5)
+	nb.content_margin_left = 14.0
+	nb.content_margin_right = 14.0
+	nb.content_margin_top = 5.0
+	nb.content_margin_bottom = 4.0
+	_name_lbl.add_theme_stylebox_override("normal", nb)
 	_panel.add_child(_name_lbl)
+	# Diamond flourish below the nameplate — the chapter-title divider that
+	# separates the speaker from the body and portrait below.
+	var div := _SpeakerDivider.new()
+	div.anchor_right = 1.0
+	div.offset_left = 56
+	div.offset_right = -56
+	div.offset_top = 80
+	div.offset_bottom = 100
+	_panel.add_child(div)
 	_body = Label.new()
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.anchor_right = 1.0
@@ -130,6 +153,15 @@ func _finish() -> void:
 	get_node("/root/Game").modal_closed()
 	finished.emit()
 	queue_free()
+
+
+# Spec (ui/artistic-dialog-speaker-nameplate) — the ── ◆ ── rule that
+# separates the speaker nameplate from the portrait and body below.
+# Pure vector (no textures in _draw — gotcha-safe).
+class _SpeakerDivider extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5),
+			size.x * 0.65)
 
 
 # Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
