@@ -39,6 +39,14 @@ func _ready() -> void:
 	_panel.offset_top = 70
 	_panel.offset_bottom = -70
 	add_child(_panel)
+	# Header ornament — a warm parchment wash + gold-and-leaf separator rule
+	# below the speaker name. Makes the most player-facing UI read as a
+	# painted page rather than a plain text box.
+	var hband := _HeaderBand.new()
+	hband.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	hband.offset_top = 28.0
+	hband.offset_bottom = 92.0   # 64 px tall band starting inside the frame
+	_panel.add_child(hband)
 	# Portrait well (spec 41) — ghosted silhouette until painted portraits.
 	var well := PortraitWell.new()
 	well.position = Vector2(48, 104)
@@ -54,6 +62,7 @@ func _ready() -> void:
 	_name_lbl.offset_left = 56
 	_name_lbl.offset_right = -56
 	_name_lbl.offset_top = 38
+	_name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_panel.add_child(_name_lbl)
 	_body = Label.new()
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -130,6 +139,23 @@ func _finish() -> void:
 	get_node("/root/Game").modal_closed()
 	finished.emit()
 	queue_free()
+
+
+# Drawn header band behind the speaker name. A warm parchment wash over the
+# header zone gives the name visual weight; the gold-and-leaf separator below
+# it separates header from body and reads as an illuminated-manuscript rule.
+class _HeaderBand extends Control:
+	func _draw() -> void:
+		var ml := WyrdUi.PANEL_MARGIN_L   # 34 — left frame margin
+		var mr := WyrdUi.PANEL_MARGIN_R   # 32 — right frame margin
+		var ix := ml
+		var iw := size.x - ml - mr
+		# Warm parchment tint over the name zone (barely-there, high-contrast safe)
+		draw_rect(Rect2(ix, 8.0, iw, 44.0), Color(0.88, 0.79, 0.60, 0.28))
+		# Soft top highlight — the page catches the warm light source above
+		draw_rect(Rect2(ix, 8.0, iw, 1.5), Color(1.0, 0.98, 0.88, 0.20))
+		# Gold + ivy-leaf separator — the centrepiece of the ornament pass
+		WyrdUi.draw_name_separator(self, float(ix), float(ix + iw), 58.0)
 
 
 # Spec 41 — the round portrait well: parchment disc, ink ring, ghosted

@@ -383,3 +383,65 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# Decorative separator for dialog / panel headers: a gold rule with a diamond
+# centrepiece and paired sage-green leaf clusters at each end.
+# Draws in the canvas-item's LOCAL space at the given y between x0..x1.
+static func draw_name_separator(c: CanvasItem, x0: float, x1: float,
+		y: float) -> void:
+	var cx := (x0 + x1) * 0.5
+	# Gold rule in two halves, gapping around the centre diamond
+	c.draw_line(Vector2(x0 + 38.0, y), Vector2(cx - 5.5, y),
+		Color(GOLD, 0.52), 1.2)
+	c.draw_line(Vector2(cx + 5.5, y), Vector2(x1 - 38.0, y),
+		Color(GOLD, 0.52), 1.2)
+	# Centre diamond
+	var dpts := PackedVector2Array([Vector2(cx, y - 4.5), Vector2(cx + 4.5, y),
+		Vector2(cx, y + 4.5), Vector2(cx - 4.5, y)])
+	c.draw_colored_polygon(dpts, Color(GOLD, 0.84))
+	# Leaf clusters at each end
+	_draw_leaf_cluster(c, Vector2(x0 + 24.0, y), false)
+	_draw_leaf_cluster(c, Vector2(x1 - 24.0, y), true)
+
+# Three small sage leaves + a gold tendril dot flanking one end of a separator.
+# anchor is the attachment point on the rule; flip mirrors it for the right end.
+static func _draw_leaf_cluster(c: CanvasItem, anchor: Vector2,
+		flip: bool) -> void:
+	var f := -1.0 if flip else 1.0
+	var sage_dk := SAGE.darkened(0.28)
+	# Connecting stem
+	c.draw_line(anchor, anchor + Vector2(f * 16.0, 0.0), Color(sage_dk, 0.55), 0.9)
+	# Three leaves: upper, centre, lower
+	c.draw_colored_polygon(
+		_leaf_pts(anchor + Vector2(f * 6.0, -5.5), -PI * 0.12 * f, 6.5, 3.0),
+		SAGE.lightened(0.05))
+	c.draw_colored_polygon(
+		_leaf_pts(anchor + Vector2(f * 13.0,  0.0), -PI * 0.05 * f, 6.0, 2.8),
+		SAGE)
+	c.draw_colored_polygon(
+		_leaf_pts(anchor + Vector2(f * 6.0,  5.5),  PI * 0.12 * f, 6.5, 3.0),
+		SAGE.lightened(0.05))
+	# Gold tendril dot at the outer tip
+	c.draw_circle(anchor + Vector2(f * 19.0, 0.0), 1.3, Color(GOLD, 0.70))
+
+# Eight-point pointed-oval polygon — used for leaf shapes.
+# angle rotates the long axis; half_l is the tip-to-base half-length;
+# half_w is the max half-width at the middle.
+static func _leaf_pts(center: Vector2, angle: float,
+		half_l: float, half_w: float) -> PackedVector2Array:
+	var raw := PackedVector2Array([
+		Vector2( 0.0,            -half_l),
+		Vector2( half_w * 0.60,  -half_l * 0.40),
+		Vector2( half_w,          0.0),
+		Vector2( half_w * 0.50,   half_l * 0.35),
+		Vector2( 0.0,             half_l * 0.40),
+		Vector2(-half_w * 0.50,   half_l * 0.35),
+		Vector2(-half_w,          0.0),
+		Vector2(-half_w * 0.60,  -half_l * 0.40),
+	])
+	var ca := cos(angle)
+	var sa := sin(angle)
+	var pts := PackedVector2Array()
+	for v in raw:
+		pts.append(center + Vector2(v.x * ca - v.y * sa, v.x * sa + v.y * ca))
+	return pts
