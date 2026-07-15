@@ -870,7 +870,17 @@ class BenchView extends Control:
 		# Keep it on the panel.
 		box.position.x = minf(box.position.x, size.x - box.size.x - 8.0)
 		box.position.y = minf(box.position.y, size.y - box.size.y - 8.0)
+		# Soft drop-shadow — the tip card floats above the bench face.
+		draw_rect(Rect2(box.position + Vector2(2, 3), box.size),
+			Color(0, 0, 0, 0.14))
+		# Parchment face.
 		draw_rect(box, Color(0.97, 0.93, 0.80, 0.97))
+		# Top honey bevel — warm candlelight catch, same as tray rows.
+		draw_rect(Rect2(box.position + Vector2(2.0, 1.5),
+			Vector2(box.size.x - 4.0, 2.0)), Color(1.0, 0.97, 0.88, 0.45))
+		# Parchment grain (fixed seed so it doesn't shift as the tip moves).
+		WyrdUi.draw_parchment_grain(self, box, 31)
+		# Ink border.
 		draw_rect(box, EDGE, false, 2.0)
 		var ty := box.position.y + 17.0
 		for ln in lines:
