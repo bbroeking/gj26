@@ -15,6 +15,11 @@ var _age := 0.0
 var _vel := Vector3.ZERO
 var _base := 1.0
 
+func _ready() -> void:
+	var f := WyrdUi.font_body()
+	if f != null:
+		font = f
+
 func setup(amount: int, tier: String = "normal") -> void:
 	text = str(amount)
 	modulate = TIER_COLOR.get(tier, TIER_COLOR["normal"])
