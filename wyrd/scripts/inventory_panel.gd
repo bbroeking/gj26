@@ -541,14 +541,37 @@ func _draw_tooltip() -> void:
 		pos.x = 0
 	if pos.y < 0:
 		pos.y = 0
-	draw_rect(Rect2(pos, Vector2(w, h)), Color(0.93, 0.88, 0.76, 0.97))
-	draw_rect(Rect2(pos, Vector2(w, h)),
-		Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+	# Parchment tooltip card — same "drawn card" language as the vendor shelf
+	# and crafting tray rows: drop shadow, grain, catch-light bevel, ink border,
+	# and a left rarity-accent stripe so the item's tier registers before
+	# the player reads the name (gold frame = rare, blue = magic, etc.).
+	var r := Rect2(pos, Vector2(w, h))
+	# Soft drop shadow so the card floats above the pack grid.
+	draw_rect(Rect2(r.position + Vector2(2.0, 3.0),
+		Vector2(r.size.x + 1.0, r.size.y + 1.0)), Color(0.0, 0.0, 0.0, 0.22))
+	# Parchment face.
+	draw_rect(r, Color(0.93, 0.88, 0.76, 0.97))
+	# Sparse grain — aged paper, not a flat engine panel.
+	WyrdUi.draw_parchment_grain(self, r, 41)
+	# Warm top catch-light.
+	draw_rect(Rect2(r.position + Vector2(2.0, 1.5), Vector2(w - 4.0, 1.5)),
+		Color(1.0, 0.97, 0.88, 0.42))
+	# Soft bottom shadow strip.
+	draw_rect(Rect2(r.position + Vector2(2.0, h - 2.5), Vector2(w - 4.0, 1.5)),
+		Color(WyrdUi.KIT_EDGE, 0.20))
+	# Ink border.
+	draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+	# Rarity accent stripe down the left edge.
+	var accent := RARITY_COLOR.get(String(item.get("rarity", "normal")),
+		WyrdUi.INK_MID) as Color
+	draw_rect(Rect2(r.position + Vector2(1.5, 1.5), Vector2(3.0, h - 3.0)),
+		accent)
 	var font := get_theme_default_font()
 	var y := pos.y + ipad + 14
 	for line in lines:
-		draw_string(font, Vector2(pos.x + ipad, y), String(line.text),
-			HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2, int(line.size), line.color)
+		draw_string(font, Vector2(pos.x + ipad + 3.0, y), String(line.text),
+			HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2 - 3.0, int(line.size),
+			line.color)
 		y += line_h
 
 func _draw_held() -> void:
