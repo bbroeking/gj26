@@ -307,6 +307,7 @@ static func draw_round_well(c: CanvasItem, center: Vector2, radius: float,
 # pinstripe. Callers draw their own label on top.
 static func draw_carved_button(c: CanvasItem, r: Rect2, enabled := true) -> void:
 	c.draw_rect(r, KIT_PLATE if enabled else Color(0.84, 0.78, 0.65))
+	draw_parchment_grain(c, r.grow(-2.0), 19)
 	c.draw_rect(Rect2(r.position + Vector2(2.0, 2.0),
 		Vector2(r.size.x - 4.0, 2.0)), Color(1.0, 1.0, 0.93, 0.55))
 	c.draw_rect(Rect2(r.position + Vector2(2.0, r.size.y - 4.0),
