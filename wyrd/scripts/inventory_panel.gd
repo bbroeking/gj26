@@ -381,6 +381,9 @@ func _draw() -> void:
 	draw_string(hdr_font, win.position + Vector2(52, 58),
 		"Adventurer's Pack", HORIZONTAL_ALIGNMENT_LEFT, win.size.x - 104, 24,
 		WyrdUi.TERRACOTTA)
+	# Flourish rule beneath the title — ◆ centred on the header band, matching
+	# the boss nameplate and dialog speaker ornament language.
+	WyrdUi.draw_flourish(self, win.position + Vector2(win.size.x * 0.5, 65.0), 240.0)
 	_draw_tabs(win)
 	if _tab == 0:
 		# Gold readout lives with the paper-doll — Gear tab only, else it
