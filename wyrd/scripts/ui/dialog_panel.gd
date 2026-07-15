@@ -132,14 +132,35 @@ func _finish() -> void:
 	queue_free()
 
 
-# Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
+# Spec 41 — the round portrait well: parchment disc, ink frame, ghosted
 # silhouette placeholder until painted portraits exist.
+# Art pass: burnished gold filigree ring + four sage leaf-bud ornaments at
+# N/E/S/W of the frame (design rule: "leafy ivy/vine + gold filigree ornament
+# on frames/headers only"). Leaf buds are drawn before the ink rings so the
+# hard ink border anchors their base; only the pointed tips poke outward.
 class PortraitWell extends Control:
 	func _draw() -> void:
 		var c := size * 0.5
 		var r := minf(c.x, c.y)
+		# Warm parchment face.
 		draw_circle(c, r, Color(0.88, 0.82, 0.67))
+		# Ghosted figure: body disc + head disc (unchanged silhouette).
 		draw_circle(c + Vector2(0, r * 0.28), r * 0.34, Color(0.55, 0.47, 0.36, 0.55))
 		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
+		# Burnished gold filigree ring inside the ink frame.
+		draw_arc(c, r - 7.0, 0, TAU, 48, Color(WyrdUi.GOLD, 0.45), 1.2, true)
+		# Leaf buds at N / E / S / W — ivy ornament on the portrait frame.
+		# Drawn before the ink rings so the hard border anchors each bud's base.
+		var leaf := Color(WyrdUi.SAGE.darkened(0.10), 0.70)
+		for i in 4:
+			var ang := float(i) * PI * 0.5 - PI * 0.5
+			var d := Vector2(cos(ang), sin(ang))
+			var perp := Vector2(-d.y, d.x)
+			draw_colored_polygon(PackedVector2Array([
+				c + d * (r + 4.0),
+				c + d * (r - 3.5) + perp * 3.5,
+				c + d * (r - 3.5) - perp * 3.5
+			]), leaf)
+		# Ink frame rings — drawn last so they sit over the leaf bases.
 		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
 		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
