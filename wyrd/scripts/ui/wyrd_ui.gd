@@ -327,15 +327,32 @@ static func draw_parchment_grain(c: CanvasItem, r: Rect2, seed_v: int = 7) -> vo
 		c.draw_line(p, p + Vector2(ln, rng.randf_range(-1.2, 1.2)),
 			Color(0.62, 0.52, 0.38, 0.05 + rng.randf() * 0.05), 1.0)
 
-# Section flourish: ── ◆ ── centred under a header.
+# Section flourish: a vine rule  🌿── ◆ ──🌿  centred under a header.
+# Small sage leaf buds at each arm end give the "ivy/vine" botanical read
+# the design language requires; the gold diamond anchors the centre accent.
 static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 	var col := Color(KIT_EDGE, 0.45)
-	c.draw_line(center - Vector2(width * 0.5, 0), center - Vector2(7, 0), col, 1.0)
-	c.draw_line(center + Vector2(7, 0), center + Vector2(width * 0.5, 0), col, 1.0)
+	var arm := width * 0.5
+	c.draw_line(center - Vector2(arm, 0), center - Vector2(7, 0), col, 1.0)
+	c.draw_line(center + Vector2(7, 0), center + Vector2(arm, 0), col, 1.0)
+	# Central gold diamond.
 	var pts := PackedVector2Array([center + Vector2(0, -3.5),
 		center + Vector2(3.5, 0), center + Vector2(0, 3.5),
 		center + Vector2(-3.5, 0)])
 	c.draw_colored_polygon(pts, Color(GOLD, 0.8))
+	# Leaf bud at each arm tip — a small almond pointing outward, sage-filled
+	# with an ink outline, so the rule reads as a sprig of ivy, not a bracket.
+	for s in [-1.0, 1.0]:
+		var tip := center + Vector2(s * (arm + 4.0), 0.0)
+		var bud := PackedVector2Array([
+			tip,
+			center + Vector2(s * (arm - 2.0), -3.5),
+			center + Vector2(s * (arm - 4.0),  0.0),
+			center + Vector2(s * (arm - 2.0),  3.5),
+		])
+		c.draw_colored_polygon(bud, Color(SAGE, 0.52))
+		c.draw_polyline(PackedVector2Array([tip, bud[1], bud[2], bud[3], tip]),
+			Color(KIT_EDGE, 0.32), 1.0)
 
 # A little hand-blown ink bottle — glass body, ink fill, neck, cork, and a
 # glass highlight. Replaces the bare text glyphs in sockets and trays.
