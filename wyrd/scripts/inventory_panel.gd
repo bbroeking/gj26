@@ -700,9 +700,49 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 	var w := win.size.x - 148.0
 	var y := win.position.y + 134.0
 	if (game.materials as Dictionary).is_empty():
-		draw_string(font, Vector2(x, y),
+		var cx := win.position.x + win.size.x * 0.5
+		var cy := win.position.y + 190.0
+		var mr := 44.0
+		# drop shadow
+		draw_circle(Vector2(cx, cy + 3.0), mr + 5.0, Color(0.0, 0.0, 0.0, 0.10))
+		# parchment outer ring
+		draw_circle(Vector2(cx, cy), mr + 5.0, Color(0.91, 0.85, 0.72))
+		# warm well disc
+		draw_circle(Vector2(cx, cy), mr, Color(0.82, 0.75, 0.60))
+		# ink border ring
+		draw_arc(Vector2(cx, cy), mr + 4.0, 0.0, TAU, 64,
+			Color(WyrdUi.KIT_EDGE, 0.50), 1.5)
+		# gold accent ring
+		draw_arc(Vector2(cx, cy), mr - 5.0, 0.0, TAU, 64,
+			Color(WyrdUi.GOLD, 0.40), 1.0)
+		# satchel icon centered on the medallion
+		var stex := _cached_tex(TAB_ICONS[1])
+		if stex != null:
+			var ir := Rect2(Vector2(cx - 26.0, cy - 26.0), Vector2(52.0, 52.0))
+			draw_texture_rect(stex, ir, false, Color(WyrdUi.INK, 0.65))
+		# sage leaf sprigs at diagonal corners of the medallion
+		var leaf_col := Color(WyrdUi.SAGE, 0.60)
+		for di in 4:
+			var ang := deg_to_rad(45.0 + float(di) * 90.0)
+			var tip := Vector2(cx + cos(ang) * (mr + 18.0),
+				cy + sin(ang) * (mr + 18.0))
+			var ba := Vector2(cx + cos(ang + 0.38) * (mr + 1.0),
+				cy + sin(ang + 0.38) * (mr + 1.0))
+			var bb := Vector2(cx + cos(ang - 0.38) * (mr + 1.0),
+				cy + sin(ang - 0.38) * (mr + 1.0))
+			draw_colored_polygon([tip, ba, bb], [leaf_col, leaf_col, leaf_col])
+		# stem nodes at cardinal points
+		var stem_col := Color(WyrdUi.SAGE, 0.40)
+		for di in 4:
+			var ang := deg_to_rad(float(di) * 90.0)
+			draw_circle(
+				Vector2(cx + cos(ang) * (mr + 6.0), cy + sin(ang) * (mr + 6.0)),
+				2.5, stem_col)
+		# divider and flavor text
+		WyrdUi.draw_flourish(self, Vector2(cx, cy + mr + 30.0), 48)
+		draw_string(font, Vector2(cx - w * 0.5, cy + mr + 54.0),
 			"Empty. The yard's herb patches regrow — start there.",
-			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
+			HORIZONTAL_ALIGNMENT_CENTER, w, 15, WyrdUi.INK_MID)
 		_tab_content_h[1] = 0.0
 		return
 	# Slice C — each material rides a list-row plate: an ink-disc holding its
