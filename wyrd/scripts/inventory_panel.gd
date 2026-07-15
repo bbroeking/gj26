@@ -816,11 +816,28 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 			if i > 0:
 				draw_line(Vector2(x, y - 12.0), Vector2(x + w, y - 12.0),
 					Color(0.52, 0.42, 0.30, 0.45), 1.5)
-			# --- emblem (60px disc, double ink ring — spec 40) ---
+			# --- emblem — burnished compass disc (spec 40 + art pass) ---
 			var ec := Vector2(x + 26.0, y + 30.0)
+			# Soft ambient glow so the disc reads as a glowing sealed crest.
+			draw_circle(ec, 31.0, Color(row.color as Color, 0.16))
+			# Face fill.
 			draw_circle(ec, 26.0, (row.color as Color))
+			# Top-left catch-light — disc catches the page's warm light.
+			draw_arc(ec, 21.0, PI * 1.12, PI * 1.88, 24,
+				Color(1.0, 1.0, 0.96, 0.45), 3.5, true)
+			# Bottom-right shadow — gives the disc depth and weight.
+			draw_arc(ec, 21.0, PI * 0.12, PI * 0.88, 24,
+				Color(0.0, 0.0, 0.0, 0.22), 3.0, true)
+			# Gold inner ring — burnished quality.
+			draw_arc(ec, 17.5, 0, TAU, 48, Color(WyrdUi.GOLD, 0.50), 1.2, true)
+			# N/S/E/W cardinal tick marks — compass-rose read, fitting Wayfinding.
+			for ti in 4:
+				var ta := float(ti) * PI * 0.5
+				var td := Vector2(cos(ta), sin(ta))
+				draw_line(ec + td * 19.0, ec + td * 25.0, Color(WyrdUi.INK, 0.45), 1.5)
+			# Ink outer ring.
 			draw_arc(ec, 26.0, 0, TAU, 48, Color(0.25, 0.18, 0.12), 2.5, true)
-			draw_arc(ec, 21.0, 0, TAU, 48, Color(0.97, 0.93, 0.82, 0.55), 1.2, true)
+			# Glyph.
 			draw_string(hdr, Vector2(ec.x - 26.0, ec.y + 8.0), String(row.glyph),
 				HORIZONTAL_ALIGNMENT_CENTER, 52.0, 22, Color(0.98, 0.95, 0.86))
 			# --- name + level (ink, per the design — terracotta is title-only) ---
