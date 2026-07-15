@@ -535,9 +535,18 @@ class BenchView extends Control:
 		return GatherDefs.material_name(id)
 
 	func _tray_section(hdr: Font, x: float, y: float, label: String) -> float:
-		draw_string(hdr, Vector2(x, y), label,
+		var pr := Rect2(Vector2(x - 4.0, y - 13.0), Vector2(212.0, 18.0))
+		draw_rect(pr, Color(WyrdUi.KIT_PLATE, 0.65))
+		draw_rect(Rect2(pr.position + Vector2(1.0, 1.0),
+			Vector2(pr.size.x - 2.0, 1.5)), Color(1.0, 1.0, 0.93, 0.45))
+		draw_rect(Rect2(pr.position + Vector2(0.0, pr.size.y - 2.0),
+			Vector2(pr.size.x, 1.5)), Color(WyrdUi.KIT_EDGE, 0.20))
+		draw_rect(pr, WyrdUi.KIT_EDGE, false, 1.0)
+		draw_rect(Rect2(pr.position + Vector2(1.5, 1.5),
+			Vector2(3.0, pr.size.y - 3.0)), Color(WyrdUi.SAGE, 0.70))
+		draw_string(hdr, Vector2(x + 8.0, y), label,
 			HORIZONTAL_ALIGNMENT_LEFT, 200, 13, WyrdUi.INK)
-		WyrdUi.draw_flourish(self, Vector2(x + 106.0, y + 7.0), 204.0)
+		WyrdUi.draw_flourish(self, Vector2(x + 106.0, y + 7.0), 180.0)
 		return y + 8.0
 
 	func _tray_row(font: Font, x: float, y: float, kind: String, id: String,
