@@ -37,16 +37,22 @@ func _ready() -> void:
 	_panel.offset_bottom = 230
 	add_child(_panel)
 
+	# Disc crest + flourish rule drawn behind the title/subtitle labels.
+	var hdr := _HeaderDecorations.new()
+	hdr.position = Vector2(36, 34)
+	hdr.size = Vector2(500, 58)
+	_panel.add_child(hdr)
+
 	var title := Label.new()
 	title.text = "The Waystone"
 	WyrdUi.style_title(title)
-	title.position = Vector2(54, 34)
+	title.position = Vector2(82, 34)
 	_panel.add_child(title)
 
 	var sub := Label.new()
 	sub.text = "Socket a chart. The crossing spends it."
 	WyrdUi.style_dim(sub, 13)
-	sub.position = Vector2(54, 66)
+	sub.position = Vector2(82, 65)
 	_panel.add_child(sub)
 
 	# A full chart case outgrows the panel — the list scrolls now,
@@ -154,3 +160,12 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# Drawn header ornament: waystone portal disc on the left, a flourish rule
+# beneath the title block. Renders behind the title/subtitle labels so the
+# text stays perfectly readable on the parchment face.
+class _HeaderDecorations extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_waystone_disc(self, Vector2(18, 24), 18.0)
+		WyrdUi.draw_flourish(self, Vector2(232, 52), 160.0)

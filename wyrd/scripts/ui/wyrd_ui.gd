@@ -358,6 +358,35 @@ static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
 		body.position + Vector2(2.5, body.size.y - 3.0),
 		Color(1, 1, 1, 0.45), 1.5)
 
+# A carved waystone portal disc — the dungeon-entry motif. An outer
+# burnished-gold ring, 8 rune notch marks, a soft jade shimmer at the
+# centre; placed in panel headers as the waystone's emblem.
+static func draw_waystone_disc(c: CanvasItem, center: Vector2, radius: float) -> void:
+	# Parchment face
+	c.draw_circle(center, radius, CREAM)
+	# Jade shimmer — the portal's living glow
+	c.draw_circle(center, radius * 0.50, Color(SAGE, 0.18))
+	c.draw_circle(center, radius * 0.28, Color(SAGE, 0.26))
+	# Carved inner ring
+	c.draw_arc(center, radius * 0.55, 0, TAU, 48, Color(KIT_EDGE, 0.45), 1.5, true)
+	# 8 rune notch marks between inner ring and outer ring
+	for i in 8:
+		var a := TAU * float(i) / 8.0 - PI * 0.5
+		var p0 := center + Vector2(cos(a), sin(a)) * (radius * 0.60)
+		var p1 := center + Vector2(cos(a), sin(a)) * (radius * 0.82)
+		c.draw_line(p0, p1, Color(KIT_EDGE, 0.45), 1.5)
+	# Outer gold ring
+	c.draw_arc(center, radius, 0, TAU, 64, Color(GOLD, 0.88), 2.5, true)
+	# 4 cardinal pip marks on the outer edge (N/S/E/W)
+	for i in 4:
+		var a := TAU * float(i) / 4.0 - PI * 0.5
+		var p0 := center + Vector2(cos(a), sin(a)) * (radius - 5.0)
+		var p1 := center + Vector2(cos(a), sin(a)) * (radius + 4.0)
+		c.draw_line(p0, p1, Color(GOLD, 0.92), 3.0)
+	# Soft gloss arc on the top of the disc
+	c.draw_arc(center, radius * 0.72, -PI * 0.72, -PI * 0.28, 18,
+		Color(1.0, 1.0, 0.92, 0.25), 3.5, true)
+
 # A rolled parchment scroll with a wax seal — the chart-in-a-socket read.
 static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 	var face := Rect2(r.position + Vector2(r.size.x * 0.08, r.size.y * 0.12),
