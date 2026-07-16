@@ -337,8 +337,8 @@ static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 		center + Vector2(-3.5, 0)])
 	c.draw_colored_polygon(pts, Color(GOLD, 0.8))
 
-# A little hand-blown ink bottle — glass body, ink fill, neck, cork, and a
-# glass highlight. Replaces the bare text glyphs in sockets and trays.
+# A little hand-blown ink bottle — glass body, ink fill, neck, cork, a
+# glass highlight, and a hand-written parchment label glued to the body.
 static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
 		ink: Color) -> void:
 	var w := h * 0.62
@@ -347,6 +347,20 @@ static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
 	c.draw_rect(body, Color(0.88, 0.92, 0.90, 0.55))
 	c.draw_rect(Rect2(body.position + Vector2(1.5, body.size.y * 0.28),
 		Vector2(body.size.x - 3.0, body.size.y * 0.72 - 1.5)), ink)
+	# Parchment label glued to the glass: straddles the glass–ink boundary so
+	# the ink colour reads through the semi-opaque cream strip, giving each
+	# blend a unique tinted tag.
+	var lx := body.position.x + 1.5
+	var ly := body.position.y + body.size.y * 0.12
+	var lw := body.size.x - 3.0
+	var lh := body.size.y * 0.36
+	c.draw_rect(Rect2(lx, ly, lw, lh), Color(0.96, 0.91, 0.78, 0.82))
+	c.draw_rect(Rect2(lx, ly, lw, lh), Color(KIT_EDGE, 0.42), false, 1.0)
+	# A single faint hand-scratched mark so it reads as a handwritten label.
+	if lw >= 5.0:
+		c.draw_line(Vector2(lx + 2.0, ly + lh * 0.48),
+			Vector2(lx + lw * 0.70, ly + lh * 0.40),
+			Color(KIT_EDGE, 0.20), 1.0)
 	c.draw_rect(body, KIT_EDGE, false, 1.5)
 	var neck := Rect2(center + Vector2(-w * 0.18, -h * 0.42),
 		Vector2(w * 0.36, h * 0.26))
