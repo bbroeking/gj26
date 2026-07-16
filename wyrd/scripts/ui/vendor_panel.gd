@@ -62,10 +62,15 @@ func _ready() -> void:
 	_panel.offset_bottom = 260
 	add_child(_panel)
 
+	# Smithing-disc crest to the left of the title — Hod's trade mark.
+	var crest := _HodCrest.new()
+	crest.position = Vector2(46, 18)
+	crest.size = Vector2(44, 44)
+	_panel.add_child(crest)
 	var title := Label.new()
 	title.text = "Hod's Counter"
 	WyrdUi.style_title(title)
-	title.position = Vector2(54, 34)
+	title.position = Vector2(100, 32)
 	_panel.add_child(title)
 
 	var sub := Label.new()
@@ -108,9 +113,7 @@ func _ready() -> void:
 	col1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col1.add_theme_constant_override("separation", 6)
 	columns.add_child(col1)
-	var sell_hdr := Label.new()
-	sell_hdr.text = "Sell (he melts it down)"
-	WyrdUi.style_section(sell_hdr)
+	var sell_hdr := _SectionHdr.new("Sell (he melts it down)")
 	col1.add_child(sell_hdr)
 	# A full pack outgrows the panel — the sell list scrolls now.
 	var sell_scroll := ScrollContainer.new()
@@ -126,9 +129,7 @@ func _ready() -> void:
 	col2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	col2.add_theme_constant_override("separation", 6)
 	columns.add_child(col2)
-	var buy_hdr := Label.new()
-	buy_hdr.text = "Wares"
-	WyrdUi.style_section(buy_hdr)
+	var buy_hdr := _SectionHdr.new("Wares")
 	col2.add_child(buy_hdr)
 	_buy_box = VBoxContainer.new()
 	_buy_box.add_theme_constant_override("separation", 5)
@@ -286,3 +287,38 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# Smithing-disc crest — parchment roundel, gold ring, hammer glyph.
+# Sits to the left of "Hod's Counter" so the header reads as a signed trade.
+class _HodCrest extends Control:
+	func _draw() -> void:
+		var c := size * 0.5
+		var r := minf(c.x, c.y) - 1.0
+		draw_circle(c, r, WyrdUi.KIT_PLATE)
+		draw_circle(c, r - 4.0, Color(0.96, 0.91, 0.80))
+		draw_arc(c, r - 2.0, 0, TAU, 48, Color(WyrdUi.GOLD, 0.65), 1.5, true)
+		draw_arc(c, r, 0, TAU, 48, WyrdUi.KIT_EDGE, 2.0, true)
+		var font := get_theme_default_font()
+		draw_string(font, Vector2(0, c.y + size.y * 0.20), "⚒",
+			HORIZONTAL_ALIGNMENT_CENTER, int(size.x), int(size.y * 0.52),
+			WyrdUi.TERRACOTTA)
+
+
+# Column section header with a ◆ flourish rule beneath the text — the two
+# shelf labels read as carved headers, not a flat spreadsheet.
+class _SectionHdr extends Control:
+	var _text := ""
+
+	func _init(text: String) -> void:
+		_text = text
+		custom_minimum_size = Vector2(0, 30)
+		size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	func _draw() -> void:
+		var font := WyrdUi.font_header()
+		if font == null:
+			font = get_theme_default_font()
+		draw_string(font, Vector2(0, 17), _text,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 17, WyrdUi.TERRACOTTA)
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 26.0), size.x)
