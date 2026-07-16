@@ -1,10 +1,11 @@
 extends Control
 
 # A carved storybook hotbar slot. Draws its own face (carved button + recessed
-# icon well + parchment grain), a true RADIAL cooldown wedge (square-clamped so
-# it never bulges past the slot), and a gold ready-flash when a skill comes off
-# cooldown. The icon/glyph/keybind/cost are children added by skill_bar.gd and
-# render over this _draw. Pure-vector (no texture in _draw — gotcha-safe).
+# icon well + parchment grain + gold burnished inset hairline + ivy leaf-bud
+# corner ornaments), a true RADIAL cooldown wedge (square-clamped so it never
+# bulges past the slot), and a gold ready-flash when a skill comes off cooldown.
+# The icon/glyph/keybind/cost are children added by skill_bar.gd and render
+# over this _draw. Pure-vector (no texture in _draw — gotcha-safe).
 
 var cd_ratio: float = 0.0      # 1 = just cast (full dark wedge) → 0 = ready
 var castable: bool = true
@@ -37,6 +38,13 @@ func _draw() -> void:
 	WyrdUi.draw_carved_button(self, r, castable)
 	WyrdUi.draw_well(self, r.grow(-7.0), WyrdUi.KIT_PLATE.lightened(0.05))
 	WyrdUi.draw_parchment_grain(self, r, _seed)
+	# Gold burnished inset hairline — ties each slot to the tray's burnished
+	# plank language (hotbar_tray draws the same inset line at grow(-4.0)).
+	draw_rect(r.grow(-4.5), Color(WyrdUi.GOLD, 0.38), false, 1.0)
+	# Tiny ivy leaf-bud ornaments at each frame corner — botanical ornament
+	# lives on frames only (design language), and the 7px band between border
+	# and well is exactly that frame.
+	_draw_corner_buds(r)
 	# Radial cooldown wedge — a square-clamped pie from 12 o'clock clockwise,
 	# shrinking as the skill cools. Vertices ride the slot's own edge so it
 	# reads as the slot face darkening, with no overshoot into the gaps.
@@ -57,3 +65,24 @@ func _draw() -> void:
 		draw_colored_polygon(pts, Color(0.10, 0.08, 0.07, 0.52))
 	if _flash > 0.0:
 		draw_rect(r.grow(-1.5), Color(WyrdUi.GOLD, _flash * 0.85), false, 3.0)
+
+# Four tiny sage-green leaf-bud diamonds sit in each corner of the carved frame
+# band (between the outer ink border and the icon well). The 4-point diamond is
+# the same ornamental shape used in draw_flourish's ◆ section dividers, so they
+# share the kit's botanical vocabulary without introducing a new visual language.
+func _draw_corner_buds(r: Rect2) -> void:
+	var col := Color(WyrdUi.SAGE, 0.40)
+	var o := 5.0     # offset from corner to bud centre (within the 7px frame band)
+	var sz := 2.6    # half-axis — buds stay clearly inside the frame
+	for corner in [
+		r.position + Vector2(o, o),
+		r.position + Vector2(r.size.x - o, o),
+		r.position + Vector2(o, r.size.y - o),
+		r.position + Vector2(r.size.x - o, r.size.y - o),
+	]:
+		draw_colored_polygon(PackedVector2Array([
+			corner + Vector2(0.0, -sz),
+			corner + Vector2(sz * 0.65, 0.0),
+			corner + Vector2(0.0, sz),
+			corner + Vector2(-sz * 0.65, 0.0),
+		]), col)
