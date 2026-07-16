@@ -34,10 +34,11 @@ func _ready() -> void:
 	_panel.offset_right = 330
 	_panel.offset_bottom = 160
 	add_child(_panel)
+	WyrdUi.style_panel(_panel)
 	# Title.
 	var title := Label.new()
 	title.text = "An Old Altar Stirs"
-	title.add_theme_font_size_override("font_size", 28)
+	WyrdUi.style_title(title)
 	title.anchor_left = 0.0
 	title.anchor_right = 1.0
 	title.offset_top = 16
@@ -65,6 +66,7 @@ func setup(buffs: Array) -> void:
 	for b in _buffs:
 		var btn := Button.new()
 		btn.custom_minimum_size = Vector2(180, 200)
+		WyrdUi.style_kit_button(btn)
 		btn.text = String(b.name) + "\n\n" + String(b.desc)
 		btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		btn.pressed.connect(_on_pressed.bind(b))
