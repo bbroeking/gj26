@@ -24,3 +24,23 @@ func _draw() -> void:
 	var cy := r.size.y * 0.5
 	WyrdUi.draw_flourish(self, Vector2(20, cy), 24)
 	WyrdUi.draw_flourish(self, Vector2(r.size.x - 20, cy), 24)
+	# Ivy leaf sprigs at the top corners — vine ornament on the plank's carved
+	# frame; they live in the 12 px band above the slots so they never clip gear.
+	_draw_corner_sprig(Vector2(5.0, 4.0), 1.0)
+	_draw_corner_sprig(Vector2(r.size.x - 5.0, 4.0), -1.0)
+
+# A small bramble sprig: a short vine tendril + two paired leaf strokes + a bud.
+# dir +1 grows rightward (left corner), -1 grows leftward (right corner).
+func _draw_corner_sprig(origin: Vector2, dir: float) -> void:
+	var vine  := Color(WyrdUi.SAGE.darkened(0.40), 0.55)
+	var leaf_a := Color(WyrdUi.SAGE, 0.68)
+	var leaf_b := Color(WyrdUi.SAGE.darkened(0.18), 0.52)
+	var tip := origin + Vector2(dir * 17.0, 8.0)
+	draw_line(origin, tip, vine, 1.2)
+	var s0 := origin + Vector2(dir * 5.5, 2.5)
+	draw_line(s0, s0 + Vector2(dir * 3.5, -4.5), leaf_a, 1.0)
+	draw_line(s0, s0 + Vector2(dir * 1.5,  4.5), leaf_b, 0.8)
+	var s1 := origin + Vector2(dir * 11.5, 5.5)
+	draw_line(s1, s1 + Vector2(dir * 4.0, -5.0), leaf_a, 1.0)
+	draw_line(s1, s1 + Vector2(dir * 2.0,  4.0), leaf_b, 0.8)
+	draw_circle(tip, 1.8, Color(WyrdUi.SAGE.darkened(0.05), 0.52))
