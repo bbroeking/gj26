@@ -292,6 +292,18 @@ static func draw_well(c: CanvasItem, r: Rect2, fill := KIT_WELL) -> void:
 	c.draw_rect(Rect2(r.position + Vector2(2.0, r.size.y - 3.0),
 		Vector2(r.size.x - 4.0, 2.0)), Color(1.0, 1.0, 0.92, 0.35))
 	c.draw_rect(r, KIT_EDGE, false, 2.0)
+	# Sparse sepia fiber strokes so the well reads as parchment-lined carved
+	# wood rather than flat paint. Seed is size-derived so each well size gets
+	# its own stable grain pattern with no per-frame drift.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(r.size.x * 3.0 + r.size.y * 7.0)
+	var inner := r.grow(-3.0)
+	for _i in int(r.size.x * r.size.y / 3200.0):
+		var p := inner.position + Vector2(rng.randf() * inner.size.x,
+			rng.randf() * inner.size.y)
+		c.draw_line(p, p + Vector2(2.0 + rng.randf() * 5.0,
+			rng.randf_range(-0.8, 0.8)),
+			Color(0.55, 0.44, 0.32, 0.04 + rng.randf() * 0.04), 1.0)
 
 # Round well — ink sockets, pot rims.
 static func draw_round_well(c: CanvasItem, center: Vector2, radius: float,
