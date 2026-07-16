@@ -34,15 +34,22 @@ func _ready() -> void:
 	_panel.offset_right = 330
 	_panel.offset_bottom = 160
 	add_child(_panel)
-	# Title.
+	WyrdUi.style_panel(_panel)
+	# Candle-trio crest left of the title — a storybook altar icon.
+	var crest := _CandleCrest.new()
+	crest.custom_minimum_size = Vector2(60, 44)
+	crest.position = Vector2(10, 14)
+	_panel.add_child(crest)
+	# Title — IM Fell SC, terracotta, left-aligned to clear the crest.
 	var title := Label.new()
 	title.text = "An Old Altar Stirs"
-	title.add_theme_font_size_override("font_size", 28)
+	WyrdUi.style_title(title)
 	title.anchor_left = 0.0
 	title.anchor_right = 1.0
+	title.offset_left = 74
 	title.offset_top = 16
 	title.offset_bottom = 56
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_panel.add_child(title)
 	# HBox for the 3 buff cards.
 	_hbox = HBoxContainer.new()
@@ -64,6 +71,7 @@ func setup(buffs: Array) -> void:
 		c.queue_free()
 	for b in _buffs:
 		var btn := Button.new()
+		WyrdUi.style_kit_button(btn)
 		btn.custom_minimum_size = Vector2(180, 200)
 		btn.text = String(b.name) + "\n\n" + String(b.desc)
 		btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -75,3 +83,11 @@ func _on_pressed(buff: Dictionary) -> void:
 	get_node("/root/Game").modal_closed()
 	chosen.emit(buff)
 	queue_free()
+
+
+# ---- altar candle crest ----
+# Three hand-drawn candles (side, centre, side) — the shrine modal's header icon.
+# Pure vector; no textures are loaded inside _draw.
+class _CandleCrest extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_candle_trio(self, Rect2(Vector2.ZERO, size))

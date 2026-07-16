@@ -383,3 +383,47 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# Three altar candles — crest icon for shrine / blessing surfaces.
+# rect.end.y is the candle bases; the flames rise above rect.position.y.
+# Side candles are 64 % the height of the centre candle and spaced 30 % of
+# rect.width apart. All draw calls are vector-only (no textures in _draw).
+static func draw_candle_trio(c: CanvasItem, rect: Rect2) -> void:
+	var cx := rect.position.x + rect.size.x * 0.5
+	var base_y := rect.end.y
+	var h_mid  := rect.size.y * 0.90
+	var h_side := rect.size.y * 0.64
+	var sp := rect.size.x * 0.30
+	_draw_candle(c, Vector2(cx - sp, base_y), h_side)
+	_draw_candle(c, Vector2(cx,      base_y), h_mid)
+	_draw_candle(c, Vector2(cx + sp, base_y), h_side)
+
+# One candle; base_pt is the bottom-centre of the wax body.
+static func _draw_candle(c: CanvasItem, base_pt: Vector2, h: float) -> void:
+	var w := h * 0.24
+	# soft amber glow above the flame
+	var wick_tip := Vector2(base_pt.x, base_pt.y - h * 0.63)
+	c.draw_circle(wick_tip, h * 0.20, Color(1.0, 0.70, 0.28, 0.11))
+	# wax body
+	var body := Rect2(Vector2(base_pt.x - w * 0.5, base_pt.y - h * 0.55),
+		Vector2(w, h * 0.55))
+	c.draw_rect(body, Color(0.96, 0.92, 0.82))
+	c.draw_rect(body, KIT_EDGE, false, 1.0)
+	# wick
+	c.draw_line(Vector2(base_pt.x, body.position.y), wick_tip,
+		Color(0.32, 0.24, 0.16), 1.5)
+	# flame — teardrop diamond
+	var fh := h * 0.16
+	c.draw_colored_polygon(PackedVector2Array([
+		wick_tip + Vector2(0.0,         -fh),
+		wick_tip + Vector2(fh * 0.30,   fh * 0.24),
+		wick_tip + Vector2(0.0,          fh * 0.46),
+		wick_tip + Vector2(-fh * 0.30,   fh * 0.24),
+	]), Color(0.92, 0.48, 0.14, 0.90))
+	# inner highlight
+	c.draw_colored_polygon(PackedVector2Array([
+		wick_tip + Vector2(0.0,          -fh * 0.52),
+		wick_tip + Vector2(fh * 0.13,    fh * 0.05),
+		wick_tip + Vector2(0.0,           fh * 0.13),
+		wick_tip + Vector2(-fh * 0.13,    fh * 0.05),
+	]), Color(1.0, 0.88, 0.55, 0.75))
