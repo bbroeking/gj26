@@ -378,6 +378,22 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_line(Vector2(face.position.x + 6.0, y),
 			Vector2(face.position.x + 6.0 + rng.randf() * face.size.x * 0.5, y),
 			Color(KIT_EDGE, 0.25), 1.0)
+	# Cartographic watermark — a faint compass-rose at the face centre, marking
+	# each scroll as a chart document rather than a blank roll of parchment.
+	var wc := face.get_center()
+	var wr := minf(face.size.x, face.size.y) * 0.28
+	if wr > 5.0:
+		for wi in 4:
+			var wa := float(wi) * PI * 0.5
+			var wfwd := Vector2(sin(wa), -cos(wa))
+			var wside := Vector2(cos(wa), sin(wa))
+			c.draw_colored_polygon(PackedVector2Array([
+				wc - wside * wr * 0.28,
+				wc + wfwd * wr,
+				wc + wside * wr * 0.28
+			]), Color(KIT_EDGE, 0.12))
+		c.draw_circle(wc, wr * 0.09, Color(KIT_EDGE, 0.15))
+		c.draw_arc(wc, wr, 0, TAU, 24, Color(KIT_EDGE, 0.10), 1.0, true)
 	if sealed:
 		var sc := Vector2(face.end.x - 10.0, face.end.y - 8.0)
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
