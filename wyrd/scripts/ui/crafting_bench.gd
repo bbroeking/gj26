@@ -542,13 +542,11 @@ class BenchView extends Control:
 
 	func _tray_row(font: Font, x: float, y: float, kind: String, id: String,
 			label: String, ok: bool) -> float:
-		var r := Rect2(Vector2(x, y), Vector2(212, 26))
-		draw_rect(r, PLATE if ok else Color(0.85, 0.79, 0.66))
-		# Spec 44 — top bevel light + a painted roundel on the left.
-		draw_rect(Rect2(r.position + Vector2(1.0, 1.0),
-			Vector2(r.size.x - 2.0, 1.5)), Color(1, 1, 0.93, 0.4))
-		draw_rect(r, EDGE if ok else Color(EDGE, 0.4), false, 1.5)
-		var cc := r.position + Vector2(14.0, 13.0)
+		var r := Rect2(Vector2(x, y), Vector2(212, 28))
+		WyrdUi.draw_list_row(self, r, WyrdUi.SAGE if ok else WyrdUi.TERRACOTTA)
+		if not ok:
+			draw_rect(r.grow(-1.5), Color(0.82, 0.76, 0.64, 0.38))
+		var cc := r.position + Vector2(15.0, 14.0)
 		if kind == "ink":
 			WyrdUi.draw_ink_bottle(self, cc + Vector2(0, 2.0), 18.0,
 				INK_TINT.get(id, Color(0.4, 0.4, 0.4)))
@@ -558,14 +556,14 @@ class BenchView extends Control:
 		else:
 			draw_circle(cc, 9.0, WELL if ok else Color(0.78, 0.72, 0.60))
 			draw_arc(cc, 9.0, 0, TAU, 20, Color(EDGE, 0.6), 1.0, true)
-			draw_string(font, Vector2(r.position.x + 6.0, r.position.y + 18.0),
+			draw_string(font, Vector2(r.position.x + 6.0, r.position.y + 20.0),
 				GatherDefs.material_icon(id), HORIZONTAL_ALIGNMENT_CENTER,
 				17, 11, TXT if ok else DIM)
-		draw_string(font, r.position + Vector2(28.0, 18.0), label,
-			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 34.0, 12,
+		draw_string(font, r.position + Vector2(30.0, 20.0), label,
+			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 36.0, 12,
 			TXT if ok else DIM)
 		_tray_rows.append({"rect": r, "kind": kind, "id": id, "ok": ok})
-		return y + 30.0
+		return y + 32.0
 
 	func _draw_tray(hdr: Font, font: Font) -> void:
 		_tray_rows.clear()
