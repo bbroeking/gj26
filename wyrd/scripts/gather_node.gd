@@ -377,9 +377,14 @@ func _float_text(text: String) -> void:
 	lbl.no_depth_test = true
 	lbl.font_size = 40
 	lbl.pixel_size = 0.005
-	lbl.outline_size = 10
+	lbl.outline_size = 12
 	lbl.outline_modulate = Color(0.08, 0.05, 0.06, 1.0)
 	lbl.modulate = Color(0.85, 0.95, 0.7)
+	# IM Fell storybook script — harvest floaters read as the game's handcrafted
+	# voice rather than a plain engine label.
+	var hf := WyrdUi.font_header()
+	if hf != null:
+		lbl.font = hf
 	lbl.position = Vector3(0.0, 1.0, 0.0)
 	add_child(lbl)
 	var t := create_tween()
