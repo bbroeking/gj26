@@ -58,10 +58,10 @@ func _win_rect() -> Rect2:
 func _tab_rect(i: int) -> Rect2:
 	var win := _win_rect()
 	# Spec 40 — four equal tabs spanning the content width, butt-joined.
-	# Taller (44px) to hold the painted icon above the label.
+	# Tab height raised to 46 to accommodate the painted icon above the label.
 	var inset := 52.0
 	var tw := (win.size.x - inset * 2.0) / 4.0
-	return Rect2(win.position + Vector2(inset + i * tw, 72), Vector2(tw, 44))
+	return Rect2(win.position + Vector2(inset + i * tw, 68), Vector2(tw, 46))
 
 func _update_layout() -> void:
 	var vp := get_viewport_rect().size
@@ -587,25 +587,33 @@ func _draw_tabs(win: Rect2) -> void:
 	for i in TABS.size():
 		var r := _tab_rect(i)
 		var active := i == _tab
+		# Spec 40 — plates; active = brighter + terracotta underline.
 		draw_rect(r, Color(0.95, 0.91, 0.80) if active else Color(0.85, 0.78, 0.64))
+		# Light top bevel so the tab reads as a lifted carved tongue.
+		draw_rect(Rect2(r.position + Vector2(2, 2), Vector2(r.size.x - 4, 2)),
+			Color(1.0, 0.98, 0.90, 0.55 if active else 0.35))
 		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 1.5)
 		if active:
 			draw_line(r.position + Vector2(2, r.size.y - 2),
 				r.position + Vector2(r.size.x - 2, r.size.y - 2),
 				WyrdUi.TERRACOTTA, 3.0)
-		# Painted icon centred in the upper half of the 44px tab plate; dim
-		# when inactive so the selected tab's icon pops against the field.
+		# Painted icon above the label (icons are preloaded in _ready).
 		var icon_tex: Texture2D = _cached_tex(String(TAB_ICONS[i]))
 		if icon_tex != null:
-			var ix := r.position.x + (r.size.x - ICON_SZ) * 0.5
-			draw_texture_rect(icon_tex,
-				Rect2(Vector2(ix, r.position.y + 5.0), Vector2(ICON_SZ, ICON_SZ)),
-				false,
-				Color.WHITE if active else Color(1.0, 1.0, 1.0, 0.45))
-		# Label beneath the icon; size 12 to match the shorter bottom band.
-		draw_string(font, r.position + Vector2(0, 38.0), String(TABS[i]),
-			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 12,
-			WyrdUi.INK if active else WyrdUi.INK_MID)
+			var icon_sz := 20.0
+			var ix := r.position.x + (r.size.x - icon_sz) * 0.5
+			var iy := r.position.y + 5.0
+			var icon_mod := Color.WHITE if active else Color(0.70, 0.65, 0.55, 0.85)
+			draw_texture_rect(icon_tex, Rect2(Vector2(ix, iy), Vector2(icon_sz, icon_sz)),
+				false, icon_mod)
+			draw_string(font, r.position + Vector2(0, 42), String(TABS[i]),
+				HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 13,
+				WyrdUi.INK if active else WyrdUi.INK_MID)
+		else:
+			# Fallback: text only, vertically centred in the old style.
+			draw_string(font, r.position + Vector2(0, 28), String(TABS[i]),
+				HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16,
+				WyrdUi.INK if active else WyrdUi.INK_MID)
 
 # ---- Spec 45 followup: drawn-page scrolling (Satchel / Charts / Trades) ----
 # The pack window is a fixed 644×604 panel but the list pages grew past it
@@ -621,10 +629,9 @@ var _tab_content_h: Dictionary = {}   # tab index -> content height (set in draw
 # bands above/below stay deeper (72px+) than the tallest single element a
 # page draws (the trade emblem cluster) so skipped spans never peek past.
 func _view_rect(win: Rect2) -> Rect2:
-	# y-offset bumped from 110 → 120 to clear the taller 44px tab row (bottom
-	# at win.y + 116); the 10px gap gives breathing room above the content.
-	return Rect2(win.position.x + 40.0, win.position.y + 120.0,
-		win.size.x - 84.0, win.size.y - 222.0)
+	# Top band now 124px to clear the taller icon-tabs (68 + 46 + 10 gap).
+	return Rect2(win.position.x + 40.0, win.position.y + 124.0,
+		win.size.x - 84.0, win.size.y - 236.0)
 
 func _scroll_offset(tab: int, view: Rect2) -> float:
 	var max_s: float = maxf(0.0,
