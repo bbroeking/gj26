@@ -39,6 +39,13 @@ func _ready() -> void:
 	_panel.offset_top = 70
 	_panel.offset_bottom = -70
 	add_child(_panel)
+	# Inner parchment dressing — grain + a flourish rule between the speaker
+	# name and the body text. Added first so it sits beneath all Labels.
+	var art := DialogBodyArt.new()
+	art.anchor_right = 1.0
+	art.anchor_bottom = 1.0
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(art)
 	# Portrait well (spec 41) — ghosted silhouette until painted portraits.
 	var well := PortraitWell.new()
 	well.position = Vector2(48, 104)
@@ -143,3 +150,26 @@ class PortraitWell extends Control:
 		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
 		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
 		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+
+
+# Inner parchment dressing for the dialog body — same pass as QuestScrollArt
+# on the quest plate (player_hud.gd): faint grain across the cream face and a
+# flourish rule separating the speaker name from the body text. Both elements
+# are purely vector (WyrdUi helpers) so the draw/load white-rect gotcha cannot
+# fire. Added as the first child of _panel so it renders under all Labels.
+class DialogBodyArt extends Control:
+	func _ready() -> void:
+		resized.connect(queue_redraw)
+
+	func _draw() -> void:
+		if size.x < 2.0 or size.y < 2.0:
+			return
+		# Grain — inset inside the carved-wood frame margins so it stays on
+		# the parchment face only, same density as the quest-scroll treatment.
+		var inner := Rect2(Vector2(50, 42), size - Vector2(100, 84))
+		WyrdUi.draw_parchment_grain(self, inner, 41)
+		# Flourish rule between the speaker name (bottom ~y 66) and the portrait
+		# + body text (top y 104). Centred horizontally, spans 55 % of the panel
+		# width — the storybook chapter-break read, consistent with section
+		# dividers on the inscribing bench and every _tray_section header.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 76.0), size.x * 0.55)
