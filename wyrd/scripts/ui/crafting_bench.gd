@@ -870,8 +870,16 @@ class BenchView extends Control:
 		# Keep it on the panel.
 		box.position.x = minf(box.position.x, size.x - box.size.x - 8.0)
 		box.position.y = minf(box.position.y, size.y - box.size.y - 8.0)
+		# Parchment note card: soft shadow → fill → grain → catch-light → border.
+		draw_rect(Rect2(box.position + Vector2(2.0, 2.0), box.size),
+			Color(0.0, 0.0, 0.0, 0.14))
 		draw_rect(box, Color(0.97, 0.93, 0.80, 0.97))
+		WyrdUi.draw_parchment_grain(self, box, 17)
+		draw_rect(Rect2(box.position + Vector2(2.0, 1.5),
+			Vector2(box.size.x - 4.0, 2.0)), Color(1.0, 0.97, 0.88, 0.38))
 		draw_rect(box, EDGE, false, 2.0)
+		draw_rect(Rect2(box.position + Vector2(3.0, 3.0),
+			box.size - Vector2(6.0, 6.0)), Color(WyrdUi.GOLD, 0.20), false, 1.0)
 		var ty := box.position.y + 17.0
 		for ln in lines:
 			draw_string(font, Vector2(box.position.x + 10.0, ty), ln,
