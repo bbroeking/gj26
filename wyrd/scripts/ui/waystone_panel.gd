@@ -109,10 +109,8 @@ func _render() -> void:
 		c.queue_free()
 	var n := 0 if _game == null else (_game.charts as Array).size()
 	if n == 0:
-		var l := Label.new()
-		l.text = "Your chart case is empty. Inscribe one at the table."
-		WyrdUi.style_body(l, 14)
-		_list_box.add_child(l)
+		var hint := _EmptyChartHint.new()
+		_list_box.add_child(hint)
 	for i in n:
 		var chart: Dictionary = _game.charts[i]
 		var b := Button.new()
@@ -154,3 +152,27 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# Drawn empty-state hint: a ghosted sealed scroll (chart yet to be inscribed)
+# above a flourish rule and two lines of dim guidance text. Uses only WyrdUi
+# vector helpers — no texture loads inside _draw().
+class _EmptyChartHint extends Control:
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 172.0)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		var cx := size.x * 0.5
+		var sr := Rect2(Vector2(cx - 52.0, 12.0), Vector2(104.0, 88.0))
+		WyrdUi.draw_scroll(self, sr, true)
+		# Dim wash: the scroll reads as empty/waiting, not inscribed.
+		draw_rect(sr, Color(0.91, 0.86, 0.72, 0.38))
+		WyrdUi.draw_flourish(self, Vector2(cx, sr.end.y + 16.0), 140.0)
+		var font := get_theme_default_font()
+		draw_string(font, Vector2(0.0, sr.end.y + 38.0),
+			"Your chart case is empty.",
+			HORIZONTAL_ALIGNMENT_CENTER, size.x, 15, WyrdUi.INK_MID)
+		draw_string(font, Vector2(0.0, sr.end.y + 57.0),
+			"Inscribe one at the table.",
+			HORIZONTAL_ALIGNMENT_CENTER, size.x, 13, Color(WyrdUi.INK_MID, 0.75))
