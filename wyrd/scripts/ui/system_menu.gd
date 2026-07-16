@@ -27,14 +27,20 @@ func _ready() -> void:
 	_panel.anchor_right = 0.5
 	_panel.anchor_bottom = 0.5
 	_panel.offset_left = -260
-	_panel.offset_top = -220
+	_panel.offset_top = -254
 	_panel.offset_right = 260
-	_panel.offset_bottom = 220
+	_panel.offset_bottom = 254
 	add_child(_panel)
+	# Drawn lantern crest + flourish separator above the title.
+	var crest := LanternCrest.new()
+	crest.anchor_right = 1.0
+	crest.offset_top = 36.0
+	crest.offset_bottom = 100.0
+	_panel.add_child(crest)
 	var title := Label.new()
 	title.text = "The Lantern"
 	WyrdUi.style_title(title)
-	title.position = Vector2(54, 36)
+	title.position = Vector2(54, 108)
 	_panel.add_child(title)
 	var hint := Label.new()
 	hint.text = "Esc — close"
@@ -42,13 +48,13 @@ func _ready() -> void:
 	hint.anchor_left = 1.0
 	hint.anchor_right = 1.0
 	hint.offset_left = -130
-	hint.offset_top = 38
+	hint.offset_top = 110
 	_panel.add_child(hint)
 	var col := VBoxContainer.new()
 	col.anchor_right = 1.0
 	col.anchor_bottom = 1.0
 	col.offset_left = 56
-	col.offset_top = 92
+	col.offset_top = 164
 	col.offset_right = -56
 	col.offset_bottom = -48
 	col.add_theme_constant_override("separation", 10)
@@ -190,3 +196,51 @@ func _close() -> void:
 	if _game != null:
 		_game.modal_closed()
 	queue_free()
+
+
+# Hand-drawn lantern icon centred above "The Lantern" title. A warm amber
+# glass body (pane grid), a flame inside, a metal top cap with a hanging
+# handle loop, a bottom cap, and a ◆ flourish separator at the foot.
+class LanternCrest extends Control:
+	func _draw() -> void:
+		var cx := size.x * 0.5
+		# Warm amber glow behind the lantern (rendered first, sits under all else).
+		draw_circle(Vector2(cx, 32.0), 28.0, Color(WyrdUi.GOLD, 0.08))
+		draw_circle(Vector2(cx, 32.0), 19.0, Color(WyrdUi.GOLD, 0.13))
+		# Hanging handle — ∩ arch above the top cap.
+		# draw_arc from PI→TAU is clockwise in Godot (y-down), tracing the upper
+		# half of the circle, so the arc peaks upward = a true suspension loop.
+		draw_arc(Vector2(cx, 14.0), 9.0, PI, TAU, 20, WyrdUi.KIT_EDGE, 2.2, true)
+		# Top metal cap.
+		var top_cap := Rect2(cx - 12.0, 14.0, 24.0, 8.0)
+		draw_rect(top_cap, WyrdUi.KIT_PLATE)
+		draw_rect(Rect2(top_cap.position + Vector2(2.0, 1.5), Vector2(20.0, 2.0)),
+			Color(1.0, 1.0, 0.92, 0.50))  # honey bevel
+		draw_rect(top_cap, WyrdUi.KIT_EDGE, false, 1.5)
+		# Glass body — warm amber with a three-pane grid.
+		var body := Rect2(cx - 14.0, 21.0, 28.0, 28.0)
+		draw_rect(body, Color(0.91, 0.78, 0.42, 0.72))
+		draw_line(Vector2(cx - 5.0, 23.0), Vector2(cx - 5.0, 47.0),
+			Color(WyrdUi.KIT_EDGE, 0.28), 1.0)
+		draw_line(Vector2(cx + 5.0, 23.0), Vector2(cx + 5.0, 47.0),
+			Color(WyrdUi.KIT_EDGE, 0.28), 1.0)
+		draw_line(Vector2(cx - 14.0, 35.0), Vector2(cx + 14.0, 35.0),
+			Color(WyrdUi.KIT_EDGE, 0.28), 1.0)
+		# Flame — a teardrop polygon with a bright inner core.
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(cx, 23.0), Vector2(cx + 5.5, 30.0),
+			Vector2(cx + 3.5, 38.0), Vector2(cx, 40.0),
+			Vector2(cx - 3.5, 38.0), Vector2(cx - 5.5, 30.0),
+		]), Color(0.98, 0.72, 0.16, 0.88))
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(cx, 26.0), Vector2(cx + 3.0, 32.0),
+			Vector2(cx, 37.0), Vector2(cx - 3.0, 32.0),
+		]), Color(1.0, 0.94, 0.62, 0.82))
+		# Body ink outline (after flame so flame reads through the glass).
+		draw_rect(body, WyrdUi.KIT_EDGE, false, 1.5)
+		# Bottom metal cap.
+		var bot_cap := Rect2(cx - 12.0, 48.0, 24.0, 7.0)
+		draw_rect(bot_cap, WyrdUi.KIT_PLATE)
+		draw_rect(bot_cap, WyrdUi.KIT_EDGE, false, 1.5)
+		# ◆ flourish separator — the crest's foot, centred in the panel width.
+		WyrdUi.draw_flourish(self, Vector2(cx, size.y - 5.0), size.x * 0.38)
