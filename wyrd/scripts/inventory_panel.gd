@@ -435,6 +435,7 @@ func _draw_slots() -> void:
 		hdr2 = font
 	draw_string(hdr2, _slot_top("pickaxe") + Vector2(0, -10), "Trade Tools",
 		HORIZONTAL_ALIGNMENT_LEFT, 160.0, 14, WyrdUi.INK)
+	WyrdUi.draw_flourish(self, _slot_top("pickaxe") + Vector2(80.0, 6.0), 120.0)
 	for name in SLOT_OFFSET:
 		var top := _slot_top(String(name))
 		var r := Rect2(top, Vector2(SLOT_SIZE, SLOT_SIZE))
