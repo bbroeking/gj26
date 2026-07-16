@@ -438,22 +438,61 @@ func _draw_slots() -> void:
 	for name in SLOT_OFFSET:
 		var top := _slot_top(String(name))
 		var r := Rect2(top, Vector2(SLOT_SIZE, SLOT_SIZE))
-		# Recessed slot well.
-		draw_rect(r, Color(0.80, 0.72, 0.58))
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(SLOT_SIZE - 1, 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(1, SLOT_SIZE - 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+		# Carved well — kit 3-step inner shadow gives proper depth vs the old flat pair.
+		WyrdUi.draw_well(self, r, Color(0.80, 0.72, 0.58))
 		var it = equipment.get_slot(String(name))
 		if it != null:
 			_draw_item_rect_scaled(it, top + Vector2(6, 6),
 				Vector2(SLOT_SIZE - 12, SLOT_SIZE - 12), false)
 		else:
-			# Empty slot — name ghosted in the well, Diablo-style.
-			draw_string(font, top + Vector2(0, SLOT_SIZE * 0.5 + 5),
-				String(name).capitalize(), HORIZONTAL_ALIGNMENT_CENTER,
-				SLOT_SIZE, 12, Color(0.50, 0.42, 0.32, 0.85))
+			# Empty slot — faint vector silhouette shows what belongs here.
+			_draw_slot_silhouette(String(name), r)
+
+# Faint storybook-style vector silhouette for each empty equipment slot so
+# the well reads as a carved waiting space rather than a blank ghosted label.
+func _draw_slot_silhouette(slot_name: String, r: Rect2) -> void:
+	var c := r.get_center()
+	var col := Color(0.50, 0.42, 0.32, 0.36)
+	var s := SLOT_SIZE * 0.25   # ≈ 18 px radius — fits the 72 px well
+	match slot_name:
+		"helmet":
+			# dome arc (top semicircle) + two cheek-guard drops
+			draw_arc(c + Vector2(0, s * 0.4), s, PI, TAU, 22, col, 2.5, true)
+			draw_line(c + Vector2(-s, s * 0.4), c + Vector2(-s, s * 1.0), col, 2.5)
+			draw_line(c + Vector2(s, s * 0.4), c + Vector2(s, s * 1.0), col, 2.5)
+		"ring":
+			draw_arc(c, s, 0.0, TAU, 32, col, 2.5, true)
+		"weapon":
+			# sword: slim vertical bar + crossguard
+			draw_line(c + Vector2(0, -s * 1.4), c + Vector2(0, s * 0.9), col, 2.5)
+			draw_line(c + Vector2(-s * 0.65, -s * 0.2), c + Vector2(s * 0.65, -s * 0.2), col, 2.0)
+		"chest":
+			# breastplate: wide body rectangle + two shoulder rises
+			var hw := s * 1.15
+			var hh := s * 0.95
+			draw_rect(Rect2(c - Vector2(hw, hh), Vector2(hw * 2.0, hh * 2.0)), col, false, 2.0)
+			draw_line(c + Vector2(-hw, -hh), c + Vector2(-hw * 0.55, -hh * 1.4), col, 2.0)
+			draw_line(c + Vector2(hw, -hh), c + Vector2(hw * 0.55, -hh * 1.4), col, 2.0)
+		"boots":
+			# boot outline: leg dropping to a toe sole
+			draw_line(c + Vector2(-s * 0.4, -s * 1.2), c + Vector2(-s * 0.4, s * 0.55), col, 2.5)
+			draw_line(c + Vector2(-s * 0.4, s * 0.55), c + Vector2(s * 0.8, s * 0.55), col, 2.5)
+			draw_line(c + Vector2(s * 0.8, s * 0.55), c + Vector2(s * 0.8, s * 1.0), col, 2.0)
+			draw_line(c + Vector2(-s * 0.4, s * 1.0), c + Vector2(s * 0.8, s * 1.0), col, 2.0)
+		"pickaxe":
+			# pick: diagonal handle + upward spike tip
+			draw_line(c + Vector2(-s * 0.9, s * 0.9), c + Vector2(s * 0.5, -s * 0.5), col, 2.2)
+			draw_line(c + Vector2(-s * 0.5, -s * 0.1), c + Vector2(s * 0.1, -s * 1.1), col, 2.2)
+		"axe":
+			# axe: vertical handle + right-facing D-blade arc
+			draw_line(c + Vector2(0, -s * 1.1), c + Vector2(0, s * 1.1), col, 2.2)
+			draw_arc(c + Vector2(s * 0.25, -s * 0.3), s * 0.7,
+				-PI * 0.45, PI * 0.45, 14, col, 2.5, true)
+		_:
+			draw_string(get_theme_default_font(),
+				r.position + Vector2(0, SLOT_SIZE * 0.5 + 5),
+				slot_name.capitalize(), HORIZONTAL_ALIGNMENT_CENTER,
+				SLOT_SIZE, 12, col)
 
 func _draw_item_in_grid(it: Dictionary) -> void:
 	var rotated: bool = it.get("rotated", false)
