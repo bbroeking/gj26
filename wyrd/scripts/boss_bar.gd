@@ -28,6 +28,12 @@ func _ready() -> void:
 		root.offset_left = -300
 		root.offset_top = 18
 		add_child(root)
+		# Carved-wood sheen: top honey bevel + bottom ink shadow + ornamental
+		# end wells, so the boss bar matches the hotbar tray's language.
+		var sheen := _BossBarSheen.new()
+		sheen.set_anchors_preset(Control.PRESET_FULL_RECT)
+		sheen.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		root.add_child(sheen)
 
 # Called at build — set max HP and fill the bar.
 func prime(mx: int) -> void:
@@ -57,3 +63,22 @@ func set_phase(phase: int) -> void:
 
 func hide_boss() -> void:
 	visible = false
+
+
+# Drawn overlay giving the flat make_meter trough the carved-wood read:
+# a honey catch-light along the top, an ink shadow along the bottom, and
+# small ornamental wells pressed into each end of the bar.
+class _BossBarSheen extends Control:
+	func _draw() -> void:
+		var w := size.x
+		var h := size.y
+		# Top honey bevel — the specular hit the hotbar tray carries.
+		draw_line(Vector2(6.0, 4.5), Vector2(w - 6.0, 4.5),
+			Color(1.0, 0.97, 0.86, 0.42), 2.0)
+		# Bottom ink shadow — anchors the bar on the screen.
+		draw_line(Vector2(6.0, h - 4.5), Vector2(w - 6.0, h - 4.5),
+			Color(0.26, 0.19, 0.13, 0.28), 1.5)
+		# End ornamental wells — the carved-wood end-cap motif.
+		var cy := h * 0.5
+		WyrdUi.draw_round_well(self, Vector2(5.5, cy), 4.5, Color(0.93, 0.88, 0.74))
+		WyrdUi.draw_round_well(self, Vector2(w - 5.5, cy), 4.5, Color(0.93, 0.88, 0.74))
