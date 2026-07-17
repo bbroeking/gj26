@@ -120,7 +120,7 @@ func _render() -> void:
 	for i in n:
 		var chart: Dictionary = _game.charts[i]
 		var card := _ChartCard.new()
-		card.setup(chart, i == _selected)
+		card.setup(chart, _affix_summary(chart), i == _selected)
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var idx := i
 		card.pressed.connect(func():
@@ -147,6 +147,18 @@ func _render() -> void:
 		_detail.text = ""
 		_go_btn.disabled = true
 
+func _affix_summary(chart: Dictionary) -> String:
+	var parts: Array = []
+	for a in chart.get("affixes", []):
+		var aff: Dictionary = ChartsData.AFFIXES.get(String(a.get("id", "")), {})
+		if aff.is_empty():
+			continue
+		if bool(a.get("good", false)):
+			parts.append("✓ %s" % String(aff.name))
+		else:
+			parts.append("✗ %s" % String(aff.bad_name))
+	return "  ".join(parts) if not parts.is_empty() else "Clean run"
+
 func _on_go() -> void:
 	if _game == null or _selected < 0 or _selected >= (_game.charts as Array).size():
 		return
@@ -168,6 +180,7 @@ class _ChartCard extends Control:
 	var _chart: Dictionary = {}
 	var _selected := false
 	var _hover := false
+	var _summary := ""
 
 	signal pressed
 
@@ -175,8 +188,9 @@ class _ChartCard extends Control:
 		custom_minimum_size = Vector2(0, 64.0)
 		mouse_filter = Control.MOUSE_FILTER_STOP
 
-	func setup(chart: Dictionary, selected: bool) -> void:
+	func setup(chart: Dictionary, summary: String, selected: bool) -> void:
 		_chart = chart
+		_summary = summary
 		_selected = selected
 		queue_redraw()
 
@@ -220,6 +234,11 @@ class _ChartCard extends Control:
 		var name_col: Color = WyrdUi.TERRACOTTA if _selected else WyrdUi.INK
 		draw_string(font, Vector2(tx, 26.0), String(_chart.get("name", "Chart")),
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 44.0, 16, name_col)
+		# Affix name summary — readable at a glance, sage tint when selected.
+		var body_font := get_theme_default_font()
+		var summary_col := Color(WyrdUi.SAGE, 0.9) if _selected else WyrdUi.INK_MID
+		draw_string(body_font, Vector2(tx, 44.0), _summary,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 44.0, 12, summary_col)
 
 		# --- tier chip (top-right corner) ---
 		var chip := Rect2(Vector2(size.x - 36.0, 9.0), Vector2(28.0, 16.0))
