@@ -699,6 +699,16 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 	var x := win.position.x + 76.0
 	var w := win.size.x - 148.0
 	var y := win.position.y + 134.0
+	# Chapter heading — mirrors the "Masteries" header in the Trades tab so
+	# every list page reads as a titled storybook journal section.
+	var hdr: Font = WyrdUi.font_header()
+	if hdr == null:
+		hdr = font
+	if _span_visible(y - 6.0, y + 24.0, scroll, view):
+		draw_string(hdr, Vector2(x, y + 18.0), "Provisions",
+			HORIZONTAL_ALIGNMENT_LEFT, w, 18, WyrdUi.TERRACOTTA)
+		WyrdUi.draw_flourish(self, Vector2(x + w * 0.5, y + 22.0), w * 0.62)
+	y += 34.0
 	if (game.materials as Dictionary).is_empty():
 		draw_string(font, Vector2(x, y),
 			"Empty. The yard's herb patches regrow — start there.",
@@ -744,6 +754,16 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 	var x := win.position.x + 76.0
 	var w := win.size.x - 148.0
 	var y := win.position.y + 134.0
+	# Chapter heading — same pattern as Satchel's "Provisions" and Trades'
+	# "Masteries", so every list page is a titled storybook journal section.
+	var hdr: Font = WyrdUi.font_header()
+	if hdr == null:
+		hdr = font
+	if _span_visible(y - 6.0, y + 24.0, scroll, view):
+		draw_string(hdr, Vector2(x, y + 18.0), "Charts",
+			HORIZONTAL_ALIGNMENT_LEFT, w, 18, WyrdUi.TERRACOTTA)
+		WyrdUi.draw_flourish(self, Vector2(x + w * 0.5, y + 22.0), w * 0.62)
+	y += 34.0
 	if (game.charts as Array).is_empty():
 		draw_string(font, Vector2(x, y),
 			"No charts inscribed. The Inscribing Table awaits.",
