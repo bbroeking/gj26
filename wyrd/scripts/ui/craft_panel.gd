@@ -39,18 +39,18 @@ func _ready() -> void:
 	_panel.offset_bottom = 300
 	add_child(_panel)
 
-	# Station-crest header: drawn first so it sits behind all other children.
-	var header_art := _CraftHeaderArt.new()
-	header_art.station = station_id
-	header_art.anchor_right = 1.0
-	header_art.offset_bottom = 84.0
-	header_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_panel.add_child(header_art)
+	# Art pass — station crest disc: parchment face + gold ring + station icon.
+	# Sits in the header's left margin so the title text starts clear at x=62.
+	var crest := _CraftCrestDisc.new()
+	crest.station_id = station_id
+	crest.position = Vector2(6, 26)
+	crest.size = Vector2(50, 50)
+	_panel.add_child(crest)
 
 	var title := Label.new()
 	title.text = String(st.get("title", "Crafting"))
 	WyrdUi.style_title(title)
-	title.position = Vector2(54, 34)
+	title.position = Vector2(62, 34)
 	_panel.add_child(title)
 
 	var close_hint := Label.new()
@@ -76,6 +76,12 @@ func _ready() -> void:
 	section.text = "Recipes"
 	WyrdUi.style_section(section)
 	col.add_child(section)
+
+	# Art pass — flourish rule under the "Recipes" header (── ◆ ──).
+	var rule := _SectionRule.new()
+	rule.custom_minimum_size = Vector2(0, 14)
+	rule.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_child(rule)
 
 	# A7-full grew the forge to 14 recipes — the list scrolls now.
 	var scroll := ScrollContainer.new()
@@ -222,41 +228,65 @@ func _render_satchel() -> void:
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
 
 
-# Drawn station-crest header — parchment grain over the header band, a small
-# trade-tinted seal roundel left of the title, and a flourish rule beneath.
-# Drawn first (lowest z) so it sits behind the Label children; covers the
-# 84px header band only (content starts at y 84 in the panel's local space).
-class _CraftHeaderArt extends Control:
-	var station := ""
-
-	func _ready() -> void:
-		resized.connect(queue_redraw)
+# Art pass — station crest disc drawn in the header's left margin.
+# Parchment face + gold ring + station-specific icon (flame / hammer).
+class _CraftCrestDisc extends Control:
+	var station_id := "cookfire"
 
 	func _draw() -> void:
-		if size.x < 2.0:
-			return
-		# Parchment grain across the inner header face (inside the wooden frame).
-		WyrdUi.draw_parchment_grain(self,
-			Rect2(Vector2(36.0, 36.0), Vector2(size.x - 72.0, 50.0)), 31)
-		# Trade-tinted station roundel left of the title (right edge at x≈34,
-		# title starts at x=54 — 20px breathing room).
-		var cc := Vector2(20.0, 51.0)
-		var cr := 14.0
-		draw_circle(cc, cr, WyrdUi.KIT_PLATE)
-		var accent: Color = WyrdUi.GOLD
-		match station:
-			"forge":    accent = WyrdUi.TERRACOTTA.darkened(0.08)
-			"cookfire": accent = WyrdUi.SAGE
-			"still":    accent = WyrdUi.SAGE.darkened(0.08)
-		draw_arc(cc, cr - 4.0, 0.0, TAU, 24, Color(accent, 0.55), 3.0, true)
-		draw_arc(cc, cr, 0.0, TAU, 32, WyrdUi.KIT_EDGE, 2.0, true)
-		# Station glyph centred inside the disc.
-		var glyph := "⚒"   # ⚒ hammer — forge default
-		match station:
-			"cookfire": glyph = "♨"   # ♨ hot spring (cooking steam)
-			"still":    glyph = "⚗"   # ⚗ alembic
-		var font := get_theme_default_font()
-		draw_string(font, Vector2(cc.x - cr + 1.0, cc.y + 5.5),
-			glyph, HORIZONTAL_ALIGNMENT_CENTER, (cr - 1.0) * 2.0, 12, WyrdUi.INK)
-		# Flourish rule under the station title (title baseline ≈ y 64).
-		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 73.0), size.x - 120.0)
+		var c := size * 0.5
+		var r := minf(size.x, size.y) * 0.5 - 1.5
+		# drop shadow so the disc sits ON the parchment frame
+		draw_circle(c + Vector2(0, 2.0), r + 0.5, Color(0, 0, 0, 0.16))
+		# warm cream parchment face
+		draw_circle(c, r, Color(0.95, 0.90, 0.78))
+		# inner off-centre glow — faint highlight that reads as a convex bevel
+		draw_circle(c - Vector2(1.5, 2.0), r * 0.78, Color(1.0, 0.97, 0.88, 0.30))
+		# gold outer ring
+		draw_arc(c, r, 0.0, TAU, 44, WyrdUi.GOLD, 2.0)
+		# inner ink hairline — the engraved feel
+		draw_arc(c, r - 4.5, 0.0, TAU, 38, Color(WyrdUi.KIT_EDGE, 0.28), 1.0)
+		# station icon
+		match station_id:
+			"cookfire":
+				_draw_flame(c)
+			_:
+				_draw_hammer(c)
+
+	func _draw_flame(c: Vector2) -> void:
+		# Outer flame body — terracotta/amber fills the disc centre.
+		var body := PackedVector2Array([
+			c + Vector2(-5.5, 9.0),
+			c + Vector2(-8.5, -0.5),
+			c + Vector2(-3.5, -7.0),
+			c + Vector2(0.0,  -2.0),
+			c + Vector2(3.5,  -8.0),
+			c + Vector2(8.5,  -0.5),
+			c + Vector2(5.5,   9.0),
+		])
+		draw_colored_polygon(body, Color(0.70, 0.34, 0.15, 0.88))
+		# warm inner tongue — a brighter amber core
+		var core := PackedVector2Array([
+			c + Vector2(-2.5,  8.0),
+			c + Vector2(-3.5,  0.5),
+			c + Vector2( 0.0, -5.5),
+			c + Vector2( 3.5,  0.5),
+			c + Vector2( 2.5,  8.0),
+		])
+		draw_colored_polygon(core, Color(0.93, 0.72, 0.22, 0.72))
+
+	func _draw_hammer(c: Vector2) -> void:
+		# Hammer head (horizontal bar)
+		draw_rect(Rect2(c + Vector2(-9.0, -6.0), Vector2(18.0, 8.0)), WyrdUi.INK)
+		# Handle (vertical)
+		draw_rect(Rect2(c + Vector2(-2.5, 2.0), Vector2(5.0, 11.0)), WyrdUi.INK)
+		# Top-face bevel highlight
+		draw_rect(Rect2(c + Vector2(-8.0, -5.0), Vector2(16.0, 2.5)),
+			Color(1.0, 1.0, 0.92, 0.38))
+
+
+# Flourish rule — ── ◆ ── drawn inline inside the VBox between header and list.
+class _SectionRule extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5),
+			size.x * 0.58)
