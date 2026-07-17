@@ -62,17 +62,35 @@ func _ready() -> void:
 	_panel.offset_bottom = 260
 	add_child(_panel)
 
+	# Blacksmith crest: a drawn medallion disc in the header corner — an anvil
+	# silhouette (flat face + bick horn + waist + base) on a parchment disc,
+	# with gold inner ring and rune ticks. Hod is a smith; the crest reads
+	# his trade at a glance, matching the craft-panel and dialog crest language.
+	var crest := _SmithCrest.new()
+	crest.position = Vector2(14, 14)
+	crest.size = Vector2(62, 62)
+	_panel.add_child(crest)
+
 	var title := Label.new()
 	title.text = "Hod's Counter"
 	WyrdUi.style_title(title)
-	title.position = Vector2(54, 34)
+	title.position = Vector2(92, 36)
 	_panel.add_child(title)
 
 	var sub := Label.new()
 	sub.text = "\"Sparks like to find sleeves. Mind the anvil, state your business.\""
 	WyrdUi.style_dim(sub, 13)
-	sub.position = Vector2(54, 66)
+	sub.position = Vector2(92, 62)
 	_panel.add_child(sub)
+
+	# Flourish rule divider under the header — ──◆── in the bench language.
+	var rule := _VendorHeaderRule.new()
+	rule.anchor_right = 1.0
+	rule.offset_left = 52
+	rule.offset_right = -52
+	rule.offset_top = 80
+	rule.offset_bottom = 92
+	_panel.add_child(rule)
 
 	_gold_lbl = Label.new()
 	WyrdUi.style_chip(_gold_lbl, 15)
@@ -286,3 +304,54 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# ── blacksmith crest disc ────────────────────────────────────────────────────
+# Anvil silhouette on a warm parchment disc: flat work-face + right-pointing
+# bick horn + narrow waist + wide base, all in sepia ink. A gold sheen marks
+# the face; rune ticks and a gold ring frame it inside the outer ink border.
+class _SmithCrest extends Control:
+	func _draw() -> void:
+		var c := size * 0.5
+		var r := minf(c.x, c.y) - 2.0
+		# Cream base disc + warm top highlight
+		draw_circle(c, r, Color(0.93, 0.87, 0.74))
+		draw_arc(c, r * 0.70, -PI, 0.0, 18, Color(1.0, 0.97, 0.88, 0.44), 3.5, true)
+		# Anvil: flat face
+		var fy := c.y - r * 0.36
+		var fw := r * 0.66
+		draw_rect(Rect2(c.x - fw * 0.5, fy, fw, r * 0.17), WyrdUi.INK)
+		# Bick (right horn) — triangle from the right end of the face
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(c.x + fw * 0.5, fy),
+			Vector2(c.x + fw * 0.5, fy + r * 0.17),
+			Vector2(c.x + fw * 0.5 + r * 0.23, fy + r * 0.085),
+		]), WyrdUi.INK)
+		# Waist (narrow neck below the face)
+		var wy := fy + r * 0.17
+		var ww := r * 0.28
+		draw_rect(Rect2(c.x - ww * 0.5, wy, ww, r * 0.34), WyrdUi.INK)
+		# Base
+		var bw := r * 0.62
+		draw_rect(Rect2(c.x - bw * 0.5, wy + r * 0.34, bw, r * 0.21), WyrdUi.INK)
+		# Gold sheen on the work face — the worn surface that catches the light
+		draw_rect(Rect2(c.x - fw * 0.5 + 3.0, fy + 3.0, fw - 6.0, 2.0),
+				  Color(WyrdUi.GOLD, 0.48))
+		# Rune tick-marks around the rim
+		for i in 8:
+			var a := float(i) / 8.0 * TAU
+			draw_line(c + Vector2(cos(a), sin(a)) * r * 0.78,
+					  c + Vector2(cos(a), sin(a)) * r * 0.92,
+					  Color(WyrdUi.GOLD, 0.62), 1.5)
+		# Gold inner ring + outer ink border + shadow crescent
+		draw_arc(c, r * 0.74, 0.0, TAU, 40, Color(WyrdUi.GOLD, 0.48), 1.2, true)
+		draw_arc(c, r, 0.0, TAU, 48, WyrdUi.KIT_EDGE, 2.5, true)
+		draw_arc(c, r - 3.5, PI * 0.2, PI * 0.83, 16, Color(0, 0, 0, 0.15), 3.0, true)
+
+
+# ── header flourish rule ─────────────────────────────────────────────────────
+class _VendorHeaderRule extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self,
+				Vector2(size.x * 0.5, size.y * 0.5),
+				minf(size.x * 0.72, 420.0))
