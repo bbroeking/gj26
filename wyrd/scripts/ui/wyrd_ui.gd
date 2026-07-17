@@ -327,7 +327,11 @@ static func draw_parchment_grain(c: CanvasItem, r: Rect2, seed_v: int = 7) -> vo
 		c.draw_line(p, p + Vector2(ln, rng.randf_range(-1.2, 1.2)),
 			Color(0.62, 0.52, 0.38, 0.05 + rng.randf() * 0.05), 1.0)
 
-# Section flourish: ── ◆ ── centred under a header.
+# Section flourish: ── ❧◆❧ ── centred under a header.
+# Wide flourishes (width >= 50) also get ivy leaf-bud pairs sprouting from the
+# vine on each side of the diamond — the design language's leafy vine ornament.
+# Narrow end-marks (hotbar tray, width < 50) skip the buds so the diamond
+# stays the only read at small sizes.
 static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 	var col := Color(KIT_EDGE, 0.45)
 	c.draw_line(center - Vector2(width * 0.5, 0), center - Vector2(7, 0), col, 1.0)
@@ -336,6 +340,33 @@ static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 		center + Vector2(3.5, 0), center + Vector2(0, 3.5),
 		center + Vector2(-3.5, 0)])
 	c.draw_colored_polygon(pts, Color(GOLD, 0.8))
+	if width < 50.0:
+		return
+	# Ivy leaf-bud pairs — two leaves per side, leaning outward from center,
+	# with a hair-thin stem connecting them. SAGE is the "fresh / good twin"
+	# accent; inner bud is slightly brighter, outer slightly receded.
+	for s in [-1.0, 1.0]:
+		# Inner bud: tip at ~12 px out, 5-point leaf pointing up-outward.
+		c.draw_colored_polygon(PackedVector2Array([
+			center + Vector2(s * 12.0, -5.5),
+			center + Vector2(s * 14.5, -1.5),
+			center + Vector2(s * 12.5,  2.0),
+			center + Vector2(s *  9.5,  2.0),
+			center + Vector2(s *  9.0, -1.5)]),
+			Color(SAGE, 0.55))
+		# Outer bud: tip at ~19 px out, a touch larger and softer.
+		c.draw_colored_polygon(PackedVector2Array([
+			center + Vector2(s * 19.0, -6.0),
+			center + Vector2(s * 22.0, -1.5),
+			center + Vector2(s * 19.5,  2.5),
+			center + Vector2(s * 16.0,  2.5),
+			center + Vector2(s * 15.5, -1.5)]),
+			Color(SAGE, 0.40))
+		# Thin stem connecting the two buds along the vine.
+		c.draw_line(
+			center + Vector2(s * 14.0, 0.5),
+			center + Vector2(s * 16.0, 0.5),
+			Color(SAGE, 0.28), 1.0)
 
 # A little hand-blown ink bottle — glass body, ink fill, neck, cork, and a
 # glass highlight. Replaces the bare text glyphs in sockets and trays.
