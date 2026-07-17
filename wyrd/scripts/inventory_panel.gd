@@ -828,20 +828,23 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 				HORIZONTAL_ALIGNMENT_LEFT, w - 78.0, 21, WyrdUi.INK)
 			draw_string(hdr, Vector2(cx, y + 20.0), "Lv %d" % lv,
 				HORIZONTAL_ALIGNMENT_RIGHT, w - 78.0, 16, WyrdUi.INK)
-			# --- xp bar ---
+			# --- xp bar — carved well trough (draw_well inner-shadow + lit lip) ---
 			var xp: int = int(game.trades[key].xp)
 			var lo: int = game.xp_for_level(lv)
 			var hi: int = game.xp_for_level(lv + 1)
 			var frac := clampf(float(xp - lo) / float(max(1, hi - lo)), 0.0, 1.0)
-			var bar := Rect2(Vector2(cx, y + 26.0), Vector2(w * 0.56, 12.0))
-			draw_rect(bar, Color(0.80, 0.72, 0.58))
-			draw_rect(Rect2(bar.position + Vector2(1, 1),
-				Vector2((bar.size.x - 2.0) * frac, bar.size.y - 2.0)),
-				(row.color as Color).lightened(0.12))
-			draw_rect(bar, Color(0.42, 0.34, 0.25, 0.9), false, 1.5)
-			draw_string(font, Vector2(bar.end.x + 10.0, y + 37.0),
+			var bar := Rect2(Vector2(cx, y + 26.0), Vector2(w * 0.56, 14.0))
+			WyrdUi.draw_well(self, bar)
+			if frac > 0.001:
+				var fill_w := maxf(0.0, (bar.size.x - 4.0) * frac)
+				draw_rect(Rect2(bar.position + Vector2(2.0, 2.0),
+					Vector2(fill_w, bar.size.y - 4.0)),
+					(row.color as Color).lightened(0.08))
+				draw_rect(Rect2(bar.position + Vector2(2.0, 2.0),
+					Vector2(fill_w, 2.5)), Color(1.0, 1.0, 0.92, 0.28))
+			draw_string(font, Vector2(bar.end.x + 10.0, y + 39.0),
 				"%d / %d xp" % [xp, hi],
-				HORIZONTAL_ALIGNMENT_LEFT, 120.0, 13, Color(0.30, 0.24, 0.19))
+				HORIZONTAL_ALIGNMENT_LEFT, 120.0, 12, Color(0.30, 0.24, 0.19))
 		# --- the mastery ladder (level 1→17): every perk, locked or earned ---
 		var perks: Array = (game.PERKS as Dictionary).get(key, []).duplicate()
 		perks.sort_custom(func(a, b): return int(a.lv) < int(b.lv))
@@ -870,12 +873,9 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 					Vector2(lx, cardy + CARD_H + CARD_GAP),
 					Color(0.55, 0.62, 0.40, 0.65), 3.0)
 				var cr := Rect2(Vector2(card_x, cardy), Vector2(card_w, CARD_H))
-				if ok:
-					draw_rect(cr, Color(0.93, 0.88, 0.74))
-					draw_rect(cr, WyrdUi.SAGE.darkened(0.12), false, 2.0)
-				else:
-					draw_rect(cr, Color(0.78, 0.72, 0.60, 0.85))
-					draw_rect(cr, Color(0.50, 0.42, 0.32, 0.7), false, 1.5)
+				WyrdUi.draw_list_row(self, cr, WyrdUi.SAGE if ok else WyrdUi.INK_MID)
+				if not ok:
+					draw_rect(cr, Color(0.40, 0.34, 0.26, 0.28))
 				# node disc on the spine
 				var dc := Vector2(lx, cardy + CARD_H * 0.5)
 				draw_circle(dc, 12.0, WyrdUi.SAGE.darkened(0.05) if ok \
