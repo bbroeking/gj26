@@ -151,10 +151,7 @@ func _render() -> void:
 		c.queue_free()
 	var items: Array = _game.inventory.items if _game.inventory != null else []
 	if items.is_empty():
-		var l := Label.new()
-		l.text = "Your pack holds no gear. The hollows provide."
-		WyrdUi.style_dim(l, 13)
-		_sell_box.add_child(l)
+		_sell_box.add_child(_EmptyShelf.new())
 	for item in items:
 		var it: Dictionary = item
 		var rarity := String(it.get("rarity", "normal"))
@@ -286,3 +283,37 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# Drawn placeholder for an empty sell column — parchment grain with a carved
+# wooden shelf and three peg hooks. Replaces the bare dim label so an untouched
+# pack reads as a tidy but empty counter rather than engine placeholder text.
+class _EmptyShelf extends Control:
+	func _ready() -> void:
+		custom_minimum_size = Vector2(0, 80)
+		size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		WyrdUi.draw_parchment_grain(self, r, 59)
+		var shelf_y := r.size.y * 0.48
+		var sr := Rect2(Vector2(16.0, shelf_y), Vector2(r.size.x - 32.0, 7.0))
+		draw_rect(sr, WyrdUi.KIT_PLATE.darkened(0.10))
+		draw_rect(Rect2(sr.position + Vector2(2.0, 1.0),
+			Vector2(sr.size.x - 4.0, 2.0)), Color(1.0, 0.97, 0.86, 0.45))
+		draw_rect(Rect2(sr.position + Vector2(2.0, sr.size.y - 2.0),
+			Vector2(sr.size.x - 4.0, 2.0)), Color(WyrdUi.KIT_EDGE, 0.20))
+		draw_rect(sr, WyrdUi.KIT_EDGE, false, 1.5)
+		for i in 3:
+			var px := r.size.x * (0.22 + float(i) * 0.28)
+			draw_line(Vector2(px, shelf_y + 7.0), Vector2(px, shelf_y + 17.0),
+				WyrdUi.KIT_EDGE, 2.0)
+			draw_circle(Vector2(px, shelf_y + 21.0), 3.5,
+				WyrdUi.KIT_PLATE.darkened(0.08))
+			draw_arc(Vector2(px, shelf_y + 21.0), 3.5, 0, TAU, 10,
+				WyrdUi.KIT_EDGE, 1.2, true)
+		var f := get_theme_default_font()
+		draw_string(f, Vector2(0.0, shelf_y - 8.0),
+			"Your pack holds no gear. The hollows provide.",
+			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 12, WyrdUi.INK_MID)
