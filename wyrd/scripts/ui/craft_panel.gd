@@ -42,8 +42,15 @@ func _ready() -> void:
 	var title := Label.new()
 	title.text = String(st.get("title", "Crafting"))
 	WyrdUi.style_title(title)
-	title.position = Vector2(54, 34)
+	title.position = Vector2(64, 34)   # shifted right — the crest disc sits at x:20
 	_panel.add_child(title)
+	# Station-crest disc: a small drawn emblem beside the title. Flame = cookfire,
+	# flask = still, hammer = forge. Matches the disc language in vendor/waystone.
+	var crest := _StationCrest.new()
+	crest.station_id = station_id
+	crest.position = Vector2(20, 22)
+	crest.size = Vector2(36, 36)
+	_panel.add_child(crest)
 
 	var close_hint := Label.new()
 	close_hint.text = "Esc — close"
@@ -68,6 +75,11 @@ func _ready() -> void:
 	section.text = "Recipes"
 	WyrdUi.style_section(section)
 	col.add_child(section)
+	# Flourish rule: ── ◆ ── storybook chapter-separator under the header.
+	var fl := _Flourish.new()
+	fl.custom_minimum_size = Vector2(0, 12)
+	fl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_child(fl)
 
 	# A7-full grew the forge to 14 recipes — the list scrolls now.
 	var scroll := ScrollContainer.new()
@@ -212,3 +224,67 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# ── ◆ ── drawn section-rule flourish centred at half-height.
+class _Flourish extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self,
+			Vector2(size.x * 0.5, size.y * 0.5), size.x - 24.0)
+
+
+# Drawn station-crest disc: parchment face + ink ring + trade emblem.
+# Matches the disc language used in vendor_panel and waystone_panel.
+class _StationCrest extends Control:
+	var station_id := "cookfire"
+
+	func _draw() -> void:
+		var c := size * 0.5
+		var r := minf(c.x, c.y) - 1.5
+		draw_circle(c, r, WyrdUi.KIT_PLATE)
+		draw_arc(c, r, 0, TAU, 40, WyrdUi.KIT_EDGE, 2.0, true)
+		draw_arc(c, r - 3.5, 0, TAU, 40, Color(WyrdUi.KIT_EDGE, 0.28), 1.0, true)
+		match station_id:
+			"cookfire":
+				_draw_flame(c, r)
+			"still":
+				_draw_flask(c, r)
+			_:
+				_draw_hammer(c, r)
+
+	func _draw_flame(c: Vector2, r: float) -> void:
+		# Three stacked ovals: warm orange base → amber mid → gold tip.
+		draw_circle(c + Vector2(0.0, r * 0.14), r * 0.44,
+			Color(0.87, 0.40, 0.12, 0.88))
+		draw_circle(c - Vector2(0.0, r * 0.04), r * 0.30,
+			Color(0.96, 0.63, 0.18, 0.82))
+		draw_circle(c - Vector2(0.0, r * 0.22), r * 0.17,
+			Color(0.98, 0.88, 0.42, 0.78))
+
+	func _draw_flask(c: Vector2, r: float) -> void:
+		# Alchemy flask: sage-tinted round belly, narrow neck, flat stopper.
+		var belly_r := r * 0.38
+		draw_circle(c + Vector2(0.0, r * 0.15), belly_r,
+			Color(0.70, 0.82, 0.68, 0.80))
+		draw_rect(Rect2(c + Vector2(-belly_r * 0.32, -r * 0.42),
+			Vector2(belly_r * 0.64, r * 0.30)),
+			Color(0.75, 0.84, 0.72, 0.80))
+		draw_rect(Rect2(c + Vector2(-belly_r * 0.44, -r * 0.52),
+			Vector2(belly_r * 0.88, r * 0.12)), Color(0.55, 0.46, 0.36, 0.88))
+		draw_arc(c + Vector2(0.0, r * 0.15), belly_r, 0, TAU, 28,
+			Color(WyrdUi.KIT_EDGE, 0.65), 1.5, true)
+		# Glass highlight on the belly.
+		draw_line(c + Vector2(-belly_r * 0.50, r * 0.02),
+			c + Vector2(-belly_r * 0.50, r * 0.30),
+			Color(1.0, 1.0, 0.88, 0.38), 1.0)
+
+	func _draw_hammer(c: Vector2, r: float) -> void:
+		# Hammer: rectangular head + tapered handle in warm sepia.
+		var hw := r * 0.66
+		var hh := r * 0.30
+		draw_rect(Rect2(c + Vector2(-hw * 0.5, -r * 0.46),
+			Vector2(hw, hh)), Color(0.48, 0.39, 0.28, 0.88))
+		draw_rect(Rect2(c + Vector2(-r * 0.10, -r * 0.16),
+			Vector2(r * 0.20, r * 0.52)), Color(0.57, 0.46, 0.33, 0.88))
+		draw_rect(Rect2(c + Vector2(-hw * 0.5, -r * 0.46),
+			Vector2(hw, hh)), Color(WyrdUi.KIT_EDGE, 0.55), false, 1.0)
