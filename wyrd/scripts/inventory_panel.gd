@@ -378,9 +378,12 @@ func _draw() -> void:
 		if scroll > max_s:
 			_tab_scroll[_tab] = max_s
 			queue_redraw()
-	draw_string(hdr_font, win.position + Vector2(52, 58),
-		"Adventurer's Pack", HORIZONTAL_ALIGNMENT_LEFT, win.size.x - 104, 24,
+	_draw_pack_crest(win.position + Vector2(52, 52), 15.0)
+	draw_string(hdr_font, win.position + Vector2(76, 58),
+		"Adventurer's Pack", HORIZONTAL_ALIGNMENT_LEFT, win.size.x - 128, 24,
 		WyrdUi.TERRACOTTA)
+	WyrdUi.draw_flourish(self, win.position + Vector2(win.size.x * 0.5, 68.0),
+		win.size.x - 108.0)
 	_draw_tabs(win)
 	if _tab == 0:
 		# Gold readout lives with the paper-doll — Gear tab only, else it
@@ -777,6 +780,39 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 		y += 10.0
 	_tab_content_h[2] = y - view.position.y
 
+
+# Compass-rose crest disc drawn left of the pack title. A warm parchment
+# plate with cardinal diamond arms (N in terracotta = forward / danger read),
+# inter-cardinal half-arms in mid-ink, a central gold pip, and an ink ring —
+# the Wayfinder's emblem in miniature. Pure-vector; no texture in _draw.
+func _draw_pack_crest(c: Vector2, r: float) -> void:
+	# Parchment disc face.
+	draw_circle(c, r, WyrdUi.KIT_PLATE)
+	# Inner concentric groove — carved-disc depth feel.
+	draw_arc(c, r - 3.5, 0, TAU, 40, Color(WyrdUi.KIT_EDGE, 0.28), 1.0, true)
+	# Cardinal arms (N, E, S, W) — diamond points, N in terracotta.
+	for i in 4:
+		var a := float(i) * PI * 0.5 - PI * 0.5
+		var tip := c + Vector2(cos(a), sin(a)) * r * 0.80
+		var side := r * 0.17
+		var bl := c + Vector2(cos(a + PI * 0.5), sin(a + PI * 0.5)) * side
+		var br := c + Vector2(cos(a - PI * 0.5), sin(a - PI * 0.5)) * side
+		var col: Color = WyrdUi.TERRACOTTA if i == 0 else WyrdUi.INK
+		draw_colored_polygon(PackedVector2Array([tip, bl, c, br]), col)
+	# Inter-cardinal half-arms — shorter, quieter ink.
+	for i in 4:
+		var a := float(i) * PI * 0.5 - PI * 0.25
+		var tip2 := c + Vector2(cos(a), sin(a)) * r * 0.54
+		var side2 := r * 0.11
+		var bl2 := c + Vector2(cos(a + PI * 0.5), sin(a + PI * 0.5)) * side2
+		var br2 := c + Vector2(cos(a - PI * 0.5), sin(a - PI * 0.5)) * side2
+		draw_colored_polygon(PackedVector2Array([tip2, bl2, c, br2]),
+			Color(WyrdUi.INK, 0.45))
+	# Central gold pip + its ink micro-ring.
+	draw_circle(c, r * 0.18, WyrdUi.GOLD)
+	draw_arc(c, r * 0.18, 0, TAU, 12, WyrdUi.KIT_EDGE, 1.0, true)
+	# Outer ink border.
+	draw_arc(c, r, 0, TAU, 48, WyrdUi.KIT_EDGE, 2.0, true)
 
 # Squiggly ink divider under headers — the UI bible's hand-drawn rule.
 func _draw_squiggle(from: Vector2, width: float, color: Color) -> void:
