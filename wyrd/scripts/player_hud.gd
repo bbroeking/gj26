@@ -412,6 +412,18 @@ class GlobeGauge extends Control:
 			_t += delta
 			queue_redraw()
 
+	# Tiny pointed leaf-bud: grows from `start` in direction `angle`.
+	# Used to dress the wood-ring knots as a bramble nest (mj_hud_bramble ref).
+	func _draw_leaf(start: Vector2, angle: float, length: float, alpha: float) -> void:
+		var dir := Vector2(cos(angle), sin(angle))
+		var perp := Vector2(-dir.y, dir.x)
+		var tip := start + dir * length
+		var mid := start + dir * (length * 0.45)
+		draw_colored_polygon(PackedVector2Array([start,
+			mid + perp * (length * 0.32), tip, mid - perp * (length * 0.32)]),
+			Color(WyrdUi.SAGE.darkened(0.10), alpha))
+		draw_line(start, tip, Color(WyrdUi.SAGE.darkened(0.50), alpha * 0.60), 0.8)
+
 	func _draw() -> void:
 		var c := size * 0.5
 		# --- carved wood-ring (spec 41 gate: kit variant A) ---
@@ -422,6 +434,12 @@ class GlobeGauge extends Control:
 			var a := PI * 0.25 + float(i) * PI * 0.5
 			var np := c + Vector2(cos(a), sin(a)) * (R + 8.0)
 			WyrdUi.draw_round_well(self, np, 8.0, Color(0.93, 0.88, 0.74))
+			# Ivy leaf-bud sprigs from each wood knot — the bramble-nest aesthetic.
+			# Three leaves per knot: one radial (primary) + two branch leaves at ±49°.
+			var lroot := c + Vector2(cos(a), sin(a)) * (R + 17.0)
+			_draw_leaf(lroot, a, 10.0, 0.68)
+			_draw_leaf(lroot, a + 0.85, 7.5, 0.48)
+			_draw_leaf(lroot, a - 0.85, 7.5, 0.48)
 		# --- glass orb ---
 		draw_circle(c, R, Color(0.12, 0.10, 0.09))
 		if frac > 0.003:
