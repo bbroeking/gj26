@@ -630,6 +630,8 @@ class BenchView extends Control:
 			_base_rect.size * bs), bench.base_id != "")
 		_highlight(_base_rect, target == "base")
 		if bench.base_id == "":
+			# Ghost scroll: a faint sealed-scroll silhouette shows what belongs here.
+			WyrdUi.draw_scroll(self, _base_rect.grow(-8.0), false, 0.28)
 			draw_string(font, _base_rect.position + Vector2(0, 52),
 				"chart base", HORIZONTAL_ALIGNMENT_CENTER,
 				_base_rect.size.x, 13, DIM)
@@ -790,6 +792,9 @@ class BenchView extends Control:
 				Color(WyrdUi.GOLD, _stamp_t * 2.0), false, 3.0)
 		var y := 250.0
 		if bench.base_id == "":
+			# Ghost sealed scroll: the reward waiting — dimmer than the base ghost
+			# since the result slot is secondary until a base is placed.
+			WyrdUi.draw_scroll(self, _result_rect.grow(-8.0), true, 0.20)
 			draw_string(font, _result_rect.position + Vector2(0, 60),
 				"place a base", HORIZONTAL_ALIGNMENT_CENTER,
 				_result_rect.size.x, 13, DIM)
