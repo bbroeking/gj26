@@ -585,13 +585,23 @@ func _draw_tabs(win: Rect2) -> void:
 	for i in TABS.size():
 		var r := _tab_rect(i)
 		var active := i == _tab
-		# Spec 40 — text-only plates; active = brighter + terracotta underline.
+		# Spec 40 — carved plates; active = brighter plate + terracotta underline.
 		draw_rect(r, Color(0.95, 0.91, 0.80) if active else Color(0.85, 0.78, 0.64))
 		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 1.5)
 		if active:
 			draw_line(r.position + Vector2(2, r.size.y - 2),
 				r.position + Vector2(r.size.x - 2, r.size.y - 2),
 				WyrdUi.TERRACOTTA, 3.0)
+		# Painted icon at the left edge — assets preloaded in _ready (white-rect-in-
+		# _draw gotcha avoided). Active tab: full ink; inactive: dimmed to 50%.
+		var icon_tex: Texture2D = _cached_tex(String(TAB_ICONS[i]))
+		if icon_tex != null:
+			var ih := 18.0
+			draw_texture_rect(icon_tex,
+				Rect2(Vector2(r.position.x + 8.0,
+					r.position.y + (r.size.y - ih) * 0.5),
+					Vector2(ih, ih)),
+				false, Color(1.0, 1.0, 1.0, 0.9 if active else 0.5))
 		draw_string(font, r.position + Vector2(0, 22), String(TABS[i]),
 			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16,
 			WyrdUi.INK if active else WyrdUi.INK_MID)
