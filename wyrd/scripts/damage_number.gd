@@ -15,6 +15,13 @@ var _age := 0.0
 var _vel := Vector3.ZERO
 var _base := 1.0
 
+func _ready() -> void:
+	# Storybook typeface so every combat hit reads as the game's hand rather
+	# than engine debug text. Font caches after first load — safe here.
+	var f := WyrdUi.font_header()
+	if f != null:
+		font = f
+
 func setup(amount: int, tier: String = "normal") -> void:
 	text = str(amount)
 	modulate = TIER_COLOR.get(tier, TIER_COLOR["normal"])
@@ -39,7 +46,7 @@ func setup_apply(label: String, color: Color) -> void:
 	modulate = color
 	_base = 0.7
 	font_size = 56
-	outline_size = 12
+	outline_size = 16
 	var ang := randf() * TAU
 	_vel = Vector3(cos(ang) * 0.5, 2.2, sin(ang) * 0.5)
 	scale = Vector3.ZERO
