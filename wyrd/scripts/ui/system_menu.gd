@@ -87,6 +87,27 @@ func _ready() -> void:
 		_ip_edit.placeholder_text = "friend's address (IP or IP:port)"
 		_ip_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_ip_edit.custom_minimum_size = Vector2(0, 40)
+		var field_sb := WyrdUi.chip_stylebox()
+		field_sb.content_margin_left = 12.0
+		field_sb.content_margin_right = 12.0
+		field_sb.content_margin_top = 8.0
+		field_sb.content_margin_bottom = 8.0
+		_ip_edit.add_theme_stylebox_override("normal", field_sb)
+		var focus_sb := WyrdUi.chip_stylebox()
+		focus_sb.content_margin_left = 12.0
+		focus_sb.content_margin_right = 12.0
+		focus_sb.content_margin_top = 8.0
+		focus_sb.content_margin_bottom = 8.0
+		focus_sb.border_color = WyrdUi.GOLD
+		_ip_edit.add_theme_stylebox_override("focus", focus_sb)
+		_ip_edit.add_theme_color_override("font_color", WyrdUi.INK)
+		_ip_edit.add_theme_color_override("font_placeholder_color", WyrdUi.INK_MID)
+		_ip_edit.add_theme_color_override("caret_color", WyrdUi.INK)
+		_ip_edit.add_theme_color_override("selection_color", Color(WyrdUi.GOLD, 0.35))
+		var bf := WyrdUi.font_body()
+		if bf != null:
+			_ip_edit.add_theme_font_override("font", bf)
+		_ip_edit.add_theme_font_size_override("font_size", 14)
 		row.add_child(_ip_edit)
 		var join := Button.new()
 		WyrdUi.style_kit_button(join)
