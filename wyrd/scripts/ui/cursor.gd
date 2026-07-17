@@ -1,9 +1,9 @@
 extends CanvasLayer
 
 # The storybook cursor (autoload "Cursor"). Replaces the generic OS arrow with
-# a hand-drawn guiding mark: an ink ring + cream lip + a burnished-gold center
-# pip and a soft glow. It follows the mouse, blooms gold when the bow fires
-# (real combat feedback — aim is WASD/soft-aim, so this is NOT an aim reticle),
+# a hand-drawn guiding mark: ink ring + cream lip + four thorn-bud diamonds
+# (NE/NW/SE/SW) + burnished-gold center pip + soft glow. Follows the mouse,
+# blooms gold when the bow fires (combat feedback — NOT an aim reticle),
 # and turns sage over a clickable Button. Pure-vector via the kit, top layer.
 
 func _ready() -> void:
@@ -44,11 +44,20 @@ class CursorMark extends Control:
 		# Ink ring + cream inner lip.
 		draw_arc(m, rad, 0.0, TAU, 28, ring_c, 2.2, true)
 		draw_arc(m, rad - 2.0, 0.0, TAU, 24, Color(WyrdUi.CREAM, 0.7), 1.0, true)
-		# Four short ticks (NE/NW/SE/SW so they never read as a crosshair).
+		# Four thorn-bud diamonds (NE/NW/SE/SW): outward-pointing leaf thorns that
+		# rhyme with the center pip and evoke Bramblewood's vine motif. Never reads
+		# as a cardinal crosshair; the inward base sits just off the ring.
 		for i in 4:
 			var a := PI * 0.25 + float(i) * PI * 0.5
 			var d := Vector2(cos(a), sin(a))
-			draw_line(m + d * (rad + 1.0), m + d * (rad + 4.0), ring_c, 1.6)
+			var dc := m + d * (rad + 2.5)
+			var perp := Vector2(-d.y, d.x)
+			draw_colored_polygon(PackedVector2Array([
+				dc + d * 3.0,
+				dc + perp * 1.5,
+				dc - d * 2.0,
+				dc - perp * 1.5,
+			]), ring_c)
 		# Burnished center pip — a tiny gold diamond.
 		var s := 2.6 + recoil * 1.6
 		draw_colored_polygon(PackedVector2Array([
