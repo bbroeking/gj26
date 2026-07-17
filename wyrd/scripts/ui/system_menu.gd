@@ -44,6 +44,22 @@ func _ready() -> void:
 	hint.offset_left = -130
 	hint.offset_top = 38
 	_panel.add_child(hint)
+	# Drawn iron lantern crest left of the title — the Lantern panel's named
+	# object as a header ornament, matching the crest treatment on vendor,
+	# craft, loadout, and waystone panels.
+	var crest := _LanternIcon.new()
+	crest.custom_minimum_size = Vector2(40, 52)
+	crest.size = Vector2(40, 52)
+	crest.position = Vector2(8, 7)
+	_panel.add_child(crest)
+	# Flourish rule between header and action rows (── ◆ ──).
+	var rule := _HeaderRule.new()
+	rule.anchor_right = 1.0
+	rule.offset_left = 52
+	rule.offset_right = -52
+	rule.offset_top = 76
+	rule.offset_bottom = 84
+	_panel.add_child(rule)
 	var col := VBoxContainer.new()
 	col.anchor_right = 1.0
 	col.anchor_bottom = 1.0
@@ -190,3 +206,73 @@ func _close() -> void:
 	if _game != null:
 		_game.modal_closed()
 	queue_free()
+
+
+# ---- drawn header ornaments ----
+
+# An iron cage lantern with amber glow and candle flame. Pure vector — no
+# textures in _draw, so the white-rect-on-load gotcha is impossible here.
+class _LanternIcon extends Control:
+	func _draw() -> void:
+		var cx := size.x * 0.5
+		# Hook chain at the very top.
+		draw_line(Vector2(cx, 0.0), Vector2(cx, size.y * 0.12),
+			WyrdUi.KIT_EDGE, 1.5)
+		# Top cap (wider than the cage body, the "crown" of the lantern).
+		var cap_y := size.y * 0.14
+		var cap_h := size.y * 0.10
+		var cap_w := size.x * 0.80
+		draw_rect(Rect2(Vector2(cx - cap_w * 0.5, cap_y), Vector2(cap_w, cap_h)),
+			WyrdUi.KIT_PLATE.darkened(0.12))
+		draw_rect(Rect2(Vector2(cx - cap_w * 0.5, cap_y), Vector2(cap_w, cap_h)),
+			WyrdUi.KIT_EDGE, false, 1.5)
+		# Cage body — amber glow fill with a brighter inner wash.
+		var body_y := cap_y + cap_h
+		var body_w := size.x * 0.60
+		var body_h := size.y * 0.52
+		var bx := cx - body_w * 0.5
+		var body := Rect2(Vector2(bx, body_y), Vector2(body_w, body_h))
+		draw_rect(body, Color(0.96, 0.84, 0.52, 0.80))
+		draw_rect(Rect2(body.position + Vector2(2.0, 2.0),
+			body.size - Vector2(4.0, 4.0)), Color(1.0, 0.93, 0.62, 0.50))
+		# Three vertical cage struts.
+		for i in 3:
+			var sx := bx + body_w * float(i + 1) / 4.0
+			draw_line(Vector2(sx, body_y), Vector2(sx, body_y + body_h),
+				Color(WyrdUi.KIT_EDGE, 0.55), 1.0)
+		# Two horizontal cage bands.
+		for j in 2:
+			var band_y := body_y + body_h * float(j + 1) / 3.0
+			draw_line(Vector2(bx, band_y), Vector2(bx + body_w, band_y),
+				Color(WyrdUi.KIT_EDGE, 0.55), 1.0)
+		# Body ink border + warm gold glow ring outside it.
+		draw_rect(body, WyrdUi.KIT_EDGE, false, 1.5)
+		draw_rect(body.grow(2.5), Color(WyrdUi.GOLD, 0.25), false, 2.0)
+		# Base cap (slightly wider, echoes the crown).
+		var base_y := body_y + body_h
+		var base_h := size.y * 0.10
+		var base_w := size.x * 0.84
+		draw_rect(Rect2(Vector2(cx - base_w * 0.5, base_y),
+			Vector2(base_w, base_h)), WyrdUi.KIT_PLATE.darkened(0.12))
+		draw_rect(Rect2(Vector2(cx - base_w * 0.5, base_y),
+			Vector2(base_w, base_h)), WyrdUi.KIT_EDGE, false, 1.5)
+		# Candle flame inside the cage: amber base circle + orange tip triangle
+		# + warm highlight dot.
+		var fc := Vector2(cx, body_y + body_h * 0.60)
+		var fr := size.x * 0.10
+		draw_circle(fc + Vector2(0.0, fr * 0.3), fr, Color(0.98, 0.70, 0.22))
+		var tip := PackedVector2Array([
+			fc + Vector2(-fr * 0.60, 0.0),
+			fc + Vector2( fr * 0.60, 0.0),
+			fc + Vector2(0.0, -fr * 1.80),
+		])
+		draw_colored_polygon(tip, Color(1.0, 0.58, 0.12))
+		draw_circle(fc + Vector2(0.0, -fr * 0.20), fr * 0.40,
+			Color(1.0, 0.94, 0.62, 0.85))
+
+
+# A thin ── ◆ ── flourish rule that divides the header from the action rows.
+class _HeaderRule extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5),
+			size.x - 20.0)
