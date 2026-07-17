@@ -35,6 +35,7 @@ var _channel_start_pos := Vector3.ZERO
 var _channel_start_hp := 0
 var _bar_root: Node3D = null
 var _bar_fill: MeshInstance3D = null
+const _BAR_FILL_HALF_W := 0.32   # half of fill quad's base width (full = 0.64)
 
 func setup(p_kind: String, p_item: String, p_respawns: bool = false) -> void:
 	kind = p_kind
@@ -319,14 +320,23 @@ static func channel_seconds(kind: String, game, base := -1.0) -> float:
 	return t
 
 # ---- channel progress bar (billboarded quads) ----
+# Art pass: three-layer kit treatment — ink border → parchment KIT_WELL trough
+# → sage fill that tracks left-to-right so the progress reads at a glance.
 func _show_bar() -> void:
 	_bar_root = Node3D.new()
 	_bar_root.position = Vector3(0.0, 1.15, 0.0)
 	add_child(_bar_root)
-	var bg := _bar_quad(Vector2(0.7, 0.1), Color(0.10, 0.08, 0.06, 0.85))
+	# Ink border frame (outermost, sits behind the trough).
+	var frame := _bar_quad(Vector2(0.74, 0.15), Color(0.26, 0.19, 0.13, 0.90))
+	frame.position.z = -0.002
+	_bar_root.add_child(frame)
+	# Parchment trough — KIT_WELL warm cream, inset inside the ink border.
+	var bg := _bar_quad(Vector2(0.68, 0.11), Color(0.80, 0.72, 0.58, 0.93))
 	_bar_root.add_child(bg)
-	_bar_fill = _bar_quad(Vector2(0.66, 0.06), Color(0.78, 0.92, 0.62))
-	_bar_fill.position.z = 0.01     # in front of the bg quad
+	# Sage fill — left-anchored; position.x is driven by _set_bar so the
+	# fill grows from left to right instead of shrinking from centre.
+	_bar_fill = _bar_quad(Vector2(0.64, 0.07), Color(0.50, 0.74, 0.30, 0.96))
+	_bar_fill.position.z = 0.01
 	_bar_root.add_child(_bar_fill)
 	_set_bar(0.0)
 
@@ -346,7 +356,11 @@ func _bar_quad(size: Vector2, color: Color) -> MeshInstance3D:
 
 func _set_bar(frac: float) -> void:
 	if _bar_fill != null:
-		_bar_fill.scale = Vector3(clampf(frac, 0.0, 1.0), 1.0, 1.0)
+		var f := clampf(frac, 0.0, 1.0)
+		_bar_fill.scale.x = f
+		# Keep the fill's left edge fixed at -_BAR_FILL_HALF_W so it fills
+		# left-to-right rather than collapsing inward from both sides.
+		_bar_fill.position.x = _BAR_FILL_HALF_W * (f - 1.0)
 
 func _deplete() -> void:
 	_depleted = true
