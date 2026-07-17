@@ -541,15 +541,33 @@ func _draw_tooltip() -> void:
 		pos.x = 0
 	if pos.y < 0:
 		pos.y = 0
-	draw_rect(Rect2(pos, Vector2(w, h)), Color(0.93, 0.88, 0.76, 0.97))
-	draw_rect(Rect2(pos, Vector2(w, h)),
-		Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+	var tip_r := Rect2(pos, Vector2(w, h))
+	# Parchment note-card treatment: soft shadow → warm face → ink border →
+	# gold inset hairline → grain → flourish under the item name.
+	# Shadow (offset 3/4 down-right so the card sits on top of the world).
+	draw_rect(Rect2(tip_r.position + Vector2(3.0, 4.0), tip_r.size),
+		Color(0, 0, 0, 0.20))
+	# Warm parchment face.
+	draw_rect(tip_r, Color(0.93, 0.88, 0.76, 0.97))
+	# Ink outer border.
+	draw_rect(tip_r, Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+	# Gold inset hairline — the burnished note-card read.
+	draw_rect(tip_r.grow(-4.0), Color(WyrdUi.GOLD, 0.42), false, 1.0)
+	# Sparse parchment grain inside the card face (seed fixed so it doesn't
+	# crawl as the tooltip follows the cursor).
+	WyrdUi.draw_parchment_grain(self, tip_r.grow(-5.0), 97)
 	var font := get_theme_default_font()
 	var y := pos.y + ipad + 14
-	for line in lines:
-		draw_string(font, Vector2(pos.x + ipad, y), String(line.text),
-			HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2, int(line.size), line.color)
+	for i in lines.size():
+		draw_string(font, Vector2(pos.x + ipad, y), String(lines[i].text),
+			HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2, int(lines[i].size),
+			lines[i].color)
 		y += line_h
+		# Flourish rule under the item name (first line only) — visually
+		# separates the name from the rarity / stat block below.
+		if i == 0 and lines.size() > 1:
+			WyrdUi.draw_flourish(self, Vector2(pos.x + w * 0.5, y - 4.0),
+				w - ipad * 3)
 
 func _draw_held() -> void:
 	var fp: Vector2i = Inventory.footprint(_held_item, _held_rotated)
