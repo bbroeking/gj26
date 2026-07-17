@@ -402,25 +402,17 @@ func _draw() -> void:
 
 func _draw_grid() -> void:
 	var grid_size := Vector2(COLS * CELL, ROWS * CELL)
-	# Recessed well behind the cells (Diablo's sunken-grid read).
-	draw_rect(Rect2(grid_origin - Vector2(6, 6), grid_size + Vector2(12, 12)),
-		Color(0.72, 0.64, 0.50, 0.85))
+	# Outer carved trough frames the whole grid (Diablo's sunken-grid read).
+	WyrdUi.draw_well(self,
+		Rect2(grid_origin - Vector2(8, 8), grid_size + Vector2(16, 16)),
+		WyrdUi.KIT_WELL.darkened(0.08))
+	# Each cell is a kit carved-well: stepped top-left shadow, warm light
+	# lip, ink border — reads as a hand-carved slot in the pack's wooden tray.
 	for y in ROWS:
 		for x in COLS:
 			var r := Rect2(grid_origin + Vector2(x * CELL, y * CELL),
 				Vector2(CELL, CELL))
-			draw_rect(r.grow(-1), Color(0.84, 0.77, 0.62))
-			# Inner shadow: dark top/left, light bottom/right → sunken cell.
-			draw_line(r.position + Vector2(1, 1),
-				r.position + Vector2(CELL - 1, 1), Color(0.45, 0.37, 0.27, 0.7), 2.0)
-			draw_line(r.position + Vector2(1, 1),
-				r.position + Vector2(1, CELL - 1), Color(0.45, 0.37, 0.27, 0.7), 2.0)
-			draw_line(r.position + Vector2(1, CELL - 1),
-				r.position + Vector2(CELL - 1, CELL - 1),
-				Color(0.97, 0.93, 0.82, 0.8), 1.5)
-			draw_line(r.position + Vector2(CELL - 1, 1),
-				r.position + Vector2(CELL - 1, CELL - 1),
-				Color(0.97, 0.93, 0.82, 0.8), 1.5)
+			WyrdUi.draw_well(self, r.grow(-2))
 	if inventory != null:
 		for it in inventory.items:
 			_draw_item_in_grid(it)
