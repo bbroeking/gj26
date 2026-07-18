@@ -358,6 +358,41 @@ static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
 		body.position + Vector2(2.5, body.size.y - 3.0),
 		Color(1, 1, 1, 0.45), 1.5)
 
+# Hearth crest disc — cookfire / forge station badge for panel headers.
+# A KIT_PLATE disc with a carved bevel, then a flame glyph: terracotta outer
+# flame, gold inner ember, two warm-orange coal dots. Reads as a hand-stamped
+# wax mark, not a logo. `r` is the disc radius; center is in parent-local space.
+static func draw_hearth_crest(c: CanvasItem, center: Vector2, r: float) -> void:
+	# Disc face.
+	c.draw_circle(center, r, KIT_PLATE)
+	# Shadow arc top-left, light arc bottom-right (carved-disc bevel language).
+	c.draw_arc(center, r - 2.5, PI * 0.78, PI * 1.95, 22, Color(0, 0, 0, 0.18), 3.0, true)
+	c.draw_arc(center, r - 2.5, -PI * 0.22, PI * 0.30, 16, Color(1.0, 1.0, 0.92, 0.30), 2.0, true)
+	c.draw_arc(center, r, 0, TAU, 40, KIT_EDGE, 2.0, true)
+	# Outer flame — terracotta, a teardrop rising from the coal bed.
+	var tip := center + Vector2(0.0, -r * 0.60)
+	var bl  := center + Vector2(-r * 0.28,  r * 0.24)
+	var br  := center + Vector2( r * 0.28,  r * 0.24)
+	var bml := center + Vector2(-r * 0.44,  r * 0.08)
+	var bmr := center + Vector2( r * 0.44,  r * 0.08)
+	var flame_outer := PackedVector2Array([tip, bmr, br, bl, bml])
+	c.draw_colored_polygon(flame_outer, TERRACOTTA)
+	# Inner ember — gold, a tighter teardrop nested inside the flame.
+	var itip := center + Vector2(0.0, -r * 0.30)
+	var ibl  := center + Vector2(-r * 0.16,  r * 0.18)
+	var ibr  := center + Vector2( r * 0.16,  r * 0.18)
+	var ibml := center + Vector2(-r * 0.26,  r * 0.06)
+	var ibmr := center + Vector2( r * 0.26,  r * 0.06)
+	var flame_inner := PackedVector2Array([itip, ibmr, ibr, ibl, ibml])
+	c.draw_colored_polygon(flame_inner, Color(GOLD, 0.92))
+	# Coal glow dots — two warm embers sitting below the flame base.
+	var ember := Color(0.80, 0.40, 0.12, 0.85)
+	c.draw_circle(center + Vector2(-r * 0.15, r * 0.32), r * 0.09, ember)
+	c.draw_circle(center + Vector2( r * 0.15, r * 0.32), r * 0.09, ember)
+	# Ink outline traces the outer flame edge (hand-drawn weight).
+	c.draw_polyline(PackedVector2Array([tip, bmr, br, bl, bml, tip]),
+		Color(KIT_EDGE, 0.55), 1.2, true)
+
 # A rolled parchment scroll with a wax seal — the chart-in-a-socket read.
 static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 	var face := Rect2(r.position + Vector2(r.size.x * 0.08, r.size.y * 0.12),

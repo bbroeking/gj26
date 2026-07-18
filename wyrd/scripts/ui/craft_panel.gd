@@ -39,10 +39,15 @@ func _ready() -> void:
 	_panel.offset_bottom = 300
 	add_child(_panel)
 
+	var crest := _HearthCrest.new()
+	crest.position = Vector2(12, 14)
+	crest.custom_minimum_size = Vector2(42, 42)
+	_panel.add_child(crest)
+
 	var title := Label.new()
 	title.text = String(st.get("title", "Crafting"))
 	WyrdUi.style_title(title)
-	title.position = Vector2(54, 34)
+	title.position = Vector2(60, 34)
 	_panel.add_child(title)
 
 	var close_hint := Label.new()
@@ -54,11 +59,19 @@ func _ready() -> void:
 	close_hint.offset_top = 36
 	_panel.add_child(close_hint)
 
+	var rule := _HeaderRule.new()
+	rule.anchor_right = 1.0
+	rule.offset_left = 52
+	rule.offset_right = -52
+	rule.offset_top = 76
+	rule.offset_bottom = 86
+	_panel.add_child(rule)
+
 	var col := VBoxContainer.new()
 	col.anchor_right = 1.0
 	col.anchor_bottom = 1.0
 	col.offset_left = 56
-	col.offset_top = 84
+	col.offset_top = 94
 	col.offset_right = -56
 	col.offset_bottom = -56
 	col.add_theme_constant_override("separation", 10)
@@ -212,3 +225,21 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# ---- inner draw controls (no external textures — _draw/load-white-rect-safe) ----
+
+# Hearth crest disc that sits in the top-left corner of the panel header.
+class _HearthCrest extends Control:
+	func _ready() -> void:
+		resized.connect(queue_redraw)
+	func _draw() -> void:
+		var r := minf(size.x, size.y) * 0.47
+		WyrdUi.draw_hearth_crest(self, size * 0.5, r)
+
+# A thin flourish rule (── ◆ ──) that separates the header from the body.
+class _HeaderRule extends Control:
+	func _ready() -> void:
+		resized.connect(queue_redraw)
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, size * 0.5, size.x)
