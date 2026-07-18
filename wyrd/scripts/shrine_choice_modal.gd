@@ -24,26 +24,37 @@ func _ready() -> void:
 	add_child(bg)
 	# Panel centred on the viewport.
 	_panel = Panel.new()
-	_panel.custom_minimum_size = Vector2(660, 320)
+	WyrdUi.style_panel(_panel)
+	_panel.custom_minimum_size = Vector2(660, 340)
 	_panel.anchor_left = 0.5
 	_panel.anchor_top = 0.5
 	_panel.anchor_right = 0.5
 	_panel.anchor_bottom = 0.5
 	_panel.offset_left = -330
-	_panel.offset_top = -160
+	_panel.offset_top = -170
 	_panel.offset_right = 330
-	_panel.offset_bottom = 160
+	_panel.offset_bottom = 170
 	add_child(_panel)
-	# Title.
+	# Title — IM Fell header in terracotta, the same register as every panel.
 	var title := Label.new()
 	title.text = "An Old Altar Stirs"
-	title.add_theme_font_size_override("font_size", 28)
+	WyrdUi.style_title(title)
 	title.anchor_left = 0.0
 	title.anchor_right = 1.0
-	title.offset_top = 16
-	title.offset_bottom = 56
+	title.offset_top = 18
+	title.offset_bottom = 52
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_panel.add_child(title)
+	# Dim subtitle — voice matches the world bible (declarative, unhurried).
+	var sub := Label.new()
+	sub.text = "The altar offers three gifts — accept one."
+	WyrdUi.style_dim(sub, 13)
+	sub.anchor_left = 0.0
+	sub.anchor_right = 1.0
+	sub.offset_top = 54
+	sub.offset_bottom = 78
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_panel.add_child(sub)
 	# HBox for the 3 buff cards.
 	_hbox = HBoxContainer.new()
 	_hbox.add_theme_constant_override("separation", 20)
@@ -51,7 +62,7 @@ func _ready() -> void:
 	_hbox.anchor_left = 0.0
 	_hbox.anchor_right = 1.0
 	_hbox.anchor_bottom = 1.0
-	_hbox.offset_top = 70
+	_hbox.offset_top = 84
 	_hbox.offset_bottom = -20
 	_hbox.offset_left = 16
 	_hbox.offset_right = -16
@@ -64,6 +75,7 @@ func setup(buffs: Array) -> void:
 		c.queue_free()
 	for b in _buffs:
 		var btn := Button.new()
+		WyrdUi.style_kit_button(btn)
 		btn.custom_minimum_size = Vector2(180, 200)
 		btn.text = String(b.name) + "\n\n" + String(b.desc)
 		btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
