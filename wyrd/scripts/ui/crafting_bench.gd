@@ -700,6 +700,26 @@ class BenchView extends Control:
 		draw_arc(pc, pr - 4.0, PI * 0.85, PI * 1.85, 26, COPPER_LIT, 5.0, true)
 		draw_circle(pc, pr * 0.66, Color(0.22, 0.16, 0.12))
 		draw_arc(pc, pr * 0.66, 0, TAU, 36, Color(0.10, 0.07, 0.05), 2.0, true)
+		# Storybook copper catch-light: two soft cream ovals on the upper-left
+		# shoulder so the pot reads as a polished metal sphere — the same
+		# specular-highlight language the HP/Focus orbs use. Both circles sit
+		# on the copper belly, outside the dark brew well (distance > pr*0.66).
+		draw_circle(pc + Vector2(-pr * 0.68, -pr * 0.52), pr * 0.14,
+			Color(0.98, 0.94, 0.82, 0.55))
+		draw_circle(pc + Vector2(-pr * 0.48, -pr * 0.72), pr * 0.07,
+			Color(1.0, 0.98, 0.92, 0.38))
+		# Cartographer's compass inscribed in the empty brew well — the
+		# ceremonial identity of a wayfinder's inscribing vessel awaiting its
+		# inks. Hidden once any ingredient is added to the pot.
+		if bench.pot.is_empty():
+			var ir := pr * 0.40
+			var cc := Color(WyrdUi.TERRACOTTA, 0.22)
+			draw_line(pc + Vector2(0, -ir), pc + Vector2(0, ir), cc, 1.0)
+			draw_line(pc + Vector2(-ir, 0), pc + Vector2(ir, 0), cc, 1.0)
+			for ai in 4:
+				var ang := PI * 0.25 + float(ai) * PI * 0.5
+				draw_line(pc, pc + Vector2(cos(ang), sin(ang)) * ir * 0.60, cc, 1.0)
+			draw_circle(pc, 2.2, Color(WyrdUi.GOLD, 0.28))
 		for hside in [-1.0, 1.0]:
 			draw_arc(pc + Vector2(hside * (pr + 5.0), 0.0), 7.0,
 				PI * (0.5 - 0.5 * hside) - PI * 0.5,
