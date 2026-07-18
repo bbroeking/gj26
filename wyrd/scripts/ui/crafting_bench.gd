@@ -510,9 +510,13 @@ class BenchView extends Control:
 		# Spec 44 — parchment grain over the working face (vector, no tex).
 		WyrdUi.draw_parchment_grain(self,
 			Rect2(Vector2(46, 72), size - Vector2(92, 124)))
-		draw_string(hdr, Vector2(54, 56), "The Inscribing Table",
+		# Quill crest disc — the inscribing table's emblem: a parchment seal
+		# with a diagonal ink quill (shaft, barbules, gold nib), rendered left
+		# of the title to match the crest-disc language of other modal panels.
+		_draw_quill_crest(Vector2(28.0, 42.0), 21.0)
+		draw_string(hdr, Vector2(64, 56), "The Inscribing Table",
 			HORIZONTAL_ALIGNMENT_LEFT, 400, 24, WyrdUi.TERRACOTTA)
-		WyrdUi.draw_flourish(self, Vector2(146, 66), 180.0)
+		WyrdUi.draw_flourish(self, Vector2(160, 66), 220.0)
 		draw_string(font, Vector2(size.x - 180, 56), "Esc — close",
 			HORIZONTAL_ALIGNMENT_RIGHT, 130, 12, DIM)
 		_odds_rows.clear()
@@ -533,6 +537,41 @@ class BenchView extends Control:
 		if ChartsData.TEMPLATES.has(id):
 			return String(ChartsData.TEMPLATES[id].name)
 		return GatherDefs.material_name(id)
+
+	# Ink-quill crest disc drawn in the panel header (left of the title).
+	# A parchment seal bearing a diagonal quill — shaft, barbule ticks, and
+	# a gold ink-nib diamond at the tip. All primitives; no load() in _draw.
+	func _draw_quill_crest(dc: Vector2, dr: float) -> void:
+		# Ghost halo just outside the ink ring — a soft atmospheric echo.
+		draw_arc(dc, dr + 3.5, 0.0, TAU, 48, Color(WyrdUi.KIT_EDGE, 0.15), 2.0, true)
+		# Parchment face.
+		draw_circle(dc, dr, WyrdUi.KIT_PLATE)
+		# Warm bevel: top-left light arc + bottom-right shade arc.
+		draw_arc(dc, dr - 3.5, PI * 0.9, PI * 1.9, 22,
+			Color(1.0, 1.0, 0.92, 0.38), 3.0, true)
+		draw_arc(dc, dr - 3.5, -PI * 0.1, PI * 0.9, 22,
+			Color(WyrdUi.KIT_EDGE, 0.15), 3.0, true)
+		# Ink border ring + burnished gold inset ring.
+		draw_arc(dc, dr, 0.0, TAU, 48, WyrdUi.KIT_EDGE, 2.0, true)
+		draw_arc(dc, dr - 3.5, 0.0, TAU, 48, Color(WyrdUi.GOLD, 0.38), 1.0, true)
+		# Quill shaft — diagonal, feather-root (bottom-left) to nib (top-right).
+		var q0 := dc + Vector2(-8.0, 8.0)
+		var q1 := dc + Vector2(8.0, -8.0)
+		draw_line(q0, q1, WyrdUi.KIT_EDGE, 2.5, true)
+		# Barbule ticks: short pairs angled off the shaft.
+		for i in 4:
+			var sp := q0.lerp(q1, 0.15 + float(i) * 0.2)
+			draw_line(sp, sp + Vector2(-2.5, -1.5), Color(WyrdUi.INK, 0.62), 1.2, true)
+			draw_line(sp, sp + Vector2(2.5, 1.5), Color(WyrdUi.INK, 0.62), 1.2, true)
+		# Gold ink-nib diamond at the quill tip.
+		var ns := 2.8
+		draw_colored_polygon(PackedVector2Array([
+			q1 + Vector2(0.0, -ns), q1 + Vector2(ns, 0.0),
+			q1 + Vector2(0.0, ns), q1 + Vector2(-ns, 0.0)]), WyrdUi.GOLD)
+		draw_polyline(PackedVector2Array([
+			q1 + Vector2(0.0, -ns), q1 + Vector2(ns, 0.0), q1 + Vector2(0.0, ns),
+			q1 + Vector2(-ns, 0.0), q1 + Vector2(0.0, -ns)]),
+			Color(WyrdUi.KIT_EDGE, 0.55), 0.8)
 
 	func _tray_section(hdr: Font, x: float, y: float, label: String) -> float:
 		draw_string(hdr, Vector2(x, y), label,
