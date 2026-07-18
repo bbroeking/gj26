@@ -31,6 +31,12 @@ func _ready() -> void:
 	_panel.offset_right = 260
 	_panel.offset_bottom = 220
 	add_child(_panel)
+	# Code-drawn lantern icon — matches the panel's "light a fire" theme.
+	var crest := _LanternIcon.new()
+	crest.position = Vector2(10, 10)
+	crest.custom_minimum_size = Vector2(38, 68)
+	crest.size = Vector2(38, 68)
+	_panel.add_child(crest)
 	var title := Label.new()
 	title.text = "The Lantern"
 	WyrdUi.style_title(title)
@@ -190,3 +196,96 @@ func _close() -> void:
 	if _game != null:
 		_game.modal_closed()
 	queue_free()
+
+
+# ---- code-drawn lantern icon ----
+# A small oil lantern: hanging hook, glass body with warm amber panes,
+# a candle flame inside, and a cast-iron base. Pure vector — no texture
+# loads inside _draw (white-rect gotcha). Sized for ~38×68 px.
+class _LanternIcon extends Control:
+	func _draw() -> void:
+		var w := size.x
+		var h := size.y
+		var cx := w * 0.5
+
+		# hanging hook (curved arc at the top)
+		var hook_c := Vector2(cx, h * 0.07)
+		draw_arc(hook_c, h * 0.065, -PI * 0.9, PI * 0.1, 18,
+			WyrdUi.KIT_EDGE, 2.0, true)
+		# the chain link that drops from the hook to the cap
+		draw_line(Vector2(cx, h * 0.13), Vector2(cx, h * 0.19),
+			WyrdUi.KIT_EDGE, 2.0, true)
+
+		# lantern cap (flat iron top)
+		var cap_y := h * 0.19
+		var cap_w := w * 0.70
+		var cap := Rect2(Vector2(cx - cap_w * 0.5, cap_y), Vector2(cap_w, h * 0.055))
+		draw_rect(cap, Color(0.30, 0.22, 0.15))
+		draw_rect(cap, WyrdUi.KIT_EDGE, false, 1.5)
+
+		# glass body — warm amber panes with a soft glow
+		var body_top := cap_y + h * 0.055
+		var body_h := h * 0.50
+		var body_w := w * 0.78
+		var body := Rect2(Vector2(cx - body_w * 0.5, body_top),
+			Vector2(body_w, body_h))
+		# outer glow so the lantern feels lit
+		draw_rect(body.grow(3.0), Color(WyrdUi.GOLD, 0.12))
+		draw_rect(body.grow(1.5), Color(WyrdUi.GOLD, 0.10))
+		# amber glass fill
+		draw_rect(body, Color(0.96, 0.82, 0.44, 0.72))
+		# inner flame glow (warm wash behind the flame)
+		var glow_c := Vector2(cx, body_top + body_h * 0.55)
+		draw_circle(glow_c, body_h * 0.30, Color(1.0, 0.85, 0.30, 0.28))
+		draw_circle(glow_c, body_h * 0.18, Color(1.0, 0.90, 0.50, 0.22))
+
+		# iron frame stripes (vertical mullions dividing the panes)
+		var stripe_x_left := cx - body_w * 0.25
+		var stripe_x_right := cx + body_w * 0.25
+		draw_line(Vector2(stripe_x_left, body_top),
+			Vector2(stripe_x_left, body_top + body_h),
+			Color(WyrdUi.KIT_EDGE, 0.50), 1.5, true)
+		draw_line(Vector2(stripe_x_right, body_top),
+			Vector2(stripe_x_right, body_top + body_h),
+			Color(WyrdUi.KIT_EDGE, 0.50), 1.5, true)
+		# horizontal midbar
+		draw_line(Vector2(body.position.x, body_top + body_h * 0.5),
+			Vector2(body.end.x, body_top + body_h * 0.5),
+			Color(WyrdUi.KIT_EDGE, 0.40), 1.2, true)
+		# glass border
+		draw_rect(body, WyrdUi.KIT_EDGE, false, 2.0)
+
+		# candle flame — a teardrop polygon
+		var flame_base := Vector2(cx, body_top + body_h * 0.72)
+		var flame_tip := Vector2(cx, body_top + body_h * 0.30)
+		var flame_pts := PackedVector2Array([
+			flame_base,
+			flame_base + Vector2(-w * 0.15, -body_h * 0.18),
+			flame_base + Vector2(-w * 0.09, -body_h * 0.36),
+			flame_tip + Vector2(0, body_h * 0.06),
+			flame_tip,
+			flame_base + Vector2(w * 0.09, -body_h * 0.36),
+			flame_base + Vector2(w * 0.15, -body_h * 0.18),
+		])
+		draw_colored_polygon(flame_pts, Color(1.0, 0.82, 0.20, 0.92))
+		# inner bright core
+		var core_pts := PackedVector2Array([
+			flame_base + Vector2(0, -body_h * 0.05),
+			flame_base + Vector2(-w * 0.06, -body_h * 0.20),
+			flame_tip + Vector2(0, body_h * 0.12),
+			flame_base + Vector2(w * 0.06, -body_h * 0.20),
+		])
+		draw_colored_polygon(core_pts, Color(1.0, 0.97, 0.70, 0.85))
+
+		# base plate (wider than the body, slightly rounded in feel)
+		var base_y := body_top + body_h
+		var base_w := body_w * 1.15
+		var base := Rect2(Vector2(cx - base_w * 0.5, base_y), Vector2(base_w, h * 0.055))
+		draw_rect(base, Color(0.30, 0.22, 0.15))
+		draw_rect(base, WyrdUi.KIT_EDGE, false, 1.5)
+		# foot ring below
+		var foot_y := base_y + h * 0.055
+		var foot_w := base_w * 0.70
+		var foot := Rect2(Vector2(cx - foot_w * 0.5, foot_y), Vector2(foot_w, h * 0.038))
+		draw_rect(foot, Color(0.26, 0.19, 0.13))
+		draw_rect(foot, WyrdUi.KIT_EDGE, false, 1.2)
