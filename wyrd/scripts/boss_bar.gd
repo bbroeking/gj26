@@ -28,6 +28,17 @@ func _ready() -> void:
 		root.offset_left = -300
 		root.offset_top = 18
 		add_child(root)
+		# Art pass — bramble crest disc flanking the boss HP bar on the left.
+		# Thorn-cross symbol on a carved parchment ground, mirroring the
+		# crest-disc language used in vendor/loadout/Lantern/pack headers.
+		var crest := _BrambleCrest.new()
+		crest.anchor_left = 0.5
+		crest.anchor_right = 0.5
+		crest.offset_left = -354
+		crest.offset_top = 11
+		crest.offset_right = -306
+		crest.offset_bottom = 59
+		add_child(crest)
 
 # Called at build — set max HP and fill the bar.
 func prime(mx: int) -> void:
@@ -57,3 +68,38 @@ func set_phase(phase: int) -> void:
 
 func hide_boss() -> void:
 	visible = false
+
+
+# Art pass — parchment medallion with a thorn-cross (four diagonal spokes
+# tipped with terracotta barbs) and four knot bumps at the cardinal ring.
+# Thematically Hedgemother (bramble/nature). Pure-vector _draw; no textures.
+class _BrambleCrest extends Control:
+	func _draw() -> void:
+		var c := size * 0.5
+		var r := minf(c.x, c.y) - 1.5
+		# Warm parchment disc.
+		draw_circle(c, r, WyrdUi.KIT_PLATE)
+		# Inner light-bevel arc — disc catches the warm page light.
+		draw_arc(c, r - 3.5, 0, TAU, 40, Color(1.0, 1.0, 0.93, 0.45), 2.5, true)
+		# Thorn-cross: four diagonal spokes with terracotta barb triangles.
+		var t1 := r * 0.14
+		var t2 := r * 0.50
+		for i in 4:
+			var a := PI * 0.25 + float(i) * PI * 0.5
+			var d := Vector2(cos(a), sin(a))
+			draw_line(c + d * t1, c + d * t2, WyrdUi.KIT_EDGE, 1.8)
+			var perp := Vector2(-sin(a), cos(a))
+			draw_colored_polygon(PackedVector2Array([
+				c + d * (t2 + 5.0),
+				c + d * t2 + perp * 3.0,
+				c + d * t2 - perp * 3.0]),
+				Color(WyrdUi.TERRACOTTA, 0.88))
+		# Knot bumps at N / S / E / W of the outer ring.
+		for i in 4:
+			var a_k := float(i) * PI * 0.5
+			var kp := c + Vector2(cos(a_k), sin(a_k)) * r
+			draw_circle(kp, 3.5, WyrdUi.KIT_PLATE)
+			draw_arc(kp, 3.5, 0, TAU, 12, WyrdUi.KIT_EDGE, 1.5, true)
+		# Outer ink ring + burnished gold inner ring.
+		draw_arc(c, r, 0, TAU, 48, WyrdUi.KIT_EDGE, 2.0, true)
+		draw_arc(c, r - 7.0, 0, TAU, 40, Color(WyrdUi.GOLD, 0.38), 1.2, true)
