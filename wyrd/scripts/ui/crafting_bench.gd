@@ -520,14 +520,44 @@ class BenchView extends Control:
 		_draw_bench(hdr, font)
 		_draw_result(hdr, font)
 		_draw_tip(font)
-		# Drag ghost (drawn over the tooltip).
+		# Drag ghost (drawn over the tooltip) — carved chip with kind icon so
+		# it reads as a physical object being carried, not a flat label.
 		if not bench._held.is_empty():
-			var r := Rect2(bench._cursor - Vector2(46, 14), Vector2(92, 28))
-			draw_rect(r, Color(PLATE, 0.85))
-			draw_rect(r, EDGE, false, 2.0)
-			draw_string(font, r.position + Vector2(0, 19),
-				_short_name(String(bench._held.id)),
-				HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 12, TXT)
+			var kind := String(bench._held.kind)
+			var id := String(bench._held.id)
+			var r := Rect2(bench._cursor - Vector2(46, 18), Vector2(92, 36))
+			# Shadow behind the chip so it lifts off the bench surface.
+			draw_rect(Rect2(r.position + Vector2(2, 3), r.size),
+				Color(0, 0, 0, 0.28))
+			# Carved plate: top-light bevel, bottom-shadow, ink edge, pinstripe.
+			WyrdUi.draw_carved_button(self, r)
+			# Kind icon in the left quarter of the chip.
+			var ic := r.position + Vector2(16, 18)
+			match kind:
+				"base":
+					WyrdUi.draw_scroll(self,
+						Rect2(ic - Vector2(10, 8), Vector2(20, 16)), false)
+				"ink":
+					WyrdUi.draw_ink_bottle(self, ic + Vector2(0, 2), 20,
+						INK_TINT.get(id, Color(0.4, 0.4, 0.4)))
+				"trophy":
+					var dp := PackedVector2Array([ic + Vector2(0, -8),
+						ic + Vector2(7, 0), ic + Vector2(0, 8),
+						ic + Vector2(-7, 0)])
+					draw_colored_polygon(dp, Color(WyrdUi.GOLD, 0.75))
+					draw_polyline(PackedVector2Array([dp[0], dp[1],
+						dp[2], dp[3], dp[0]]), Color(EDGE, 0.65), 1.2)
+				_:
+					draw_circle(ic, 9, WELL)
+					draw_arc(ic, 9, 0, TAU, 20, Color(EDGE, 0.5), 1.2, true)
+					draw_string(font,
+						Vector2(r.position.x + 7, r.position.y + 23),
+						GatherDefs.material_icon(id),
+						HORIZONTAL_ALIGNMENT_CENTER, 18, 10, TXT)
+			# Name label to the right of the icon.
+			draw_string(font, r.position + Vector2(30, 24),
+				_short_name(id), HORIZONTAL_ALIGNMENT_LEFT,
+				r.size.x - 36, 12, TXT)
 
 	func _short_name(id: String) -> String:
 		if ChartsData.TEMPLATES.has(id):
