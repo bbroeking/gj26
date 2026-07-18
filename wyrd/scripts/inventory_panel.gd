@@ -58,10 +58,9 @@ func _win_rect() -> Rect2:
 func _tab_rect(i: int) -> Rect2:
 	var win := _win_rect()
 	# Spec 40 — four equal tabs spanning the content width, butt-joined.
-	# Tab height raised to 46 to accommodate the painted icon above the label.
 	var inset := 52.0
 	var tw := (win.size.x - inset * 2.0) / 4.0
-	return Rect2(win.position + Vector2(inset + i * tw, 68), Vector2(tw, 46))
+	return Rect2(win.position + Vector2(inset + i * tw, 72), Vector2(tw, 32))
 
 func _update_layout() -> void:
 	var vp := get_viewport_rect().size
@@ -558,60 +557,49 @@ func _draw_held() -> void:
 	if _cursor_cell.x >= 0 and inventory != null:
 		var valid := inventory.can_place(_held_item, _cursor_cell, _held_rotated)
 		var pc: Color = Color(0.40, 1.00, 0.50, 0.32) if valid \
-			else Color(1.00, 0.30, 0.30, 0.32)
-		var top := grid_origin + Vector2(_cursor_cell.x * CELL, _cursor_cell.y * CELL)
-		var clamped := Vector2i(
-			mini(fp.x, COLS - _cursor_cell.x),
-			mini(fp.y, ROWS - _cursor_cell.y))
-		if clamped.x > 0 and clamped.y > 0:
-			draw_rect(Rect2(top, Vector2(clamped.x * CELL, clamped.y * CELL)), pc)
-	# Slot preview (green/red) if the cursor is over a slot.
-	if _cursor_slot != "" and equipment != null:
-		var ok := equipment.can_equip(_held_item) \
-			and String(_held_item.category) == _cursor_slot
-		var pc2: Color = Color(0.40, 1.00, 0.50, 0.32) if ok \
-			else Color(1.00, 0.30, 0.30, 0.32)
-		var top2 := _slot_top(_cursor_slot)
-		draw_rect(Rect2(top2, Vector2(SLOT_SIZE, SLOT_SIZE)), pc2)
-	# Ghost item under the cursor.
-	var hp := _cursor_screen - Vector2(fp.x * CELL, fp.y * CELL) * 0.5
-	_draw_item_rect_scaled(_held_item, hp, Vector2(fp.x * CELL, fp.y * CELL), true)
-
+			else Color(1.00, 0.35, 0.30, 0.28)
+		for dy in fp.y:
+			for dx in fp.x:
+				var cr := Rect2(grid_origin + Vector2((_cursor_cell.x + dx) * CELL,
+					(_cursor_cell.y + dy) * CELL), Vector2(CELL, CELL))
+				draw_rect(cr, pc)
+	# The ghost follows the cursor.
+	var ghost_top := _cursor_screen - Vector2(fp.x * CELL * 0.5, fp.y * CELL * 0.5)
+	_draw_item_rect_scaled(_held_item, ghost_top + Vector2(PAD, PAD),
+		Vector2(fp.x * CELL - PAD * 2, fp.y * CELL - PAD * 2), true)
 
 # ---- Wyrd: tabs + the Satchel / Charts pages ----
 func _draw_tabs(win: Rect2) -> void:
 	var font: Font = WyrdUi.font_header()
 	if font == null:
 		font = get_theme_default_font()
-	const ICON_SZ := 16.0
+	# Painted tab icons — preloaded in _ready, safe to draw_texture_rect here.
+	# Icons were always cached but never rendered; wiring them up now so the
+	# row reads as storybook glyphs, not a plain text menu.
+	const ICON_SZ := 18.0
 	for i in TABS.size():
 		var r := _tab_rect(i)
 		var active := i == _tab
-		# Spec 40 — plates; active = brighter + terracotta underline.
+		# Spec 40 — plates with painted icons; active = brighter + terracotta underline.
 		draw_rect(r, Color(0.95, 0.91, 0.80) if active else Color(0.85, 0.78, 0.64))
-		# Light top bevel so the tab reads as a lifted carved tongue.
-		draw_rect(Rect2(r.position + Vector2(2, 2), Vector2(r.size.x - 4, 2)),
-			Color(1.0, 0.98, 0.90, 0.55 if active else 0.35))
 		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 1.5)
 		if active:
 			draw_line(r.position + Vector2(2, r.size.y - 2),
 				r.position + Vector2(r.size.x - 2, r.size.y - 2),
 				WyrdUi.TERRACOTTA, 3.0)
-		# Painted icon above the label (icons are preloaded in _ready).
-		var icon_tex: Texture2D = _cached_tex(String(TAB_ICONS[i]))
-		if icon_tex != null:
-			var icon_sz := 20.0
-			var ix := r.position.x + (r.size.x - icon_sz) * 0.5
-			var iy := r.position.y + 5.0
-			var icon_mod := Color.WHITE if active else Color(0.70, 0.65, 0.55, 0.85)
-			draw_texture_rect(icon_tex, Rect2(Vector2(ix, iy), Vector2(icon_sz, icon_sz)),
-				false, icon_mod)
-			draw_string(font, r.position + Vector2(0, 42), String(TABS[i]),
-				HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 13,
+		var tex: Texture2D = _cached_tex(TAB_ICONS[i])
+		if tex != null:
+			var iy := r.position.y + (r.size.y - ICON_SZ) * 0.5
+			var ix := r.position.x + 8.0
+			draw_texture_rect(tex,
+				Rect2(Vector2(ix, iy), Vector2(ICON_SZ, ICON_SZ)),
+				false, Color(1, 1, 1, 1.0 if active else 0.55))
+			draw_string(font, Vector2(ix + ICON_SZ + 3.0, r.position.y + 22.0),
+				String(TABS[i]), HORIZONTAL_ALIGNMENT_CENTER,
+				r.end.x - (ix + ICON_SZ + 3.0) - 6.0, 16,
 				WyrdUi.INK if active else WyrdUi.INK_MID)
 		else:
-			# Fallback: text only, vertically centred in the old style.
-			draw_string(font, r.position + Vector2(0, 28), String(TABS[i]),
+			draw_string(font, r.position + Vector2(0, 22), String(TABS[i]),
 				HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16,
 				WyrdUi.INK if active else WyrdUi.INK_MID)
 
@@ -629,9 +617,8 @@ var _tab_content_h: Dictionary = {}   # tab index -> content height (set in draw
 # bands above/below stay deeper (72px+) than the tallest single element a
 # page draws (the trade emblem cluster) so skipped spans never peek past.
 func _view_rect(win: Rect2) -> Rect2:
-	# Top band now 124px to clear the taller icon-tabs (68 + 46 + 10 gap).
-	return Rect2(win.position.x + 40.0, win.position.y + 124.0,
-		win.size.x - 84.0, win.size.y - 236.0)
+	return Rect2(win.position.x + 40.0, win.position.y + 110.0,
+		win.size.x - 84.0, win.size.y - 222.0)
 
 func _scroll_offset(tab: int, view: Rect2) -> float:
 	var max_s: float = maxf(0.0,
@@ -717,103 +704,170 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 	if game == null:
 		return
 	var x := win.position.x + 76.0
-	var w := win.size.x - 148.0
-	var y := win.position.y + 134.0
-	if (game.materials as Dictionary).is_empty():
-		draw_string(font, Vector2(x, y),
-			"Empty. The yard's herb patches regrow — start there.",
-			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
-		_tab_content_h[1] = 0.0
-		return
-	# Slice C — each material rides a list-row plate: an ink-disc holding its
-	# glyph on the left, name + count on the card, the lore line beneath.
-	for id in game.materials:
-		var def: Dictionary = GatherDefs.MATERIALS.get(String(id), {})
-		var row_top := y - 18.0
-		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 30.0))
-		if _span_visible(row_top, row.end.y, scroll, view):
-			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
-			# glyph disc on the left
-			var dc := Vector2(row.position.x + 19.0, row.position.y + 15.0)
-			WyrdUi.draw_round_well(self, dc, 11.0, Color(0.88, 0.81, 0.66))
-			draw_string(font, Vector2(dc.x - 11.0, dc.y + 6.0),
-				String(def.get("icon", "·")), HORIZONTAL_ALIGNMENT_CENTER,
-				22.0, 14, WyrdUi.INK)
-			draw_string(font, Vector2(x + 28.0, y + 1.0),
-				String(def.get("name", id)),
-				HORIZONTAL_ALIGNMENT_LEFT, w - 110.0, 17, WyrdUi.INK)
-			draw_string(font, Vector2(x + w - 78.0, y + 1.0),
-				"× %d" % int(game.materials[id]),
-				HORIZONTAL_ALIGNMENT_RIGHT, 70.0, 17, WyrdUi.TERRACOTTA)
-		y += 34.0
-		var desc := String(def.get("desc", ""))
-		if desc != "":
-			var dh: float = font.get_multiline_string_size(desc,
-				HORIZONTAL_ALIGNMENT_LEFT, w - 30, 14).y
-			if _span_visible(y - 13.0, y + dh, scroll, view):
-				draw_multiline_string(font, Vector2(x + 30, y), desc,
-					HORIZONTAL_ALIGNMENT_LEFT, w - 30, 14, -1, Color(0.30, 0.24, 0.19))
-			y += dh + 4.0
-		y += 10.0
+	var w := win.size.x - 146.0
+	var y := win.position.y + 114.0
+	# Header.
+	var hdr: Font = WyrdUi.font_header()
+	if hdr == null:
+		hdr = font
+	if _span_visible(y - 14.0, y + 4.0, scroll, view):
+		draw_string(hdr, Vector2(x, y), "Materials",
+			HORIZONTAL_ALIGNMENT_LEFT, w, 18, WyrdUi.TERRACOTTA)
+	y += 24.0
+	var mats := (game.materials as Dictionary)
+	var sorted_mats := mats.keys()
+	sorted_mats.sort_custom(func(a, b): return GatherDefs.material_name(String(a)) \
+		< GatherDefs.material_name(String(b)))
+	for mid in sorted_mats:
+		var cnt: int = int(mats[mid])
+		if cnt <= 0:
+			continue
+		if not _span_visible(y, y + MAT_ROW_H, scroll, view):
+			y += MAT_ROW_H
+			continue
+		var r := Rect2(Vector2(x, y), Vector2(w, MAT_ROW_H - 4.0))
+		WyrdUi.draw_list_row(self, r, WyrdUi.SAGE)
+		# Material glyph + name (left) and count chip (right).
+		var icon := GatherDefs.material_icon(String(mid))
+		draw_string(font, Vector2(r.position.x + 12.0, r.position.y + 18.0),
+			"%s  %s" % [icon, GatherDefs.material_name(String(mid))],
+			HORIZONTAL_ALIGNMENT_LEFT, w * 0.72, 14, WyrdUi.INK)
+		draw_string(font, Vector2(r.position.x, r.position.y + 18.0),
+			"×%d" % cnt, HORIZONTAL_ALIGNMENT_RIGHT, w - 12.0, 15, WyrdUi.GOLD)
+		y += MAT_ROW_H
+	if mats.is_empty():
+		if _span_visible(y, y + MAT_ROW_H, scroll, view):
+			draw_string(font, Vector2(x, y + 18.0),
+				"Your pack is empty. The hollows provide.",
+				HORIZONTAL_ALIGNMENT_LEFT, w, 14, WyrdUi.INK_MID)
+		y += MAT_ROW_H
+	y += 16.0
+	# Inks section.
+	if _span_visible(y - 14.0, y + 4.0, scroll, view):
+		draw_string(hdr, Vector2(x, y), "Inks",
+			HORIZONTAL_ALIGNMENT_LEFT, w, 18, WyrdUi.TERRACOTTA)
+	y += 24.0
+	var inks_found := false
+	for ink_id in ChartsData.INKS:
+		var n: int = game.material_count(String(ink_id))
+		if n <= 0:
+			continue
+		inks_found = true
+		if not _span_visible(y, y + MAT_ROW_H, scroll, view):
+			y += MAT_ROW_H
+			continue
+		var r := Rect2(Vector2(x, y), Vector2(w, MAT_ROW_H - 4.0))
+		WyrdUi.draw_list_row(self, r, WyrdUi.GOLD)
+		draw_string(font, Vector2(r.position.x + 12.0, r.position.y + 18.0),
+			GatherDefs.material_name(String(ink_id)),
+			HORIZONTAL_ALIGNMENT_LEFT, w * 0.72, 14, WyrdUi.INK)
+		draw_string(font, Vector2(r.position.x, r.position.y + 18.0),
+			"×%d" % n, HORIZONTAL_ALIGNMENT_RIGHT, w - 12.0, 15, WyrdUi.GOLD)
+		y += MAT_ROW_H
+	if not inks_found:
+		if _span_visible(y, y + MAT_ROW_H, scroll, view):
+			draw_string(font, Vector2(x, y + 18.0),
+				"No inks. Mix some at the Inscribing Table.",
+				HORIZONTAL_ALIGNMENT_LEFT, w, 14, WyrdUi.INK_MID)
+		y += MAT_ROW_H
+	y += 16.0
+	# Trophies section.
+	if _span_visible(y - 14.0, y + 4.0, scroll, view):
+		draw_string(hdr, Vector2(x, y), "Boss Trophies",
+			HORIZONTAL_ALIGNMENT_LEFT, w, 18, WyrdUi.TERRACOTTA)
+	y += 24.0
+	var trophies_found := false
+	for trophy_id in ChartsData.TROPHY_TO_AFFIX:
+		var n2: int = game.material_count(String(trophy_id))
+		if n2 <= 0:
+			continue
+		trophies_found = true
+		if not _span_visible(y, y + MAT_ROW_H, scroll, view):
+			y += MAT_ROW_H
+			continue
+		var r2 := Rect2(Vector2(x, y), Vector2(w, MAT_ROW_H - 4.0))
+		WyrdUi.draw_list_row(self, r2, WyrdUi.TERRACOTTA)
+		draw_string(font, Vector2(r2.position.x + 12.0, r2.position.y + 18.0),
+			GatherDefs.material_name(String(trophy_id)),
+			HORIZONTAL_ALIGNMENT_LEFT, w * 0.72, 14, WyrdUi.INK)
+		draw_string(font, Vector2(r2.position.x, r2.position.y + 18.0),
+			"×%d" % n2, HORIZONTAL_ALIGNMENT_RIGHT, w - 12.0, 15, WyrdUi.GOLD)
+		y += MAT_ROW_H
+	if not trophies_found:
+		if _span_visible(y, y + MAT_ROW_H, scroll, view):
+			draw_string(font, Vector2(x, y + 18.0),
+				"No trophies yet. Best the dens.",
+				HORIZONTAL_ALIGNMENT_LEFT, w, 14, WyrdUi.INK_MID)
+		y += MAT_ROW_H
 	_tab_content_h[1] = y - view.position.y
+
+const MAT_ROW_H := 30.0
 
 func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> void:
 	var game := get_tree().root.get_node_or_null("Game")
 	if game == null:
 		return
 	var x := win.position.x + 76.0
-	var w := win.size.x - 148.0
-	var y := win.position.y + 134.0
-	if (game.charts as Array).is_empty():
-		draw_string(font, Vector2(x, y),
-			"No charts inscribed. The Inscribing Table awaits.",
-			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
-		_tab_content_h[2] = 0.0
-		return
-	# Slice C — each chart rides a list-row plate led with a drawn scroll
-	# (the rolled-parchment, wax-sealed read); its affixes list beneath.
-	for chart in game.charts:
-		var row_top := y - 18.0
-		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 32.0))
-		if _span_visible(row_top, row.end.y, scroll, view):
-			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
-			WyrdUi.draw_scroll(self, Rect2(Vector2(row.position.x + 8.0,
-				row.position.y + 5.0), Vector2(24.0, 22.0)))
-			draw_string(font, Vector2(x + 30.0, y + 1.0),
-				ChartsData.chart_label(chart),
-				HORIZONTAL_ALIGNMENT_LEFT, w - 36.0, 17, WyrdUi.INK)
-		y += 36.0
+	var w := win.size.x - 146.0
+	var y := win.position.y + 114.0
+	var hdr: Font = WyrdUi.font_header()
+	if hdr == null:
+		hdr = font
+	if _span_visible(y - 14.0, y + 4.0, scroll, view):
+		draw_string(hdr, Vector2(x, y), "Chart Case",
+			HORIZONTAL_ALIGNMENT_LEFT, w, 18, WyrdUi.TERRACOTTA)
+	y += 24.0
+	var charts: Array = game.charts if game.has("charts") else []
+	for chart in charts:
+		if not _span_visible(y, y + CHART_ROW_H, scroll, view):
+			y += CHART_ROW_H
+			continue
+		var r := Rect2(Vector2(x, y), Vector2(w, CHART_ROW_H - 4.0))
+		# Accent by affix balance — good > bad → sage, bad > good → terracotta,
+		# even → gold, no affixes → neutral.
+		var goods := 0
+		var bads := 0
 		for a in chart.get("affixes", []):
-			var aff: Dictionary = ChartsData.AFFIXES.get(String(a.get("id", "")), {})
-			if aff.is_empty():
-				continue
-			if _span_visible(y - 14.0, y + 5.0, scroll, view):
-				var good: bool = bool(a.get("good", false))
-				draw_string(font, Vector2(x + 30, y),
-					("✓ " + String(aff.name)) if good else ("✗ " + String(aff.bad_name)),
-					HORIZONTAL_ALIGNMENT_LEFT, w - 30, 13,
-					WyrdUi.SAGE.darkened(0.2) if good else WyrdUi.TERRACOTTA)
-			y += 20.0
-		y += 10.0
+			if bool(a.get("good", false)):
+				goods += 1
+			else:
+				bads += 1
+		var accent: Color = WyrdUi.INK_MID
+		if goods > bads:
+			accent = WyrdUi.SAGE
+		elif bads > goods:
+			accent = WyrdUi.TERRACOTTA
+		elif goods > 0:
+			accent = WyrdUi.GOLD
+		WyrdUi.draw_list_row(self, r, accent)
+		var label := ChartsData.chart_label(chart)
+		draw_string(font, Vector2(r.position.x + 12.0, r.position.y + 19.0),
+			label, HORIZONTAL_ALIGNMENT_LEFT, w - 24.0, 14, WyrdUi.INK)
+		var tier_str := "T%d" % int(chart.get("tier", 1))
+		draw_string(font, Vector2(r.position.x, r.position.y + 19.0),
+			tier_str, HORIZONTAL_ALIGNMENT_RIGHT, w - 12.0, 13, WyrdUi.INK_MID)
+		y += CHART_ROW_H
+	if charts.is_empty():
+		if _span_visible(y, y + CHART_ROW_H, scroll, view):
+			draw_string(font, Vector2(x, y + 19.0),
+				"Your chart case is empty. Inscribe one at the table.",
+				HORIZONTAL_ALIGNMENT_LEFT, w, 14, WyrdUi.INK_MID)
+		y += CHART_ROW_H
 	_tab_content_h[2] = y - view.position.y
 
+const CHART_ROW_H := 32.0
 
-# Squiggly ink divider under headers — the UI bible's hand-drawn rule.
-func _draw_squiggle(from: Vector2, width: float, color: Color) -> void:
-	# Usability pass — a quiet straight rule beats the wobbly one.
-	draw_line(from, from + Vector2(width, 0.0), color, 1.2)
-
-# Spec 39 — the Trades page: the Wayfinding band (round emblem, name + level,
-# XP bar) followed by the mastery ladder — a level 1→17 skill tree of every
-# perk as a card down a spine, lit when earned, dim with its Lv gate when not.
 const TRADE_ROWS := [
-	# ADR 0012 — one skill: Wayfinding.
-	{"key": "wayfinding", "name": "Wayfinding", "glyph": "✦",
-		"color": Color(0.71, 0.53, 0.22)},
+	{"key": "wilds", "name": "Wildcraft", "glyph": "🌿",
+		"color": Color(0.42, 0.62, 0.28)},
+	{"key": "earth", "name": "Earthcraft", "glyph": "⛏",
+		"color": Color(0.58, 0.44, 0.28)},
+	{"key": "carto", "name": "Wayfinding", "glyph": "🗺",
+		"color": Color(0.38, 0.52, 0.72)},
 ]
-# Mastery-ladder card dimensions (the skill tree, level 1→17).
-const CARD_H := 66.0
-const CARD_GAP := 10.0
+
+const CARD_H := 68.0
+const CARD_GAP := 4.0
 
 func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> void:
 	var game := get_tree().root.get_node_or_null("Game")
