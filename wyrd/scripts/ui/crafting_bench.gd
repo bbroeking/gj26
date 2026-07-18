@@ -519,7 +519,7 @@ class BenchView extends Control:
 		_draw_tray(hdr, font)
 		_draw_bench(hdr, font)
 		_draw_result(hdr, font)
-		_draw_tip(font)
+		_draw_tip(hdr, font)
 		# Drag ghost (drawn over the tooltip).
 		if not bench._held.is_empty():
 			var r := Rect2(bench._cursor - Vector2(46, 14), Vector2(92, 28))
@@ -739,6 +739,7 @@ class BenchView extends Control:
 		var cy := 462.0
 		draw_string(hdr, Vector2(bx, cy), "Codex", HORIZONTAL_ALIGNMENT_LEFT,
 			200, 13, WyrdUi.INK)
+		WyrdUi.draw_flourish(self, Vector2(bx + 106.0, cy + 7.0), 204.0)
 		cy += 16.0
 		_codex_rects.clear()
 		for rid in GatherDefs.INK_RECIPE_ORDER:
@@ -857,23 +858,44 @@ class BenchView extends Control:
 			draw_circle(sc, 5.5, Color(0.72, 0.28, 0.22))
 			draw_arc(sc, 9.0, 0, TAU, 22, Color(0.40, 0.12, 0.10), 1.5, true)
 
-	func _draw_tip(font: Font) -> void:
+	func _draw_tip(hdr: Font, font: Font) -> void:
 		if _tip == "" or not bench._held.is_empty():
 			return
 		var lines := _tip.split("\n")
+		# First line (item name) uses the header font at size 14; rest use
+		# body at 12. Measure both so the card is always wide enough.
 		var w := 0.0
-		for ln in lines:
-			w = maxf(w, font.get_string_size(ln, HORIZONTAL_ALIGNMENT_LEFT,
-				-1, 13).x)
+		for i in lines.size():
+			var f := hdr if i == 0 else font
+			var sz := 14 if i == 0 else 12
+			if f != null:
+				w = maxf(w, f.get_string_size(String(lines[i]),
+					HORIZONTAL_ALIGNMENT_LEFT, -1, sz).x)
 		var box := Rect2(_tip_at + Vector2(16, 12),
-			Vector2(w + 20.0, 12.0 + 19.0 * lines.size()))
+			Vector2(w + 22.0, 14.0 + 19.0 * float(lines.size())))
 		# Keep it on the panel.
 		box.position.x = minf(box.position.x, size.x - box.size.x - 8.0)
 		box.position.y = minf(box.position.y, size.y - box.size.y - 8.0)
+		# Drop shadow — the card lifts above the bench face.
+		draw_rect(Rect2(box.position + Vector2(3, 3), box.size),
+			Color(0, 0, 0, 0.18))
+		# Parchment cream fill.
 		draw_rect(box, Color(0.97, 0.93, 0.80, 0.97))
+		# Fibre grain (seed from position stays stable while hovering).
+		WyrdUi.draw_parchment_grain(self, box,
+			int(box.position.x * 3.0) ^ int(box.position.y))
+		# Gold inner hairline — the burnished card edge.
+		draw_rect(box.grow(-3.0), Color(WyrdUi.GOLD, 0.45), false, 1.0)
+		# Ink border.
 		draw_rect(box, EDGE, false, 2.0)
+		# Name line in header font, description lines dimmer and smaller.
 		var ty := box.position.y + 17.0
-		for ln in lines:
-			draw_string(font, Vector2(box.position.x + 10.0, ty), ln,
-				HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 20.0, 13, TXT)
-			ty += 19.0
+		for i in lines.size():
+			var f := hdr if (i == 0 and hdr != null) else font
+			var sz := 14 if i == 0 else 12
+			var col := TXT if i == 0 else DIM
+			if f != null:
+				draw_string(f, Vector2(box.position.x + 10.0, ty),
+					String(lines[i]),
+					HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 20.0, sz, col)
+			ty += 19.0 if i == 0 else 17.0
