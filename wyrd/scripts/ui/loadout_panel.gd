@@ -76,6 +76,13 @@ func _ready() -> void:
 	_panel.offset_right = 330
 	_panel.offset_bottom = 300
 	add_child(_panel)
+	# Header art — crest disc + flourish rule, drawn behind the title text.
+	# Same medallion language as craft/vendor/waystone/dialog panels.
+	var hdr_art := _LoadoutHeaderArt.new()
+	hdr_art.anchor_right = 1.0
+	hdr_art.offset_bottom = 82.0
+	hdr_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(hdr_art)
 	var title := Label.new()
 	title.text = "Loadout"
 	WyrdUi.style_title(title)
@@ -262,3 +269,43 @@ class _SkillCard extends Control:
 		# --- short desc (up to two lines) ---
 		draw_multiline_string(font, Vector2(tx, 40.0), _desc,
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 16.0, 12, 2, dim)
+
+
+# ---- header crest disc + flourish rule ----
+# A crossed-arrows medallion to the left of the "Loadout" title (the archer's
+# kit crest) plus a WyrdUi flourish rule below it — the same ornament language
+# as craft/vendor/waystone/dialog panels. Pure vector, no textures.
+class _LoadoutHeaderArt extends Control:
+	func _draw() -> void:
+		# Crest disc — centred on the title baseline, left of the title text.
+		var cx := 26.0
+		var cy := 44.0
+		var r := 18.0
+		# Parchment face.
+		draw_circle(Vector2(cx, cy), r, WyrdUi.KIT_PLATE)
+		# Warm upper-left highlight so the disc catches the page's warm light.
+		draw_arc(Vector2(cx, cy), r - 3.5, PI * 0.85, PI * 1.60, 14,
+			Color(1.0, 1.0, 0.93, 0.50), 3.5, true)
+		# Gold burnished inner ring (kit "carved object" read).
+		draw_arc(Vector2(cx, cy), r - 4.5, 0, TAU, 40,
+			Color(WyrdUi.GOLD, 0.65), 1.2, true)
+		# Ink rim.
+		draw_arc(Vector2(cx, cy), r, 0, TAU, 40, WyrdUi.KIT_EDGE, 2.0, true)
+		# Crossed-arrows motif — slot 1 is always the Bow; two arrows mark the kit.
+		var s := r * 0.38
+		# Arrow ↗ (primary — darker ink).
+		draw_line(Vector2(cx - s, cy + s), Vector2(cx + s, cy - s),
+			WyrdUi.INK, 1.5)
+		draw_line(Vector2(cx + s, cy - s), Vector2(cx + s - 5.0, cy - s),
+			WyrdUi.INK, 1.5)
+		draw_line(Vector2(cx + s, cy - s), Vector2(cx + s, cy - s + 5.0),
+			WyrdUi.INK, 1.5)
+		# Arrow ↘ (secondary — mid ink so the cross reads without muddying).
+		draw_line(Vector2(cx - s, cy - s), Vector2(cx + s, cy + s),
+			Color(WyrdUi.INK_MID, 0.75), 1.5)
+		draw_line(Vector2(cx + s, cy + s), Vector2(cx + s - 5.0, cy + s),
+			Color(WyrdUi.INK_MID, 0.75), 1.5)
+		draw_line(Vector2(cx + s, cy + s), Vector2(cx + s, cy + s - 5.0),
+			Color(WyrdUi.INK_MID, 0.75), 1.5)
+		# Flourish rule centred under the title, spanning the inner content width.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 72.0), size.x * 0.82)
