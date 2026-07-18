@@ -115,18 +115,13 @@ func _render() -> void:
 		_list_box.add_child(l)
 	for i in n:
 		var chart: Dictionary = _game.charts[i]
-		var b := Button.new()
-		WyrdUi.style_button(b)
-		WyrdUi.mark_selected(b, i == _selected)
-		b.toggle_mode = true
-		b.button_pressed = i == _selected
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.text = ChartsData.chart_label(chart)
+		var row := _ChartRow.new()
+		row.setup(ChartsData.chart_label(chart), chart, i == _selected)
 		var idx := i
-		b.pressed.connect(func():
+		row.pressed.connect(func():
 			_selected = idx
 			_render())
-		_list_box.add_child(b)
+		_list_box.add_child(row)
 	# Detail + button state.
 	if _selected >= 0 and _selected < n:
 		var chart: Dictionary = _game.charts[_selected]
@@ -154,3 +149,82 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# ---- drawn chart row ----
+# Replaces the plain styled Button in the chart list. An accent stripe encodes
+# affix balance at a glance (SAGE = boon-heavy, TERRACOTTA = curse-heavy,
+# GOLD = balanced, INK_MID = clean/no affixes). A scroll icon sits in the
+# left well — sealed when affixes are inked in, open when the chart is clean.
+# The selected row shows a sage ring (kit selection language).
+class _ChartRow extends Control:
+	const ICON_W := 44.0
+
+	var _label := ""
+	var _accent: Color = WyrdUi.INK_MID
+	var _selected := false
+	var _sealed := false
+	var _hover := false
+
+	signal pressed
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 54.0)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
+	func setup(chart_label: String, chart: Dictionary, is_selected: bool) -> void:
+		_label = chart_label
+		_selected = is_selected
+		var affixes: Array = chart.get("affixes", [])
+		if affixes.is_empty():
+			_accent = WyrdUi.INK_MID
+			_sealed = false
+		else:
+			var goods := 0
+			var bads := 0
+			for a in affixes:
+				if bool(a.get("good", false)):
+					goods += 1
+				else:
+					bads += 1
+			_sealed = true
+			if goods > bads:
+				_accent = WyrdUi.SAGE
+			elif bads > goods:
+				_accent = WyrdUi.TERRACOTTA
+			else:
+				_accent = WyrdUi.GOLD
+		queue_redraw()
+
+	func _gui_input(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.pressed \
+				and event.button_index == MOUSE_BUTTON_LEFT:
+			pressed.emit()
+			accept_event()
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_MOUSE_ENTER:
+			_hover = true
+			queue_redraw()
+		elif what == NOTIFICATION_MOUSE_EXIT:
+			_hover = false
+			queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		WyrdUi.draw_list_row(self, r, _accent)
+		if _selected:
+			draw_rect(r.grow(-2.0), Color(WyrdUi.SAGE, 0.40), false, 2.0)
+		elif _hover:
+			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.10))
+		# scroll icon in the left well — sealed when affixes are inked in
+		var ir := Rect2(Vector2(9.0, (size.y - ICON_W) * 0.5),
+			Vector2(ICON_W, ICON_W))
+		WyrdUi.draw_well(self, ir, Color(0.95, 0.91, 0.80))
+		WyrdUi.draw_scroll(self, ir.grow(-4.0), _sealed)
+		# chart label — accent-tinted when selected so eye + stripe agree
+		var font := get_theme_default_font()
+		var tx := ir.end.x + 12.0
+		var col: Color = _accent.darkened(0.2) if _selected else WyrdUi.INK
+		draw_string(font, Vector2(tx, size.y * 0.5 + 6.0), _label,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 12.0, 15, col)
