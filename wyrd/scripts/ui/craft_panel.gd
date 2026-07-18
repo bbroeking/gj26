@@ -115,58 +115,28 @@ func _render() -> void:
 	for rid in st.get("recipes", []):
 		var rec: Dictionary = CraftingDefs.recipe(String(rid))
 		var locked: bool = lv < int(rec.get("req_lv", 1))
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 10)
-
-		# Spec 44 — a painted icon chip in front of every recipe row.
-		var chip := Label.new()
-		chip.text = _recipe_glyph(rec)
-		chip.custom_minimum_size = Vector2(36, 36)
-		chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		chip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		chip.add_theme_font_size_override("font_size", 17)
-		chip.add_theme_color_override("font_color",
-			WyrdUi.INK if not locked else WyrdUi.INK_MID)
-		chip.add_theme_stylebox_override("normal",
-			WyrdUi.chip_stylebox(_recipe_tint(rec, locked)))
-		row.add_child(chip)
-
-		var info := VBoxContainer.new()
-		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var name_lbl := Label.new()
-		if locked:
-			name_lbl.text = "%s — %s %d" % [String(rec.name),
-				_game.TRADE_NAMES.get(trade, trade) if _game != null else trade,
-				int(rec.req_lv)]
-			WyrdUi.style_dim(name_lbl, 14)
-		else:
-			name_lbl.text = String(rec.name)
-			WyrdUi.style_body(name_lbl, 14)
-		info.add_child(name_lbl)
+		var affordable: bool = not locked and _game != null \
+			and _game.can_afford(rec.inputs)
 		var cost_parts: Array = []
 		for id in rec.inputs:
 			var have: int = 0 if _game == null else _game.material_count(String(id))
 			cost_parts.append("%d× %s (%d)" % [int(rec.inputs[id]),
 				GatherDefs.material_name(String(id)), have])
-		var detail := Label.new()
-		detail.text = "%s  ·  %d xp  ·  %s" % [" + ".join(cost_parts),
+		var detail_txt := "%s  ·  %d xp  ·  %s" % [" + ".join(cost_parts),
 			int(rec.get("xp", 0)), String(rec.get("desc", ""))]
-		WyrdUi.style_dim(detail, 12)
-		detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		info.add_child(detail)
-		row.add_child(info)
-
-		var b := Button.new()
-		WyrdUi.style_kit_button(b)
-		b.text = String(st.get("verb", "Craft"))
-		b.custom_minimum_size = Vector2(96, 40)
-		b.disabled = locked or _game == null or not _game.can_afford(rec.inputs)
+		var name_txt := "%s — %s %d" % [String(rec.name),
+			_game.TRADE_NAMES.get(trade, trade) if _game != null else trade,
+			int(rec.req_lv)] if locked else String(rec.name)
+		var card := _RecipeCard.new()
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		card.setup(name_txt, detail_txt, _recipe_glyph(rec),
+			_recipe_tint(rec, locked), String(st.get("verb", "Craft")),
+			locked, not affordable)
 		var rid_s := String(rid)
-		b.pressed.connect(func():
+		card.pressed.connect(func():
 			if _game != null and _game.craft(station_id, rid_s):
 				_render())
-		row.add_child(b)
-		_recipe_box.add_child(row)
+		_recipe_box.add_child(card)
 
 	if _game == null:
 		_satchel_lbl.text = ""
@@ -212,3 +182,90 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# ---- drawn recipe card (one row in the list) ----
+# Replaces the plain HBoxContainer rows: a KIT_PLATE face via draw_list_row,
+# a small icon well on the left with the recipe glyph, name + ingredient line
+# drawn in ink/dim, and a carved Craft button on the right.
+# Locked rows show terracotta accent + dim text; unaffordable shows INK_MID
+# accent and a greyed button. Clicking anywhere on an enabled card crafts.
+class _RecipeCard extends Control:
+	const WELL_W := 46.0
+	const BTN_W  := 82.0
+
+	var _name := ""
+	var _detail := ""
+	var _glyph := "▣"
+	var _glyph_tint: Color = Color(0.93, 0.88, 0.74)
+	var _verb := "Craft"
+	var _locked := false
+	var _unaffordable := false
+	var _hover := false
+
+	signal pressed
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 56.0)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
+	func setup(p_name: String, p_detail: String, p_glyph: String,
+			p_tint: Color, p_verb: String, p_locked: bool,
+			p_unaffordable: bool) -> void:
+		_name        = p_name
+		_detail      = p_detail
+		_glyph       = p_glyph
+		_glyph_tint  = p_tint
+		_verb        = p_verb
+		_locked      = p_locked
+		_unaffordable = p_unaffordable
+		queue_redraw()
+
+	func _gui_input(event: InputEvent) -> void:
+		if _locked or _unaffordable:
+			return
+		if event is InputEventMouseButton and event.pressed \
+				and event.button_index == MOUSE_BUTTON_LEFT:
+			pressed.emit()
+			accept_event()
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_MOUSE_ENTER:
+			_hover = true
+			queue_redraw()
+		elif what == NOTIFICATION_MOUSE_EXIT:
+			_hover = false
+			queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		# Accent: sage = ready to craft, terracotta = locked, mid = can't afford.
+		var accent: Color = WyrdUi.SAGE if (not _locked and not _unaffordable) \
+			else (WyrdUi.TERRACOTTA if _locked else WyrdUi.INK_MID)
+		WyrdUi.draw_list_row(self, r, accent)
+		if _hover and not _locked and not _unaffordable:
+			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.08))
+		# Icon well — tinted by recipe group (verdant/earthen/lumen/item rarity).
+		var ir := Rect2(Vector2(8.0, (size.y - WELL_W) * 0.5),
+			Vector2(WELL_W, WELL_W))
+		WyrdUi.draw_well(self, ir, _glyph_tint.darkened(0.08))
+		var font := get_theme_default_font()
+		draw_string(font, ir.position + Vector2(0.0, WELL_W * 0.5 + 7.0),
+			_glyph, HORIZONTAL_ALIGNMENT_CENTER, WELL_W, 18,
+			WyrdUi.INK if not _locked else WyrdUi.INK_MID)
+		# Name + ingredient detail.
+		var tx  := ir.end.x + 10.0
+		var btn_x := size.x - BTN_W - 8.0
+		var tw  := maxf(0.0, btn_x - tx - 6.0)
+		var nc: Color = WyrdUi.INK if not _locked else WyrdUi.INK_MID
+		draw_string(font, Vector2(tx, size.y * 0.5 - 2.0), _name,
+			HORIZONTAL_ALIGNMENT_LEFT, tw, 14, nc)
+		draw_string(font, Vector2(tx, size.y * 0.5 + 14.0), _detail,
+			HORIZONTAL_ALIGNMENT_LEFT, tw, 11, WyrdUi.INK_MID)
+		# Craft button — carved plate on the right.
+		var br := Rect2(Vector2(btn_x, 8.0), Vector2(BTN_W, size.y - 16.0))
+		WyrdUi.draw_carved_button(self, br, not _locked and not _unaffordable)
+		var bc: Color = WyrdUi.INK if not _locked and not _unaffordable \
+			else Color(WyrdUi.INK_MID, 0.55)
+		draw_string(font, Vector2(btn_x, size.y * 0.5 + 5.0), _verb,
+			HORIZONTAL_ALIGNMENT_CENTER, BTN_W, 13, bc)
