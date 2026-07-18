@@ -50,7 +50,7 @@ func _ready() -> void:
 	_panel.add_child(sub)
 	var rule := _FlourishRule.new()
 	rule.position = Vector2(54, 84)
-	rule.size = Vector2(260, 6)
+	rule.size = Vector2(492, 8)
 	_panel.add_child(rule)
 
 	# A full chart case outgrows the panel — the list scrolls now,
@@ -210,7 +210,26 @@ class _ChartCard extends Control:
 
 	func _draw() -> void:
 		var r := Rect2(Vector2.ZERO, size)
-		var accent: Color = WyrdUi.GOLD if _selected else WyrdUi.INK_MID
+		# Count affixes first so the accent stripe and pips share the same values.
+		var affixes: Array = _chart.get("affixes", [])
+		var good_count := 0
+		var bad_count := 0
+		for a in affixes:
+			if bool(a.get("good", false)):
+				good_count += 1
+			else:
+				bad_count += 1
+		# Accent stripe reads the chart's disposition at a glance:
+		# gold=chosen, sage=boon-heavy, terracotta=curse-heavy, mid=clean run.
+		var accent: Color
+		if _selected:
+			accent = WyrdUi.GOLD
+		elif good_count > 0 and bad_count == 0:
+			accent = WyrdUi.SAGE
+		elif bad_count > good_count:
+			accent = WyrdUi.TERRACOTTA
+		else:
+			accent = WyrdUi.INK_MID
 		WyrdUi.draw_list_row(self, r, accent)
 		if _hover and not _selected:
 			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.10))
@@ -220,7 +239,7 @@ class _ChartCard extends Control:
 		var ir := Rect2(Vector2(9.0, wy), Vector2(WELL_W, WELL_H))
 		WyrdUi.draw_well(self, ir, Color(0.95, 0.91, 0.80))
 		# sealed = chart has affixes (the wax seal reads "something inked in")
-		var has_affixes := not (_chart.get("affixes", []) as Array).is_empty()
+		var has_affixes := not affixes.is_empty()
 		WyrdUi.draw_scroll(self, ir.grow(-3.0), has_affixes)
 		# gold ring when this chart is chosen
 		if _selected:
@@ -250,14 +269,6 @@ class _ChartCard extends Control:
 
 		# --- affix pips: sage circles = good affixes, terracotta = bad ---
 		# Two rows on the right; gives an instant risk read without text.
-		var affixes: Array = _chart.get("affixes", [])
-		var good_count := 0
-		var bad_count := 0
-		for a in affixes:
-			if bool(a.get("good", false)):
-				good_count += 1
-			else:
-				bad_count += 1
 		_draw_pips(WyrdUi.SAGE, good_count, size.y * 0.32)
 		_draw_pips(WyrdUi.TERRACOTTA, bad_count, size.y * 0.68)
 
