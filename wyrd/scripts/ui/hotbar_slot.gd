@@ -37,6 +37,19 @@ func _draw() -> void:
 	WyrdUi.draw_carved_button(self, r, castable)
 	WyrdUi.draw_well(self, r.grow(-7.0), WyrdUi.KIT_PLATE.lightened(0.05))
 	WyrdUi.draw_parchment_grain(self, r, _seed)
+	# Carved keybind pip — an ivory disc inset into the top-left corner so
+	# the number reads as a coin pressed into the slot, not a floating label.
+	var pip_c := Vector2(15.0, 13.0)
+	var pip_r := 9.0
+	draw_circle(pip_c, pip_r, WyrdUi.KIT_PLATE.darkened(0.10))
+	draw_arc(pip_c, pip_r - 2.0, PI * 0.75, PI * 1.85, 12,
+			Color(0.0, 0.0, 0.0, 0.18), 2.0, true)
+	draw_arc(pip_c, pip_r - 1.0, -PI * 0.25, PI * 0.35, 10,
+			Color(1.0, 1.0, 0.93, 0.38), 1.5, true)
+	draw_arc(pip_c, pip_r, 0.0, TAU, 28, WyrdUi.KIT_EDGE, 1.5, true)
+	# Amber mist when focus — not a cooldown — is the only blocker.
+	if not castable and cd_ratio <= 0.001:
+		draw_rect(r, Color(0.75, 0.50, 0.16, 0.15))
 	# Radial cooldown wedge — a square-clamped pie from 12 o'clock clockwise,
 	# shrinking as the skill cools. Vertices ride the slot's own edge so it
 	# reads as the slot face darkening, with no overshoot into the gaps.
