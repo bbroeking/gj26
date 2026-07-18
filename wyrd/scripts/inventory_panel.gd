@@ -745,6 +745,25 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 	var w := win.size.x - 148.0
 	var y := win.position.y + 134.0
 	if (game.charts as Array).is_empty():
+		# Ghost scroll watermark — a faint silhouette of a sealed chart scroll
+		# centred below the prompt text, ~8-9 % alpha (atmospheric, not intrusive).
+		var cx := x + w * 0.5
+		var cy := y + 130.0
+		var sw := minf(w * 0.65, 200.0)
+		var sh := sw * 0.56
+		var sr := Rect2(Vector2(cx - sw * 0.5, cy - sh * 0.5), Vector2(sw, sh))
+		var face := Rect2(sr.position + Vector2(sw * 0.08, sh * 0.12),
+			Vector2(sw * 0.84, sh * 0.76))
+		draw_rect(face, Color(WyrdUi.KIT_PLATE, 0.06))
+		var roll_w := sw * 0.07
+		draw_rect(Rect2(face.position - Vector2(roll_w * 0.6, 2.0),
+			Vector2(roll_w, face.size.y + 4.0)), Color(WyrdUi.KIT_WELL, 0.08))
+		draw_rect(Rect2(Vector2(face.end.x - roll_w * 0.4, face.position.y - 2.0),
+			Vector2(roll_w, face.size.y + 4.0)), Color(WyrdUi.KIT_WELL, 0.08))
+		draw_rect(face, Color(WyrdUi.KIT_EDGE, 0.09), false, 1.5)
+		var sc := Vector2(face.end.x - 10.0, face.end.y - 8.0)
+		draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16, 0.09))
+		draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10, 0.09), 1.5, true)
 		draw_string(font, Vector2(x, y),
 			"No charts inscribed. The Inscribing Table awaits.",
 			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
