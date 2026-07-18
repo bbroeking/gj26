@@ -498,3 +498,19 @@ class QuestScrollArt extends Control:
 		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
 		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
 		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+		# Cartographer's compass ghost at the right end — a pale ink wayfinder's
+		# mark mirroring the wax seal. Two concentric rings + four cardinal ticks
+		# radiating outward + four diagonal pip dots + center point, all at ~18%
+		# opacity so the mark breathes without overwriting text.
+		var wr := Vector2(size.x - 26.0, 24.0)
+		var ghost := Color(WyrdUi.INK, 0.18)
+		draw_arc(wr, 8.0, 0, TAU, 24, ghost, 1.4, true)
+		draw_arc(wr, 4.0, 0, TAU, 16, ghost, 0.8, true)
+		for i in 4:
+			var a := -PI * 0.5 + PI * 0.5 * float(i)
+			draw_line(wr + Vector2(cos(a), sin(a)) * 5.5,
+				wr + Vector2(cos(a), sin(a)) * 10.5, ghost, 1.4)
+		for i in 4:
+			var a := -PI * 0.25 + PI * 0.5 * float(i)
+			draw_circle(wr + Vector2(cos(a), sin(a)) * 9.0, 1.2, ghost)
+		draw_circle(wr, 1.6, ghost)
