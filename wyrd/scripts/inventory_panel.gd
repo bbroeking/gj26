@@ -752,13 +752,33 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 		return
 	# Slice C — each chart rides a list-row plate led with a drawn scroll
 	# (the rolled-parchment, wax-sealed read); its affixes list beneath.
+	# Accent stripe and seal state carry the chart's affix balance at a glance:
+	# sage = good-heavy, terracotta = bad-heavy, gold = balanced, ink = clean.
+	# Clean charts get an unsealed scroll — nothing inked in but the path.
 	for chart in game.charts:
+		var good_n := 0
+		var bad_n := 0
+		for a in chart.get("affixes", []):
+			if bool(a.get("good", false)):
+				good_n += 1
+			else:
+				bad_n += 1
+		var has_affixes := (good_n + bad_n) > 0
+		var accent: Color
+		if good_n > bad_n:
+			accent = WyrdUi.SAGE
+		elif bad_n > good_n:
+			accent = WyrdUi.TERRACOTTA
+		elif has_affixes:
+			accent = WyrdUi.GOLD
+		else:
+			accent = WyrdUi.INK_MID
 		var row_top := y - 18.0
 		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 32.0))
 		if _span_visible(row_top, row.end.y, scroll, view):
-			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
+			WyrdUi.draw_list_row(self, row, accent)
 			WyrdUi.draw_scroll(self, Rect2(Vector2(row.position.x + 8.0,
-				row.position.y + 5.0), Vector2(24.0, 22.0)))
+				row.position.y + 5.0), Vector2(24.0, 22.0)), has_affixes)
 			draw_string(font, Vector2(x + 30.0, y + 1.0),
 				ChartsData.chart_label(chart),
 				HORIZONTAL_ALIGNMENT_LEFT, w - 36.0, 17, WyrdUi.INK)
