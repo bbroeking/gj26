@@ -28,6 +28,12 @@ func _ready() -> void:
 		root.offset_left = -300
 		root.offset_top = 18
 		add_child(root)
+		# Phase threshold marks overlay — terracotta diamond pips at the 66% and
+		# 33% HP thresholds where the boss escalates (PHASE2_FRAC / PHASE3_FRAC).
+		var marks := _PhaseMarks.new()
+		marks.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		marks.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		root.add_child(marks)
 
 # Called at build — set max HP and fill the bar.
 func prime(mx: int) -> void:
@@ -57,3 +63,23 @@ func set_phase(phase: int) -> void:
 
 func hide_boss() -> void:
 	visible = false
+
+
+# Drawn phase-threshold marks for the boss HP trough. Two terracotta diamond
+# pips + faint seam lines at the 66% and 33% fill positions — the two HP
+# thresholds where the Hedgemother escalates her attack pattern.
+class _PhaseMarks extends Control:
+	func _draw() -> void:
+		var fill_l := 3.0
+		var full_w := size.x - 14.0
+		for frac in [0.66, 0.33]:
+			var x := fill_l + full_w * frac
+			# Faint ink seam through the trough height.
+			draw_line(Vector2(x, 3.5), Vector2(x, size.y - 3.5),
+				Color(WyrdUi.KIT_EDGE, 0.40), 1.5)
+			# Terracotta diamond pip on the top rim — the phase boundary cue.
+			var tc := Vector2(x, 3.0)
+			draw_colored_polygon(PackedVector2Array([
+				tc + Vector2(0.0, -2.5), tc + Vector2(4.0, 0.0),
+				tc + Vector2(0.0, 2.5), tc + Vector2(-4.0, 0.0)]),
+				Color(WyrdUi.TERRACOTTA, 0.90))
