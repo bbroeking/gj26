@@ -12,7 +12,7 @@ var station_id := "cookfire"
 var _game: Node
 var _panel: Panel
 var _recipe_box: VBoxContainer
-var _satchel_lbl: Label
+var _satchel_box: HFlowContainer
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -93,10 +93,10 @@ func _ready() -> void:
 	s2.text = "Satchel"
 	WyrdUi.style_section(s2)
 	col.add_child(s2)
-	_satchel_lbl = Label.new()
-	WyrdUi.style_body(_satchel_lbl, 13)
-	_satchel_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	col.add_child(_satchel_lbl)
+	_satchel_box = HFlowContainer.new()
+	_satchel_box.add_theme_constant_override("h_separation", 6)
+	_satchel_box.add_theme_constant_override("v_separation", 4)
+	col.add_child(_satchel_box)
 
 	get_node("/root/Game").modal_opened()
 	_render()
@@ -169,7 +169,8 @@ func _render() -> void:
 		_recipe_box.add_child(row)
 
 	if _game == null:
-		_satchel_lbl.text = ""
+		for c in _satchel_box.get_children():
+			c.queue_free()
 		return
 	_render_satchel()
 
@@ -207,8 +208,26 @@ func _recipe_tint(rec: Dictionary, locked: bool) -> Color:
 	return Color(0.88, 0.83, 0.72)
 
 func _render_satchel() -> void:
-	var parts: Array = []
+	for c in _satchel_box.get_children():
+		c.queue_free()
+	if _game.materials.is_empty():
+		var empty := Label.new()
+		empty.text = "empty"
+		WyrdUi.style_dim(empty, 13)
+		_satchel_box.add_child(empty)
+		return
 	for id in _game.materials:
-		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
-			GatherDefs.material_name(String(id)), int(_game.materials[id])])
-	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+		var mat: Dictionary = GatherDefs.MATERIALS.get(String(id), {})
+		var group := String(mat.get("group", ""))
+		var tint: Color = WyrdUi.KIT_PLATE
+		match group:
+			"verdant": tint = Color(0.82, 0.87, 0.68)
+			"earthen": tint = Color(0.85, 0.80, 0.70)
+			"lumen":   tint = Color(0.92, 0.90, 0.78)
+		var chip := Label.new()
+		chip.text = "%s  %s  ×%d" % [GatherDefs.material_icon(String(id)),
+			GatherDefs.material_name(String(id)), int(_game.materials[id])]
+		chip.add_theme_stylebox_override("normal", WyrdUi.chip_stylebox(tint))
+		chip.add_theme_color_override("font_color", WyrdUi.INK)
+		chip.add_theme_font_size_override("font_size", 13)
+		_satchel_box.add_child(chip)
