@@ -32,22 +32,40 @@ func _ready() -> void:
 	# Floating prompt — built by base, parameterised by subclass.
 	# Wyrd — playtest: the old 48px prompt washed out against the world.
 	# Bigger, heavier outline, and a soft bob so the eye finds it.
-	# Slice B — a parchment plate behind the prompt so it reads as a tooltip
-	# on a scrap of parchment, not floating text. Built first so it draws
-	# behind the label; sized to the text in _size_prompt_plate, toggled with
-	# the prompt in show_prompt. Billboarded + no-depth like the label.
+	# Parchment chip prompt — a warm cream face (kit parchment) over an ink
+	# border quad, so world-space prompts read as storybook labels consistent
+	# with the 2D chip_stylebox language rather than dark UI overlays.
+	# render_priority 1 → border behind; 2 → face on top (both no_depth_test).
+	var border := MeshInstance3D.new()
+	border.name = "PromptBorder"
+	var bmesh := QuadMesh.new()
+	bmesh.size = Vector2(1.0, 0.34)
+	border.mesh = bmesh
+	var bmat := StandardMaterial3D.new()
+	bmat.albedo_color = Color(0.26, 0.19, 0.13, 0.88)   # kit ink edge
+	bmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	bmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	bmat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	bmat.no_depth_test = true
+	bmat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	bmat.render_priority = 1
+	border.material_override = bmat
+	border.position = get_prompt_position()
+	border.visible = false
+	add_child(border)
 	var plate := MeshInstance3D.new()
 	plate.name = "PromptPlate"
 	var pmesh := QuadMesh.new()
 	pmesh.size = Vector2(1.0, 0.34)            # provisional — resized to text below
 	plate.mesh = pmesh
 	var pmat := StandardMaterial3D.new()
-	pmat.albedo_color = Color(0.20, 0.15, 0.11, 0.90)   # dark parchment scrap
+	pmat.albedo_color = Color(0.93, 0.88, 0.74, 0.88)   # kit parchment cream
 	pmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	pmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	pmat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
 	pmat.no_depth_test = true
 	pmat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	pmat.render_priority = 2
 	plate.material_override = pmat
 	plate.position = get_prompt_position()
 	plate.visible = false
@@ -70,8 +88,8 @@ func _ready() -> void:
 	lbl.position = get_prompt_position() + Vector3(0.0, 0.0, 0.004)
 	lbl.visible = false
 	add_child(lbl)
-	# Size the plate to the text once the label can measure its AABB.
-	_size_prompt_plate(lbl, plate)
+	# Size face + border once the label can measure its AABB.
+	_size_prompt_plate(lbl, plate, border)
 	# A small always-on marker diamond so interactables read from across
 	# the yard even before the player is in prompt range.
 	var mark := Label3D.new()
@@ -100,10 +118,13 @@ func show_prompt(on: bool) -> void:
 	var lbl := get_node_or_null("PromptLabel") as Label3D
 	if lbl != null:
 		lbl.visible = shown
-	# The parchment plate tracks the label.
+	# Face + border track the label together.
 	var plate := get_node_or_null("PromptPlate") as MeshInstance3D
 	if plate != null:
 		plate.visible = shown
+	var border := get_node_or_null("PromptBorder") as MeshInstance3D
+	if border != null:
+		border.visible = shown
 	# The marker hands off to the prompt up close, and dies with one-shots.
 	var mark := get_node_or_null("Marker") as Label3D
 	if mark != null:
@@ -112,7 +133,8 @@ func show_prompt(on: bool) -> void:
 # Size the parchment plate to the prompt text. Label3D reports its mesh AABB
 # after a frame, so we wait one frame, then convert the AABB extents (already
 # in world units via pixel_size) into the plate's QuadMesh size with padding.
-func _size_prompt_plate(lbl: Label3D, plate: MeshInstance3D) -> void:
+func _size_prompt_plate(lbl: Label3D, plate: MeshInstance3D,
+		border: MeshInstance3D = null) -> void:
 	await get_tree().process_frame
 	if not is_instance_valid(lbl) or not is_instance_valid(plate):
 		return
@@ -126,7 +148,10 @@ func _size_prompt_plate(lbl: Label3D, plate: MeshInstance3D) -> void:
 	var h: float = maxf(aabb.size.y, char_h)
 	var pad_x := 0.16
 	var pad_y := 0.10
-	(plate.mesh as QuadMesh).size = Vector2(w + pad_x * 2.0, h + pad_y * 2.0)
+	var face := Vector2(w + pad_x * 2.0, h + pad_y * 2.0)
+	(plate.mesh as QuadMesh).size = face
+	if border != null and is_instance_valid(border):
+		(border.mesh as QuadMesh).size = face + Vector2(0.05, 0.05)
 
 # ---- Virtual hooks (override in subclasses) ----
 
