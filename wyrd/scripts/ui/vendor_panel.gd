@@ -69,9 +69,15 @@ func _ready() -> void:
 	_panel.add_child(title)
 
 	var sub := Label.new()
-	sub.text = "\"Sparks like to find sleeves. Mind the anvil, state your business.\""
+	# Caveat (hand-jotted kit font) so Hod's voice reads as a scrawled margin
+	# note rather than printed body text — the first live use of font_hand().
+	sub.text = "❝ Sparks like to find sleeves. Mind the anvil, state your business."
 	WyrdUi.style_dim(sub, 13)
-	sub.position = Vector2(54, 66)
+	var _hf := WyrdUi.font_hand()
+	if _hf != null:
+		sub.add_theme_font_override("font", _hf)
+		sub.add_theme_font_size_override("font_size", 15)
+	sub.position = Vector2(54, 64)
 	_panel.add_child(sub)
 
 	_gold_lbl = Label.new()
@@ -152,8 +158,14 @@ func _render() -> void:
 	var items: Array = _game.inventory.items if _game.inventory != null else []
 	if items.is_empty():
 		var l := Label.new()
+		# Empty-state flavor — also hand-scrawled so it reads as a note on the
+		# shelf, not a status message.
 		l.text = "Your pack holds no gear. The hollows provide."
 		WyrdUi.style_dim(l, 13)
+		var _ef := WyrdUi.font_hand()
+		if _ef != null:
+			l.add_theme_font_override("font", _ef)
+			l.add_theme_font_size_override("font_size", 14)
 		_sell_box.add_child(l)
 	for item in items:
 		var it: Dictionary = item
