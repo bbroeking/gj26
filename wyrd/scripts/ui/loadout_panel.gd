@@ -77,9 +77,10 @@ func _ready() -> void:
 	_panel.offset_bottom = 300
 	add_child(_panel)
 	# Bow-and-arrow crest disc + flourish rule (spec 44 header-art pattern).
+	# anchor_right lets the flourish span the full panel width instead of 480px.
 	var hdr := _LoadoutHeader.new()
-	hdr.position = Vector2(0, 0)
-	hdr.size = Vector2(480, 84)
+	hdr.anchor_right = 1.0
+	hdr.offset_bottom = 84
 	hdr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel.add_child(hdr)
 	var title := Label.new()
@@ -317,5 +318,5 @@ class _LoadoutHeader extends Control:
 		draw_arc(c, r - 3.5, 0, TAU, 40,
 			Color(WyrdUi.KIT_EDGE, 0.25), 1.0, true)
 
-		# --- section flourish below the title ---
-		WyrdUi.draw_flourish(self, Vector2(165.0, 70.0), 130.0)
+		# Section flourish: centred in the full panel width, spanning ~70%.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 70.0), size.x * 0.68)
