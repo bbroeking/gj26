@@ -14,6 +14,20 @@ var _panel: Panel
 var _recipe_box: VBoxContainer
 var _satchel_lbl: Label
 
+# ---- drawn card rows + section rule (art pass) ----
+# Each recipe gets a parchment card via draw_list_row(); the section header
+# gets a ◆ flourish rule. Accent color encodes craft state at a glance:
+# SAGE = affordable, INK_MID = missing materials, TERRACOTTA = level-locked.
+class _RecipeCard extends MarginContainer:
+	var accent: Color = WyrdUi.SAGE
+	func _draw() -> void:
+		WyrdUi.draw_list_row(self, Rect2(Vector2.ZERO, size), accent)
+
+class _SectionRule extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5),
+			size.x * 0.52)
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 90
@@ -69,13 +83,18 @@ func _ready() -> void:
 	WyrdUi.style_section(section)
 	col.add_child(section)
 
+	var rule := _SectionRule.new()
+	rule.custom_minimum_size = Vector2(0, 16)
+	rule.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_child(rule)
+
 	# A7-full grew the forge to 14 recipes — the list scrolls now.
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	col.add_child(scroll)
 	_recipe_box = VBoxContainer.new()
-	_recipe_box.add_theme_constant_override("separation", 8)
+	_recipe_box.add_theme_constant_override("separation", 4)
 	_recipe_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_recipe_box)
 
@@ -160,13 +179,24 @@ func _render() -> void:
 		WyrdUi.style_kit_button(b)
 		b.text = String(st.get("verb", "Craft"))
 		b.custom_minimum_size = Vector2(96, 40)
-		b.disabled = locked or _game == null or not _game.can_afford(rec.inputs)
+		var can_afford: bool = _game != null and _game.can_afford(rec.inputs)
+		b.disabled = locked or _game == null or not can_afford
 		var rid_s := String(rid)
 		b.pressed.connect(func():
 			if _game != null and _game.craft(station_id, rid_s):
 				_render())
 		row.add_child(b)
-		_recipe_box.add_child(row)
+
+		var card := _RecipeCard.new()
+		card.accent = WyrdUi.TERRACOTTA if locked \
+			else (WyrdUi.SAGE if can_afford else WyrdUi.INK_MID)
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		card.add_theme_constant_override("margin_left", 10)
+		card.add_theme_constant_override("margin_top", 5)
+		card.add_theme_constant_override("margin_right", 6)
+		card.add_theme_constant_override("margin_bottom", 5)
+		card.add_child(row)
+		_recipe_box.add_child(card)
 
 	if _game == null:
 		_satchel_lbl.text = ""
