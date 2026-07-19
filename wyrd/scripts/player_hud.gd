@@ -296,12 +296,11 @@ func _refresh_trades() -> void:
 		int(game.gold), game.trade_lv("wayfinding")]
 
 func show_toast(msg: String) -> void:
-	var l := Label.new()
-	l.text = msg
-	# Spec 41 — toasts are kit parchment chips.
-	WyrdUi.style_chip(l, 15)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	# Drawn parchment card replaces the plain chip label. ToastCard below uses
+	# the Caveat hand font, which wyrd_ui.gd designates for toasts but never
+	# applied here, and adds the kit card language (sage accent stripe, bevel).
+	var l := ToastCard.new()
+	l.msg = msg
 	_toast_box.add_child(l)
 	var t := create_tween()
 	# Pause-immune — most toasts (mix, inscribe, level-up) fire while a modal
@@ -498,3 +497,39 @@ class QuestScrollArt extends Control:
 		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
 		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
 		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+
+# A drawn parchment card for HUD toast notifications. Replaces the plain
+# style_chip Label: same kit card language as draw_list_row (parchment face,
+# ink border, bevel, sage accent stripe) plus the Caveat hand font that
+# wyrd_ui.gd explicitly designates for "toasts, costs, margin scribbles"
+# but which was never applied to the toast stack until now.
+class ToastCard extends Control:
+	var msg := ""
+
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		custom_minimum_size = Vector2(240.0, 36.0)
+
+	func _draw() -> void:
+		if msg.is_empty():
+			return
+		var r := Rect2(Vector2.ZERO, size)
+		# Parchment face, top honey bevel, bottom shade, ink border.
+		draw_rect(r, WyrdUi.KIT_PLATE)
+		draw_rect(Rect2(r.position + Vector2(1.0, 1.0),
+			Vector2(r.size.x - 2.0, 1.5)), Color(1.0, 1.0, 0.93, 0.42))
+		draw_rect(Rect2(r.position + Vector2(2.0, r.size.y - 2.5),
+			Vector2(r.size.x - 4.0, 1.5)), Color(WyrdUi.KIT_EDGE, 0.22))
+		draw_rect(r, WyrdUi.KIT_EDGE, false, 1.5)
+		# Sage accent stripe — "good news" read (level-up, craft, discovery).
+		draw_rect(Rect2(r.position + Vector2(1.5, 1.5),
+			Vector2(3.0, r.size.y - 3.0)), WyrdUi.SAGE)
+		# Caveat hand font: the wyrd_ui.gd comment says it's for toasts but it
+		# was never wired up — this is the first call site.
+		var font: Font = WyrdUi.font_hand()
+		if font == null:
+			font = get_theme_default_font()
+		draw_string(font, Vector2(13.0, r.size.y * 0.5 + 7.0), msg,
+			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 18.0, 16, WyrdUi.INK)
