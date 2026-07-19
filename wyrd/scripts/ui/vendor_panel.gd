@@ -207,6 +207,7 @@ class _VendorCard extends Control:
 	var _tex: Texture2D = null     # painted item icon (sell), else null
 	var _glyph := ""               # material glyph (buy)
 	var _hover := false
+	var _seed: int = 31
 
 	signal pressed
 
@@ -221,6 +222,7 @@ class _VendorCard extends Control:
 		_rarity = rarity
 		_rc = rarity_color
 		_tex = tex
+		_seed = hash(item_name) & 0x7fffffff
 		queue_redraw()
 
 	func setup_buy(mat_name: String, price: int, have: int, affordable: bool,
@@ -231,6 +233,7 @@ class _VendorCard extends Control:
 		_sub = "have %d" % have
 		_glyph = glyph
 		_rarity = "normal"
+		_seed = hash(mat_name) & 0x7fffffff
 		queue_redraw()
 
 	func _gui_input(event: InputEvent) -> void:
@@ -253,6 +256,7 @@ class _VendorCard extends Control:
 		# for magic+, quiet ink for normals).
 		var accent: Color = _rc if _rarity != "normal" else WyrdUi.INK_MID
 		WyrdUi.draw_list_row(self, r, accent)
+		WyrdUi.draw_parchment_grain(self, r, _seed)
 		if _hover:
 			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.10))
 		# --- icon plate on the left ---
@@ -282,7 +286,20 @@ class _VendorCard extends Control:
 		if _sub != "":
 			draw_string(font, Vector2(tx, size.y * 0.5 + 16.0), _sub,
 				HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 86.0, 12, WyrdUi.INK_MID)
-		# --- price (gold, right-aligned; red when unaffordable on buy) ---
-		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
-		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
-			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+		# --- price badge chip (right side) ---
+		# A small parchment tag with an ink border reads as a shop-price label
+		# rather than a number floating in space. Fill shifts warm when buyable,
+		# blush when the player can't afford it.
+		var badge_w := 64.0
+		var badge_h := 22.0
+		var badge_x := size.x - badge_w - 8.0
+		var badge_y := (size.y - badge_h) * 0.5
+		var badge := Rect2(Vector2(badge_x, badge_y), Vector2(badge_w, badge_h))
+		var badge_fill: Color = Color(0.93, 0.87, 0.68) if not _price_red \
+			else Color(0.96, 0.82, 0.76)
+		draw_rect(badge, badge_fill)
+		draw_rect(badge, Color(WyrdUi.KIT_EDGE, 0.50), false, 1.0)
+		var price_col: Color = WyrdUi.TERRACOTTA if _price_red \
+			else WyrdUi.GOLD.darkened(0.05)
+		draw_string(font, Vector2(badge_x, badge_y + 15.0),
+			"%dg" % _price, HORIZONTAL_ALIGNMENT_CENTER, badge_w, 14, price_col)
