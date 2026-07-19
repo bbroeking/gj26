@@ -99,6 +99,19 @@ const RARITY_COLOR := {
 	"unique": Color(0.80, 0.38, 0.10),
 }
 
+# Satchel tab — group-medallion colours (group id -> disc fill).
+const GROUP_DISC_COLOR := {
+	"verdant": Color(0.40, 0.58, 0.26),  # sage leaf green
+	"earthen": Color(0.62, 0.38, 0.24),  # earthy umber
+	"echo":    Color(0.54, 0.34, 0.68),  # amethyst / bramble-light
+	"gristle": Color(0.50, 0.42, 0.34),  # bone / pelt
+	"lumen":   Color(0.70, 0.56, 0.20),  # honey-gold ink
+}
+const GROUP_LABEL := {
+	"verdant": "Verdant", "earthen": "Earthen", "echo": "Echo",
+	"gristle": "Gristle", "lumen": "Lumen",
+}
+
 var _tex_cache := {}
 
 func _ready() -> void:
@@ -705,34 +718,70 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
 		_tab_content_h[1] = 0.0
 		return
-	# Slice C — each material rides a list-row plate: an ink-disc holding its
-	# glyph on the left, name + count on the card, the lore line beneath.
-	for id in game.materials:
+	var hdr_font: Font = WyrdUi.font_header()
+	if hdr_font == null:
+		hdr_font = font
+	# Sort materials by group then name for a grouped read.
+	var sorted_ids: Array = (game.materials as Dictionary).keys()
+	sorted_ids.sort_custom(func(a, b):
+		var da: Dictionary = GatherDefs.MATERIALS.get(String(a), {})
+		var db: Dictionary = GatherDefs.MATERIALS.get(String(b), {})
+		var ga := String(da.get("group", "z"))
+		var gb := String(db.get("group", "z"))
+		if ga != gb:
+			return ga < gb
+		return String(da.get("name", a)) < String(db.get("name", b))
+	)
+	var prev_group := ""
+	for id in sorted_ids:
 		var def: Dictionary = GatherDefs.MATERIALS.get(String(id), {})
-		var row_top := y - 18.0
-		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 30.0))
+		var group := String(def.get("group", ""))
+		# Group section header when the group changes.
+		if group != prev_group:
+			prev_group = group
+			var label := String(GROUP_LABEL.get(group, group.capitalize()))
+			if _span_visible(y, y + 24.0, scroll, view):
+				draw_string(hdr_font, Vector2(x + 4.0, y + 13.0), label,
+					HORIZONTAL_ALIGNMENT_LEFT, w, 12, WyrdUi.INK_MID)
+				draw_line(Vector2(x + 4.0, y + 16.0),
+					Vector2(x + w - 4.0, y + 16.0),
+					Color(WyrdUi.KIT_EDGE, 0.22), 1.0)
+			y += 26.0
+		# Row card — 40px tall, fits the 14px-radius group medallion.
+		var disc_col: Color = GROUP_DISC_COLOR.get(group, WyrdUi.KIT_WELL)
+		var row_top := y - 20.0
+		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 40.0))
 		if _span_visible(row_top, row.end.y, scroll, view):
-			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
-			# glyph disc on the left
-			var dc := Vector2(row.position.x + 19.0, row.position.y + 15.0)
-			WyrdUi.draw_round_well(self, dc, 11.0, Color(0.88, 0.81, 0.66))
-			draw_string(font, Vector2(dc.x - 11.0, dc.y + 6.0),
+			WyrdUi.draw_list_row(self, row, disc_col.darkened(0.10))
+			# Group-tinted medallion: coloured disc + gold filigree outer ring.
+			var dc := Vector2(row.position.x + 22.0, row.position.y + 20.0)
+			WyrdUi.draw_icon_disc(self, dc, 14.0, disc_col)
+			draw_string(hdr_font, Vector2(dc.x - 14.0, dc.y + 7.0),
 				String(def.get("icon", "·")), HORIZONTAL_ALIGNMENT_CENTER,
-				22.0, 14, WyrdUi.INK)
-			draw_string(font, Vector2(x + 28.0, y + 1.0),
+				28.0, 16, Color(0.97, 0.95, 0.86))
+			# Item name.
+			draw_string(hdr_font, Vector2(x + 44.0, y + 5.0),
 				String(def.get("name", id)),
-				HORIZONTAL_ALIGNMENT_LEFT, w - 110.0, 17, WyrdUi.INK)
-			draw_string(font, Vector2(x + w - 78.0, y + 1.0),
-				"× %d" % int(game.materials[id]),
-				HORIZONTAL_ALIGNMENT_RIGHT, 70.0, 17, WyrdUi.TERRACOTTA)
-		y += 34.0
+				HORIZONTAL_ALIGNMENT_LEFT, w - 120.0, 17, WyrdUi.INK)
+			# Count badge — gold-rimmed parchment chip.
+			var cnt_str := "×%d" % int(game.materials[id])
+			var cnt_w := 52.0
+			var cnt_r := Rect2(
+				Vector2(row.end.x - cnt_w - 6.0, y - 11.0),
+				Vector2(cnt_w, 22.0))
+			draw_rect(cnt_r, WyrdUi.KIT_PLATE)
+			draw_rect(cnt_r, Color(WyrdUi.GOLD, 0.65), false, 1.5)
+			draw_string(hdr_font, Vector2(cnt_r.position.x, cnt_r.position.y + 15.0),
+				cnt_str, HORIZONTAL_ALIGNMENT_CENTER, cnt_w, 15, WyrdUi.TERRACOTTA)
+		y += 44.0
 		var desc := String(def.get("desc", ""))
 		if desc != "":
 			var dh: float = font.get_multiline_string_size(desc,
-				HORIZONTAL_ALIGNMENT_LEFT, w - 30, 14).y
+				HORIZONTAL_ALIGNMENT_LEFT, w - 52, 14).y
 			if _span_visible(y - 13.0, y + dh, scroll, view):
-				draw_multiline_string(font, Vector2(x + 30, y), desc,
-					HORIZONTAL_ALIGNMENT_LEFT, w - 30, 14, -1, Color(0.30, 0.24, 0.19))
+				draw_multiline_string(font, Vector2(x + 44, y), desc,
+					HORIZONTAL_ALIGNMENT_LEFT, w - 52, 14, -1,
+					Color(0.30, 0.24, 0.19))
 			y += dh + 4.0
 		y += 10.0
 	_tab_content_h[1] = y - view.position.y

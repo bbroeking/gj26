@@ -303,6 +303,20 @@ static func draw_round_well(c: CanvasItem, center: Vector2, radius: float,
 		Color(1.0, 1.0, 0.92, 0.30), 2.0, true)
 	c.draw_arc(center, radius, 0, TAU, 40, KIT_EDGE, 2.0, true)
 
+# Group-tinted medallion — like draw_round_well but with a category colour
+# and a thin gold filigree outer ring. Used for material icons in the satchel
+# list so each group reads as a different painted disc at a glance.
+static func draw_icon_disc(c: CanvasItem, center: Vector2, radius: float,
+		fill: Color) -> void:
+	c.draw_circle(center, radius, fill)
+	# catch-light arc top-left (warm parchment light)
+	c.draw_arc(center, radius - 2.5, PI * 0.78, PI * 1.95, 22,
+		Color(1.0, 1.0, 0.93, 0.28), 2.5, true)
+	# ink border
+	c.draw_arc(center, radius, 0, TAU, 40, KIT_EDGE, 2.0, true)
+	# gold filigree outer ring — the storybook-medallion ornament rule
+	c.draw_arc(center, radius + 2.5, 0, TAU, 48, Color(GOLD, 0.60), 1.5, true)
+
 # A carved button face: plate, light top bevel, dark bottom bevel, inner
 # pinstripe. Callers draw their own label on top.
 static func draw_carved_button(c: CanvasItem, r: Rect2, enabled := true) -> void:
