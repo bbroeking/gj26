@@ -433,6 +433,22 @@ func _draw_slots() -> void:
 	var hdr2: Font = WyrdUi.font_header()
 	if hdr2 == null:
 		hdr2 = font
+	# Ghost ranger — a faint hooded-figure watermark drawn before the slot
+	# wells so the paper-doll reads as a clothed character rather than a field
+	# of floating tiles. Head peeks above the helmet slot; hood drapes over it;
+	# shoulder and hip lines emerge in the 16 px inter-slot gaps.
+	var cx := doll_origin.x + 124.0   # centre of the helm / chest / boots column
+	var g := Color(WyrdUi.INK, 0.12)  # sepia ghost — quiet, not competing
+	draw_arc(Vector2(cx, doll_origin.y - 12.0), 15.0, 0.0, TAU, 28, g, 1.8, true)
+	draw_arc(Vector2(cx, doll_origin.y - 16.0), 44.0, 0.0, PI, 32, g, 2.0, true)
+	draw_line(Vector2(cx - 28.0, doll_origin.y + 73.0),
+		Vector2(cx - 12.0, doll_origin.y + 87.0), g, 1.5, true)
+	draw_line(Vector2(cx + 28.0, doll_origin.y + 73.0),
+		Vector2(cx + 12.0, doll_origin.y + 87.0), g, 1.5, true)
+	draw_line(Vector2(cx - 12.0, doll_origin.y + 161.0),
+		Vector2(cx - 16.0, doll_origin.y + 175.0), g, 1.5, true)
+	draw_line(Vector2(cx + 12.0, doll_origin.y + 161.0),
+		Vector2(cx + 16.0, doll_origin.y + 175.0), g, 1.5, true)
 	draw_string(hdr2, _slot_top("pickaxe") + Vector2(0, -10), "Trade Tools",
 		HORIZONTAL_ALIGNMENT_LEFT, 160.0, 14, WyrdUi.INK)
 	for name in SLOT_OFFSET:
