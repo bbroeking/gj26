@@ -143,3 +143,19 @@ class PortraitWell extends Control:
 		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
 		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
 		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+		# Gold locket trim — burnished band inside the ink ring, giving the well
+		# the gilded-medallion feel the design language asks for on frames.
+		draw_arc(c, r - 7.5, 0, TAU, 48, Color(WyrdUi.GOLD, 0.65), 1.5, true)
+		# Four tiny gold diamond points at cardinal positions — echoes draw_flourish's
+		# ◆ motif; reads as a wax-seal compass on the locket face.
+		for k in 4:
+			var la := PI * 0.5 * float(k)
+			var ld := Vector2(cos(la), sin(la))
+			var lp_v := Vector2(-sin(la), cos(la))
+			var rp := c + ld * (r - 4.0)
+			draw_colored_polygon(PackedVector2Array([
+				rp + ld * 3.0,
+				rp + lp_v * 2.2,
+				rp - ld * 2.0,
+				rp - lp_v * 2.2,
+			]), Color(WyrdUi.GOLD, 0.85))
