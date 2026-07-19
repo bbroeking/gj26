@@ -115,18 +115,20 @@ func _render() -> void:
 		_list_box.add_child(l)
 	for i in n:
 		var chart: Dictionary = _game.charts[i]
-		var b := Button.new()
-		WyrdUi.style_button(b)
-		WyrdUi.mark_selected(b, i == _selected)
-		b.toggle_mode = true
-		b.button_pressed = i == _selected
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.text = ChartsData.chart_label(chart)
+		var good_ct := 0
+		var bad_ct := 0
+		for a in chart.get("affixes", []):
+			if bool(a.get("good", false)):
+				good_ct += 1
+			else:
+				bad_ct += 1
+		var row := _ChartRow.new()
+		row.setup(ChartsData.chart_label(chart), good_ct, bad_ct, i == _selected)
 		var idx := i
-		b.pressed.connect(func():
+		row.pressed.connect(func():
 			_selected = idx
 			_render())
-		_list_box.add_child(b)
+		_list_box.add_child(row)
 	# Detail + button state.
 	if _selected >= 0 and _selected < n:
 		var chart: Dictionary = _game.charts[_selected]
@@ -154,3 +156,98 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# ---- drawn chart-list row ----
+# A carved row card: draw_list_row plate (GOLD accent when selected,
+# INK_MID otherwise), a mini scroll icon in a recessed well on the left,
+# the chart label in ink, and good/bad affix-balance chips on the right.
+# Pure vector — no texture touched in _draw.
+class _ChartRow extends Control:
+	const ICON_W := 36.0
+	const ICON_H := 28.0      # slightly shorter than wide — scroll proportions
+
+	var _label := ""
+	var _good := 0
+	var _bad := 0
+	var _selected := false
+	var _hover := false
+
+	signal pressed
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 52.0)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
+	func setup(lbl: String, good: int, bad: int, sel: bool) -> void:
+		_label = lbl
+		_good = good
+		_bad = bad
+		_selected = sel
+		queue_redraw()
+
+	func _gui_input(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.pressed \
+				and event.button_index == MOUSE_BUTTON_LEFT:
+			pressed.emit()
+			accept_event()
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_MOUSE_ENTER:
+			_hover = true
+			queue_redraw()
+		elif what == NOTIFICATION_MOUSE_EXIT:
+			_hover = false
+			queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		# Row plate: gold accent when selected (the scroll has been chosen);
+		# sage when the chart is purely blessing; ink-mid when neutral/bad-heavy.
+		var accent: Color = WyrdUi.GOLD if _selected \
+			else (WyrdUi.SAGE if (_good > 0 and _bad == 0) else WyrdUi.INK_MID)
+		WyrdUi.draw_list_row(self, r, accent)
+		if _selected:
+			draw_rect(r.grow(-1.5), Color(WyrdUi.GOLD, 0.07))
+		elif _hover:
+			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.10))
+		var font := get_theme_default_font()
+		# --- scroll icon in a carved well on the left ---
+		var ir := Rect2(
+			Vector2(9.0, (size.y - ICON_H) * 0.5),
+			Vector2(ICON_W, ICON_H))
+		WyrdUi.draw_well(self, ir, Color(0.95, 0.91, 0.80))
+		WyrdUi.draw_scroll(self, ir, false)   # unsealed — chart is unspent
+		# gold rim on the well when selected (the "chosen chart" read)
+		if _selected:
+			draw_rect(ir, Color(WyrdUi.GOLD, 0.70), false, 1.5)
+		# --- chart label ---
+		var tx := ir.end.x + 11.0
+		var ink: Color = WyrdUi.INK if not _selected \
+			else WyrdUi.SAGE.darkened(0.15)
+		draw_string(font, Vector2(tx, size.y * 0.5 + 6.0), _label,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 82.0, 15, ink)
+		# --- affix-balance chips: good ✓ count (sage) + bad ✗ count (terracotta) ---
+		var chip_x := size.x - 76.0
+		var chip_y := size.y * 0.5 - 9.0
+		if _good > 0 or _bad > 0:
+			if _good > 0:
+				var gc := Rect2(Vector2(chip_x, chip_y), Vector2(32.0, 18.0))
+				draw_rect(gc, Color(0.80, 0.88, 0.66))
+				draw_rect(gc, Color(WyrdUi.SAGE, 0.50), false, 1.0)
+				draw_string(font,
+					Vector2(gc.position.x, gc.position.y + 14.0),
+					"✓ %d" % _good, HORIZONTAL_ALIGNMENT_CENTER, gc.size.x,
+					12, WyrdUi.SAGE.darkened(0.28))
+			if _bad > 0:
+				var bc := Rect2(Vector2(chip_x + 36.0, chip_y), Vector2(32.0, 18.0))
+				draw_rect(bc, Color(0.92, 0.78, 0.72))
+				draw_rect(bc, Color(WyrdUi.TERRACOTTA, 0.45), false, 1.0)
+				draw_string(font,
+					Vector2(bc.position.x, bc.position.y + 14.0),
+					"✗ %d" % _bad, HORIZONTAL_ALIGNMENT_CENTER, bc.size.x,
+					12, WyrdUi.TERRACOTTA.darkened(0.08))
+		else:
+			# Clean chart — a quiet dim label so emptiness reads intentional
+			draw_string(font, Vector2(size.x - 74.0, size.y * 0.5 + 6.0),
+				"clean", HORIZONTAL_ALIGNMENT_RIGHT, 68.0, 11, WyrdUi.INK_MID)

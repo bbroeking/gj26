@@ -31,6 +31,12 @@ func _ready() -> void:
 	_panel.offset_right = 260
 	_panel.offset_bottom = 220
 	add_child(_panel)
+	# Drawn lantern crest disc + flourish rule — the header ornament for this panel.
+	# Added before the title/hint labels so it renders behind them.
+	var crest := _LanternCrest.new()
+	crest.anchor_right = 1.0
+	crest.offset_bottom = 86.0
+	_panel.add_child(crest)
 	var title := Label.new()
 	title.text = "The Lantern"
 	WyrdUi.style_title(title)
@@ -190,3 +196,78 @@ func _close() -> void:
 	if _game != null:
 		_game.modal_closed()
 	queue_free()
+
+
+# ---- header ornament: carved lantern crest disc + flourish rule ----
+# A circular parchment disc in the left margin of the header strip, containing
+# a micro vector-drawn lantern (glass body, warm flame fill, pane ribs, cap,
+# base plate, gold tip). A draw_flourish rule runs under the full header.
+# Pure vector — no texture touched inside _draw (white-rect gotcha is impossible).
+class _LanternCrest extends Control:
+	func _draw() -> void:
+		# --- flourish rule centred along the bottom edge of the header strip ---
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y - 5.0),
+			size.x * 0.52)
+		# --- crest disc: parchment circle in the left margin, beside the title ---
+		var disc_c := Vector2(30.0, size.y * 0.5)
+		var disc_r := 22.0
+		# warm glow halo (two faint gold rings bleeding out of the disc)
+		for i in 2:
+			draw_circle(disc_c, disc_r + 4.0 + float(i) * 2.5,
+				Color(WyrdUi.GOLD, 0.07 - float(i) * 0.02))
+		# parchment face
+		draw_circle(disc_c, disc_r, WyrdUi.KIT_PLATE)
+		# inner gold ring (the burnished rim that reads "crafted object")
+		draw_arc(disc_c, disc_r - 3.5, 0.0, TAU, 32,
+			Color(WyrdUi.GOLD, 0.55), 1.5, true)
+		# --- micro lantern drawn inside the disc ---
+		_draw_lantern(disc_c, disc_r * 1.14)
+		# outer ink ring
+		draw_arc(disc_c, disc_r, 0.0, TAU, 40, WyrdUi.KIT_EDGE, 1.5, true)
+
+	func _draw_lantern(center: Vector2, h: float) -> void:
+		var w := h * 0.48
+		# bail — handle arc bowing above the body
+		draw_arc(center + Vector2(0.0, -h * 0.30), w * 0.38,
+			PI, TAU, 20, WyrdUi.KIT_EDGE, 1.5, false)
+		# warm glow behind the glass body
+		var body := Rect2(center + Vector2(-w * 0.5, -h * 0.18),
+			Vector2(w, h * 0.56))
+		for i in 2:
+			draw_rect(body.grow(1.5 + float(i) * 2.0),
+				Color(WyrdUi.GOLD, 0.08 - float(i) * 0.02))
+		# glass body — pale jade-cream with slight transparency
+		draw_rect(body, Color(0.88, 0.93, 0.82, 0.52))
+		# warm flame fill (bottom 64% of the glass interior)
+		var fill_top := body.position.y + body.size.y * 0.26
+		draw_rect(Rect2(Vector2(body.position.x + 2.5, fill_top),
+			Vector2(body.size.x - 5.0, body.end.y - fill_top - 1.5)),
+			Color(0.96, 0.62, 0.16, 0.80))
+		# pane ribs: two vertical + one horizontal (the glass-pane read)
+		var rib := Color(WyrdUi.KIT_EDGE, 0.38)
+		for dx in [-w * 0.20, w * 0.20]:
+			draw_line(
+				Vector2(center.x + dx, body.position.y + 1.5),
+				Vector2(center.x + dx, body.end.y - 1.5), rib, 1.0)
+		draw_line(
+			Vector2(body.position.x + 1.5, center.y - 1.0),
+			Vector2(body.end.x - 1.5, center.y - 1.0), rib, 1.0)
+		# ink border
+		draw_rect(body, WyrdUi.KIT_EDGE, false, 1.5)
+		# top cap (the lantern's crown, warm wood tint)
+		var cap_h := h * 0.12
+		var cap := Rect2(
+			Vector2(center.x - w * 0.30, body.position.y - cap_h),
+			Vector2(w * 0.60, cap_h + 1.5))
+		draw_rect(cap, Color(0.70, 0.56, 0.35))
+		draw_rect(cap, WyrdUi.KIT_EDGE, false, 1.5)
+		# base plate (wider than body — planted, substantial)
+		var base := Rect2(
+			Vector2(center.x - w * 0.54, body.end.y - 1.5),
+			Vector2(w * 1.08, h * 0.10))
+		draw_rect(base, Color(0.70, 0.56, 0.35))
+		draw_rect(base, WyrdUi.KIT_EDGE, false, 1.5)
+		# gold tip — the finial at the very top
+		var tip := Vector2(center.x, cap.position.y - 3.0)
+		draw_circle(tip, 2.5, Color(WyrdUi.GOLD, 0.92))
+		draw_arc(tip, 2.5, 0.0, TAU, 10, WyrdUi.KIT_EDGE, 1.0, true)
