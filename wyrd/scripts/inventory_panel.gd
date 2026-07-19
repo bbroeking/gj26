@@ -541,12 +541,33 @@ func _draw_tooltip() -> void:
 		pos.x = 0
 	if pos.y < 0:
 		pos.y = 0
-	draw_rect(Rect2(pos, Vector2(w, h)), Color(0.93, 0.88, 0.76, 0.97))
-	draw_rect(Rect2(pos, Vector2(w, h)),
-		Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+	var r := Rect2(pos, Vector2(w, h))
+	# Soft drop shadow so the card lifts off the world.
+	draw_rect(Rect2(pos + Vector2(2.0, 3.0), Vector2(w + 2.0, h + 2.0)),
+		Color(0, 0, 0, 0.22))
+	# Parchment face.
+	draw_rect(r, Color(0.93, 0.88, 0.76, 0.97))
+	# Top honey bevel + bottom ink shadow — the carved-card language.
+	draw_rect(Rect2(r.position + Vector2(2.0, 2.0),
+		Vector2(r.size.x - 4.0, 2.0)), Color(1.0, 1.0, 0.93, 0.40))
+	draw_rect(Rect2(r.position + Vector2(2.0, r.size.y - 3.0),
+		Vector2(r.size.x - 4.0, 2.0)), Color(WyrdUi.KIT_EDGE, 0.22))
+	# Parchment grain gives the notecard a hand-made read.
+	WyrdUi.draw_parchment_grain(self, r, 17)
+	# Ink border + gold inner inset (the burnished edge from the hotbar tray).
+	draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+	draw_rect(r.grow(-4.0), Color(WyrdUi.GOLD, 0.35), false, 1.0)
 	var font := get_theme_default_font()
 	var y := pos.y + ipad + 14
 	for line in lines:
+		# The empty spacer between the header (item name + type) and the stat
+		# lines becomes a drawn flourish rule — the ── ◆ ── motif.
+		if String(line.text) == "":
+			WyrdUi.draw_flourish(self,
+				Vector2(pos.x + w * 0.5, y - line_h * 0.5 + 2.0),
+				w - ipad * 2)
+			y += line_h
+			continue
 		draw_string(font, Vector2(pos.x + ipad, y), String(line.text),
 			HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2, int(line.size), line.color)
 		y += line_h
