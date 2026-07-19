@@ -510,9 +510,23 @@ class BenchView extends Control:
 		# Spec 44 — parchment grain over the working face (vector, no tex).
 		WyrdUi.draw_parchment_grain(self,
 			Rect2(Vector2(46, 72), size - Vector2(92, 124)))
-		draw_string(hdr, Vector2(54, 56), "The Inscribing Table",
+		# Scroll-crest medallion — carved disc with a rolled chart inside,
+		# same visual language as the pack-tab and trades-emblem medallions.
+		var crest_c := Vector2(37.0, 44.0)
+		var crest_r := 22.0
+		draw_circle(crest_c, crest_r + 4.0, Color(WyrdUi.GOLD, 0.12))
+		draw_circle(crest_c, crest_r, PLATE)
+		draw_arc(crest_c, crest_r - 3.5, PI * 0.70, PI * 1.90, 22,
+			Color(0, 0, 0, 0.12), 3.5, true)
+		draw_arc(crest_c, crest_r - 3.5, -PI * 0.30, PI * 0.25, 14,
+			Color(1.0, 1.0, 0.90, 0.28), 2.0, true)
+		WyrdUi.draw_scroll(self,
+			Rect2(crest_c.x - 13.0, crest_c.y - 14.0, 26.0, 28.0), false)
+		draw_arc(crest_c, crest_r, 0, TAU, 40, EDGE, 2.0, true)
+		draw_arc(crest_c, crest_r + 4.0, 0, TAU, 40, Color(WyrdUi.GOLD, 0.28), 1.0, true)
+		draw_string(hdr, Vector2(80, 56), "The Inscribing Table",
 			HORIZONTAL_ALIGNMENT_LEFT, 400, 24, WyrdUi.TERRACOTTA)
-		WyrdUi.draw_flourish(self, Vector2(146, 66), 180.0)
+		WyrdUi.draw_flourish(self, Vector2(162, 66), 180.0)
 		draw_string(font, Vector2(size.x - 180, 56), "Esc — close",
 			HORIZONTAL_ALIGNMENT_RIGHT, 130, 12, DIM)
 		_odds_rows.clear()
