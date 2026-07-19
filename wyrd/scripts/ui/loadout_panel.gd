@@ -221,6 +221,9 @@ class _SkillCard extends Control:
 		var accent: Color = WyrdUi.SAGE if _picked \
 			else (WyrdUi.TERRACOTTA if _locked else WyrdUi.INK_MID)
 		WyrdUi.draw_list_row(self, r, accent)
+		# Sparse parchment grain over the card face — matches the hotbar tray
+		# and bench surfaces; each skill gets a distinct pattern via focus seed.
+		WyrdUi.draw_parchment_grain(self, r, _focus * 17 + 61)
 		if _locked:
 			# wash the whole card down so it reads as out-of-reach
 			draw_rect(r.grow(-1.5), Color(0.80, 0.74, 0.62, 0.45))
@@ -252,12 +255,20 @@ class _SkillCard extends Control:
 				"⚿ Huntcraft %d" % _req, HORIZONTAL_ALIGNMENT_RIGHT,
 				146.0, 13, WyrdUi.TERRACOTTA)
 		elif _focus > 0:
-			# focus-cost chip in the top-right corner
-			var chip := Rect2(Vector2(size.x - 78.0, 8.0), Vector2(66.0, 18.0))
-			draw_rect(chip, Color(0.86, 0.79, 0.66))
-			draw_rect(chip, Color(WyrdUi.KIT_EDGE, 0.6), false, 1.0)
-			draw_string(font, Vector2(chip.position.x, chip.position.y + 14.0),
-				"%d focus" % _focus, HORIZONTAL_ALIGNMENT_CENTER, chip.size.x,
+			# Carved parchment wafer: drop shadow → KIT_PLATE face → top catch-light
+			# bevel → bottom ink shadow → ink border → ◇ glyph + cost. Reads as a
+			# minted token sitting ON the card rather than a printed label.
+			var chip := Rect2(Vector2(size.x - 82.0, 7.0), Vector2(70.0, 20.0))
+			draw_rect(Rect2(chip.position + Vector2(1, 2), chip.size),
+				Color(0, 0, 0, 0.12))
+			draw_rect(chip, WyrdUi.KIT_PLATE)
+			draw_rect(Rect2(chip.position + Vector2(1, 1),
+				Vector2(chip.size.x - 2, 1.5)), Color(1.0, 1.0, 0.93, 0.50))
+			draw_rect(Rect2(chip.position + Vector2(1, chip.size.y - 2.5),
+				Vector2(chip.size.x - 2, 1.5)), Color(WyrdUi.KIT_EDGE, 0.20))
+			draw_rect(chip, Color(WyrdUi.KIT_EDGE, 0.65), false, 1.0)
+			draw_string(font, Vector2(chip.position.x, chip.position.y + 15.0),
+				"◇ %d focus" % _focus, HORIZONTAL_ALIGNMENT_CENTER, chip.size.x,
 				12, WyrdUi.INK_MID)
 		# --- short desc (up to two lines) ---
 		draw_multiline_string(font, Vector2(tx, 40.0), _desc,
