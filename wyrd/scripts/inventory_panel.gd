@@ -871,11 +871,22 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 					Color(0.55, 0.62, 0.40, 0.65), 3.0)
 				var cr := Rect2(Vector2(card_x, cardy), Vector2(card_w, CARD_H))
 				if ok:
-					draw_rect(cr, Color(0.93, 0.88, 0.74))
-					draw_rect(cr, WyrdUi.SAGE.darkened(0.12), false, 2.0)
+					# Earned: kit carved-plate — warm face, catch-light bevel,
+					# bottom shadow, ink border, trade-colour accent stripe at
+					# the left edge (mirrors draw_list_row's language). Parchment
+					# grain gives each card a hand-painted read; seed from the
+					# perk's gate level so cards differ but never drift on redraw.
+					WyrdUi.draw_list_row(self, cr, (row.color as Color))
+					WyrdUi.draw_parchment_grain(self, cr, int(p.lv) + 13)
 				else:
-					draw_rect(cr, Color(0.78, 0.72, 0.60, 0.85))
-					draw_rect(cr, Color(0.50, 0.42, 0.32, 0.7), false, 1.5)
+					# Locked: same shape, recessed fill, ink_mid accent stripe.
+					draw_rect(cr, Color(0.80, 0.74, 0.62, 0.88))
+					draw_rect(Rect2(cr.position + Vector2(1.0, 1.0),
+						Vector2(cr.size.x - 2.0, 1.5)), Color(1.0, 1.0, 0.93, 0.18))
+					draw_rect(cr, Color(WyrdUi.KIT_EDGE, 0.58), false, 1.5)
+					draw_rect(Rect2(cr.position + Vector2(1.5, 1.5),
+						Vector2(3.0, cr.size.y - 3.0)),
+						Color(WyrdUi.INK_MID, 0.50))
 				# node disc on the spine
 				var dc := Vector2(lx, cardy + CARD_H * 0.5)
 				draw_circle(dc, 12.0, WyrdUi.SAGE.darkened(0.05) if ok \
