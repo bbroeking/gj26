@@ -580,20 +580,23 @@ func _draw_tabs(win: Rect2) -> void:
 	for i in TABS.size():
 		var r := _tab_rect(i)
 		var active := i == _tab
-		# Spec 40 — plates with painted icons; active = brighter + terracotta underline.
+		# Spec 40 — plates with painted icons + carved-well socket; active = brighter + underline.
 		draw_rect(r, Color(0.95, 0.91, 0.80) if active else Color(0.85, 0.78, 0.64))
 		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 1.5)
 		if active:
 			draw_line(r.position + Vector2(2, r.size.y - 2),
 				r.position + Vector2(r.size.x - 2, r.size.y - 2),
 				WyrdUi.TERRACOTTA, 3.0)
+		const ICON_SZ := 18.0
 		var tex: Texture2D = _cached_tex(TAB_ICONS[i])
 		if tex != null:
 			var iy := r.position.y + (r.size.y - ICON_SZ) * 0.5
 			var ix := r.position.x + 8.0
-			draw_texture_rect(tex,
-				Rect2(Vector2(ix, iy), Vector2(ICON_SZ, ICON_SZ)),
-				false, Color(1, 1, 1, 1.0 if active else 0.55))
+			var icon_r := Rect2(Vector2(ix, iy), Vector2(ICON_SZ, ICON_SZ))
+			# Recessed well so the icon reads as carved INTO the plate, not floating.
+			WyrdUi.draw_well(self, icon_r.grow(2.0), Color(WyrdUi.KIT_WELL, 0.55))
+			draw_texture_rect(tex, icon_r, false,
+				Color(1, 1, 1, 1.0 if active else 0.55))
 			draw_string(font, Vector2(ix + ICON_SZ + 3.0, r.position.y + 22.0),
 				String(TABS[i]), HORIZONTAL_ALIGNMENT_CENTER,
 				r.end.x - (ix + ICON_SZ + 3.0) - 6.0, 16,
