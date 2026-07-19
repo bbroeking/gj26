@@ -816,11 +816,22 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 			if i > 0:
 				draw_line(Vector2(x, y - 12.0), Vector2(x + w, y - 12.0),
 					Color(0.52, 0.42, 0.30, 0.45), 1.5)
-			# --- emblem (60px disc, double ink ring — spec 40) ---
+			# --- emblem (60px disc — carved medallion with raised-face depth) ---
 			var ec := Vector2(x + 26.0, y + 30.0)
 			draw_circle(ec, 26.0, (row.color as Color))
+			# Depth pass: upper arc catches the page's warm light (catch-light);
+			# lower arc is in shadow — together they give the disc volume.
+			draw_arc(ec, 20.0, PI * 0.80, PI * 1.90, 22,
+				Color(1.0, 1.0, 0.88, 0.28), 5.0, true)
+			draw_arc(ec, 20.0, -PI * 0.22, PI * 0.30, 16,
+				Color(0, 0, 0, 0.22), 5.0, true)
+			# Outer ink ring + burnished gold pinstripe — the medallion's carved edge.
 			draw_arc(ec, 26.0, 0, TAU, 48, Color(0.25, 0.18, 0.12), 2.5, true)
-			draw_arc(ec, 21.0, 0, TAU, 48, Color(0.97, 0.93, 0.82, 0.55), 1.2, true)
+			draw_arc(ec, 22.5, 0, TAU, 36, Color(WyrdUi.GOLD, 0.55), 1.0, true)
+			# Glyph with ink outline — set into the medallion face.
+			draw_string_outline(hdr, Vector2(ec.x - 26.0, ec.y + 8.0),
+				String(row.glyph), HORIZONTAL_ALIGNMENT_CENTER, 52.0, 22,
+				3, Color(0, 0, 0, 0.40))
 			draw_string(hdr, Vector2(ec.x - 26.0, ec.y + 8.0), String(row.glyph),
 				HORIZONTAL_ALIGNMENT_CENTER, 52.0, 22, Color(0.98, 0.95, 0.86))
 			# --- name + level (ink, per the design — terracotta is title-only) ---
