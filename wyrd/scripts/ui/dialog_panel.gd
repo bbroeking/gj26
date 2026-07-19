@@ -44,17 +44,28 @@ func _ready() -> void:
 	well.position = Vector2(48, 104)
 	well.size = Vector2(120, 120)
 	_panel.add_child(well)
+	# Nameplate banner — a carved parchment band framing the speaker name so it
+	# reads as a storybook title card rather than bare floating text.
+	var banner := NameplateBanner.new()
+	banner.anchor_right = 1.0
+	banner.offset_left = 56
+	banner.offset_right = -56
+	banner.offset_top = 28
+	banner.offset_bottom = 70
+	_panel.add_child(banner)
 	_name_lbl = Label.new()
 	var hf := WyrdUi.font_header()
 	if hf != null:
 		_name_lbl.add_theme_font_override("font", hf)
-	_name_lbl.add_theme_font_size_override("font_size", 24)
+	_name_lbl.add_theme_font_size_override("font_size", 22)
 	_name_lbl.add_theme_color_override("font_color", WyrdUi.TERRACOTTA)
 	_name_lbl.anchor_right = 1.0
-	_name_lbl.offset_left = 56
-	_name_lbl.offset_right = -56
-	_name_lbl.offset_top = 38
-	_panel.add_child(_name_lbl)
+	_name_lbl.anchor_bottom = 1.0
+	_name_lbl.offset_left = 32
+	_name_lbl.offset_right = -32
+	_name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	banner.add_child(_name_lbl)
 	_body = Label.new()
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.anchor_right = 1.0
@@ -143,3 +154,28 @@ class PortraitWell extends Control:
 		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
 		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
 		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+
+
+# Carved parchment nameplate — the speaker name sits on a warm KIT_PLATE band
+# edged by an ink border, a gold inner pinstripe, and a diamond-flourish
+# ornament tucked into each end. Ornament only on the frame, text above it.
+class NameplateBanner extends Control:
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		# Parchment face.
+		draw_rect(r, WyrdUi.KIT_PLATE)
+		# Top honey bevel — the band catches the scene's warm overhead light.
+		draw_rect(Rect2(r.position + Vector2(3, 2), Vector2(r.size.x - 6, 2)),
+			Color(1.0, 0.99, 0.90, 0.50))
+		# Soft ink shadow at the bottom — anchors the band to the panel.
+		draw_rect(Rect2(r.position + Vector2(2, r.size.y - 2),
+			Vector2(r.size.x - 4, 2)), Color(WyrdUi.KIT_EDGE, 0.22))
+		# Ink border.
+		draw_rect(r, WyrdUi.KIT_EDGE, false, 1.5)
+		# Gold inner pinstripe — the "burnished" read matching the hotbar tray.
+		draw_rect(r.grow(-3.5), Color(WyrdUi.GOLD, 0.55), false, 1.0)
+		# Diamond-flourish ornament at each end (design language: ornament on
+		# frames/headers only, never on body text).
+		var cy := r.size.y * 0.5
+		WyrdUi.draw_flourish(self, Vector2(22, cy), 28)
+		WyrdUi.draw_flourish(self, Vector2(r.size.x - 22, cy), 28)
