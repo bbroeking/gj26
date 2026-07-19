@@ -585,13 +585,30 @@ func _draw_tabs(win: Rect2) -> void:
 	for i in TABS.size():
 		var r := _tab_rect(i)
 		var active := i == _tab
-		# Spec 40 — text-only plates; active = brighter + terracotta underline.
+		# Spec 40 — plates; active = brighter + terracotta underline.
 		draw_rect(r, Color(0.95, 0.91, 0.80) if active else Color(0.85, 0.78, 0.64))
+		if active:
+			# Honey top-bevel lifts the selected drawer off the shelf.
+			draw_rect(Rect2(r.position + Vector2(2.0, 1.0),
+				Vector2(r.size.x - 4.0, 2.0)), Color(1.0, 0.97, 0.86, 0.60))
 		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 1.5)
 		if active:
 			draw_line(r.position + Vector2(2, r.size.y - 2),
 				r.position + Vector2(r.size.x - 2, r.size.y - 2),
 				WyrdUi.TERRACOTTA, 3.0)
+		# Carved disc medallion on the left of each tab. Icons are preloaded
+		# in _ready so draw_texture_rect here is safe (no white-rect gotcha).
+		# Colour lives on the active drawer; inactive icons fade to half-alpha
+		# so the eye lands on the selected tab first.
+		var icon_tex: Texture2D = _cached_tex(String(TAB_ICONS[i]))
+		if icon_tex != null:
+			var dc := Vector2(r.position.x + 13.0, r.position.y + r.size.y * 0.5)
+			WyrdUi.draw_round_well(self, dc, 9.0,
+				Color(0.88, 0.82, 0.68) if active else Color(0.82, 0.76, 0.62))
+			var mod := Color.WHITE if active \
+				else Color(1.0, 1.0, 1.0, 0.50)
+			draw_texture_rect(icon_tex,
+				Rect2(dc - Vector2(7.0, 7.0), Vector2(14.0, 14.0)), false, mod)
 		draw_string(font, r.position + Vector2(0, 22), String(TABS[i]),
 			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16,
 			WyrdUi.INK if active else WyrdUi.INK_MID)
