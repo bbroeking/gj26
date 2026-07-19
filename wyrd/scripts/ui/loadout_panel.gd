@@ -76,10 +76,16 @@ func _ready() -> void:
 	_panel.offset_right = 330
 	_panel.offset_bottom = 300
 	add_child(_panel)
+	# Bow-and-arrow crest disc + flourish rule (spec 44 header-art pattern).
+	var hdr := _LoadoutHeader.new()
+	hdr.position = Vector2(0, 0)
+	hdr.size = Vector2(480, 84)
+	hdr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(hdr)
 	var title := Label.new()
 	title.text = "Loadout"
 	WyrdUi.style_title(title)
-	title.position = Vector2(54, 36)
+	title.position = Vector2(100, 28)
 	_panel.add_child(title)
 	var hint := Label.new()
 	hint.text = "Esc — close"
@@ -262,3 +268,54 @@ class _SkillCard extends Control:
 		# --- short desc (up to two lines) ---
 		draw_multiline_string(font, Vector2(tx, 40.0), _desc,
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 16.0, 12, 2, dim)
+
+
+# Bow-and-arrow crest disc + flourish rule for the Loadout header.
+# Drawn in code (no textures) following the spec 44 header-art pattern:
+# a warm parchment disc with a carved bow stave, taut bowstring, and a
+# nocked arrow — the hunter's mark that identifies this panel at a glance.
+class _LoadoutHeader extends Control:
+	func _draw() -> void:
+		# --- parchment disc ---
+		var c := Vector2(48.0, 42.0)
+		var r := 30.0
+		draw_circle(c, r, WyrdUi.KIT_PLATE)
+		# carved inner shadow top-left — reads as depth
+		draw_arc(c, r - 5.0, PI * 0.75, PI * 1.90, 22,
+			Color(0, 0, 0, 0.16), 3.5, true)
+		# catch-light upper-right — the page's warm lamp catches the disc
+		draw_arc(c, r - 4.0, -PI * 0.28, PI * 0.18, 14,
+			Color(1.0, 1.0, 0.93, 0.50), 2.5, true)
+		# gold pinstripe ring
+		draw_arc(c, r - 7.0, 0, TAU, 40,
+			Color(WyrdUi.GOLD, 0.60), 1.2, true)
+
+		# --- bow stave (a curved wooden arc, slightly left of centre) ---
+		var bpiv := c + Vector2(-4.0, 0.0)
+		var blen := r * 0.78
+		draw_arc(bpiv, blen, -PI * 0.52, PI * 0.52, 18,
+			Color(0.45, 0.31, 0.17), 2.5, true)
+		# bowstring drawn taut between the stave tips
+		var bs_t := bpiv + Vector2(cos(-PI * 0.52), sin(-PI * 0.52)) * blen
+		var bs_b := bpiv + Vector2(cos( PI * 0.52), sin( PI * 0.52)) * blen
+		draw_line(bs_t, bs_b, Color(0.55, 0.42, 0.28, 0.88), 1.2)
+
+		# --- arrow: shaft, arrowhead, and fletching ---
+		var al := c + Vector2(-r * 0.60, 2.0)   # nock end (left)
+		var ar_ := c + Vector2(r * 0.60, 2.0)   # point end (right)
+		draw_line(al, ar_, Color(0.48, 0.34, 0.20), 2.0)
+		# arrowhead triangle
+		var head := PackedVector2Array([ar_,
+			ar_ + Vector2(-8.0, -4.0), ar_ + Vector2(-8.0, 4.0)])
+		draw_colored_polygon(head, Color(0.48, 0.34, 0.20))
+		# fletching V at the nock
+		draw_line(al, al + Vector2(6.5, -5.5), Color(0.62, 0.46, 0.30), 1.5)
+		draw_line(al, al + Vector2(6.5,  5.5), Color(0.62, 0.46, 0.30), 1.5)
+
+		# --- ink outer ring + faint inner pinstripe ---
+		draw_arc(c, r, 0, TAU, 48, WyrdUi.KIT_EDGE, 2.5, true)
+		draw_arc(c, r - 3.5, 0, TAU, 40,
+			Color(WyrdUi.KIT_EDGE, 0.25), 1.0, true)
+
+		# --- section flourish below the title ---
+		WyrdUi.draw_flourish(self, Vector2(165.0, 70.0), 130.0)
