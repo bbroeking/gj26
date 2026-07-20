@@ -55,6 +55,14 @@ func _ready() -> void:
 	_name_lbl.offset_right = -56
 	_name_lbl.offset_top = 38
 	_panel.add_child(_name_lbl)
+	var rule := _NameDivider.new()
+	rule.anchor_right = 1.0
+	rule.offset_left = 56
+	rule.offset_right = -56
+	rule.offset_top = 72
+	rule.offset_bottom = 90
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(rule)
 	_body = Label.new()
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.anchor_right = 1.0
@@ -143,3 +151,24 @@ class PortraitWell extends Control:
 		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
 		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
 		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+
+
+# Ivy-bracketed flourish rule between the speaker name and the body zone.
+# A ── ◆ ── sepia rule + gold diamond, with jade leaf buds at each end —
+# the storybook header/body divide from the design language.
+class _NameDivider extends Control:
+	func _draw() -> void:
+		if size.x < 40.0:
+			return
+		var cx := size.x * 0.5
+		var cy := size.y * 0.5
+		var half := minf(size.x * 0.44, 360.0)
+		WyrdUi.draw_flourish(self, Vector2(cx, cy), half)
+		var stem_len := 7.0
+		for side in [-1.0, 1.0]:
+			var term := Vector2(cx + side * half * 0.5, cy)
+			for flip in [-1.0, 1.0]:
+				var angle := atan2(flip * 0.6, side)
+				var bud := term + Vector2(cos(angle), sin(angle)) * stem_len
+				draw_line(term, bud, Color(WyrdUi.SAGE, 0.50), 1.2)
+				draw_circle(bud, 2.2, Color(WyrdUi.SAGE, 0.62))
