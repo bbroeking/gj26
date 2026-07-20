@@ -39,6 +39,14 @@ func _ready() -> void:
 	_panel.offset_bottom = 300
 	add_child(_panel)
 
+	# Header art drawn first so it sits behind the Label nodes.
+	var header_art := CraftHeaderArt.new()
+	header_art.station_id = station_id
+	header_art.anchor_right = 1.0
+	header_art.offset_bottom = 90
+	header_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(header_art)
+
 	var title := Label.new()
 	title.text = String(st.get("title", "Crafting"))
 	WyrdUi.style_title(title)
@@ -212,3 +220,44 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# Storybook header dressing: faint parchment grain across the title band, a
+# flourish below the station name, and a carved crest disc (♨ Cottage Hearth /
+# ⚒ Hod's Anvil) in the upper-right of the header. Drawn as the panel's first
+# child so it sits behind the Label nodes (same pattern as QuestScrollArt and
+# PortraitWell). Pure _draw — no textures, no load() inside _draw.
+class CraftHeaderArt extends Control:
+	var station_id := "cookfire"
+
+	func _ready() -> void:
+		resized.connect(queue_redraw)
+
+	func _draw() -> void:
+		if size.x < 8.0:
+			return
+		# Sparse parchment grain over the header band (warm sepia fibres).
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(Vector2(52.0, 14.0), Vector2(size.x - 120.0, 62.0)), 41)
+		# Flourish below the station title (title Label sits at y≈34, size 30;
+		# text bottom ≈ y 66 — flourish drops just below it).
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.30, 73.0), 200.0)
+		# Station crest: a carved parchment disc holding the station's glyph.
+		# Placed right-of-centre, clear of the Esc-close hint (starts at x−130).
+		var sc := Vector2(size.x - 170.0, 50.0)
+		WyrdUi.draw_round_well(self, sc, 22.0, WyrdUi.KIT_PLATE)
+		# Outer accent ring: gold for the hearth (warmth), ink-mid for the anvil.
+		var ring_col := Color(WyrdUi.GOLD, 0.68) if station_id == "cookfire" \
+			else Color(WyrdUi.INK_MID, 0.52)
+		draw_arc(sc, 22.0, 0, TAU, 36, ring_col, 1.5, true)
+		draw_arc(sc, 16.5, 0, TAU, 28, Color(WyrdUi.KIT_EDGE, 0.20), 1.0, true)
+		# Glyph inside the disc: ♨ (steam / hearth) or ⚒ (pick-hammer / anvil).
+		var f := get_theme_default_font()
+		var glyph := "♨" if station_id == "cookfire" else "⚒"
+		var gc := WyrdUi.GOLD if station_id == "cookfire" \
+			else Color(0.45, 0.36, 0.26)
+		draw_string_outline(f, Vector2(sc.x - 18.0, sc.y + 7.0), glyph,
+			HORIZONTAL_ALIGNMENT_CENTER, 36.0, 18, 4,
+			Color(WyrdUi.KIT_EDGE, 0.40))
+		draw_string(f, Vector2(sc.x - 18.0, sc.y + 7.0), glyph,
+			HORIZONTAL_ALIGNMENT_CENTER, 36.0, 18, gc)
