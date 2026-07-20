@@ -692,6 +692,15 @@ func _draw_scroll_marker(win: Rect2, view: Rect2, font: Font) -> void:
 		"scroll to read on · I close", HORIZONTAL_ALIGNMENT_CENTER,
 		view.size.x, 13, WyrdUi.INK_MID)
 
+func _satchel_accent(id: String) -> Color:
+	var group := String(GatherDefs.MATERIALS.get(id, {}).get("group", ""))
+	match group:
+		"verdant":        return WyrdUi.SAGE
+		"earthen":        return WyrdUi.TERRACOTTA
+		"lumen":          return WyrdUi.GOLD
+		"echo", "gristle": return WyrdUi.GOLD.darkened(0.2)
+		_:                return WyrdUi.INK_MID
+
 func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> void:
 	var game := get_tree().root.get_node_or_null("Game")
 	if game == null:
@@ -711,11 +720,13 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 		var def: Dictionary = GatherDefs.MATERIALS.get(String(id), {})
 		var row_top := y - 18.0
 		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 30.0))
+		var accent := _satchel_accent(String(id))
 		if _span_visible(row_top, row.end.y, scroll, view):
-			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
-			# glyph disc on the left
+			WyrdUi.draw_list_row(self, row, accent)
+			# glyph disc on the left — whisper of the group accent in the well
 			var dc := Vector2(row.position.x + 19.0, row.position.y + 15.0)
-			WyrdUi.draw_round_well(self, dc, 11.0, Color(0.88, 0.81, 0.66))
+			var well_fill := Color(0.88, 0.81, 0.66).lerp(accent, 0.12)
+			WyrdUi.draw_round_well(self, dc, 11.0, well_fill)
 			draw_string(font, Vector2(dc.x - 11.0, dc.y + 6.0),
 				String(def.get("icon", "·")), HORIZONTAL_ALIGNMENT_CENTER,
 				22.0, 14, WyrdUi.INK)
