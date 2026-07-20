@@ -2,8 +2,8 @@ extends Control
 
 # The carved wooden plank the hotbar slots sit on. A darkened parchment face
 # with a top honey bevel + bottom ink shadow, a gold inner inset line, a pass
-# of parchment grain, and a small flourish at each end — so the most-seen HUD
-# surface reads as a crafted object, not a flat engine panel.
+# of parchment grain, and an ivy-leaf knot at each end — so the most-seen HUD
+# surface reads as a crafted storybook object, not a flat engine panel.
 
 func _draw() -> void:
 	var r := Rect2(Vector2.ZERO, size)
@@ -20,7 +20,10 @@ func _draw() -> void:
 	# Ink border + a gold inner inset line (the "burnished" read).
 	draw_rect(r, WyrdUi.KIT_EDGE, false, 2.0)
 	draw_rect(r.grow(-4.0), Color(WyrdUi.GOLD, 0.5), false, 1.0)
-	# A flourish tucked into each end.
+	# Ivy-leaf knot ornaments at each end of the plank — the design-language
+	# "leafy ivy/vine on frames" applied to the most-seen HUD surface. Each
+	# knot is a three-leaf sprig facing inward, with a gold filigree centre,
+	# replacing the plain ── ◆ ── flourish.
 	var cy := r.size.y * 0.5
-	WyrdUi.draw_flourish(self, Vector2(20, cy), 24)
-	WyrdUi.draw_flourish(self, Vector2(r.size.x - 20, cy), 24)
+	WyrdUi.draw_leaf_trio(self, Vector2(20, cy), 13, 0.0)          # left, inward
+	WyrdUi.draw_leaf_trio(self, Vector2(r.size.x - 20, cy), 13, PI)  # right, inward
