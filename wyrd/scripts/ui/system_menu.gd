@@ -31,6 +31,12 @@ func _ready() -> void:
 	_panel.offset_right = 260
 	_panel.offset_bottom = 220
 	add_child(_panel)
+	# Decorative header art — sits behind the labels, no interaction.
+	var art := _LanternHeaderArt.new()
+	art.anchor_right = 1.0
+	art.anchor_bottom = 1.0
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(art)
 	var title := Label.new()
 	title.text = "The Lantern"
 	WyrdUi.style_title(title)
@@ -190,3 +196,47 @@ func _close() -> void:
 	if _game != null:
 		_game.modal_closed()
 	queue_free()
+
+
+# Header ornament for The Lantern panel — parchment grain + gold flourish
+# under the title + a small amber flame emblem in the clear space between
+# the title text and the Esc hint. Follows the QuestScrollArt pattern
+# (player_hud.gd): drawn purely in _draw, no textures, mouse-ignored.
+class _LanternHeaderArt extends Control:
+	func _ready() -> void:
+		resized.connect(queue_redraw)
+
+	func _draw() -> void:
+		if size.x < 2.0 or size.y < 2.0:
+			return
+		# Faint parchment grain across the header band (inside the wood frame).
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(Vector2(36, 38), Vector2(size.x - 72.0, 42.0)), 53)
+		# Gold flourish centred just under "The Lantern" title — reads as a
+		# storybook header rule.  Title baseline sits ~y 64; flourish at y 74
+		# gives a clean 10 px gap before the button column begins at y 92.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 74.0), size.x * 0.50)
+		# Small amber flame emblem centred between title end (~x 240) and Esc
+		# hint start (~x 390).  The title Label renders on top, so even if they
+		# clip the flame reads as a warm background crest.
+		_flame(Vector2(size.x * 0.5, 52.0), 13.0)
+
+	func _flame(pos: Vector2, h: float) -> void:
+		var w := h * 0.50
+		# Outer body — warm amber teardrop polygon.
+		var body := PackedVector2Array([
+			pos + Vector2(0.0,       -h),
+			pos + Vector2(w * 0.38,  -h * 0.50),
+			pos + Vector2(w * 0.50,  -h * 0.04),
+			pos + Vector2(w * 0.28,   h * 0.22),
+			pos + Vector2(0.0,        h * 0.28),
+			pos + Vector2(-w * 0.28,  h * 0.22),
+			pos + Vector2(-w * 0.50, -h * 0.04),
+			pos + Vector2(-w * 0.38, -h * 0.50),
+		])
+		draw_colored_polygon(body, Color(WyrdUi.GOLD, 0.70))
+		# Cream inner core — the hot heart of the flame.
+		draw_circle(pos + Vector2(0.0, -h * 0.28), h * 0.22, Color(1.0, 0.97, 0.84, 0.48))
+		# Light ink outline — delicate so it reads as paint, not a shape.
+		draw_polyline(body + PackedVector2Array([body[0]]),
+			Color(WyrdUi.KIT_EDGE, 0.36), 1.0, true)
