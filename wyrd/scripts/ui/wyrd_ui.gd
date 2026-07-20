@@ -358,6 +358,41 @@ static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
 		body.position + Vector2(2.5, body.size.y - 3.0),
 		Color(1, 1, 1, 0.45), 1.5)
 
+# Three-leaf ivy knot: a small sprig of three sage leaves radiating from a gold
+# filigree centre dot, `angle` pointing toward the first leaf (0 = rightward).
+# Designed for frame-end / header-corner ornament — the design-language "leafy
+# ivy/vine" call-out, in pure vector code (no texture, no _draw gotcha).
+static func draw_leaf_trio(c: CanvasItem, center: Vector2, size: float,
+		angle: float = 0.0) -> void:
+	var sage_leaf  := Color(0.35, 0.52, 0.22)   # painted sage-green leaf fill
+	var sage_vein  := Color(0.22, 0.37, 0.14)   # darker midrib
+	var leaf_ink   := Color(KIT_EDGE, 0.60)      # ink outline, slightly lifted
+	# Two flanking leaves — mirrored either side of the main axis.
+	for side in [-1.0, 1.0]:
+		var la  := angle + side * PI * 0.42
+		var tip := center + Vector2(cos(la), sin(la)) * size
+		var mid := (center + tip) * 0.5
+		var perp := Vector2(-sin(la), cos(la)) * size * 0.30 * side
+		var pts := PackedVector2Array([center,
+			mid + perp * 1.2, tip, mid - perp * 0.5])
+		c.draw_colored_polygon(pts, sage_leaf)
+		c.draw_polyline(PackedVector2Array([pts[0], pts[1], pts[2], pts[3], pts[0]]),
+			leaf_ink, 0.9, true)
+		c.draw_line(center, tip, sage_vein, 0.7)
+	# Central forward leaf — slightly longer than the side pair.
+	var tip_c  := center + Vector2(cos(angle), sin(angle)) * size * 1.15
+	var mid_c  := (center + tip_c) * 0.5
+	var perp_c := Vector2(-sin(angle), cos(angle)) * size * 0.26
+	var cpts := PackedVector2Array([center,
+		mid_c + perp_c, tip_c, mid_c - perp_c])
+	c.draw_colored_polygon(cpts, sage_leaf.lightened(0.12))
+	c.draw_polyline(PackedVector2Array([cpts[0], cpts[1], cpts[2], cpts[3], cpts[0]]),
+		leaf_ink, 0.9, true)
+	c.draw_line(center, tip_c, sage_vein, 0.7)
+	# Gold filigree centre — a tiny filled disc + ink ring.
+	c.draw_circle(center, size * 0.22, Color(GOLD, 0.88))
+	c.draw_arc(center, size * 0.22, 0, TAU, 12, Color(KIT_EDGE, 0.55), 1.0, true)
+
 # A rolled parchment scroll with a wax seal — the chart-in-a-socket read.
 static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 	var face := Rect2(r.position + Vector2(r.size.x * 0.08, r.size.y * 0.12),
