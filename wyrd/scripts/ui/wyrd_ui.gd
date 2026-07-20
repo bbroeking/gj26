@@ -380,6 +380,33 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 			Color(KIT_EDGE, 0.25), 1.0)
 	if sealed:
 		var sc := Vector2(face.end.x - 10.0, face.end.y - 8.0)
-		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
-		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
-		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+		draw_wax_seal(c, sc, 7.5)
+
+
+# A proper wax seal — cast shadow, convex dome highlight, pressed four-petal
+# crest (a fleur motif stamped by the signet ring), and a cracked outer ring.
+# Replaces the inline two-circle placeholder used in draw_scroll and elsewhere.
+# Use radius ≈ 7–14 for panel wax; col is the wax brand colour.
+static func draw_wax_seal(c: CanvasItem, center: Vector2, radius: float,
+		col: Color = Color(0.62, 0.20, 0.16)) -> void:
+	# soft cast shadow — the seal sits proud on the parchment face
+	c.draw_circle(center + Vector2(1.5, 2.5), radius + 1.0, Color(0.0, 0.0, 0.0, 0.20))
+	# wax disc
+	c.draw_circle(center, radius, col)
+	# convex dome — top-left light catch (wax curves outward like a lens)
+	c.draw_circle(center + Vector2(-radius * 0.25, -radius * 0.30),
+		radius * 0.42, col.lightened(0.22))
+	# pressed four-petal crest (the signet impression)
+	var s := radius * 0.32
+	for i in 4:
+		var a := float(i) * PI * 0.5
+		var tip := center + Vector2(cos(a), sin(a)) * (s * 1.7)
+		var bl  := center + Vector2(cos(a + 1.1), sin(a + 1.1)) * (s * 0.7)
+		var br  := center + Vector2(cos(a - 1.1), sin(a - 1.1)) * (s * 0.7)
+		c.draw_colored_polygon(PackedVector2Array([center, bl, tip, br]),
+			col.darkened(0.32))
+	# tiny centre pip
+	c.draw_circle(center, radius * 0.12, col.darkened(0.40))
+	# outer cracked-ink ring
+	c.draw_arc(center, radius, 0.0, TAU, 32, Color(0.30, 0.10, 0.08), 1.5, true)
+	c.draw_arc(center, radius - 2.5, 0.0, TAU, 20, Color(0.0, 0.0, 0.0, 0.16), 1.0, true)
