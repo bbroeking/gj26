@@ -287,7 +287,7 @@ const BIOME_ENV := {
 const BIOME_GROUND := {
 	"crypt":        {"mscale": Vector3(1.0, 0.5, 1.0),  "color": Color(0.55, 0.52, 0.46), "size": 0.14, "density": 0.45},
 	"mineral_seam": {"mscale": Vector3(0.5, 1.3, 0.5),  "color": Color(0.46, 0.64, 0.85), "size": 0.13, "density": 0.45, "emission": 0.7},
-	"wood_grove":   {"mscale": Vector3(1.3, 0.08, 1.3), "color": Color(0.32, 0.46, 0.22), "size": 0.18, "density": 0.7},
+	"wood_grove":   {"mscale": Vector3(1.3, 0.08, 1.3), "color": Color(0.19, 0.31, 0.12), "size": 0.13, "density": 0.32},
 	"bog":          {"mscale": Vector3(1.2, 0.10, 1.2), "color": Color(0.34, 0.50, 0.30), "size": 0.18, "density": 0.7},
 	"summit":       {"mscale": Vector3(1.0, 0.45, 1.0), "color": Color(0.88, 0.92, 0.98), "size": 0.13, "density": 0.6},
 	"rootroads":     {"mscale": Vector3(1.2, 0.14, 0.62), "color": Color(0.34, 0.42, 0.27), "size": 0.17, "density": 0.72, "emission": 0.25},
@@ -649,7 +649,7 @@ func _ready() -> void:
 	_resolve_biome()                        # sets _biome_id
 	_floor_mat = _make_floor_material(_biome_id)   # procedural toon ground (spec 50)
 	_read_chart_modifiers()
-	_build_grid(layout.grid)                # walls only now
+	_build_grid(layout.grid, layout.get("perimeter_dressing", [])) # walls only now
 	_build_floor_mesh(layout.grid)          # one merged seamless floor surface
 	_build_bog_reflection(layout.grid)      # interior reflection for the wet bog pools
 	_scatter_ground_cover(layout.grid)
@@ -1065,15 +1065,24 @@ func _scatter_seam_dressing(grid: Array) -> void:
 				seams.append([x, y, dir])
 	if seams.is_empty():
 		return
-	var per := 2
+	var per := 1 if _scope == "snug" else 2
 	var count: int = mini(seams.size() * per, 700)
 	if count <= 0:
 		return
-	var base: Color = _desat(e.color, 0.7).darkened(0.18)   # rubble = darker, greyer
+	var base: Color = Color(0.20, 0.24, 0.14) if _scope == "snug" else \
+		_desat(e.color, 0.7).darkened(0.18)   # rubble = darker, greyer
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_colors = true
-	mm.mesh = BoxMesh.new()
+	if _scope == "snug":
+		var moss_mesh := SphereMesh.new()
+		moss_mesh.radial_segments = 6
+		moss_mesh.rings = 3
+		moss_mesh.radius = 0.5
+		moss_mesh.height = 1.0
+		mm.mesh = moss_mesh
+	else:
+		mm.mesh = BoxMesh.new()
 	mm.instance_count = count
 	var msc := Vector3(1.0, 0.6, 1.0)
 	var i := 0
@@ -1183,13 +1192,21 @@ func _build_bog_reflection(grid: Array) -> void:
 	rp.max_distance = 64.0
 	add_child(rp)
 
-func _build_grid(grid: Array) -> void:
+func _build_grid(grid: Array, perimeter_dressing: Array = []) -> void:
+	var perimeter_by_cell := {}
+	for profile_v in perimeter_dressing:
+		if not profile_v is Dictionary:
+			continue
+		var profile: Dictionary = profile_v
+		perimeter_by_cell["%d:%d" % [int(profile.get("x", -1)),
+			int(profile.get("y", -1))]] = profile
 	for y in grid.size():
 		var row: Array = grid[y]
 		for x in row.size():
 			if String(row[x]) == "wall" \
 					and (_scope != "snug" or _is_floor_boundary(grid, x, y)):
-				_place_wall(x, y, grid)
+				_place_wall(x, y, grid,
+					perimeter_by_cell.get("%d:%d" % [x, y], {}))
 
 func _is_floor_boundary(grid: Array, x: int, y: int) -> bool:
 	for dy in range(-1, 2):
@@ -1244,7 +1261,8 @@ const WALL_NATIVE := {
 	"cornerOuter": Vector3(1.69, 1.91, 1.79),
 }
 
-func _place_wall(x: int, y: int, grid: Array) -> void:
+func _place_wall(x: int, y: int, grid: Array,
+		perimeter_profile: Dictionary = {}) -> void:
 	var body := StaticBody3D.new()
 	body.position = Vector3(x + 0.5, WALL_HEIGHT * 0.5, y + 0.5)
 	body.collision_layer = LAYER_WORLD
@@ -1252,7 +1270,7 @@ func _place_wall(x: int, y: int, grid: Array) -> void:
 	body.add_to_group("wall")          # camera occlusion fades these
 
 	if _scope == "snug":
-		_place_first_hollow_wall_visual(body, x, y)
+		_place_first_hollow_wall_visual(body, x, y, perimeter_profile)
 	else:
 		_place_box_wall_visual(body)
 
@@ -1289,7 +1307,8 @@ func _place_box_wall_visual(body: StaticBody3D) -> void:
 	body.add_child(mi)
 
 
-func _place_first_hollow_wall_visual(body: StaticBody3D, x: int, y: int) -> void:
+func _place_first_hollow_wall_visual(body: StaticBody3D, x: int, y: int,
+		perimeter_profile: Dictionary = {}) -> void:
 	# Coordinate-derived variation remains stable even though deep exterior
 	# cells no longer consume RNG or instantiate nodes.
 	var local_rng := RandomNumberGenerator.new()
@@ -1297,47 +1316,265 @@ func _place_first_hollow_wall_visual(body: StaticBody3D, x: int, y: int) -> void
 		& 0x7FFFFFFFFFFFFFFF
 	var visual := Node3D.new()
 	visual.name = "WallMesh"
-	visual.rotation.y = local_rng.randf_range(-0.28, 0.28)
+	# Profiles orient from generated floor truth. Individual pieces carry their
+	# own jitter; rotating the root would rotate its outward backdrop back toward
+	# the playable floor at corners.
+	visual.rotation.y = 0.0
 	visual.scale = Vector3(local_rng.randf_range(0.88, 1.12), 1.0,
 		local_rng.randf_range(0.88, 1.12))
+	var profile_id := String(perimeter_profile.get("profile", "leaf_bank"))
+	visual.set_meta("perimeter_profile", profile_id)
+	visual.set_meta("room_id", int(perimeter_profile.get("room_id", -1)))
+	visual.set_meta("landmark", bool(perimeter_profile.get("landmark", false)))
+	body.set_meta("perimeter_profile", profile_id)
+	body.set_meta("perimeter_room_id", int(perimeter_profile.get("room_id", -1)))
+	body.set_meta("perimeter_landmark", bool(perimeter_profile.get("landmark", false)))
 	body.add_child(visual)
 
-	var tone := local_rng.randf_range(-0.025, 0.025)
-	var wmat := _wall_material(0.0)
-	wmat.albedo_color = Color(0.19 + tone, 0.27 + tone,
-		0.13 + tone * 0.5, 1.0)
-	var mass := SphereMesh.new()
-	mass.radial_segments = 7
-	mass.rings = 4
-	mass.radius = 0.76
-	mass.height = local_rng.randf_range(1.95, 2.45)
-	var mass_mi := MeshInstance3D.new()
-	mass_mi.name = "Rootstone"
-	mass_mi.mesh = mass
-	mass_mi.position.y = -0.62
-	mass_mi.scale = Vector3(local_rng.randf_range(0.88, 1.16), 1.0,
-		local_rng.randf_range(0.88, 1.16))
-	mass_mi.material_override = wmat
-	mass_mi.material_overlay = _make_outline_pass()
-	visual.add_child(mass_mi)
+	_add_first_hollow_bank_base(visual, local_rng, profile_id)
+	var inward := Vector3(float(perimeter_profile.get("inward_x", 0)), 0.0,
+		float(perimeter_profile.get("inward_y", 1)))
+	if inward.length_squared() < 0.1:
+		inward = Vector3.FORWARD
+	_add_first_hollow_backdrop(visual, local_rng, -inward.normalized())
+	match profile_id:
+		"root_bank":
+			_add_first_hollow_roots(visual, local_rng, false)
+		"stone_bank":
+			_add_first_hollow_stones(visual, local_rng)
+		"fern_bank":
+			_add_first_hollow_ferns(visual, local_rng)
+		"bramble_bank":
+			_add_first_hollow_bramble(visual, local_rng)
+		"fallen_log":
+			_add_first_hollow_landmark(visual, local_rng, profile_id)
+		"lantern_oak", "old_oak", "bramble_oak", "hearth_oak":
+			_add_first_hollow_landmark(visual, local_rng, profile_id)
+		_:
+			_add_first_hollow_leaves(visual, local_rng, false)
 
-	# A smaller shoulder overlaps the next tile's mass, softening the grid edge
-	# into a continuous root-and-fieldstone bank without raising the skyline.
-	var shoulder := SphereMesh.new()
-	shoulder.radial_segments = 7
-	shoulder.rings = 4
-	shoulder.radius = 0.48
-	shoulder.height = local_rng.randf_range(0.85, 1.30)
-	var shoulder_mi := MeshInstance3D.new()
-	shoulder_mi.name = "BrambleShoulder"
-	shoulder_mi.mesh = shoulder
-	shoulder_mi.position = Vector3(local_rng.randf_range(-0.34, 0.34),
-		-1.05, local_rng.randf_range(-0.34, 0.34))
-	shoulder_mi.scale = Vector3(local_rng.randf_range(0.85, 1.15), 1.0,
-		local_rng.randf_range(0.85, 1.15))
-	shoulder_mi.material_override = _wall_material(local_rng.randf_range(-0.04, 0.02))
-	shoulder_mi.material_overlay = _make_outline_pass()
-	visual.add_child(shoulder_mi)
+
+func _first_hollow_material(color: Color) -> StandardMaterial3D:
+	var mat := _wall_material(0.0)
+	mat.albedo_color = color
+	mat.roughness = 0.9
+	return mat
+
+
+func _first_hollow_sphere(parent: Node3D, node_name: String, position: Vector3,
+		radius: float, height: float, color: Color, scale: Vector3 = Vector3.ONE,
+		outline: bool = false) -> MeshInstance3D:
+	var mesh := SphereMesh.new()
+	mesh.radial_segments = 7
+	mesh.rings = 4
+	mesh.radius = radius
+	mesh.height = maxf(height, radius * 2.0)
+	var mi := MeshInstance3D.new()
+	mi.name = node_name
+	mi.mesh = mesh
+	mi.position = position
+	mi.scale = scale
+	mi.material_override = _first_hollow_material(color)
+	if outline:
+		mi.material_overlay = _make_outline_pass()
+	parent.add_child(mi)
+	return mi
+
+
+func _first_hollow_cylinder(parent: Node3D, node_name: String,
+		position: Vector3, height: float, radius: float, color: Color,
+		rotation: Vector3 = Vector3.ZERO, top_scale: float = 0.78,
+		outline: bool = false) -> MeshInstance3D:
+	var mesh := CylinderMesh.new()
+	mesh.radial_segments = 7
+	mesh.rings = 1
+	mesh.height = height
+	mesh.bottom_radius = radius
+	mesh.top_radius = maxf(0.01, radius * top_scale)
+	var mi := MeshInstance3D.new()
+	mi.name = node_name
+	mi.mesh = mesh
+	mi.position = position
+	mi.rotation = rotation
+	mi.material_override = _first_hollow_material(color)
+	if outline:
+		mi.material_overlay = _make_outline_pass()
+	parent.add_child(mi)
+	return mi
+
+
+func _add_first_hollow_bank_base(visual: Node3D,
+		local_rng: RandomNumberGenerator, profile_id: String) -> void:
+	var tone := local_rng.randf_range(-0.025, 0.025)
+	var base_color := Color(0.18 + tone, 0.27 + tone, 0.12 + tone * 0.5)
+	if profile_id in ["root_bank", "fallen_log"]:
+		base_color = Color(0.25 + tone, 0.24 + tone, 0.13)
+	elif profile_id == "stone_bank":
+		base_color = Color(0.29 + tone, 0.31 + tone, 0.24 + tone)
+	_first_hollow_sphere(visual, "Rootstone", Vector3(0.0, -1.13, 0.0),
+		0.64, local_rng.randf_range(1.28, 1.48), base_color,
+		Vector3(local_rng.randf_range(1.05, 1.32), 1.0,
+			local_rng.randf_range(0.82, 1.10)), true)
+	_first_hollow_sphere(visual, "BrambleShoulder",
+		Vector3(local_rng.randf_range(-0.36, 0.36), -1.23,
+			local_rng.randf_range(-0.28, 0.28)), 0.42,
+		local_rng.randf_range(0.84, 1.02), base_color.lightened(0.035),
+		Vector3(local_rng.randf_range(0.9, 1.2), 1.0,
+			local_rng.randf_range(0.9, 1.2)))
+
+
+func _add_first_hollow_backdrop(visual: Node3D,
+		local_rng: RandomNumberGenerator, outward: Vector3) -> void:
+	# A dark, non-colliding rear shoulder extends into the void behind the real
+	# boundary. It supplies the concept's forest depth without rebuilding the
+	# deleted exterior wall field. The whole layer still lowers with WallMesh.
+	var tangent := Vector3(-outward.z, 0.0, outward.x)
+	for i in 2:
+		var side := -0.24 if i == 0 else 0.24
+		_first_hollow_sphere(visual, "RearFoliage%d" % i,
+			outward * local_rng.randf_range(0.42, 0.62) + tangent * side \
+				+ Vector3(0.0, -0.48 + float(i) * 0.08, 0.0),
+			0.55, local_rng.randf_range(1.20, 1.48),
+			Color(0.10 + float(i) * 0.025, 0.21 + float(i) * 0.025, 0.075),
+			Vector3(local_rng.randf_range(1.05, 1.32), 1.0,
+				local_rng.randf_range(1.05, 1.30)))
+
+
+func _add_first_hollow_leaves(visual: Node3D,
+		local_rng: RandomNumberGenerator, dark: bool) -> void:
+	var colors := [Color(0.16, 0.28, 0.10), Color(0.21, 0.35, 0.12),
+		Color(0.27, 0.40, 0.14)]
+	if dark:
+		colors = [Color(0.11, 0.21, 0.07), Color(0.15, 0.27, 0.09),
+			Color(0.19, 0.31, 0.10)]
+	for i in 3:
+		var side := float(i - 1) * 0.34 + local_rng.randf_range(-0.08, 0.08)
+		_first_hollow_sphere(visual, "LeafCluster%d" % i,
+			Vector3(side, -0.80 + local_rng.randf_range(-0.08, 0.18),
+				local_rng.randf_range(-0.20, 0.20)),
+			local_rng.randf_range(0.35, 0.48),
+			local_rng.randf_range(0.78, 1.12), colors[i],
+			Vector3(local_rng.randf_range(1.05, 1.34),
+				local_rng.randf_range(0.68, 0.84),
+				local_rng.randf_range(0.88, 1.16)))
+
+
+func _add_first_hollow_roots(visual: Node3D,
+		local_rng: RandomNumberGenerator, brambled: bool) -> void:
+	var root_color := Color(0.30, 0.20, 0.11) if not brambled else Color(0.23, 0.14, 0.09)
+	for i in 2:
+		_first_hollow_cylinder(visual, "Root%d" % i,
+			Vector3(local_rng.randf_range(-0.24, 0.24), -1.18,
+				local_rng.randf_range(-0.18, 0.18)),
+			local_rng.randf_range(1.15, 1.55), local_rng.randf_range(0.08, 0.13),
+			root_color, Vector3(0.0, 0.0,
+				local_rng.randf_range(-1.25, 1.25)), 0.55)
+	_add_first_hollow_leaves(visual, local_rng, brambled)
+
+
+func _add_first_hollow_stones(visual: Node3D,
+		local_rng: RandomNumberGenerator) -> void:
+	_add_first_hollow_prop(visual, "MossBoulder",
+		"res://models/biome_wood_grove_boulder_v1.glb",
+		Vector3(0.0, -1.80, 0.0), Vector3(0.72, 0.72, 0.72),
+		Color(0.32, 0.36, 0.27))
+	for i in 2:
+		_first_hollow_sphere(visual, "MossStone%d" % i,
+			Vector3(float(i * 2 - 1) * 0.27, -1.04,
+				local_rng.randf_range(-0.12, 0.16)),
+			local_rng.randf_range(0.28, 0.38),
+			local_rng.randf_range(0.62, 0.84),
+			Color(0.36, 0.38, 0.30).darkened(float(i) * 0.06),
+			Vector3(1.15, 1.0, 0.92))
+	_first_hollow_sphere(visual, "StoneMoss", Vector3(0.0, -0.78, 0.04),
+		0.28, 0.58, Color(0.28, 0.43, 0.18), Vector3(1.25, 1.0, 0.9))
+
+
+func _add_first_hollow_ferns(visual: Node3D,
+		local_rng: RandomNumberGenerator) -> void:
+	_add_first_hollow_prop(visual, "FernCluster",
+		"res://models/biome_wood_grove_fern_v1.glb",
+		Vector3(0.0, -1.80, 0.0),
+		Vector3.ONE * local_rng.randf_range(0.78, 1.04),
+		Color(0.24, 0.46, 0.16))
+	_first_hollow_sphere(visual, "FernMoss", Vector3(0.18, -1.16, 0.05),
+		0.30, 0.62, Color(0.18, 0.34, 0.11), Vector3(1.5, 0.55, 1.0))
+
+
+func _add_first_hollow_bramble(visual: Node3D,
+		local_rng: RandomNumberGenerator) -> void:
+	_add_first_hollow_roots(visual, local_rng, true)
+	for i in 2:
+		_first_hollow_cylinder(visual, "Bramble%d" % i,
+			Vector3(float(i * 2 - 1) * 0.24, -0.44,
+				local_rng.randf_range(-0.14, 0.14)), 1.08, 0.07,
+			Color(0.22, 0.13, 0.09), Vector3(0.0, 0.0,
+				(-0.42 if i == 0 else 0.42)), 0.35)
+
+
+func _add_first_hollow_landmark(visual: Node3D,
+		local_rng: RandomNumberGenerator, profile_id: String) -> void:
+	var landmark := Node3D.new()
+	landmark.name = "PerimeterLandmark"
+	landmark.set_meta("profile", profile_id)
+	visual.add_child(landmark)
+	if profile_id == "fallen_log":
+		_add_first_hollow_prop(landmark, "FallenLog",
+			"res://models/biome_wood_grove_log_v1.glb",
+			Vector3(0.0, -1.80, 0.0), Vector3(0.88, 0.88, 0.88),
+			Color(0.32, 0.25, 0.13))
+		_first_hollow_sphere(landmark, "LogMoss", Vector3(0.0, -0.64, 0.0),
+			0.30, 0.62, Color(0.27, 0.43, 0.16), Vector3(1.55, 0.55, 0.9))
+		return
+
+	var trunk_color := Color(0.31, 0.20, 0.11)
+	if profile_id == "bramble_oak":
+		trunk_color = Color(0.23, 0.14, 0.09)
+	_first_hollow_cylinder(landmark, "Trunk", Vector3(0.0, -0.34, 0.0),
+		2.60, local_rng.randf_range(0.20, 0.27), trunk_color,
+		Vector3(0.0, 0.0, local_rng.randf_range(-0.10, 0.10)), 0.72, true)
+	var canopy_colors := [Color(0.13, 0.25, 0.08), Color(0.18, 0.32, 0.10),
+		Color(0.25, 0.39, 0.12)]
+	if profile_id == "bramble_oak":
+		canopy_colors = [Color(0.12, 0.22, 0.08), Color(0.17, 0.29, 0.10),
+			Color(0.24, 0.35, 0.11)]
+	elif profile_id == "hearth_oak":
+		canopy_colors = [Color(0.22, 0.31, 0.11), Color(0.34, 0.42, 0.12),
+			Color(0.47, 0.47, 0.13)]
+	for i in 5:
+		_first_hollow_sphere(landmark, "Canopy%d" % i,
+			Vector3(float(i - 2) * 0.26, 0.96 + float(i % 2) * 0.18,
+				local_rng.randf_range(-0.18, 0.18)),
+			0.48, local_rng.randf_range(1.02, 1.26), canopy_colors[i % 3],
+			Vector3(local_rng.randf_range(0.92, 1.18), 1.0,
+				local_rng.randf_range(0.88, 1.14)), i == 2)
+	if profile_id == "lantern_oak":
+		var glow := _first_hollow_sphere(landmark, "LanternGlow",
+			Vector3(0.36, 0.18, 0.10), 0.10, 0.22,
+			Color(1.0, 0.68, 0.20), Vector3.ONE)
+		var glow_mat := glow.material_override as StandardMaterial3D
+		glow_mat.emission_enabled = true
+		glow_mat.emission = Color(1.0, 0.52, 0.12)
+		glow_mat.emission_energy_multiplier = 2.0
+
+
+func _add_first_hollow_prop(parent: Node3D, node_name: String, path: String,
+		position: Vector3, scale: Vector3, color: Color) -> Node3D:
+	if not ResourceLoader.exists(path):
+		return null
+	var packed: PackedScene = load(path)
+	if packed == null:
+		return null
+	var prop := packed.instantiate() as Node3D
+	if prop == null:
+		return null
+	prop.name = node_name
+	prop.position = position
+	prop.scale = scale
+	parent.add_child(prop)
+	_unmetal(prop)
+	_tint(prop, color)
+	return prop
 
 func _is_floor(grid: Array, x: int, y: int) -> bool:
 	if y < 0 or y >= grid.size() or x < 0 or x >= grid[0].size():

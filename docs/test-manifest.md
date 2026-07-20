@@ -1,6 +1,6 @@
 # Wayfinder test manifest
 
-Updated 2026-07-20 for `0.1.5-natural-hollows`.
+Updated 2026-07-20 for `0.1.6-living-edge`.
 
 ## Canonical checkpoint gate
 
@@ -15,9 +15,10 @@ Run every entry with `WYRD_NO_SAVE=1 godot --headless --path wyrd --script res:/
 | `test_boot_smoke.gd` | 147 | Script compilation and Town/World boot paths |
 | `test_first_road_slice.gd` | 14 | Fresh 5–10 minute First Road promise |
 | `test_movement_feel.gd` | 12 | Production keyboard movement, roll feel, and named-neighbor motion |
-| `test_hollow_readability.gd` | 7 | Boundary-only natural walls, cutaway restoration, and budget |
+| `test_hollow_readability.gd` | 9 | Boundary-only living walls, complete-profile cutaway restoration, and budget |
 | `test_first_hollow_room_grammar.gd` | 8 | Archetype determinism, variation, boundary truth, and combat apertures |
-| **Total** | **855** | **Required before a checkpoint is accepted** |
+| `test_first_hollow_living_edge.gd` | 9 | Profile ownership, landmark count, deterministic remixing, and production realization |
+| **Total** | **866** | **Required before a checkpoint is accepted** |
 
 ## Exported-browser gate
 
@@ -35,6 +36,18 @@ The `0.1.5-natural-hollows` release proof additionally requires a rendered
 1280×720 Bold Road comparison with the approved First Hollow concept, the
 export resource audit, and a real title → town → First Road → return journey
 with an empty browser diagnostic ledger.
+
+The `0.1.6-living-edge` proof additionally compares native and Web First Road
+renders with the approved First Hollow concept, requires deterministic profile
+and landmark data, and verifies that the full layered edge lowers and restores
+through the production camera cutaway.
+
+The persistence-disabled retained corpus currently contains 121 direct
+entrypoints: 116 pass. Four documented exceptions still require their owning
+driver or historical state, and `test_combat.gd` retains its pre-checkpoint F2
+chase/F7 navigation fixture anomaly. None loads the living-edge generator or
+loader changes; the production dungeon, transition, boot, movement, room, and
+cutaway gates remain green.
 
 The repository also contains focused chapter, UI, authority, economy, save,
 and regression entrypoints. They remain useful for their owning specs, but are

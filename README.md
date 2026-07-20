@@ -67,7 +67,7 @@ I pack · M satchel · K trades · Space roll · F10 sound (off by default)
 ## Tests
 
 Nine headless suites gate every change (855 assertions at
-`0.1.5-natural-hollows`; see `docs/test-manifest.md`):
+`0.1.6-living-edge`; see `docs/test-manifest.md`):
 
 ```bash
 cd wyrd

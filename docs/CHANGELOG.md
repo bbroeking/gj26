@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.6-living-edge — 2026-07-20
+
+- Kept procedural Charts, randomized authored room archetypes, and the
+  continuous FATE camera while giving First Road rooms deterministic living
+  edge profiles.
+- Replaced the repeated hedge ring with layered leaf, root, fern, stone, and
+  bramble banks plus one archetype-aware landmark per room.
+- Kept every compound edge on its existing wall body so collision,
+  navigation, projectile truth, and the local camera cutaway remain unified.
+- Quieted the playable center and hid the immediate exterior void behind a
+  non-colliding rear foliage shoulder without rebuilding deep wall fields.
+- Verified 866 canonical native assertions, the retained corpus with no
+  checkpoint-caused regression, and the real native and Web renders beside
+  the approved First Hollow concept.
+
 ## 0.1.5-natural-hollows — 2026-07-20
 
 - Kept seeded procedural Chart graphs while giving First Road rooms

@@ -49,20 +49,40 @@ func run() -> void:
 		walls.size() == expected_layout.boundary_cells.size(),
 		{"rendered": walls.size(), "boundary": expected_layout.boundary_cells.size()})
 	var natural_visuals := 0
+	var profile_ids := {}
+	var landmark_visuals := 0
+	var landmark_collision_ok := true
 	for wall_v in walls:
 		var wall := wall_v as Node
 		var visual := wall.get_node_or_null("WallMesh")
 		if visual is Node3D and not visual is MeshInstance3D \
 				and visual.get_node_or_null("Rootstone") is MeshInstance3D:
 			natural_visuals += 1
+			profile_ids[String(visual.get_meta("perimeter_profile", ""))] = true
+			if bool(visual.get_meta("landmark", false)):
+				landmark_visuals += 1
+				var has_wall_collision := false
+				for child in wall.get_children():
+					if child is CollisionShape3D:
+						has_wall_collision = true
+						break
+				landmark_collision_ok = landmark_collision_ok \
+					and visual.get_node_or_null("PerimeterLandmark") is Node3D \
+					and has_wall_collision
 	check("First Hollow boundary uses compound natural silhouettes",
 		natural_visuals == walls.size() and not walls.is_empty(),
 		{"natural": natural_visuals, "walls": walls.size()})
+	check("production Bold Road realizes at least five edge profiles",
+		profile_ids.size() >= 5, profile_ids.keys())
+	check("every generated room realizes one colliding-wall landmark root",
+		landmark_visuals == expected_layout.rooms.size() and landmark_collision_ok,
+		{"landmarks": landmark_visuals, "rooms": expected_layout.rooms.size(),
+			"collision_ok": landmark_collision_ok})
 	check("production Bold Road supplies player, elite, and camera",
 		player != null and elite != null and rig != null)
 	if player != null and elite != null and rig != null:
 		player.global_position = elite.global_position + Vector3(0.0, 0.0, 5.5)
-		for _frame in 12:
+		for _frame in 20:
 			await process_frame
 		var occluding: Dictionary = rig.get("_occluding")
 		var strongly_cut := 0

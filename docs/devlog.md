@@ -1,5 +1,27 @@
 # Wayfinder devlog
 
+## 2026-07-20 — The hedge became a living edge
+
+Natural Hollows proved that a procedural Chart could draw authored clearing
+shapes without becoming a fixed map. The next playthrough made the remaining
+weakness plain: every shape was still outlined by the same repeated green
+piece. The room graph varied, but its edge did not yet tell the player whether
+they had entered a lookout, bower, glade, or hearth clearing.
+
+Living Edge gives each boundary cell a deterministic profile owned by the room
+beside it. Leaf banks, roots, ferns, stones, and brambles now overlap in a dark
+forest shoulder, and each room receives one seeded landmark chosen from its
+archetype. An early render was rejected for looking like bright beads around a
+board; the accepted pass lowers the contrast, quiets the center, and layers
+larger silhouettes behind the playable boundary.
+
+Nothing about the Chart promise was traded away. Seeds still remix authored
+archetypes, the map remains procedural, and the FATE camera remains continuous.
+Each compound profile is still one existing wall unit, so the same collision,
+navigation, projectile, and local cutaway truth governs the whole edge. Native
+and browser play both show a more place-like Hollow; the browser's flatter,
+brighter grade is now the clearest remaining visual weakness.
+
 ## 2026-07-20 — The chart began drawing places
 
 Readable Hollow taught nearby walls to yield, but play exposed the deeper

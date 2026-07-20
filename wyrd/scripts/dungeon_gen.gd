@@ -210,6 +210,25 @@ const FIRST_HOLLOW_ARCHETYPE_SHAPES := {
 	"hearth_court": "rounded",
 }
 
+# Spec 66 — a room archetype now owns the rhythm of its living edge as well as
+# its floor mask.  These are presentation profiles, not decor spawns: they sit
+# on the already-colliding boundary and cannot consume the room's combat stage.
+const FIRST_HOLLOW_EDGE_PROFILES := {
+	"lantern_landing": ["leaf_bank", "fern_bank", "stone_bank"],
+	"round_glade": ["leaf_bank", "fern_bank", "root_bank"],
+	"crooked_bower": ["bramble_bank", "root_bank", "leaf_bank"],
+	"long_clearing": ["root_bank", "stone_bank", "leaf_bank"],
+	"hearth_court": ["root_bank", "leaf_bank", "stone_bank"],
+	"default": ["leaf_bank", "root_bank", "stone_bank"],
+}
+const FIRST_HOLLOW_LANDMARK_PROFILES := {
+	"lantern_landing": "lantern_oak",
+	"round_glade": "old_oak",
+	"crooked_bower": "bramble_oak",
+	"long_clearing": "fallen_log",
+	"hearth_court": "hearth_oak",
+}
+
 # Spec 25 Phase 3 — authored setpieces. ASCII templates in data/rooms/;
 # one is stamped into the largest eligible room each run.
 const SETPIECES := ["vault", "shrine"]
@@ -379,6 +398,8 @@ static func _generate_one(rng: RandomNumberGenerator, cfg: Dictionary = {}) -> D
 			grid[yy][xx] = "floor"
 	_capture_room_footprints(rooms, grid)
 	var boundary_cells: Array = _boundary_cells(grid)
+	var perimeter_dressing: Array = _first_hollow_perimeter_dressing(
+		rooms, boundary_cells, grid, int(rng.seed), gen_scope)
 	var exit := {
 		"x": int(boss.x + boss.w / 2.0),
 		"y": int(boss.y + boss.h / 2.0),
@@ -443,6 +464,7 @@ static func _generate_one(rng: RandomNumberGenerator, cfg: Dictionary = {}) -> D
 		"room_depths": room_depths,
 		"decor": decor,
 		"boundary_cells": boundary_cells,
+		"perimeter_dressing": perimeter_dressing,
 		"story_clues": story_clues,
 		"campaign_clues": campaign_clues,
 		"campaign_contract": campaign_contract.duplicate(true),
@@ -1595,6 +1617,132 @@ static func _boundary_cells(grid: Array) -> Array:
 			if adjacent:
 				cells.append({"x": x, "y": y})
 	return cells
+
+
+# Spec 66 — bind each visible boundary cell to the room footprint it actually
+# touches, then select one archetype-owned landmark per room.  Cell hashing is
+# independent of iteration order, so later removal of an unrelated wall cannot
+# shuffle the rest of the edge.
+static func _first_hollow_perimeter_dressing(rooms: Array,
+		boundary_cells: Array, grid: Array, seed: int, scope: String) -> Array:
+	if scope != "snug":
+		return []
+	var footprint_owners := {}
+	for room_v in rooms:
+		var room: Dictionary = room_v
+		var room_id := int(room.get("id", -1))
+		for cell_v in room.get("footprint_cells", []):
+			var cell: Dictionary = cell_v
+			var key := "%d:%d" % [int(cell.x), int(cell.y)]
+			if not footprint_owners.has(key):
+				footprint_owners[key] = []
+			(footprint_owners[key] as Array).append(room_id)
+
+	var manifest: Array = []
+	var indices_by_room := {}
+	for cell_v in boundary_cells:
+		var cell: Dictionary = cell_v
+		var x := int(cell.x)
+		var y := int(cell.y)
+		var owner_id := _first_hollow_boundary_owner(
+			x, y, rooms, footprint_owners)
+		var archetype := ""
+		var role := "corridor"
+		if owner_id >= 0 and owner_id < rooms.size():
+			var owner: Dictionary = rooms[owner_id]
+			archetype = String(owner.get("archetype", ""))
+			role = String(owner.get("role", "default"))
+		var pool: Array = FIRST_HOLLOW_EDGE_PROFILES.get(archetype,
+			FIRST_HOLLOW_EDGE_PROFILES["default"])
+		var cell_hash := _first_hollow_cell_hash(seed, x, y, owner_id)
+		var inward := _first_hollow_inward_direction(x, y, grid)
+		var row := {
+			"x": x, "y": y,
+			"room_id": owner_id,
+			"archetype": archetype,
+			"role": role,
+			"profile": String(pool[cell_hash % pool.size()]),
+			"landmark": false,
+			"variant": (cell_hash / 17) % 4,
+			"inward_x": int(inward.x),
+			"inward_y": int(inward.y),
+		}
+		manifest.append(row)
+		if owner_id >= 0:
+			if not indices_by_room.has(owner_id):
+				indices_by_room[owner_id] = []
+			(indices_by_room[owner_id] as Array).append(manifest.size() - 1)
+
+	for room_v in rooms:
+		var room: Dictionary = room_v
+		var room_id := int(room.get("id", -1))
+		var candidates: Array = indices_by_room.get(room_id, [])
+		if candidates.is_empty():
+			continue
+		candidates.sort_custom(func(a_v, b_v) -> bool:
+			var a: Dictionary = manifest[int(a_v)]
+			var b: Dictionary = manifest[int(b_v)]
+			return _first_hollow_cell_hash(seed ^ 0x4C495645,
+				int(a.x), int(a.y), room_id) < _first_hollow_cell_hash(
+				seed ^ 0x4C495645, int(b.x), int(b.y), room_id))
+		var landmark_idx := int(candidates[0])
+		var landmark: Dictionary = manifest[landmark_idx]
+		var archetype := String(room.get("archetype", ""))
+		landmark["profile"] = String(FIRST_HOLLOW_LANDMARK_PROFILES.get(
+			archetype, "old_oak"))
+		landmark["landmark"] = true
+		manifest[landmark_idx] = landmark
+	return manifest
+
+
+static func _first_hollow_inward_direction(x: int, y: int,
+		grid: Array) -> Vector2i:
+	var sum := Vector2i.ZERO
+	for dy in range(-1, 2):
+		for dx in range(-1, 2):
+			if dx == 0 and dy == 0:
+				continue
+			var nx := x + dx
+			var ny := y + dy
+			if ny >= 0 and ny < grid.size() and nx >= 0 and nx < grid[ny].size() \
+					and String(grid[ny][nx]) == "floor":
+				sum += Vector2i(dx, dy)
+	if sum == Vector2i.ZERO:
+		return Vector2i(0, 1)
+	return Vector2i(signi(sum.x), signi(sum.y))
+
+
+static func _first_hollow_boundary_owner(x: int, y: int, rooms: Array,
+		footprint_owners: Dictionary) -> int:
+	var owners := {}
+	for dy in range(-1, 2):
+		for dx in range(-1, 2):
+			if dx == 0 and dy == 0:
+				continue
+			var key := "%d:%d" % [x + dx, y + dy]
+			for owner_v in footprint_owners.get(key, []):
+				owners[int(owner_v)] = true
+	var best_id := -1
+	var best_distance := INF
+	for owner_v in owners:
+		var owner_id := int(owner_v)
+		if owner_id < 0 or owner_id >= rooms.size():
+			continue
+		var room: Dictionary = rooms[owner_id]
+		var dx := float(x) + 0.5 - (float(room.x) + float(room.w) * 0.5)
+		var dy := float(y) + 0.5 - (float(room.y) + float(room.h) * 0.5)
+		var distance := dx * dx + dy * dy
+		if distance < best_distance or (is_equal_approx(distance, best_distance) \
+				and owner_id < best_id):
+			best_distance = distance
+			best_id = owner_id
+	return best_id
+
+
+static func _first_hollow_cell_hash(seed: int, x: int, y: int,
+		room_id: int) -> int:
+	return int((seed ^ (x * 73856093) ^ (y * 19349663) \
+		^ ((room_id + 2) * 83492791)) & 0x7FFFFFFF)
 
 # ---- Phase 1 (spec 25): room roles, themes, themed dressing ----
 # Spec 29 — every dungeon gets entrance + boss + at least MIN_COMBAT_ROOMS

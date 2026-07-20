@@ -110,6 +110,19 @@ empty diagnostic ledgers. The exact game source is pushed on
 `codex/wayfinder-director`, and companion-site version 4 is live with the new
 playable export and release evidence.
 
+## Living Edge checkpoint — shipped 2026-07-20
+
+[Spec 66](specs/66-first-hollow-living-edge.md) deepens the accepted procedural
+room grammar without replacing it. Every First Road boundary cell now resolves
+to a deterministic, archetype-owned leaf, root, fern, stone, or bramble
+profile, and every generated room owns one seeded perimeter landmark. The
+layered visual remains a child of the existing colliding wall and therefore
+lowers and restores as one unit under the continuous FATE camera. The
+ten-suite gate is green at 866 assertions; native and Web rendered evidence
+shows a denser, more asymmetrical perimeter with a protected central stage.
+The next player-visible candidate is the Web renderer's bright, flat tonal
+separation, not another parallel game system.
+
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)
 
