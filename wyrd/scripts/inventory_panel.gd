@@ -283,6 +283,58 @@ func _snap_back() -> void:
 	elif _held_source.type == "slot":
 		equipment.equip(_held_item)
 
+# Ghosted ink vignette inside an empty equipment slot — a minimal storybook
+# silhouette that reads as "this is where X goes". Pure vector, no texture
+# (gotcha-safe: no load() inside _draw).
+func _draw_slot_glyph(c: Vector2, slot: String) -> void:
+	var ink := Color(WyrdUi.INK, 0.22)
+	var gold := Color(WyrdUi.GOLD, 0.18)
+	match slot:
+		"helmet":
+			# dome (upper semicircle) + wide brim line
+			draw_arc(c - Vector2(0, 6), 15.0, -PI, 0.0, 22, ink, 2.5, true)
+			draw_line(c + Vector2(-19, 9), c + Vector2(19, 9), ink, 3.0)
+		"chest":
+			# torso trapezoid: wide at shoulders, narrower at hips
+			var pts := PackedVector2Array([
+				c + Vector2(-14, -16), c + Vector2(14, -16),
+				c + Vector2(10, 14), c + Vector2(-10, 14),
+			])
+			draw_polyline(pts + PackedVector2Array([pts[0]]), ink, 2.0, true)
+		"ring":
+			# band circle + faceted gem crest (tiny gold diamond)
+			draw_arc(c + Vector2(0, 5), 11.0, 0.0, TAU, 28, ink, 2.5, true)
+			var gpts := PackedVector2Array([
+				c + Vector2(0, -11), c + Vector2(5, -6),
+				c + Vector2(0, -1), c + Vector2(-5, -6),
+			])
+			draw_colored_polygon(gpts, gold)
+			draw_polyline(gpts + PackedVector2Array([gpts[0]]), ink, 1.5, true)
+		"weapon":
+			# bow stave (arc curving right) + string (straight line left)
+			draw_arc(c + Vector2(6, 0), 20.0, -PI * 0.45, PI * 0.45,
+				16, ink, 2.5, true)
+			draw_line(c + Vector2(-9, -16), c + Vector2(-9, 16), ink, 1.5)
+		"boots":
+			# L-boot silhouette: leg column + foot sole
+			var bpts := PackedVector2Array([
+				c + Vector2(-7, -18), c + Vector2(3, -18),
+				c + Vector2(3, 6), c + Vector2(17, 6),
+				c + Vector2(17, 14), c + Vector2(-7, 14),
+				c + Vector2(-7, -18),
+			])
+			draw_polyline(bpts, ink, 2.0, true)
+		"pickaxe":
+			# diagonal haft + angled pick head at top
+			draw_line(c + Vector2(-14, 16), c + Vector2(12, -14), ink, 2.5)
+			draw_line(c + Vector2(12, -14), c + Vector2(19, -3), ink, 2.5)
+			draw_line(c + Vector2(12, -14), c + Vector2(4, -22), ink, 2.5)
+		"axe":
+			# vertical haft + curved axe-head on the left
+			draw_line(c + Vector2(4, -19), c + Vector2(4, 19), ink, 2.5)
+			draw_arc(c + Vector2(-3, -4), 12.0, -PI * 0.6, PI * 0.6,
+				14, ink, 2.5, true)
+
 # ---- right-click quick-swap ----
 func _quick_swap_at(pos: Vector2) -> void:
 	if _held_item != null:
@@ -438,22 +490,27 @@ func _draw_slots() -> void:
 	for name in SLOT_OFFSET:
 		var top := _slot_top(String(name))
 		var r := Rect2(top, Vector2(SLOT_SIZE, SLOT_SIZE))
-		# Recessed slot well.
-		draw_rect(r, Color(0.80, 0.72, 0.58))
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(SLOT_SIZE - 1, 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(1, SLOT_SIZE - 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
 		var it = equipment.get_slot(String(name))
+		# Carved recessed well — same depth language as bench sockets and
+		# hotbar slot wells; empty slots use the darker KIT_WELL, filled
+		# slots lighten to KIT_PLATE so the item reads against a cream plate.
+		WyrdUi.draw_well(self, r, WyrdUi.KIT_PLATE if it != null else WyrdUi.KIT_WELL)
 		if it != null:
 			_draw_item_rect_scaled(it, top + Vector2(6, 6),
 				Vector2(SLOT_SIZE - 12, SLOT_SIZE - 12), false)
 		else:
-			# Empty slot — name ghosted in the well, Diablo-style.
-			draw_string(font, top + Vector2(0, SLOT_SIZE * 0.5 + 5),
-				String(name).capitalize(), HORIZONTAL_ALIGNMENT_CENTER,
-				SLOT_SIZE, 12, Color(0.50, 0.42, 0.32, 0.85))
+			# Ghosted ink vignette + Caveat hand label — the storybook
+			# slot-identity read: says what goes here without competing
+			# with a placed item.
+			var c := top + Vector2(SLOT_SIZE * 0.5, SLOT_SIZE * 0.5 - 4.0)
+			_draw_slot_glyph(c, String(name))
+			var hf: Font = WyrdUi.font_hand()
+			if hf == null:
+				hf = font
+			draw_string(hf, top + Vector2(0, SLOT_SIZE - 6),
+				String(name).replace("_", " ").capitalize(),
+				HORIZONTAL_ALIGNMENT_CENTER, SLOT_SIZE, 11,
+				Color(WyrdUi.INK, 0.50))
 
 func _draw_item_in_grid(it: Dictionary) -> void:
 	var rotated: bool = it.get("rotated", false)
