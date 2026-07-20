@@ -155,7 +155,9 @@ Bramblewood rather than boards over void. The twelve-suite gate is green at 878
 assertions, the retained corpus is 118/122 with only historical driver/timing
 exceptions, all 112 release resources audit cleanly, and the exact browser
 route completed title → town → generated First Road → return with an empty
-diagnostic ledger. The next cycle should begin by replaying the shipped build
+diagnostic ledger. Companion-site version 7 is live owner-only with the exact
+playable export, fingerprint, rendered comparison, and next-replay priority.
+The next cycle should begin by replaying the shipped build
 and deciding whether foreground canopy bulk, interior ground sameness, or room
 landmark identity is now the highest-leverage visible weakness.
 

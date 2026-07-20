@@ -40,6 +40,10 @@
   completed title → town → World → return with an empty warning/error ledger.
   Its 105,923,504-byte PCK has SHA-256
   `1b77869a37ec656e664e4d0b4212667812c0808ff47b35377b0f501472d06ce7`.
+- Companion-site version 7 ships the same playable export, Deep Wood evidence,
+  878-assertion receipt, and next-replay priority. Source commit
+  `f0c5fa39e72c4a8437303b9bdc22345ee636d37a` built, rendered, and deployed
+  owner-only at `https://wayfinder-field-journal.iamactuallyinthearen.chatgpt.site`.
 
 ## Followups
 
