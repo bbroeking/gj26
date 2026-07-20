@@ -20,9 +20,16 @@ func _ready() -> void:
 class CursorMark extends Control:
 	var _bloom := 0.0          # 0..1, fire flash
 	var _player: Node = null
+	var _hover_sage := 0.0     # 0..1, animated sage bloom over clickable controls
 
-	func _process(_delta: float) -> void:
+	func _process(delta: float) -> void:
 		queue_redraw()
+		# Smoothly animate the sage bloom in/out as the cursor crosses a button
+		# boundary — a leisurely lerp reads as the cursor "sensing" the target.
+		var hov := get_viewport().gui_get_hovered_control() \
+			if get_viewport() != null else null
+		var on_btn: bool = hov is Button or hov is LineEdit
+		_hover_sage = lerpf(_hover_sage, 1.0 if on_btn else 0.0, 14.0 * delta)
 
 	func _draw() -> void:
 		var m := get_viewport().get_mouse_position()
@@ -39,11 +46,22 @@ class CursorMark extends Control:
 		var ring_c := WyrdUi.SAGE.darkened(0.1) if on_button else WyrdUi.INK
 		var pip_c := WyrdUi.SAGE if on_button else WyrdUi.GOLD
 		var rad := 7.5 + recoil * 5.0
+		# Ambient ink halo — a very soft dark outer circle so the cursor reads
+		# cleanly against both parchment and deep-shadow backgrounds.
+		draw_circle(m, rad + 10.0, Color(WyrdUi.INK, 0.055))
+		# Sage bloom — swells in as the cursor enters a clickable control,
+		# giving a warm confirmation before the click. Layered under the fire
+		# glow so it never fights the recoil flash.
+		if _hover_sage > 0.004:
+			draw_circle(m, rad + 6.5, Color(WyrdUi.SAGE, 0.17 * _hover_sage))
 		# Soft glow (blooms on fire).
 		draw_circle(m, rad + 5.0, Color(WyrdUi.GOLD, 0.10 + recoil * 0.22))
 		# Ink ring + cream inner lip.
 		draw_arc(m, rad, 0.0, TAU, 28, ring_c, 2.2, true)
 		draw_arc(m, rad - 2.0, 0.0, TAU, 24, Color(WyrdUi.CREAM, 0.7), 1.0, true)
+		# Secondary outer lip — a faint cream arc giving the ring a watchglass
+		# depth: frame-within-frame echoing the kit's recessed-well language.
+		draw_arc(m, rad + 3.8, 0.0, TAU, 20, Color(WyrdUi.CREAM, 0.18), 1.0, true)
 		# Four short ticks (NE/NW/SE/SW so they never read as a crosshair).
 		for i in 4:
 			var a := PI * 0.25 + float(i) * PI * 0.5
