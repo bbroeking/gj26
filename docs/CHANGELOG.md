@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.8-deep-wood — 2026-07-20
+
+- Kept procedural Chart graphs, randomized authored clearing archetypes, and
+  the continuous FATE camera while embedding First Road rooms in deeper forest.
+- Added one presentation-only forest bed beneath the generated grid and
+  deepened each existing cutaway-owned rear foliage shoulder into two seeded
+  tiers without adding collision, navigation, interaction, or route authority.
+- Reduced near-black pixels in the rendered Web playfield from `0.2684` to
+  `0.0000`, matching the approved First Hollow concept's continuous surround.
+- Verified the complete layered wall still lowers and restores under the local
+  cutaway and keeps its scan below the existing 1.5 ms budget.
+- Passed 878 canonical native assertions, 118/122 retained direct entrypoints
+  with only historical driver/timing exceptions, all 112 release resources,
+  and a clean browser title → town → generated First Road → return route.
+
 ## 0.1.7-shaded-road — 2026-07-20
 
 - Preserved the accepted native art direction while correcting the Web

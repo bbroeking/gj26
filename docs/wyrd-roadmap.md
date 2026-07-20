@@ -142,6 +142,23 @@ next visual comparison should address the remaining black-void/isolated-ring
 read around rooms, deepening forest continuity without restoring obstructive
 wall fields or changing the continuous FATE camera.
 
+## Deep Wood checkpoint — shipped 2026-07-20
+
+[Spec 68](specs/68-first-hollow-forest-continuity.md) resolves the isolated-ring
+read exposed by Shaded Road. Procedural First Road clearings now sit over one
+quiet, non-authoritative forest bed, and each existing cutaway-owned rear
+foliage shoulder reaches into two seeded depth tiers. The authored archetypes,
+Chart graph, collision, navigation, encounters, and continuous FATE camera are
+unchanged. In the matched Web crop, near-black coverage fell from `0.2684` to
+`0.0000`; native and browser renders now read as clearings embedded in
+Bramblewood rather than boards over void. The twelve-suite gate is green at 878
+assertions, the retained corpus is 118/122 with only historical driver/timing
+exceptions, all 112 release resources audit cleanly, and the exact browser
+route completed title → town → generated First Road → return with an empty
+diagnostic ledger. The next cycle should begin by replaying the shipped build
+and deciding whether foreground canopy bulk, interior ground sameness, or room
+landmark identity is now the highest-leverage visible weakness.
+
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)
 

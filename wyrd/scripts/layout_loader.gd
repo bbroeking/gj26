@@ -655,6 +655,7 @@ func _ready() -> void:
 	_resolve_biome()                        # sets _biome_id
 	_floor_mat = _make_floor_material(_biome_id)   # procedural toon ground (spec 50)
 	_read_chart_modifiers()
+	_build_first_hollow_forest_underlay(layout.grid)
 	_build_grid(layout.grid, layout.get("perimeter_dressing", [])) # walls only now
 	_build_floor_mesh(layout.grid)          # one merged seamless floor surface
 	_build_bog_reflection(layout.grid)      # interior reflection for the wet bog pools
@@ -1228,6 +1229,33 @@ func _build_grid(grid: Array, perimeter_dressing: Array = []) -> void:
 				_place_wall(x, y, grid,
 					perimeter_by_cell.get("%d:%d" % [x, y], {}))
 
+
+# Spec 68 — one presentation-only forest bed beneath the First Road. The
+# playable merged floor remains the only visible surface at y=0 and the only
+# source of collision/nav truth; this lower matte merely prevents gaps beyond
+# the authored boundary from falling directly to the black clear color.
+func _build_first_hollow_forest_underlay(grid: Array) -> void:
+	if _scope != "snug" or grid.is_empty() or (grid[0] as Array).is_empty():
+		return
+	var width := float((grid[0] as Array).size())
+	var depth := float(grid.size())
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(width + 24.0, depth + 24.0)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.055, 0.105, 0.050)
+	mat.roughness = 1.0
+	mat.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
+	mat.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+	var underlay := MeshInstance3D.new()
+	underlay.name = "FirstHollowForestUnderlay"
+	underlay.mesh = plane
+	underlay.material_override = mat
+	underlay.position = Vector3(width * 0.5, -0.22, depth * 0.5)
+	underlay.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	underlay.set_meta("presentation_only", true)
+	underlay.set_meta("grid_size", Vector2(width, depth))
+	add_child(underlay)
+
 func _is_floor_boundary(grid: Array, x: int, y: int) -> bool:
 	for dy in range(-1, 2):
 		for dx in range(-1, 2):
@@ -1445,19 +1473,30 @@ func _add_first_hollow_bank_base(visual: Node3D,
 
 func _add_first_hollow_backdrop(visual: Node3D,
 		local_rng: RandomNumberGenerator, outward: Vector3) -> void:
-	# A dark, non-colliding rear shoulder extends into the void behind the real
-	# boundary. It supplies the concept's forest depth without rebuilding the
-	# deleted exterior wall field. The whole layer still lowers with WallMesh.
+	# A dark, non-colliding two-tier shoulder extends behind the real boundary.
+	# It supplies the concept's continuous forest depth without rebuilding the
+	# deleted exterior wall field. Both tiers still lower with WallMesh.
 	var tangent := Vector3(-outward.z, 0.0, outward.x)
 	for i in 2:
-		var side := -0.24 if i == 0 else 0.24
-		_first_hollow_sphere(visual, "RearFoliage%d" % i,
-			outward * local_rng.randf_range(0.42, 0.62) + tangent * side \
-				+ Vector3(0.0, -0.48 + float(i) * 0.08, 0.0),
-			0.55, local_rng.randf_range(1.20, 1.48),
-			Color(0.10 + float(i) * 0.025, 0.21 + float(i) * 0.025, 0.075),
-			Vector3(local_rng.randf_range(1.05, 1.32), 1.0,
-				local_rng.randf_range(1.05, 1.30)))
+		var far_tier := i == 1
+		var tier_depth := 1.72 if far_tier else 0.92
+		var side := (0.38 if far_tier else -0.32) \
+			+ local_rng.randf_range(-0.16, 0.16)
+		var color := Color(0.055, 0.135, 0.040) if far_tier \
+			else Color(0.085, 0.185, 0.060)
+		var mass := _first_hollow_sphere(visual, "RearFoliage%d" % i,
+			outward * (tier_depth + local_rng.randf_range(-0.10, 0.14)) \
+				+ tangent * side \
+				+ Vector3(0.0, local_rng.randf_range(-0.66, -0.46), 0.0),
+			0.82 if far_tier else 0.70,
+			local_rng.randf_range(1.82, 2.18) if far_tier \
+				else local_rng.randf_range(1.48, 1.82),
+			color,
+			Vector3(local_rng.randf_range(1.12, 1.42), 1.0,
+				local_rng.randf_range(1.08, 1.38)))
+		mass.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mass.set_meta("presentation_only", true)
+		mass.set_meta("depth_tier", i)
 
 
 func _add_first_hollow_leaves(visual: Node3D,

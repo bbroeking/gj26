@@ -1,6 +1,6 @@
 # Wayfinder test manifest
 
-Updated 2026-07-20 for `0.1.7-shaded-road`.
+Updated 2026-07-20 for `0.1.8-deep-wood`.
 
 ## Canonical checkpoint gate
 
@@ -19,7 +19,8 @@ Run every entry with `WYRD_NO_SAVE=1 godot --headless --path wyrd --script res:/
 | `test_first_hollow_room_grammar.gd` | 8 | Archetype determinism, variation, boundary truth, and combat apertures |
 | `test_first_hollow_living_edge.gd` | 9 | Profile ownership, landmark count, deterministic remixing, and production realization |
 | `test_web_tonal_separation.gd` | 4 | Web-only environment grade, native no-op, and forced production mutation seam |
-| **Total** | **870** | **Required before a checkpoint is accepted** |
+| `test_first_hollow_forest_continuity.gd` | 8 | Forest-bed coverage, cutaway ownership, depth, and non-authority |
+| **Total** | **878** | **Required before a checkpoint is accepted** |
 
 ## Exported-browser gate
 
@@ -51,8 +52,17 @@ comparison, a native before/after no-op check, and a real exported title → tow
 accepted export loaded all 112 audited release resources from a
 105,922,096-byte PCK.
 
-The persistence-disabled retained corpus currently contains 121 direct
-entrypoints: 116 pass. Its driver-required and historical timing exceptions
+The `0.1.8-deep-wood` proof additionally requires matched native/Web renders
+beside the approved First Hollow concept, no physics or navigation authority in
+the exterior depth, complete-profile cutaway restoration, and Web near-black
+coverage no greater than `0.08`. The accepted render moved from `0.2684` to
+`0.0000`; the release PCK loaded all 112 audited resources and the clean compact
+browser route produced no warning/error diagnostics. The exact PCK is
+105,923,504 bytes with SHA-256
+`1b77869a37ec656e664e4d0b4212667812c0808ff47b35377b0f501472d06ce7`.
+
+The persistence-disabled retained corpus currently contains 122 direct
+entrypoints: 118 pass. Its driver-required and historical timing exceptions
 remain; the rendering checkpoint introduced no new failure. The production
 dungeon, transition, boot, standalone movement, room, cutaway, and tonal-grade
 gates remain green.

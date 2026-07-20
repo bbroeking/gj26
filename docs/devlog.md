@@ -1,5 +1,26 @@
 # Wayfinder devlog
 
+## 2026-07-20 — The road entered the deep wood
+
+Shaded Road made the browser renderer honest enough to expose the next spatial
+problem. The living edge was richer and less grid-like, but broad black wedges
+still began immediately behind it. The clearing read as a decorated board
+floating in darkness rather than one room along a road through Bramblewood.
+
+Deep Wood keeps the accepted procedural structure. One quiet forest bed now
+sits below the generated grid, while the two seeded rear foliage masses already
+owned by every living wall reach farther outward with different height, color,
+and lateral rhythm. They remain children of the same `WallMesh`, so the local
+cutaway lowers and restores the whole obstruction unit. The new depth owns no
+collision, navigation, interaction, projectile, encounter, or reward truth.
+
+The browser comparison made the decision measurable: near-black pixels in the
+gameplay crop fell from `0.2684` to `0.0000`, beside an approved concept that is
+also effectively zero. Native and Web now read as clearings embedded in deep
+forest, while the brighter foreground wall still communicates where play ends.
+The exact exported journey completed title, town, generated First Road, and
+return without a warning or error.
+
 ## 2026-07-20 — The browser road found its shade
 
 Living Edge made First Road rooms denser and more place-like, but the exact Web
