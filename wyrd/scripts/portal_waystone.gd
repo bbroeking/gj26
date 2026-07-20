@@ -4,7 +4,7 @@ extends Interactable
 # Wyrd — the town Waystone. E opens the chart-socket panel; choosing a
 # chart crosses into its dungeon. The cairn GLB + a cool standing glow.
 
-const CAIRN_GLB := preload("res://models/waypoint_cairn.glb")
+const CAIRN_GLB := preload("res://models/waypoint_cairn_v2.glb")
 const WaystonePanelScript = preload("res://scripts/ui/waystone_panel.gd")
 
 func get_prompt_text() -> String:
@@ -20,6 +20,7 @@ func get_prompt_position() -> Vector3:
 	return Vector3(0.0, 2.6, 0.0)
 
 func _ready_interactable() -> void:
+	add_to_group("tutorial_waystone")
 	var cairn := CAIRN_GLB.instantiate()
 	add_child(cairn)
 	GlbFit.normalize_height(cairn, 2.4)

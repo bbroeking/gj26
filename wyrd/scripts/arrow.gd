@@ -52,6 +52,9 @@ const POWER_GROWTH_SEC := 0.50
 var damage: int = DAMAGE_BASE
 var crit_chance: float = -1.0
 var crit_mult: float = -1.0
+# Wayweaver fan echoes are deliberately modest: even Combatant's normal
+# super-crit roll is bypassed, while ordinary arrows retain the default.
+var can_crit := true
 # Spec 30 — which skill spawned this arrow. Affects visual scale.
 # "basic" / "power" / "multi"; the snare skill doesn't spawn arrows.
 var skill_type: String = "basic"
@@ -232,7 +235,13 @@ func _on_area_entered(area: Area3D) -> void:
 			if execute_mult > 1.0 and float(c.get("hp_max")) > 0.0 \
 					and float(c.get("hp")) / float(c.get("hp_max")) < execute_below:
 				dealt = int(round(float(damage) * execute_mult))
+			if not can_crit:
+				# Keep the marker scoped to this synchronous hit so boss subclasses
+				# still receive their normal floor/phase override through take_damage.
+				c.set_meta("wayweaver_no_crit", true)
 			c.take_damage(dealt, fwd, crit_chance, crit_mult)
+			if not can_crit and c.has_meta("wayweaver_no_crit"):
+				c.remove_meta("wayweaver_no_crit")
 			# C7 — a Mercy Shot finisher (execute fired AND it killed) gets a
 			# distinct silver-white kill burst, not the warm-gold default.
 			if dealt > damage and bool(c.get("dead")):
@@ -244,6 +253,10 @@ func _on_area_entered(area: Area3D) -> void:
 			for e in effects:
 				if e != null:
 					e.apply(c)
+			# Tutorial/practice targets can observe WHICH projectile Skill landed
+			# without changing Combatant's general damage signature.
+			if c.has_method("on_projectile_skill_hit"):
+				c.call_deferred("on_projectile_skill_hit", skill_type)
 			# Spec-34 cookbook: PowerShot lands with extra weight. The
 			# combatant's HitFeedback already fires tier-scaled freeze +
 			# shake; here we ADD on top so even a non-crit PowerShot has

@@ -1,1029 +1,517 @@
 extends Control
 
-# Spec 27c/d — Tetris inventory panel + equipment slots.
-# 5×6 grid on the right, 5 equipment slots stacked on the left. Drag/snap/
-# rotate (R) within the grid; drag grid ↔ slot to (un)equip; right-click
-# an item or slot to quick-(un)equip. Toggled by the player (I key).
+# Spec 59 — Field Journal Pack. The previous 1,244-line custom canvas manually
+# drew tabs, rows, scroll masks, tooltips, and hit rectangles. This replacement
+# keeps the Inventory/Equipment data contracts and public open methods while
+# using semantic Controls, Containers, focus, and real scrolling.
 
-const Affixes = preload("res://data/affixes.gd")  # spec 27f tooltip formatter
+const Affixes = preload("res://data/affixes.gd")
 const ChartsData = preload("res://data/charts.gd")
 const GatherDefs = preload("res://data/gather.gd")
 const ItemsData = preload("res://data/items.gd")
+const Progression = preload("res://data/progression.gd")
+const Tokens = preload("res://scripts/ui/foundation/ui_tokens.gd")
+const FocusPointer = preload("res://scripts/ui/components/focus_pointer.gd")
+const JournalRow = preload("res://scripts/ui/components/journal_list_row.gd")
+const FIELD_THEME := preload("res://themes/wayfinder_theme.tres")
 
-const COLS := 5
-const ROWS := 6
-const CELL := 64
-const PAD := 3
-const SLOT_SIZE := 72
-const SLOT_GAP := 4
-
-# Wyrd Diablo-style rebuild — the pack is a framed window docked right:
-# paper-doll equipment up top (helm over chest, weapon/ring at the sides,
-# boots below), the Tetris grid beneath, painted item icons with rarity
-# glows. All hit-testing/interaction logic is unchanged.
-var grid_origin := Vector2(940, 330)
-var doll_origin := Vector2(940, 60)         # paper-doll anchor (recomputed)
-
-# Slot offsets relative to doll_origin — a body column beside the grid
-# (PoE layout: paper-doll left, grid right) so the window fits a 648-high
-# viewport. Helmet over chest over boots; weapon and ring at the side.
-const SLOT_OFFSET := {
-	"helmet": Vector2(88, 0),
-	"ring": Vector2(6, 14),
-	"weapon": Vector2(6, 110),
-	"chest": Vector2(88, 88),
-	"boots": Vector2(88, 176),
-	# Spec 38 — the trade-tool row, grouped under the body column.
-	"pickaxe": Vector2(6, 268),
-	"axe": Vector2(88, 268),
-}
-
-# Painted item icons live in the item catalogue (ItemsData.ICON_TEX) so the
-# pack and the vendor counter draw from one map. Missing kinds fall back to
-# the flat icon_color plate.
-
-# Live pack row count (grows with level); falls back to the base ROWS const
-# before the Inventory is bound.
-func _rows() -> int:
-	return inventory.rows if inventory != null else ROWS
-
-func _win_rect() -> Rect2:
-	# 116px header band fits the title + tab row above the grid; 64px
-	# footer fits the keys hint.
-	return Rect2(grid_origin - Vector2(272, 124),
-		Vector2(COLS * CELL + 272 + 52, _rows() * CELL + 124 + 96))
-
-func _tab_rect(i: int) -> Rect2:
-	var win := _win_rect()
-	# Spec 40 — four equal tabs spanning the content width, butt-joined.
-	var inset := 52.0
-	var tw := (win.size.x - inset * 2.0) / 4.0
-	return Rect2(win.position + Vector2(inset + i * tw, 72), Vector2(tw, 32))
-
-func _update_layout() -> void:
-	var vp := get_viewport_rect().size
-	var grid_w := COLS * CELL
-	grid_origin = Vector2(vp.x - grid_w - 70.0,
-		clampf(vp.y * 0.5 - (_rows() * CELL) * 0.5 + 30.0, 90.0, vp.y))
-	doll_origin = grid_origin + Vector2(-216.0, 40.0)
+const TABS := ["Gear", "Satchel", "Charts", "Trades"]
+const EQUIP_ORDER := ["helmet", "chest", "weapon", "ring", "boots", "pickaxe", "axe"]
 
 var inventory: Inventory
 var equipment: Equipment
-# Wyrd — one window, no split: Gear / Satchel / Charts live as tabs
-# (playtest ruling 2026-06-10, mock: docs/ui-refs/mj_pack_tabbed.png).
-const TABS := ["Gear", "Satchel", "Charts", "Trades"]
-const TAB_ICONS := [
-	"res://assets/ui/icons/gear.png",
-	"res://assets/ui/icons/satchel.png",
-	"res://assets/ui/icons/chart.png",
-	"res://assets/ui/icons/trades.png",
-]
+
 var _tab := 0
+var _modal_on := false
+var _shell: PanelContainer
+var _title: Label
+var _tabs: HBoxContainer
+var _tab_buttons: Array[Button] = []
+var _content: MarginContainer
+var _footer: Label
 
-# Drag state. _held_source describes where the held item came from:
-#   {"type": "grid", "pos": Vector2i, "rotated": bool}
-#   {"type": "slot", "name": "weapon"}
-var _held_item = null
-var _held_source: Dictionary = {}
-var _held_rotated: bool
-var _cursor_cell: Vector2i = Vector2i(-1, -1)
-var _cursor_slot: String = ""
-var _cursor_screen: Vector2 = Vector2.ZERO
-
-# Rarity colors route through WyrdUi.RARITY — one ramp for the whole game
-# (pack / loot beam / vendor / tooltip). No local override.
-
-var _tex_cache := {}
 
 func _ready() -> void:
 	visible = false
-	# Process while the tree is paused — opening the pack pauses the world
-	# (modal_opened), and the panel still needs input to take Esc/clicks.
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	mouse_filter = MOUSE_FILTER_IGNORE
+	mouse_filter = Control.MOUSE_FILTER_STOP
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	# Preload every texture _draw needs — a CompressedTexture2D whose first
-	# load happens inside _draw renders as a white rect (macOS, Godot 4.6).
-	for path in ItemsData.ICON_TEX.values():
-		if ResourceLoader.exists(String(path)):
-			_tex_cache[String(path)] = load(String(path))
-	for path in TAB_ICONS:
-		if ResourceLoader.exists(String(path)):
-			_tex_cache[String(path)] = load(String(path))
-	if ResourceLoader.exists(WyrdUi.PANEL_TEX_PATH):
-		_tex_cache[WyrdUi.PANEL_TEX_PATH] = load(WyrdUi.PANEL_TEX_PATH)
-	# Maple frame texture — preload so panel_stylebox()'s load() inside _draw hits
-	# the cache (never a first-load, which white-rects; memory gotcha).
-	if ResourceLoader.exists(WyrdUi.MAPLE_PANEL):
-		_tex_cache[WyrdUi.MAPLE_PANEL] = load(WyrdUi.MAPLE_PANEL)
+	theme = FIELD_THEME
+	_build_ui()
+	get_viewport().size_changed.connect(_layout_shell)
+	_layout_shell()
 
-func _cached_tex(path: String) -> Texture2D:
-	return _tex_cache.get(path, null)
 
-func set_inventory(inv: Inventory) -> void:
-	inventory = inv
-	queue_redraw()
+func set_inventory(value: Inventory) -> void:
+	inventory = value
+	_refresh()
 
-func set_equipment(eq: Equipment) -> void:
-	equipment = eq
-	queue_redraw()
+
+func set_equipment(value: Equipment) -> void:
+	if equipment != null and equipment.changed.is_connected(_on_equipment_changed):
+		equipment.changed.disconnect(_on_equipment_changed)
+	equipment = value
+	if equipment != null and not equipment.changed.is_connected(_on_equipment_changed):
+		equipment.changed.connect(_on_equipment_changed)
+	_refresh()
+
 
 func toggle() -> void:
 	open_tab(0)
 
-# Open on a tab; if already open on that tab, close (so I and M both
-# toggle naturally).
-func open_tab(t: int) -> void:
-	if visible and _tab == t:
+
+func open_tab(next_tab: int) -> void:
+	var safe_tab := clampi(next_tab, 0, TABS.size() - 1)
+	if visible and _tab == safe_tab:
 		_set_open(false)
 	else:
-		_tab = t
+		_tab = safe_tab
 		_set_open(true)
-		_update_layout()
-		queue_redraw()
-	# Spec 27f — UI open/close SFX (no-op until the file is generated).
-	var sfx := get_node_or_null("/root/Sfx")
-	if sfx != null:
-		sfx.play("inv_open")
+		_refresh()
+		_focus_selected_tab.call_deferred()
 
-# Single source of truth for open/closed: drives visibility AND registers the
-# pack as a modal so the world pauses (solo) and Esc routes to us, not the
-# pause menu. _modal_on guards against double counting on tab-switches.
-var _modal_on := false
 
-func _set_open(on: bool) -> void:
-	if on == _modal_on:
-		visible = on
+func _set_open(opened: bool) -> void:
+	if opened == _modal_on:
+		visible = opened
 		return
 	var game := get_node_or_null("/root/Game")
-	if on:
+	if opened:
 		if game != null:
 			game.modal_opened()
 	else:
-		# Return a dragged item to where it came from before we close.
-		if _held_item != null:
-			_snap_back()
-			_held_item = null
 		if game != null:
 			game.modal_closed()
-	_modal_on = on
-	visible = on
+	_modal_on = opened
+	visible = opened
+
 
 func _close_pack() -> void:
 	if visible:
 		_set_open(false)
-		queue_redraw()
 
-func _input(event: InputEvent) -> void:
+
+func _unhandled_input(event: InputEvent) -> void:
 	if not visible:
 		return
-	# Esc dismisses the pack (and is consumed so it never reaches the player's
-	# pause-menu handler — the old bug stacked Pause on top of the open pack).
 	if event.is_action_pressed("ui_cancel"):
 		_close_pack()
 		get_viewport().set_input_as_handled()
-		return
-	if event is InputEventKey and event.pressed:
-		if event.keycode == KEY_R and _held_item != null:
-			_held_rotated = not _held_rotated
-			queue_redraw()
-	elif event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			if event.pressed:
-				# Click on the dim area outside the window closes the pack —
-				# unless mid-drag, where the click is a place/drop action.
-				if _held_item == null and not _win_rect().has_point(event.position):
-					_close_pack()
-					get_viewport().set_input_as_handled()
-					return
-				for i in TABS.size():
-					if _tab_rect(i).has_point(event.position):
-						_tab = i
-						queue_redraw()
-						return
-				if _tab == 0:
-					_try_pick_up_at(event.position)
-			elif _tab == 0:
-				_try_drop_at(event.position)
-		elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed \
-				and _tab == 0:
-			_quick_swap_at(event.position)
-		# Spec 45 followup — the list pages scroll on the wheel; eat the
-		# event so the camera rig doesn't zoom behind the open pack.
-		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed \
-				and _tab != 0:
-			_scroll_tab(SCROLL_STEP)
-			get_viewport().set_input_as_handled()
-		elif event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed \
-				and _tab != 0:
-			_scroll_tab(-SCROLL_STEP)
-			get_viewport().set_input_as_handled()
-	elif event is InputEventPanGesture and _tab != 0:
-		# macOS trackpads pan instead of clicking a wheel.
-		_scroll_tab((event as InputEventPanGesture).delta.y * 14.0)
-		get_viewport().set_input_as_handled()
-	elif event is InputEventMouseMotion:
-		_cursor_screen = event.position
-		_cursor_cell = _cell_at(event.position)
-		_cursor_slot = _slot_at(event.position)
-		queue_redraw()         # spec 27f — tooltip + ghost both follow the cursor
 
-# ---- hit-testing helpers ----
-func _cell_at(screen_pos: Vector2) -> Vector2i:
-	var local := screen_pos - grid_origin
-	if local.x < 0 or local.y < 0 \
-			or local.x >= COLS * CELL or local.y >= _rows() * CELL:
-		return Vector2i(-1, -1)
-	return Vector2i(int(local.x / CELL), int(local.y / CELL))
 
-func _slot_at(screen_pos: Vector2) -> String:
-	for name in SLOT_OFFSET:
-		var r := Rect2(_slot_top(String(name)), Vector2(SLOT_SIZE, SLOT_SIZE))
-		if r.has_point(screen_pos):
-			return String(name)
-	return ""
+func _build_ui() -> void:
+	var backdrop := ColorRect.new()
+	backdrop.name = "PackBackdrop"
+	backdrop.color = Tokens.SCRIM
+	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	backdrop.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.pressed \
+				and event.button_index == MOUSE_BUTTON_LEFT:
+			_close_pack())
+	add_child(backdrop)
 
-func _slot_top(slot_name: String) -> Vector2:
-	return doll_origin + (SLOT_OFFSET.get(slot_name, Vector2.ZERO) as Vector2)
+	_shell = PanelContainer.new()
+	_shell.name = "PackShell"
+	_shell.theme_type_variation = &"JournalFrameContainer"
+	_shell.anchor_left = 0.5
+	_shell.anchor_right = 0.5
+	_shell.anchor_top = 0.5
+	_shell.anchor_bottom = 0.5
+	add_child(_shell)
 
-# ---- click / drag ----
-func _try_pick_up_at(pos: Vector2) -> void:
-	# Slot click first (slots sit left of the grid, no overlap, but check
-	# slots before grid for clarity).
-	var slot := _slot_at(pos)
-	if slot != "" and equipment != null:
-		var it = equipment.get_slot(slot)
-		if it != null:
-			_held_item = it
-			_held_source = {"type": "slot", "name": slot}
-			_held_rotated = it.get("rotated", false)
-			equipment.unequip(slot)
-			queue_redraw()
-			return
-	if inventory == null:
-		return
-	var cell := _cell_at(pos)
-	if cell.x < 0:
-		return
-	var item = inventory.cells[cell.y][cell.x]
-	if item == null:
-		return
-	_held_item = item
-	_held_source = {"type": "grid", "pos": item.pos,
-		"rotated": item.get("rotated", false)}
-	_held_rotated = item.get("rotated", false)
-	inventory.remove(item)
-	queue_redraw()
+	var paper := PanelContainer.new()
+	paper.theme_type_variation = &"PaperSurface"
+	_shell.add_child(paper)
+	var page := VBoxContainer.new()
+	page.add_theme_constant_override("separation", Tokens.SPACE_3)
+	paper.add_child(page)
 
-func _try_drop_at(pos: Vector2) -> void:
-	if _held_item == null:
-		return
-	var slot := _slot_at(pos)
-	if slot != "":
-		_drop_on_slot(slot)
-	else:
-		var cell := _cell_at(pos)
-		_drop_on_grid(cell)
-	_held_item = null
-	_held_source = {}
-	_cursor_cell = Vector2i(-1, -1)
-	queue_redraw()
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", Tokens.SPACE_3)
+	page.add_child(header)
+	_title = Label.new()
+	_title.name = "PackTitle"
+	_title.text = "Adventurer's Pack"
+	_title.theme_type_variation = &"PageTitle"
+	_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(_title)
+	var close := Button.new()
+	close.name = "CloseButton"
+	close.text = "Close  ×"
+	close.theme_type_variation = &"SecondaryButton"
+	close.custom_minimum_size = Vector2(112, Tokens.HIT_TARGET)
+	close.pressed.connect(_close_pack)
+	header.add_child(close)
 
-func _drop_on_slot(slot: String) -> void:
-	# Reject if categories don't match.
-	if not equipment.can_equip(_held_item) \
-			or String(_held_item.category) != slot:
-		_snap_back()
-		return
-	# Pre-check the displacement — if a swap would leave the previous gear
-	# homeless, abort and snap back.
-	var prev = equipment.get_slot(slot)
-	if prev != null:
-		var fit := inventory.find_first_fit(prev)
-		if fit.is_empty():
-			_snap_back()
-			return
-		equipment.equip(_held_item)
-		inventory.try_place(prev, fit.pos, fit.rotated)
-	else:
-		equipment.equip(_held_item)
+	_tabs = HBoxContainer.new()
+	_tabs.name = "PackTabs"
+	_tabs.add_theme_constant_override("separation", Tokens.SPACE_2)
+	page.add_child(_tabs)
+	var group := ButtonGroup.new()
+	for i in TABS.size():
+		var button := Button.new()
+		button.name = "%sTab" % TABS[i]
+		button.text = TABS[i]
+		button.theme_type_variation = &"TabButton"
+		button.toggle_mode = true
+		button.button_group = group
+		button.custom_minimum_size = Vector2(0, Tokens.HIT_TARGET)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.pressed.connect(_select_tab.bind(i))
+		_tabs.add_child(button)
+		_tab_buttons.append(button)
 
-func _drop_on_grid(cell: Vector2i) -> void:
-	if cell.x < 0:
-		_snap_back()
-		return
-	var placed := inventory.try_place(_held_item, cell, _held_rotated)
-	if not placed:
-		_snap_back()
+	var divider := HSeparator.new()
+	page.add_child(divider)
+	_content = MarginContainer.new()
+	_content.name = "PackContent"
+	_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_child(_content)
 
-func _snap_back() -> void:
-	if _held_source.is_empty():
-		return
-	if _held_source.type == "grid":
-		inventory.try_place(_held_item, _held_source.pos, _held_source.rotated)
-	elif _held_source.type == "slot":
-		equipment.equip(_held_item)
+	var footer_row := HBoxContainer.new()
+	page.add_child(footer_row)
+	_footer = Label.new()
+	_footer.name = "PackFooter"
+	_footer.theme_type_variation = &"Caption"
+	_footer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	footer_row.add_child(_footer)
+	var hint := Label.new()
+	hint.text = "Esc / I — close"
+	hint.theme_type_variation = &"Caption"
+	footer_row.add_child(hint)
 
-# ---- right-click quick-swap ----
-func _quick_swap_at(pos: Vector2) -> void:
-	if _held_item != null:
-		return                              # ignore while dragging
-	var slot := _slot_at(pos)
-	if slot != "" and equipment != null:
-		_quick_unequip(slot)
+	var focus_pointer := FocusPointer.new()
+	focus_pointer.name = "PackFocusPointer"
+	add_child(focus_pointer)
+
+
+func _layout_shell() -> void:
+	if _shell == null:
 		return
-	if inventory == null:
+	var max_size := Tokens.modal_max_size(get_viewport_rect().size)
+	var width := minf(1120.0, max_size.x)
+	var height := minf(640.0, max_size.y)
+	_shell.offset_left = -width * 0.5
+	_shell.offset_right = width * 0.5
+	_shell.offset_top = -height * 0.5
+	_shell.offset_bottom = height * 0.5
+
+
+func _select_tab(index: int) -> void:
+	_tab = clampi(index, 0, TABS.size() - 1)
+	_refresh()
+
+
+func _focus_selected_tab() -> void:
+	if _tab >= 0 and _tab < _tab_buttons.size():
+		_tab_buttons[_tab].grab_focus()
+
+
+func _refresh() -> void:
+	if _content == null:
 		return
-	var cell := _cell_at(pos)
-	if cell.x < 0:
+	for child in _content.get_children():
+		child.free()
+	for i in _tab_buttons.size():
+		_tab_buttons[i].button_pressed = i == _tab
+	match _tab:
+		0: _build_gear_page()
+		1: _build_satchel_page()
+		2: _build_charts_page()
+		3: _build_trades_page()
+	var game := get_node_or_null("/root/Game")
+	_footer.text = "%d gold" % int(game.gold) if game != null else ""
+
+
+func _build_gear_page() -> void:
+	var columns := HBoxContainer.new()
+	columns.add_theme_constant_override("separation", Tokens.SPACE_4)
+	_content.add_child(columns)
+
+	var equipped_shell := PanelContainer.new()
+	equipped_shell.theme_type_variation = &"PaperRaised"
+	equipped_shell.custom_minimum_size.x = 330
+	equipped_shell.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	columns.add_child(equipped_shell)
+	var equipped_col := VBoxContainer.new()
+	equipped_col.add_theme_constant_override("separation", Tokens.SPACE_2)
+	equipped_shell.add_child(equipped_col)
+	equipped_col.add_child(_section_title("Equipped"))
+	var equipped_scroll := ScrollContainer.new()
+	equipped_scroll.name = "EquipmentScroll"
+	equipped_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	equipped_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	equipped_col.add_child(equipped_scroll)
+	var equipped_list := VBoxContainer.new()
+	equipped_list.add_theme_constant_override("separation", Tokens.SPACE_2)
+	equipped_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	equipped_scroll.add_child(equipped_list)
+	for slot in EQUIP_ORDER:
+		var item = equipment.get_slot(slot) if equipment != null else null
+		var row := JournalRow.new()
+		row.name = "%sEquipmentSlot" % String(slot).capitalize()
+		row.setup({
+			"title": String(slot).capitalize(),
+			"subtitle": String(item.get("name", "")) if item != null else "Empty",
+			"trailing": "Unequip" if item != null else "",
+			"trailing_color": Tokens.SAGE.darkened(0.2),
+			"icon": _item_icon(item) if item != null else null,
+			"state": JournalRow.RowState.DISABLED if item == null \
+				else JournalRow.RowState.NORMAL,
+			"tooltip": "Unequip %s" % String(item.get("name", "")) \
+				if item != null else "No %s equipped" % slot,
+		})
+		if item != null:
+			row.pressed.connect(_quick_unequip.bind(String(slot)))
+		equipped_list.add_child(row)
+
+	var pack_shell := PanelContainer.new()
+	pack_shell.theme_type_variation = &"PaperRaised"
+	pack_shell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pack_shell.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	columns.add_child(pack_shell)
+	var pack_col := VBoxContainer.new()
+	pack_col.add_theme_constant_override("separation", Tokens.SPACE_2)
+	pack_shell.add_child(pack_col)
+	var count := inventory.items.size() if inventory != null else 0
+	pack_col.add_child(_section_title("Backpack · %d items" % count))
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	pack_col.add_child(scroll)
+	var list := VBoxContainer.new()
+	list.add_theme_constant_override("separation", Tokens.SPACE_2)
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(list)
+	if inventory == null or inventory.items.is_empty():
+		list.add_child(_empty_state("Your pack is empty.",
+			"Gear and tools you find will wait here."))
 		return
-	var item = inventory.cells[cell.y][cell.x]
-	if item != null:
-		_quick_equip(item)
+	for item in inventory.items:
+		var row := JournalRow.new()
+		row.setup({
+			"title": String(item.get("name", "Item")),
+			"subtitle": "%s %s" % [String(item.get("rarity", "normal")).capitalize(),
+				String(item.get("category", "gear")).capitalize()],
+			"trailing": "Equip",
+			"icon": _item_icon(item),
+			"state": JournalRow.RowState.DISABLED \
+				if equipment == null or not equipment.can_equip(item) \
+				else JournalRow.RowState.NORMAL,
+			"tooltip": _item_tooltip(item),
+			"trailing_color": Tokens.SAGE.darkened(0.2),
+		})
+		row.pressed.connect(_quick_equip.bind(item))
+		list.add_child(row)
+
+
+func _build_satchel_page() -> void:
+	var root := _scrolling_page("Satchel", "Gathered supplies and charting materials.")
+	var list := root.list as VBoxContainer
+	var game := get_node_or_null("/root/Game")
+	if game == null or (game.materials as Dictionary).is_empty():
+		list.add_child(_empty_state("The satchel is empty.",
+			"The yard's herb patches regrow — start there."))
+		return
+	for id in game.materials:
+		var definition: Dictionary = GatherDefs.MATERIALS.get(String(id), {})
+		var card := PanelContainer.new()
+		card.theme_type_variation = &"PaperRaised"
+		card.custom_minimum_size.y = 64
+		var row := VBoxContainer.new()
+		card.add_child(row)
+		var title := Label.new()
+		title.theme_type_variation = &"Body"
+		title.text = "%s  ×%d" % [String(definition.get("name", id)),
+			int(game.materials[id])]
+		row.add_child(title)
+		var desc := Label.new()
+		desc.theme_type_variation = &"Caption"
+		desc.text = String(definition.get("desc", ""))
+		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		row.add_child(desc)
+		list.add_child(card)
+
+
+func _build_charts_page() -> void:
+	var root := _scrolling_page("Charts", "Finished roads waiting in your Chart Case.")
+	var list := root.list as VBoxContainer
+	var game := get_node_or_null("/root/Game")
+	if game == null or (game.charts as Array).is_empty():
+		list.add_child(_empty_state("No Charts inscribed.",
+			"Mara's Chart Table awaits your first clear mark."))
+		return
+	for chart in game.charts:
+		var card := PanelContainer.new()
+		card.theme_type_variation = &"PaperRaised"
+		var col := VBoxContainer.new()
+		card.add_child(col)
+		var title := Label.new()
+		title.theme_type_variation = &"SectionTitle"
+		title.text = ChartsData.chart_label(chart)
+		col.add_child(title)
+		for affix in chart.get("affixes", []):
+			var definition: Dictionary = ChartsData.AFFIXES.get(String(affix.get("id", "")), {})
+			if definition.is_empty():
+				continue
+			var good := bool(affix.get("good", false))
+			var line := Label.new()
+			line.theme_type_variation = &"Body"
+			line.text = ("✓ " + String(definition.name)) if good \
+				else ("✕ " + String(definition.bad_name))
+			line.add_theme_color_override("font_color", Tokens.SAGE.darkened(0.22) \
+				if good else Tokens.TERRACOTTA)
+			col.add_child(line)
+		list.add_child(card)
+
+
+func _build_trades_page() -> void:
+	var root := _scrolling_page("Trades", "Your four working disciplines, level 1–23.")
+	var list := root.list as VBoxContainer
+	var game := get_node_or_null("/root/Game")
+	if game == null:
+		return
+	for key in ["wayfinding", "earthcraft", "wildcraft", "huntcraft"]:
+		var level: int = game.trade_lv(key)
+		var xp: int = int(game.trades[key].xp)
+		var cap: int = int(game.LEVEL_CAP)
+		var next_xp: int = game.xp_for_level(mini(level + 1, cap))
+		var card := PanelContainer.new()
+		card.theme_type_variation = &"PaperRaised"
+		var col := VBoxContainer.new()
+		col.add_theme_constant_override("separation", Tokens.SPACE_2)
+		card.add_child(col)
+		var heading := HBoxContainer.new()
+		col.add_child(heading)
+		var name := Label.new()
+		name.theme_type_variation = &"SectionTitle"
+		name.text = String(Progression.TRADE_NAMES.get(key, key.capitalize()))
+		name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		heading.add_child(name)
+		var lv := Label.new()
+		lv.theme_type_variation = &"Numeric"
+		lv.text = "Level %d" % level
+		heading.add_child(lv)
+		var meter := ProgressBar.new()
+		meter.show_percentage = false
+		meter.min_value = 0
+		meter.max_value = max(1, next_xp)
+		meter.value = min(xp, next_xp)
+		meter.custom_minimum_size.y = 18
+		col.add_child(meter)
+		var progress := Label.new()
+		progress.theme_type_variation = &"Caption"
+		progress.text = "Mastered" if level >= cap else "%d / %d XP" % [xp, next_xp]
+		col.add_child(progress)
+		var next_unlock: Dictionary = Progression.unlock_for_trade_level(key,
+			mini(level + 1, cap))
+		var next_line := Label.new()
+		next_line.theme_type_variation = &"Body"
+		next_line.text = "Next: %s" % String(next_unlock.get("label", "Mastery"))
+		col.add_child(next_line)
+		list.add_child(card)
+
+
+func _scrolling_page(title_text: String, subtitle_text: String) -> Dictionary:
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", Tokens.SPACE_2)
+	_content.add_child(col)
+	col.add_child(_section_title(title_text))
+	var subtitle := Label.new()
+	subtitle.theme_type_variation = &"Body"
+	subtitle.text = subtitle_text
+	col.add_child(subtitle)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	col.add_child(scroll)
+	var list := VBoxContainer.new()
+	list.add_theme_constant_override("separation", Tokens.SPACE_3)
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(list)
+	return {"root": col, "list": list}
+
+
+func _section_title(text: String) -> Label:
+	var label := Label.new()
+	label.theme_type_variation = &"SectionTitle"
+	label.text = text
+	return label
+
+
+func _empty_state(title_text: String, body_text: String) -> PanelContainer:
+	var panel := PanelContainer.new()
+	panel.theme_type_variation = &"PaperRaised"
+	panel.custom_minimum_size.y = 120
+	var col := VBoxContainer.new()
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	panel.add_child(col)
+	var title := Label.new()
+	title.theme_type_variation = &"SectionTitle"
+	title.text = title_text
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(title)
+	var body := Label.new()
+	body.theme_type_variation = &"Body"
+	body.text = body_text
+	body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(body)
+	return panel
+
+
+func _item_icon(item: Dictionary) -> Texture2D:
+	var icon_path := String(ItemsData.ICON_TEX.get(String(item.get("kind_id", "")), ""))
+	return load(icon_path) as Texture2D if ResourceLoader.exists(icon_path) else null
+
+
+func _item_tooltip(item: Dictionary) -> String:
+	var lines := [String(item.get("name", "Item"))]
+	var stat := String(item.get("base_stat", ""))
+	if stat != "":
+		lines.append("%s: %.1f" % [stat.capitalize(), float(item.get("base_value", 0))])
+	for affix in item.get("affixes", []):
+		lines.append(Affixes.format_affix(affix))
+	return "\n".join(lines)
+
 
 func _quick_equip(item: Dictionary) -> void:
-	if not equipment.can_equip(item):
+	if equipment == null or inventory == null or not equipment.can_equip(item):
 		return
 	var slot := String(item.category)
-	var prev = equipment.get_slot(slot)
-	if prev != null:
-		# Need a home for the displaced item — without removing the new one
-		# first, find_first_fit will count its cells; so remove it first.
-		inventory.remove(item)
-		var fit := inventory.find_first_fit(prev)
+	var previous = equipment.get_slot(slot)
+	var original_pos: Vector2i = item.get("pos", Vector2i.ZERO)
+	var original_rotated := bool(item.get("rotated", false))
+	inventory.remove(item)
+	if previous != null:
+		var fit := inventory.find_first_fit(previous)
 		if fit.is_empty():
-			# Put both back where they were.
-			inventory.try_place(item, item.pos, item.get("rotated", false))
+			inventory.try_place(item, original_pos, original_rotated)
 			return
 		equipment.equip(item)
-		inventory.try_place(prev, fit.pos, fit.rotated)
+		inventory.try_place(previous, fit.pos, fit.rotated)
 	else:
-		inventory.remove(item)
 		equipment.equip(item)
-	queue_redraw()
+	# Equipment emits synchronously. Rebuild after the pressed callback returns so
+	# the button delivering this action is never freed mid-signal.
+	_refresh.call_deferred()
+
 
 func _quick_unequip(slot: String) -> void:
-	var it = equipment.get_slot(slot)
-	if it == null:
+	if equipment == null or inventory == null:
 		return
-	var fit := inventory.find_first_fit(it)
-	if fit.is_empty():
-		return                              # inventory full — silent no-op
-	equipment.unequip(slot)
-	inventory.try_place(it, fit.pos, fit.rotated)
-	queue_redraw()
-
-# ---- rendering ----
-func _draw() -> void:
-	if not visible:
-		return
-	# Dim backdrop over the whole screen.
-	draw_rect(Rect2(Vector2.ZERO, get_viewport_rect().size),
-		Color(0, 0, 0, 0.45))
-	# The framed pack window — Midjourney parchment frame behind everything.
-	var win := _win_rect()
-	if _cached_tex(WyrdUi.PANEL_TEX_PATH) != null:
-		# Texture preloaded in _ready (white-texture gotcha); the factory's
-		# load() hits the resource cache, so this is safe inside _draw.
-		WyrdUi.panel_stylebox().draw(get_canvas_item(), win)
-	else:
-		draw_rect(win, Color(WyrdUi.KIT_PLATE, 0.97))
-	# Enamel Night drew a deep recessed dark page here; the maple cream panel
-	# already fills its opening with cream, so this is skipped when maple's on.
-	if not WyrdUi.has_maple():
-		draw_rect(Rect2(win.position + Vector2(WyrdUi.PANEL_MARGIN_L, WyrdUi.PANEL_MARGIN_T),
-			win.size - Vector2(WyrdUi.PANEL_MARGIN_L + WyrdUi.PANEL_MARGIN_R,
-				WyrdUi.PANEL_MARGIN_T + WyrdUi.PANEL_MARGIN_B)),
-			WyrdUi.KIT_WELL)
-	var hdr_font: Font = WyrdUi.font_header()
-	if hdr_font == null:
-		hdr_font = get_theme_default_font()
-	var hint_font: Font = get_theme_default_font()
-	# Spec 45 followup — the list pages (Satchel / Charts / Trades) outgrew
-	# the fixed window, so they scroll: page content draws first, shifted up
-	# by the tab's scroll offset; parchment masks then hide whatever slid
-	# under the header / footer bands, and the title + tabs draw back on top.
-	if _tab != 0:
-		var view := _view_rect(win)
-		var scroll := _scroll_offset(_tab, view)
-		draw_set_transform(Vector2(0.0, -scroll))
-		match _tab:
-			1:
-				_draw_satchel_tab(win, hint_font, scroll, view)
-			2:
-				_draw_charts_tab(win, hint_font, scroll, view)
-			3:
-				_draw_trades_tab(win, hint_font, scroll, view)
-		draw_set_transform(Vector2.ZERO)
-		_draw_page_masks(win, view)
-		_draw_scroll_marker(win, view, hint_font)
-		# Content may have shrunk under a stored offset — settle it once.
-		var max_s: float = maxf(0.0,
-			float(_tab_content_h.get(_tab, 0.0)) - view.size.y)
-		if scroll > max_s:
-			_tab_scroll[_tab] = max_s
-			queue_redraw()
-	draw_string(hdr_font, win.position + Vector2(52, 58),
-		"Adventurer's Pack", HORIZONTAL_ALIGNMENT_LEFT, win.size.x - 104,
-		WyrdUi.SIZE_DISPLAY, WyrdUi.GOLD)
-	_draw_tabs(win)
-	if _tab == 0:
-		# Gold readout lives with the paper-doll — Gear tab only, else it
-		# stamps over the other pages' text.
-		var game := get_tree().root.get_node_or_null("Game")
-		if game != null:
-			draw_string(hdr_font, doll_origin + Vector2(-6, 364),
-				"%d gold" % int(game.gold), HORIZONTAL_ALIGNMENT_CENTER,
-				172.0, WyrdUi.SIZE_SECTION, WyrdUi.GOLD)
-		_draw_slots()
-		_draw_grid()
-		if _held_item != null:
-			_draw_held()
-		draw_string(hint_font, grid_origin + Vector2(0, _rows() * CELL + 30),
-			"I close · R rotate · right-click quick-equips",
-			HORIZONTAL_ALIGNMENT_CENTER, COLS * CELL, WyrdUi.SIZE_LABEL,
-			WyrdUi.MAPLE_WOOD_D if WyrdUi.has_maple() else WyrdUi.INK_MID)
-		# Hover tooltip — drawn last so it sits on top of everything.
-		_draw_tooltip()
-
-func _draw_grid() -> void:
-	var grid_size := Vector2(COLS * CELL, _rows() * CELL)
-	var maple := WyrdUi.has_maple()
-	if not maple:
-		# Recessed enamel well behind the cells (Diablo's sunken-grid read).
-		WyrdUi.draw_well(self,
-			Rect2(grid_origin - Vector2(6, 6), grid_size + Vector2(12, 12)))
-	for y in _rows():
-		for x in COLS:
-			var r := Rect2(grid_origin + Vector2(x * CELL, y * CELL),
-				Vector2(CELL, CELL))
-			if maple:
-				# Each cell is its own glossy jade slot.
-				WyrdUi.draw_well(self, r.grow(-2.0))
-			else:
-				# Raised enamel tile; the 1px gap shows the well as a grid line.
-				draw_rect(r.grow(-1), WyrdUi.KIT_PLATE)
-				draw_rect(Rect2(r.position + Vector2(2, 1), Vector2(CELL - 4, 1.5)),
-					Color(0.18, 0.34, 0.32))
-				draw_rect(r.grow(-1), Color(0.03, 0.10, 0.09), false, 1.0)
-	if inventory != null:
-		for it in inventory.items:
-			_draw_item_in_grid(it)
-
-func _draw_slots() -> void:
-	if equipment == null:
-		return
-	var font: Font = WyrdUi.font_body()
-	if font == null:
-		font = get_theme_default_font()
-	# Spec 41 (Pack design) — the tool pair gets its section label.
-	var hdr2: Font = WyrdUi.font_header()
-	if hdr2 == null:
-		hdr2 = font
-	draw_string(hdr2, _slot_top("pickaxe") + Vector2(0, -10), "Trade Tools",
-		HORIZONTAL_ALIGNMENT_LEFT, 160.0, WyrdUi.SIZE_BODY,
-		WyrdUi.MAPLE_WOOD_D if WyrdUi.has_maple() else WyrdUi.INK)
-	for name in SLOT_OFFSET:
-		var top := _slot_top(String(name))
-		var r := Rect2(top, Vector2(SLOT_SIZE, SLOT_SIZE))
-		# Recessed enamel slot well — gold-edged socket.
-		WyrdUi.draw_well(self, r)
-		var it = equipment.get_slot(String(name))
-		if it != null:
-			_draw_item_rect_scaled(it, top + Vector2(6, 6),
-				Vector2(SLOT_SIZE - 12, SLOT_SIZE - 12), false)
-		else:
-			# Empty slot — name ghosted in the well.
-			draw_string(font, top + Vector2(0, SLOT_SIZE * 0.5 + 5),
-				String(name).capitalize(), HORIZONTAL_ALIGNMENT_CENTER,
-				SLOT_SIZE, WyrdUi.SIZE_CAPTION,
-				Color(WyrdUi.MAPLE_WOOD_D, 0.7) if WyrdUi.has_maple() \
-					else Color(WyrdUi.INK_MID, 0.85))
-
-func _draw_item_in_grid(it: Dictionary) -> void:
-	var rotated: bool = it.get("rotated", false)
-	var fp: Vector2i = Inventory.footprint(it, rotated)
-	var top := grid_origin + Vector2(int(it.pos.x) * CELL, int(it.pos.y) * CELL)
-	_draw_item_rect_scaled(it, top + Vector2(PAD, PAD),
-		Vector2(fp.x * CELL - PAD * 2, fp.y * CELL - PAD * 2), false)
-
-func _draw_item_rect_scaled(it: Dictionary, top: Vector2, size: Vector2, ghost: bool) -> void:
-	var r := Rect2(top, size)
-	var rc: Color = WyrdUi.RARITY.get(String(it.rarity), WyrdUi.INK_MID)
-	# Rarity glow behind magic+ items (Diablo's pickup language).
-	if String(it.rarity) != "normal" and not ghost:
-		for i in 3:
-			var g := rc
-			g.a = 0.10 + 0.06 * float(2 - i)
-			draw_rect(r.grow(2.0 + i * 3.0), g)
-	var tex_path := String(ItemsData.ICON_TEX.get(String(it.get("kind_id", "")), ""))
-	var tex: Texture2D = _cached_tex(tex_path)
-	if tex != null:
-		# Enamel plate under the painted icon (maple slots already are jade).
-		if not WyrdUi.has_maple():
-			var plate := WyrdUi.KIT_PLATE
-			if ghost:
-				plate.a = 0.55
-			draw_rect(r, plate)
-		var mod := Color.WHITE
-		if ghost:
-			mod.a = 0.6
-		draw_texture_rect(tex, r.grow(-2), false, mod)
-	else:
-		var fill: Color = it.get("icon_color", Color.WHITE)
-		if ghost:
-			fill.a = 0.55
-		draw_rect(r, fill)
-	if ghost:
-		rc.a = 0.7
-	draw_rect(r, rc, false, 3.0)
-
-# ---- Spec 27f: hover tooltip ----
-func _hovered_item():
-	if _held_item != null:
-		return null
-	if _cursor_cell.x >= 0 and inventory != null:
-		return inventory.cells[_cursor_cell.y][_cursor_cell.x]
-	if _cursor_slot != "" and equipment != null:
-		return equipment.get_slot(_cursor_slot)
-	return null
-
-func _tooltip_lines(item: Dictionary) -> Array:
-	var rc: Color = WyrdUi.RARITY.get(String(item.rarity), WyrdUi.INK_MID)
-	var lines: Array = []
-	lines.append({"text": String(item.name), "color": rc, "size": WyrdUi.SIZE_BODY})
-	lines.append({
-		"text": "%s %s" % [String(item.rarity).capitalize(),
-			String(item.category).capitalize()],
-		"color": WyrdUi.INK_MID, "size": WyrdUi.SIZE_MICRO})
-	lines.append({"text": "", "color": WyrdUi.INK, "size": WyrdUi.SIZE_MICRO})
-	var base_stat := String(item.get("base_stat", ""))
-	if base_stat != "":
-		var base_aff := {"stat": base_stat, "value": item.get("base_value", 0),
-			"side": "base", "display": "Base", "id": "base"}
-		lines.append({"text": Affixes.format_affix(base_aff),
-			"color": WyrdUi.INK, "size": WyrdUi.SIZE_CAPTION})
-	for a in item.get("affixes", []):
-		lines.append({"text": Affixes.format_affix(a),
-			"color": WyrdUi.SAGE, "size": WyrdUi.SIZE_CAPTION})
-	# Spec items-affixes Task 9 — compare-on-hover. Hovering a *pack* item
-	# (grid, not the slot itself) appends the stat swing vs. the gear you'd
-	# swap out. Slot hovers are the equipped item already, so they're skipped.
-	if _cursor_cell.x >= 0 and equipment != null:
-		var cat := String(item.get("category", ""))
-		var equipped = equipment.get_slot(cat)
-		if equipped != null:
-			lines.append_array(_compare_lines(item, equipped, cat))
-	return lines
-
-# Sum an item's stats (base + every affix on the same stat) into a flat map.
-func _accumulate_stats(item: Dictionary) -> Dictionary:
-	var out := {}
-	var bs := String(item.get("base_stat", ""))
-	if bs != "":
-		out[bs] = float(item.get("base_value", 0))
-	for a in item.get("affixes", []):
-		var st := String(a.get("stat", ""))
-		if st == "":
-			continue
-		out[st] = float(out.get(st, 0.0)) + float(a.get("value", 0))
-	return out
-
-# Spec items-affixes Task 9 — stat-swing rows for the hovered item vs. the one
-# in its slot (▲ green gain / ▼ terracotta loss). Returns [] when every delta
-# rounds to nothing on screen, so the header never shows over an empty compare.
-func _compare_lines(item: Dictionary, equipped: Dictionary, cat: String) -> Array:
-	var mine := _accumulate_stats(item)
-	var theirs := _accumulate_stats(equipped)
-	var keys := {}
-	for k in mine:
-		keys[k] = true
-	for k in theirs:
-		keys[k] = true
-	var rows: Array = []
-	for k in keys:
-		var d: float = float(mine.get(k, 0.0)) - float(theirs.get(k, 0.0))
-		if absf(d) <= 0.0001:
-			continue
-		# Reuse the affix formatter on the magnitude, then re-sign it so the
-		# percent/round rules (e.g. crit → "+2%") match the lines above.
-		var ftxt: String = Affixes.format_affix({"stat": String(k), "value": absf(d)})
-		if ftxt.begins_with("+0 ") or ftxt.begins_with("+0%"):
-			continue   # rounds to a no-op on screen — don't show it
-		var up: bool = d > 0.0
-		rows.append({
-			"text": ("▲ " if up else "▼ ") + ("+" if up else "−") + ftxt.substr(1),
-			"color": WyrdUi.SAGE if up else WyrdUi.TERRACOTTA,
-			"size": WyrdUi.SIZE_CAPTION})
-	if rows.is_empty():
-		return []
-	var out: Array = [
-		{"text": "", "color": WyrdUi.INK, "size": WyrdUi.SIZE_MICRO},
-		{"text": "vs. equipped %s" % cat.capitalize(),
-			"color": WyrdUi.INK_MID, "size": WyrdUi.SIZE_MICRO},
-	]
-	out.append_array(rows)
-	return out
-
-func _draw_tooltip() -> void:
-	var item = _hovered_item()
+	var item = equipment.get_slot(slot)
 	if item == null:
 		return
-	var lines: Array = _tooltip_lines(item)
-	var line_h := 18
-	var ipad := 8
-	# Spec items-affixes task 12 — 4 px rarity accent stripe on the left edge;
-	# text x-origin nudged right by 4 px to clear the stripe.
-	var stripe_w := 4.0
-	var w := 280.0
-	var h: float = ipad * 2 + lines.size() * line_h
-	var pos := _cursor_screen + Vector2(16, 16)
-	var screen := get_viewport_rect().size
-	if pos.x + w > screen.x:
-		pos.x = _cursor_screen.x - w - 16
-	if pos.y + h > screen.y:
-		pos.y = screen.y - h - 8
-	if pos.x < 0:
-		pos.x = 0
-	if pos.y < 0:
-		pos.y = 0
-	draw_rect(Rect2(pos, Vector2(w, h)), Color(WyrdUi.KIT_PLATE, 0.97))
-	# Rarity-coloured left stripe (4 px wide, full tooltip height).
-	var rc_accent: Color = WyrdUi.RARITY.get(String(item.get("rarity", "normal")),
-		WyrdUi.INK_MID)
-	draw_rect(Rect2(pos, Vector2(stripe_w, h)), rc_accent)
-	draw_rect(Rect2(pos, Vector2(w, h)),
-		WyrdUi.KIT_EDGE, false, 2.0)
-	var font: Font = WyrdUi.font_body()
-	if font == null:
-		font = get_theme_default_font()
-	var text_x_offset := ipad + stripe_w
-	var y := pos.y + ipad + 14
-	for line in lines:
-		draw_string(font, Vector2(pos.x + text_x_offset, y), String(line.text),
-			HORIZONTAL_ALIGNMENT_LEFT, w - text_x_offset - ipad, int(line.size),
-			line.color)
-		y += line_h
-
-func _draw_held() -> void:
-	var fp: Vector2i = Inventory.footprint(_held_item, _held_rotated)
-	# Grid-cell preview (green/red).
-	if _cursor_cell.x >= 0 and inventory != null:
-		var valid := inventory.can_place(_held_item, _cursor_cell, _held_rotated)
-		var pc: Color = Color(0.40, 1.00, 0.50, 0.32) if valid \
-			else Color(1.00, 0.30, 0.30, 0.32)
-		var top := grid_origin + Vector2(_cursor_cell.x * CELL, _cursor_cell.y * CELL)
-		var clamped := Vector2i(
-			mini(fp.x, COLS - _cursor_cell.x),
-			mini(fp.y, ROWS - _cursor_cell.y))
-		if clamped.x > 0 and clamped.y > 0:
-			draw_rect(Rect2(top, Vector2(clamped.x * CELL, clamped.y * CELL)), pc)
-	# Slot preview (green/red) if the cursor is over a slot.
-	if _cursor_slot != "" and equipment != null:
-		var ok := equipment.can_equip(_held_item) \
-			and String(_held_item.category) == _cursor_slot
-		var pc2: Color = Color(0.40, 1.00, 0.50, 0.32) if ok \
-			else Color(1.00, 0.30, 0.30, 0.32)
-		var top2 := _slot_top(_cursor_slot)
-		draw_rect(Rect2(top2, Vector2(SLOT_SIZE, SLOT_SIZE)), pc2)
-	# Ghost item under the cursor.
-	var hp := _cursor_screen - Vector2(fp.x * CELL, fp.y * CELL) * 0.5
-	_draw_item_rect_scaled(_held_item, hp, Vector2(fp.x * CELL, fp.y * CELL), true)
-
-
-# ---- Wyrd: tabs + the Satchel / Charts pages ----
-func _draw_tabs(win: Rect2) -> void:
-	var font: Font = WyrdUi.font_header()
-	if font == null:
-		font = get_theme_default_font()
-	for i in TABS.size():
-		var r := _tab_rect(i)
-		var active := i == _tab
-		# Spec 40 — enamel plates; active = brighter face + gold underline.
-		draw_rect(r, WyrdUi.KIT_PLATE.lightened(0.10) if active else WyrdUi.KIT_PLATE)
-		draw_rect(r, WyrdUi.KIT_EDGE, false, 1.5)
-		if active:
-			draw_line(r.position + Vector2(2, r.size.y - 2),
-				r.position + Vector2(r.size.x - 2, r.size.y - 2),
-				WyrdUi.GOLD, 3.0)
-		draw_string(font, r.position + Vector2(0, 22), String(TABS[i]),
-			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, WyrdUi.SIZE_SECTION,
-			WyrdUi.INK if active else WyrdUi.INK_MID)
-
-# ---- Spec 45 followup: drawn-page scrolling (Satchel / Charts / Trades) ----
-# The pack window is a fixed 644×604 panel but the list pages grew past it
-# (the trades' unlock grids, a mid-game satchel). Each page scrolls: content
-# draws translated by -scroll, spans fully outside the page are skipped, and
-# parchment strips repainted from the ninepatch hide the partial rows that
-# slide under the header / footer bands.
-const SCROLL_STEP := 44.0
-var _tab_scroll: Dictionary = {}      # tab index -> scroll offset (px)
-var _tab_content_h: Dictionary = {}   # tab index -> content height (set in draw)
-
-# The scrolled-page viewport between the tab row and the footer band. The
-# bands above/below stay deeper (72px+) than the tallest single element a
-# page draws (the trade emblem cluster) so skipped spans never peek past.
-func _view_rect(win: Rect2) -> Rect2:
-	return Rect2(win.position.x + 40.0, win.position.y + 110.0,
-		win.size.x - 84.0, win.size.y - 222.0)
-
-func _scroll_offset(tab: int, view: Rect2) -> float:
-	var max_s: float = maxf(0.0,
-		float(_tab_content_h.get(tab, 0.0)) - view.size.y)
-	var s: float = clampf(float(_tab_scroll.get(tab, 0.0)), 0.0, max_s)
-	_tab_scroll[tab] = s
-	return s
-
-func _scroll_tab(delta: float) -> void:
-	if _tab == 0:
+	var fit := inventory.find_first_fit(item)
+	if fit.is_empty():
 		return
-	var view := _view_rect(_win_rect())
-	var s := _scroll_offset(_tab, view)
-	var max_s: float = maxf(0.0,
-		float(_tab_content_h.get(_tab, 0.0)) - view.size.y)
-	var next := clampf(s + delta, 0.0, max_s)
-	if next != s:
-		_tab_scroll[_tab] = next
-		queue_redraw()
-
-# True when a content-space span [y0, y1] intersects the view — anything
-# fully outside is skipped; the page masks hide partial leaks at the edges.
-func _span_visible(y0: float, y1: float, scroll: float, view: Rect2) -> bool:
-	return y1 - scroll >= view.position.y and y0 - scroll <= view.end.y
-
-# Repaint the page's own parchment over the bands above/below the view —
-# each strip maps back into the ninepatch centre so it lands pixel-identical
-# to what the stylebox drew there, warm wash included.
-func _draw_page_masks(win: Rect2, view: Rect2) -> void:
-	var l := win.position.x + 36.0
-	var w := win.size.x - 72.0
-	_draw_page_patch(win, Rect2(l, win.position.y + WyrdUi.PANEL_MARGIN_T,
-		w, view.position.y - (win.position.y + WyrdUi.PANEL_MARGIN_T)))
-	_draw_page_patch(win, Rect2(l, view.end.y,
-		w, (win.end.y - WyrdUi.PANEL_MARGIN_B) - view.end.y))
-
-func _draw_page_patch(win: Rect2, r: Rect2) -> void:
-	var tex: Texture2D = _cached_tex(WyrdUi.PANEL_TEX_PATH)
-	if tex == null:
-		draw_rect(r, WyrdUi.KIT_WELL)
-	else:
-		# Same mapping the stylebox uses: window centre -> texture centre.
-		var dst := Rect2(
-			win.position + Vector2(WyrdUi.PANEL_MARGIN_L, WyrdUi.PANEL_MARGIN_T),
-			win.size - Vector2(WyrdUi.PANEL_MARGIN_L + WyrdUi.PANEL_MARGIN_R,
-				WyrdUi.PANEL_MARGIN_T + WyrdUi.PANEL_MARGIN_B))
-		var src := Rect2(
-			Vector2(WyrdUi.PANEL_MARGIN_L, WyrdUi.PANEL_MARGIN_T),
-			Vector2(float(tex.get_width()) - (WyrdUi.PANEL_MARGIN_L
-					+ WyrdUi.PANEL_MARGIN_R),
-				float(tex.get_height()) - (WyrdUi.PANEL_MARGIN_T
-					+ WyrdUi.PANEL_MARGIN_B)))
-		var px_ratio := src.size / dst.size
-		draw_texture_rect_region(tex, r,
-			Rect2(src.position + (r.position - dst.position) * px_ratio,
-				r.size * px_ratio))
-	# Re-paint the deep enamel page face the band masks sit on.
-	draw_rect(r, WyrdUi.KIT_WELL)
-
-# A slim sage runner along the right edge marks the place in the page, and
-# the footer carries the hint — both only when there is more to read.
-func _draw_scroll_marker(win: Rect2, view: Rect2, font: Font) -> void:
-	var content_h: float = float(_tab_content_h.get(_tab, 0.0))
-	if content_h <= view.size.y:
-		return
-	var track := Rect2(Vector2(win.end.x - 52.0, view.position.y),
-		Vector2(4.0, view.size.y))
-	draw_rect(track, Color(WyrdUi.KIT_EDGE, 0.18))
-	var th: float = maxf(34.0, track.size.y * view.size.y / content_h)
-	var max_s: float = maxf(1.0, content_h - view.size.y)
-	var s: float = float(_tab_scroll.get(_tab, 0.0))
-	var thumb := Rect2(Vector2(track.position.x - 1.5,
-		track.position.y + (track.size.y - th) * (s / max_s)),
-		Vector2(7.0, th))
-	draw_rect(thumb, WyrdUi.SAGE.darkened(0.08))
-	draw_rect(thumb, Color(WyrdUi.KIT_EDGE, 0.7), false, 1.0)
-	draw_string(font, Vector2(view.position.x, view.end.y + 34.0),
-		"scroll to read on · I close", HORIZONTAL_ALIGNMENT_CENTER,
-		view.size.x, WyrdUi.SIZE_LABEL, WyrdUi.INK_MID)
-
-func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> void:
-	var game := get_tree().root.get_node_or_null("Game")
-	if game == null:
-		return
-	var x := win.position.x + 76.0
-	var w := win.size.x - 148.0
-	var y := win.position.y + 134.0
-	if (game.materials as Dictionary).is_empty():
-		draw_string(font, Vector2(x, y),
-			"Empty. The yard's herb patches regrow — start there.",
-			HORIZONTAL_ALIGNMENT_LEFT, w, WyrdUi.SIZE_BODY, WyrdUi.INK_MID)
-		_tab_content_h[1] = 0.0
-		return
-	# Slice C — each material rides a list-row plate: an ink-disc holding its
-	# glyph on the left, name + count on the card, the lore line beneath.
-	for id in game.materials:
-		var def: Dictionary = GatherDefs.MATERIALS.get(String(id), {})
-		var row_top := y - 18.0
-		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 30.0))
-		if _span_visible(row_top, row.end.y, scroll, view):
-			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
-			# glyph disc on the left
-			var dc := Vector2(row.position.x + 19.0, row.position.y + 15.0)
-			WyrdUi.draw_round_well(self, dc, 11.0)
-			draw_string(font, Vector2(dc.x - 11.0, dc.y + 6.0),
-				String(def.get("icon", "·")), HORIZONTAL_ALIGNMENT_CENTER,
-				22.0, WyrdUi.SIZE_BODY, WyrdUi.INK)
-			draw_string(font, Vector2(x + 28.0, y + 1.0),
-				String(def.get("name", id)),
-				HORIZONTAL_ALIGNMENT_LEFT, w - 110.0, WyrdUi.SIZE_SECTION, WyrdUi.INK)
-			draw_string(font, Vector2(x + w - 78.0, y + 1.0),
-				"× %d" % int(game.materials[id]),
-				HORIZONTAL_ALIGNMENT_RIGHT, 70.0, WyrdUi.SIZE_SECTION, WyrdUi.NUMERIC)
-		y += 34.0
-		var desc := String(def.get("desc", ""))
-		if desc != "":
-			var dh: float = font.get_multiline_string_size(desc,
-				HORIZONTAL_ALIGNMENT_LEFT, w - 30, WyrdUi.SIZE_BODY).y
-			if _span_visible(y - 13.0, y + dh, scroll, view):
-				draw_multiline_string(font, Vector2(x + 30, y), desc,
-					HORIZONTAL_ALIGNMENT_LEFT, w - 30, WyrdUi.SIZE_BODY, -1, WyrdUi.INK_MID)
-			y += dh + 4.0
-		y += 10.0
-	_tab_content_h[1] = y - view.position.y
-
-func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> void:
-	var game := get_tree().root.get_node_or_null("Game")
-	if game == null:
-		return
-	var x := win.position.x + 76.0
-	var w := win.size.x - 148.0
-	var y := win.position.y + 134.0
-	if (game.charts as Array).is_empty():
-		draw_string(font, Vector2(x, y),
-			"No charts inscribed. The Inscribing Table awaits.",
-			HORIZONTAL_ALIGNMENT_LEFT, w, WyrdUi.SIZE_BODY, WyrdUi.INK_MID)
-		_tab_content_h[2] = 0.0
-		return
-	# Slice C — each chart rides a list-row plate led with a drawn scroll
-	# (the rolled-parchment, wax-sealed read); its affixes list beneath.
-	for chart in game.charts:
-		var row_top := y - 18.0
-		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 32.0))
-		if _span_visible(row_top, row.end.y, scroll, view):
-			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
-			WyrdUi.draw_scroll(self, Rect2(Vector2(row.position.x + 8.0,
-				row.position.y + 5.0), Vector2(24.0, 22.0)))
-			draw_string(font, Vector2(x + 30.0, y + 1.0),
-				ChartsData.chart_label(chart),
-				HORIZONTAL_ALIGNMENT_LEFT, w - 36.0, WyrdUi.SIZE_SECTION, WyrdUi.INK)
-		y += 36.0
-		for a in chart.get("affixes", []):
-			var aff: Dictionary = ChartsData.AFFIXES.get(String(a.get("id", "")), {})
-			if aff.is_empty():
-				continue
-			if _span_visible(y - 14.0, y + 5.0, scroll, view):
-				var good: bool = bool(a.get("good", false))
-				draw_string(font, Vector2(x + 30, y),
-					("✓ " + String(aff.name)) if good else ("✗ " + String(aff.bad_name)),
-					HORIZONTAL_ALIGNMENT_LEFT, w - 30, WyrdUi.SIZE_LABEL,
-					WyrdUi.SAGE.darkened(0.2) if good else WyrdUi.TERRACOTTA)
-			y += 20.0
-		y += 10.0
-	_tab_content_h[2] = y - view.position.y
+	equipment.unequip(slot)
+	inventory.try_place(item, fit.pos, fit.rotated)
+	_refresh.call_deferred()
 
 
-# Spec 39 — the Trades page: the Wayfinding band (round emblem, name + level,
-# XP bar) followed by the mastery ladder — a level 1→17 skill tree of every
-# perk as a card down a spine, lit when earned, dim with its Lv gate when not.
-const TRADE_ROWS := [
-	# ADR 0012 — one skill: Wayfinding.
-	{"key": "wayfinding", "name": "Wayfinding", "glyph": "✦",
-		"color": Color(0.71, 0.53, 0.22)},
-]
-# Mastery-ladder card dimensions (the skill tree, level 1→17).
-const CARD_H := 66.0
-const CARD_GAP := 10.0
-
-func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> void:
-	var game := get_tree().root.get_node_or_null("Game")
-	if game == null:
-		return
-	var hdr: Font = WyrdUi.font_header()
-	if hdr == null:
-		hdr = font
-	var x := win.position.x + 64.0
-	var w := win.size.x - 122.0
-	var y := win.position.y + 114.0
-	for i in TRADE_ROWS.size():
-		var row: Dictionary = TRADE_ROWS[i]
-		var key := String(row.key)
-		var lv: int = game.trade_lv(key)
-		var cx := x + 68.0
-		# The divider + emblem + name + xp-bar cluster draws as one unit; its
-		# span (y-14 .. y+58) stays within the page masks' reach when skipped.
-		if _span_visible(y - 14.0, y + 58.0, scroll, view):
-			if i > 0:
-				draw_line(Vector2(x, y - 12.0), Vector2(x + w, y - 12.0),
-					Color(WyrdUi.KIT_EDGE, 0.45), 1.5)
-			# --- emblem (60px disc, gold ring — spec 40) ---
-			var ec := Vector2(x + 26.0, y + 30.0)
-			draw_circle(ec, 26.0, (row.color as Color))
-			draw_arc(ec, 26.0, 0, TAU, 48, WyrdUi.KIT_EDGE, 2.5, true)
-			draw_arc(ec, 21.0, 0, TAU, 48, Color(0.18, 0.34, 0.32), 1.2, true)
-			draw_string(hdr, Vector2(ec.x - 26.0, ec.y + 8.0), String(row.glyph),
-				HORIZONTAL_ALIGNMENT_CENTER, 52.0, WyrdUi.SIZE_TITLE, WyrdUi.INK)
-			# --- name + level (cream body — gold/terracotta are title-only) ---
-			draw_string(hdr, Vector2(cx, y + 18.0), String(row.name),
-				HORIZONTAL_ALIGNMENT_LEFT, w - 78.0, WyrdUi.SIZE_TITLE, WyrdUi.INK)
-			draw_string(hdr, Vector2(cx, y + 20.0), "Lv %d" % lv,
-				HORIZONTAL_ALIGNMENT_RIGHT, w - 78.0, WyrdUi.SIZE_SECTION, WyrdUi.INK)
-			# --- xp bar ---
-			var xp: int = int(game.trades[key].xp)
-			var lo: int = game.xp_for_level(lv)
-			var hi: int = game.xp_for_level(lv + 1)
-			var frac := clampf(float(xp - lo) / float(max(1, hi - lo)), 0.0, 1.0)
-			var bar := Rect2(Vector2(cx, y + 26.0), Vector2(w * 0.56, 12.0))
-			draw_rect(bar, WyrdUi.KIT_WELL)
-			draw_rect(Rect2(bar.position + Vector2(1, 1),
-				Vector2((bar.size.x - 2.0) * frac, bar.size.y - 2.0)),
-				(row.color as Color).lightened(0.12))
-			draw_rect(bar, WyrdUi.KIT_EDGE, false, 1.5)
-			draw_string(font, Vector2(bar.end.x + 10.0, y + 37.0),
-				"%d / %d xp" % [xp, hi],
-				HORIZONTAL_ALIGNMENT_LEFT, 120.0, WyrdUi.SIZE_LABEL, WyrdUi.NUMERIC)
-		# --- the mastery ladder (level 1→17): every perk, locked or earned ---
-		var perks: Array = (game.PERKS as Dictionary).get(key, []).duplicate()
-		perks.sort_custom(func(a, b): return int(a.lv) < int(b.lv))
-		var earned := 0
-		for p in perks:
-			if (game.MASTERY_CHOICE_LVS as Array).has(int(p.lv)):
-				if bool(game.chosen_perks.get(String(p.id), false)):
-					earned += 1   # choice-tier perk counts only when chosen
-			elif lv >= int(p.lv):
-				earned += 1
-		var sy := y + 72.0
-		if _span_visible(sy - 18.0, sy + 4.0, scroll, view):
-			draw_string(hdr, Vector2(cx, sy), "Masteries",
-				HORIZONTAL_ALIGNMENT_LEFT, w - 78.0, WyrdUi.SIZE_SECTION, WyrdUi.TERRACOTTA)
-			draw_string(font, Vector2(cx, sy),
-				"%d / %d earned" % [earned, perks.size()],
-				HORIZONTAL_ALIGNMENT_RIGHT, w - 78.0, WyrdUi.SIZE_LABEL, WyrdUi.INK_MID)
-		# cards march down a spine in the left gutter; the disc lights when earned
-		var lx := x + 18.0
-		var card_x := x + 42.0
-		var card_w := w - 50.0
-		var cardy := sy + 18.0
-		for p in perks:
-			var pl: int = int(p.lv)
-			# Choice-tier perks (lv 5/10/13/14/17) light only when CHOSEN;
-			# single-perk tiers light on reaching the level (ADR 0012 mastery).
-			var ok: bool = bool(game.chosen_perks.get(String(p.id), false)) \
-				if (game.MASTERY_CHOICE_LVS as Array).has(pl) else lv >= pl
-			if _span_visible(cardy - CARD_GAP, cardy + CARD_H + CARD_GAP, scroll, view):
-				# spine segment (left gutter — cards sit to its right, never cover it)
-				draw_line(Vector2(lx, cardy - CARD_GAP),
-					Vector2(lx, cardy + CARD_H + CARD_GAP),
-					Color(WyrdUi.SAGE, 0.55), 3.0)
-				var cr := Rect2(Vector2(card_x, cardy), Vector2(card_w, CARD_H))
-				if ok:
-					draw_rect(cr, WyrdUi.KIT_PLATE)
-					draw_rect(cr, WyrdUi.SAGE.darkened(0.12), false, 2.0)
-				else:
-					draw_rect(cr, Color(0.20, 0.34, 0.32))
-					draw_rect(cr, Color(WyrdUi.KIT_EDGE, 0.4), false, 1.5)
-				# node disc on the spine
-				var dc := Vector2(lx, cardy + CARD_H * 0.5)
-				draw_circle(dc, 12.0, WyrdUi.SAGE.darkened(0.05) if ok \
-					else Color(0.20, 0.34, 0.32))
-				draw_arc(dc, 12.0, 0.0, TAU, 24, WyrdUi.KIT_EDGE, 1.5, true)
-				draw_string(hdr, Vector2(dc.x - 12.0, dc.y + 6.0),
-					"❖" if ok else "⚿", HORIZONTAL_ALIGNMENT_CENTER, 24.0, WyrdUi.SIZE_LABEL,
-					WyrdUi.INK if ok else WyrdUi.INK_MID)
-				# name + state tag
-				draw_string(hdr, Vector2(cr.position.x + 12.0, cardy + 23.0),
-					String(p.name), HORIZONTAL_ALIGNMENT_LEFT, card_w - 96.0, WyrdUi.SIZE_SECTION,
-					WyrdUi.INK if ok else WyrdUi.INK_MID)
-				# State tag: chosen/earned · an open choice tier · a passed-over
-				# pick · or still level-locked.
-				var tag := "✓ earned"
-				var tag_col: Color = WyrdUi.SAGE.darkened(0.2)
-				if not ok:
-					if (game.MASTERY_CHOICE_LVS as Array).has(pl) and lv >= pl:
-						if game.tier_chosen(pl):
-							tag = "passed"
-							tag_col = WyrdUi.INK_MID
-						else:
-							tag = "choose (K)"
-							tag_col = WyrdUi.GOLD.darkened(0.1)
-					else:
-						tag = "Lv %d" % pl
-						tag_col = WyrdUi.INK_MID
-				draw_string(font, Vector2(cr.position.x, cardy + 21.0),
-					tag, HORIZONTAL_ALIGNMENT_RIGHT, card_w - 12.0, WyrdUi.SIZE_LABEL, tag_col)
-				# description (up to two lines)
-				draw_multiline_string(font, Vector2(cr.position.x + 12.0, cardy + 41.0),
-					String(p.desc), HORIZONTAL_ALIGNMENT_LEFT, card_w - 24.0, WyrdUi.SIZE_CAPTION, 2,
-					WyrdUi.INK_MID if ok else Color(WyrdUi.INK_MID, 0.6))
-			cardy += CARD_H + CARD_GAP
-		y = cardy + 12.0
-	_tab_content_h[3] = y - view.position.y
+func _on_equipment_changed() -> void:
+	if visible:
+		_refresh.call_deferred()

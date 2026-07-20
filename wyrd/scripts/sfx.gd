@@ -47,6 +47,15 @@ const PATHS := {
 	# Wayfinding signature — the inscription seal. File deferred (ElevenLabs
 	# spend ungated); play() is a graceful no-op until it lands.
 	"inscribe_seal": "res://audio/inscribe_seal.mp3",
+	# D8 — six stable Rune profiles. They intentionally reuse a few compact
+	# existing streams with profile pitch, rather than adding unapproved audio
+	# generation; the action keys remain distinct for a later one-for-one swap.
+	"wayweaver_rune_green": "res://audio/inscribe_seal.mp3",
+	"wayweaver_rune_mist": "res://audio/waystone.mp3",
+	"wayweaver_rune_fang": "res://audio/charge.mp3",
+	"wayweaver_rune_crown": "res://audio/level_up.mp3",
+	"wayweaver_rune_pale": "res://audio/ward_absorb.mp3",
+	"wayweaver_rune_ember": "res://audio/craft_smith.mp3",
 	# C8 — Heartwood Ward soak / shatter (deferred audio).
 	"ward_absorb": "res://audio/ward_absorb.mp3",
 	"ward_break":  "res://audio/ward_break.mp3",
@@ -95,7 +104,31 @@ func music(name: String) -> void:
 
 func stop_music() -> void:
 	_music_key = ""
-	_music.stop()
+	if _music != null:
+		_music.stop()
+
+
+# Release all audio-server references before a short-lived SceneTree exits.
+# Normal gameplay keeps this autoload alive for the session; focused headless
+# scripts call shutdown explicitly after their assertions so pending playback
+# handles cannot outlive the resource cache.
+func shutdown() -> void:
+	stop_music()
+	if _music != null:
+		_music.stream = null
+		_music.queue_free()
+		_music = null
+	for player in _players:
+		if is_instance_valid(player):
+			(player as AudioStreamPlayer).stop()
+			(player as AudioStreamPlayer).stream = null
+			(player as AudioStreamPlayer).queue_free()
+	_players.clear()
+	_streams.clear()
+
+
+func _exit_tree() -> void:
+	shutdown()
 
 func play(name: String, pitch_var := 0.07) -> void:
 	if not _streams.has(name) or _players.is_empty():
@@ -104,4 +137,14 @@ func play(name: String, pitch_var := 0.07) -> void:
 	_next = (_next + 1) % _players.size()
 	p.stream = _streams[name]
 	p.pitch_scale = 1.0 + randf_range(-pitch_var, pitch_var)
+	p.play()
+
+
+func play_tuned(name: String, pitch_scale: float) -> void:
+	if not _streams.has(name) or _players.is_empty():
+		return
+	var p: AudioStreamPlayer = _players[_next]
+	_next = (_next + 1) % _players.size()
+	p.stream = _streams[name]
+	p.pitch_scale = clampf(pitch_scale, 0.5, 1.5)
 	p.play()

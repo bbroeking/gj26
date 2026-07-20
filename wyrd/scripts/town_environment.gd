@@ -31,6 +31,7 @@ var _yard := 40.0
 var _plaza := Vector3(20.0, 0.0, 21.0)
 var _stations: Array = []          # Vector3s grass must keep clear of
 var _spokes: Array = []            # path destinations (subset of stations)
+var _treeline_breaks: Array = []   # restored roads may visibly pierce the ring
 var _path_points: Array = []       # sampled path centers (Vector3)
 var _rng := RandomNumberGenerator.new()
 
@@ -42,11 +43,13 @@ var _lantern_lights: Array = []    # OmniLight3D refs for flicker
 var _lantern_phases: Array = []    # float phase offset per lantern
 var _ambient_t := 0.0              # running time for procedural sway
 
-func setup(yard: float, plaza: Vector3, stations: Array, spokes: Array) -> void:
+func setup(yard: float, plaza: Vector3, stations: Array, spokes: Array,
+		treeline_breaks: Array = []) -> void:
 	_yard = yard
 	_plaza = plaza
 	_stations = stations
 	_spokes = spokes
+	_treeline_breaks = treeline_breaks
 	_rng.seed = 26                 # the yard looks the same every visit
 
 func _ready() -> void:
@@ -138,6 +141,8 @@ func _build_treeline() -> void:
 		var ang := TAU * float(i) / float(count) + _rng.randf_range(-0.06, 0.06)
 		var radius := half + _rng.randf_range(-1.5, 1.5)
 		var pos := center + Vector3(cos(ang), 0.0, sin(ang)) * radius
+		if _near_treeline_break(pos):
+			continue
 		var oak: Node3D = OAK_GLB.instantiate()
 		GlbFit.normalize_height(oak, _rng.randf_range(4.6, 7.2))
 		GlbFit.unmetal(oak)
@@ -148,7 +153,7 @@ func _build_treeline() -> void:
 	for i in 14:
 		var ang := TAU * float(i) / 14.0 + 0.22
 		var pos := center + Vector3(cos(ang), 0.0, sin(ang)) * (half - 3.2)
-		if _too_close(pos, STATION_CLEAR + 1.5):
+		if _too_close(pos, STATION_CLEAR + 1.5) or _near_treeline_break(pos):
 			continue
 		var oak: Node3D = OAK_GLB.instantiate()
 		GlbFit.normalize_height(oak, _rng.randf_range(3.4, 5.0))
@@ -274,6 +279,13 @@ func _drop(packed: PackedScene, pos: Vector3, target_h: float) -> void:
 func _too_close(pos: Vector3, clearance: float) -> bool:
 	for s in _stations:
 		if pos.distance_to(s) < clearance:
+			return true
+	return false
+
+
+func _near_treeline_break(pos: Vector3) -> bool:
+	for opening_v in _treeline_breaks:
+		if opening_v is Vector3 and pos.distance_to(opening_v as Vector3) < 5.2:
 			return true
 	return false
 

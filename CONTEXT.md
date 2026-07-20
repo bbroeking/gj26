@@ -2,8 +2,6 @@
 
 A cozy fairytale Godot 4.6.2 ARPG set in Bramblewood. Toon-shaded low-poly visuals, a 4-skill hotbar + Focus resource, a status-effect framework, and themed procedural dungeons with typed-room contracts (combat / treasure / shrine / rest). NOT OSRS, NOT Diablo grimdark — storybook flavour with Diablo/PoE-shaped mechanics.
 
-(A separate three.js cozy game lives at `src/`; this context covers the Godot side at `wyrd/` — the working game, forked 2026-06-09 from the frozen `godot/` evaluation project.)
-
 ## Language
 
 **Pickup**:
@@ -15,12 +13,24 @@ A player-usable ability bound to a hotbar slot. Carries cost (Focus), cooldown, 
 _Avoid_: ability, spell, attack. Never use Skill for a leveling discipline — that's a **Trade**.
 
 **Trade**:
-The single leveling discipline (ADR 0012): **Wayfinding** — one XP curve, one unified perk ladder, level cap 17 (ADR 0006). Every cozy activity (gather / craft / forage / chart) feeds it; **combat gives no Trade XP**. Formerly four trades (`carto`/`earth`/`wilds`/`hunt`, ADR 0005) — now compressed into one. Lives on the `Game` autoload (`Game.trades`, `trade_lv`, `award_xp` — which ignore any legacy key argument). Player-facing name comes from `TRADE_NAMES`.
+An independently levelled discipline. Wayfinding, Earthcraft, Wildcraft, and Huntcraft each run from level 1 through 23 and own the XP earned through their verbs.
 _Avoid_: skill (reserved for hotbar abilities), stat, profession.
 
+**Wayfinding**:
+The Trade of discovering routes, learning Chart Recipes, inscribing Charts, reading Affixes, restoring the Living Atlas, and turning chapter clues into Boss Charts.
+_Avoid_: Cartography, carto, mapmaking skill.
+
 **Chart**:
-A crafted map item — the keystone that opens a dungeon run. Carries template id, tier, scope, a rolled affix list (`[{id, good, resolvedId}]`), and the generation seed. Inscribed at the Inscribing Table, consumed by the Waystone on entry. Lives in `Game.charts` (the chart case), defined by `data/charts.gd`.
+A crafted route that opens one dungeon run. Its Chart Recipe determines the destination and route shape; its inks shape the Affix odds. A Chart is inscribed at the Chart Table and consumed by the Waystone on entry.
 _Avoid_: map (overloaded), orb, keystone (flavor, not identifier).
+
+**Chart Table**:
+Mara's Wayfinding station. The player places a Chart Base, Waymark, Binding, inks, and an optional Seal into a learned arrangement; the arrangement chooses the Chart's destination and shape while the inks shape its Affix odds.
+_Avoid_: Creation Table, Crafting Bench, Inscribing Table.
+
+**Chart Recipe**:
+A discoverable arrangement of components at the Chart Table that deterministically produces a Chart family. A recipe determines where the Chart leads and what route it draws, not the final good/bad Affix rolls.
+_Avoid_: Formula, blueprint, crafting menu entry.
 
 **Affix**:
 A chart property with a good twin and a bad twin, resolved by a stability roll at inscribe time. Bias affixes spawn GatherNodes; modifier/pacing affixes change combat math; boss affixes put a boss in the deepest room. Only affixes with implemented effects appear in `Charts.AFFIXES` — the preview must never promise what the run can't deliver.

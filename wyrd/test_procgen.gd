@@ -10,6 +10,7 @@ extends SceneTree
 #   - setpiece variety: crypt and briar_maze show >= 2 distinct setpiece values across 5 seeds
 
 const DungeonGenScript = preload("res://scripts/dungeon_gen.gd")
+const ChartsData = preload("res://data/charts.gd")
 
 var _pass := 0
 var _fail := 0
@@ -27,6 +28,10 @@ func _init() -> void:
 	_check_scope_variance()
 	_check_layout_affixes()
 	_check_setpiece_variety()
+	_check_green_hollow_resource_contract()
+	_check_mire_resource_contract()
+	_check_d2_required_rest_contract()
+	_check_scatter_creation_pattern()
 	print("--- %d passed, %d failed ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
 
@@ -192,3 +197,141 @@ func _check_setpiece_variety() -> void:
 			snug_valid = false
 	_check("snug: all setpieces are from scope pool",
 		snug_valid, "found=%s" % str(snug_setpieces.keys()))
+
+
+func _check_green_hollow_resource_contract() -> void:
+	print("--- Green Hollow baseline resource contract ---")
+	var all_honest := true
+	var failed_seed := -1
+	for seed in 50:
+		var cfg: Dictionary = (ChartsData.TEMPLATES.tier_1.gen as Dictionary).duplicate(true)
+		cfg["scope"] = "hollow"
+		cfg["template_id"] = "tier_1"
+		cfg["tier"] = 1
+		cfg["affixes"] = []
+		var layout: Dictionary = DungeonGenScript.generate(seed + 1, cfg)
+		var items := {}
+		for decor_v in layout.get("decor", []):
+			if decor_v is Dictionary and bool((decor_v as Dictionary).get("gather", false)):
+				var item_id := String((decor_v as Dictionary).get("item", ""))
+				items[item_id] = int(items.get(item_id, 0)) + 1
+		if int(items.get("copper_ore", 0)) < 1 \
+				or int(items.get("wild_herb", 0)) < 1 \
+				or int(items.get("logs", 0)) < 1:
+			all_honest = false
+			failed_seed = seed + 1
+			break
+	_check("50 Green Hollow seeds always carry Copper, Herb, and Logs",
+		all_honest, "failed_seed=%d" % failed_seed)
+
+
+func _check_mire_resource_contract() -> void:
+	print("--- Mire baseline resource contract ---")
+	var all_honest := true
+	var failed_seed := -1
+	for seed in 30:
+		var cfg: Dictionary = (ChartsData.TEMPLATES.mire_shallows.gen as Dictionary).duplicate(true)
+		cfg["scope"] = "mire"
+		cfg["template_id"] = "mire_shallows"
+		cfg["tier"] = 1
+		cfg["affixes"] = []
+		var layout: Dictionary = DungeonGenScript.generate(seed + 401, cfg)
+		var mothmint := 0
+		for decor_v in layout.get("decor", []):
+			if decor_v is Dictionary and bool((decor_v as Dictionary).get("gather", false)) \
+					and String((decor_v as Dictionary).get("item", "")) == "mothmint":
+				mothmint += 1
+		if mothmint < 2:
+			all_honest = false
+			failed_seed = seed + 401
+			break
+	_check("30 Mire seeds always carry two reachable Mothmint patches",
+		all_honest, "failed_seed=%d" % failed_seed)
+
+# D2 — an added terminal layer promises a Hearth, so procgen must reserve the
+# role and expose the focal marker consumed by LayoutLoader. This is purposely
+# several seeds: a room-budget coincidence is not an authored guarantee.
+func _check_d2_required_rest_contract() -> void:
+	print("--- D2 required-rest contract ---")
+	var all_honest := true
+	for seed_i in [91, 772, 1603, 9821, 44117]:
+		var layout: Dictionary = DungeonGenScript.generate(seed_i, {
+			"scope": "hollow", "template_id": "hollow", "tier": 1,
+			"boss_kind": "", "required_room_roles": ["rest"],
+		})
+		var has_rest := false
+		for room_v in layout.get("rooms", []):
+			if room_v is Dictionary and String((room_v as Dictionary).get("role", "")) == "rest":
+				has_rest = true
+				break
+		var has_focal := false
+		for decor_v in layout.get("decor", []):
+			if decor_v is Dictionary \
+					and String((decor_v as Dictionary).get("interact_role", "")) == "rest":
+				has_focal = true
+				break
+		all_honest = all_honest and bool(layout.get("required_roles_valid", false)) \
+			and has_rest and has_focal
+	_check("D2 terminal Hearth has a required rest room and focal", all_honest)
+
+
+# Regression corpus for the Dungeon Forge-inspired creation pattern. These are
+# structural contracts rather than snapshots, so harmless decor changes do not
+# force golden-file churn.
+func _check_scatter_creation_pattern() -> void:
+	print("--- scatter / topology creation-pattern corpus ---")
+	var configs: Array = [
+		{"seed": 101, "scope": "crypt"},
+		{"seed": 202, "scope": "hollow"},
+		{"seed": 303, "scope": "briar_maze"},
+		{"seed": 404, "scope": "mire"},
+		{"seed": 505, "scope": "rootroads"},
+		{"seed": 606, "scope": "snug", "grid": 28, "room_min": 6,
+			"room_max": 10, "room_count_min": 3, "room_count_max": 7},
+	]
+	var deterministic := true
+	var non_overlapping := true
+	var topology_valid := true
+	var semantic_widths_valid := true
+	for corpus_v in configs:
+		var corpus: Dictionary = corpus_v
+		var seed_value := int(corpus.get("seed", 1))
+		var cfg := corpus.duplicate(true)
+		cfg.erase("seed")
+		var first: Dictionary = DungeonGenScript.generate(seed_value, cfg)
+		var second: Dictionary = DungeonGenScript.generate(seed_value, cfg)
+		deterministic = deterministic and first.get("grid", []) == second.get("grid", []) \
+			and first.get("rooms", []) == second.get("rooms", []) \
+			and first.get("room_edges", []) == second.get("room_edges", []) \
+			and first.get("decor", []) == second.get("decor", [])
+		var rooms: Array = first.get("rooms", [])
+		for i in rooms.size():
+			for j in range(i + 1, rooms.size()):
+				var a: Dictionary = rooms[i]
+				var b: Dictionary = rooms[j]
+				if int(a.x) < int(b.x) + int(b.w) and int(a.x) + int(a.w) > int(b.x) \
+						and int(a.y) < int(b.y) + int(b.h) and int(a.y) + int(a.h) > int(b.y):
+					non_overlapping = false
+		var boss_idx := int(first.get("boss_room_id", -1))
+		var critical: Array = first.get("critical_room_ids", [])
+		var max_area := 0
+		for room_v in rooms:
+			var room: Dictionary = room_v
+			max_area = maxi(max_area, int(room.w) * int(room.h))
+		var boss_area := int(rooms[boss_idx].w) * int(rooms[boss_idx].h) \
+			if boss_idx >= 0 and boss_idx < rooms.size() else -1
+		topology_valid = topology_valid \
+			and String(first.get("generation_pattern", "")) == "scatter_separate_delaunay_mst" \
+			and not critical.is_empty() and int(critical[0]) == 0 \
+			and int(critical[critical.size() - 1]) == boss_idx \
+			and boss_area == max_area
+		var widths: Dictionary = first.get("corridor_widths", {})
+		for path_i in range(1, critical.size()):
+			var lo := mini(int(critical[path_i - 1]), int(critical[path_i]))
+			var hi := maxi(int(critical[path_i - 1]), int(critical[path_i]))
+			if int(widths.get("%d:%d" % [lo, hi], 0)) != 3:
+				semantic_widths_valid = false
+	_check("same seed freezes identical topology and dressing", deterministic)
+	_check("scattered rooms finish without rectangle overlaps", non_overlapping)
+	_check("largest room is boss and critical path spans entry to boss", topology_valid)
+	_check("every critical-route corridor is three tiles wide", semantic_widths_valid)

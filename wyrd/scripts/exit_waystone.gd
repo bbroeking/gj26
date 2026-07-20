@@ -11,10 +11,12 @@ extends Interactable
 # boss chart soft-locked an under-leveled player (the exit only rises when
 # the boss falls and the chart is already spent).
 
-const CAIRN_GLB := preload("res://models/waypoint_cairn.glb")
+const CAIRN_GLB := preload("res://models/waypoint_cairn_v2.glb")
+const DialogPanelScript = preload("res://scripts/ui/dialog_panel.gd")
 
 var abandoning := false
 var _used := false
+var _choice_open := false
 
 func get_prompt_text() -> String:
 	if abandoning:
@@ -76,14 +78,57 @@ func interact(player: Node) -> void:
 	# cancel the death penalty. (Belt to the player controller's suspenders.)
 	if _used or player == null or bool(player.get("dead")):
 		return
-	_used = true
 	var sfx := get_node_or_null("/root/Sfx")
 	if sfx != null:
 		sfx.play("waystone")
 	var game := get_tree().root.get_node_or_null("Game")
 	var net := get_node_or_null("/root/NetGame")
 	if net != null and bool(net.active):
-		# Phase B — the stone ends the run for the whole party (host-routed).
-		net.request_end(abandoning)
+		if abandoning:
+			_used = true
+			net.request_end(true)
+		elif game != null and game.has_method("can_press_deeper") \
+				and bool(game.can_press_deeper()):
+			if not bool(net.is_host()):
+				game.notify("The fire-keeper chooses whether this Chart returns or deepens.")
+				return
+			_open_depth_choice(game, player)
+		else:
+			_used = true
+			# Final-layer return retains the existing party-end/grace flow.
+			net.request_end(false)
 	elif game != null:
-		game.return_to_town(player, abandoning)
+		if not abandoning and game.has_method("can_press_deeper") \
+				and bool(game.can_press_deeper()):
+			_open_depth_choice(game, player)
+		else:
+			_used = true
+			game.return_to_town(player, abandoning)
+
+func _open_depth_choice(game: Node, player: Node) -> void:
+	if _choice_open:
+		return
+	_choice_open = true
+	var omen: Dictionary = game.next_depth_omen()
+	var dlg := DialogPanelScript.new()
+	dlg.open("Far Waystone", [
+		"The Chart has another fold. Return with what you have, or press deeper and accept an Omen.",
+		"%s — %s" % [String(omen.get("name", "Unknown Omen")),
+			String(omen.get("desc", "The next layer hardens."))],
+	], null, ["Return safely", "Press deeper"])
+	dlg.choice_selected.connect(func(index: int) -> void:
+		if _used:
+			return
+		_used = true
+		if index == 0:
+			var net := get_node_or_null("/root/NetGame")
+			if net != null and bool(net.active):
+				net.request_end(false)
+			else:
+				game.return_to_town(player, false)
+		else:
+			game.press_deeper(player))
+	dlg.finished.connect(func() -> void:
+		if not _used:
+			_choice_open = false)
+	get_tree().current_scene.add_child(dlg)

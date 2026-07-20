@@ -273,8 +273,9 @@ func _capture_skill(slug: String, ability: Dictionary) -> void:
 		_save_frame(slug, frame_n)
 		frame_n += 1
 	if slot == 1:
-		_player.skills[0].fire(_player)
-		_player._skill_cooldowns[1] = _player.skills[0].effective_cd(_player)
+		# Exercise the real nock → release seam; direct Skill.fire() bypasses the
+		# player's authored anticipation and would produce a misleading capture.
+		_player._begin_basic_release()
 	else:
 		_player.skills[slot - 1].fire(_player)
 		_player._skill_cooldowns[slot] = _player.skills[slot - 1].effective_cd(_player)

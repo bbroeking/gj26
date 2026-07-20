@@ -259,6 +259,9 @@ func _make_boss(host: Node3D, hp: int) -> Node3D:
 	b.global_position = Vector3.ZERO
 	b.cache_meshes()
 	b.setup(hp, 0.9, 3.0)
+	# Production assigns damage from LayoutLoader.BOSS_KINDS. This direct
+	# fixture models the Hedgemother and must carry her authored value too.
+	b.damage = 8
 	return b
 
 func _test_section_g() -> void:
@@ -356,14 +359,23 @@ func _test_section_f() -> void:
 		"near peer chained to CHASE (state=%d)" % near._state)
 	_check("F1b-far-stays-idle", far_peer._state == 0,
 		"far peer still IDLE (state=%d)" % far_peer._state)
+	# The chain-aggro fixtures share the lead enemy's origin with `e`; leaving
+	# them alive makes CharacterBody collision, rather than chase speed, decide
+	# F2. Remove them before the independent movement measurement.
+	lead.queue_free()
+	near.queue_free()
+	far_peer.queue_free()
+	await physics_frame
 
 	# F2 — chase: enemy closes distance. Measured over a short 15-frame
 	# window so the enemy is still chasing — not yet in attack range
 	# (where it stops + knocks the player back, confounding the metric).
-	var d_start := e.global_position.distance_to(player.global_position)
+	var d_start := Vector2(e.global_position.x, e.global_position.z).distance_to(
+		Vector2(player.global_position.x, player.global_position.z))
 	for i in 15:
 		await physics_frame
-	var d_end := e.global_position.distance_to(player.global_position)
+	var d_end := Vector2(e.global_position.x, e.global_position.z).distance_to(
+		Vector2(player.global_position.x, player.global_position.z))
 	_check("F2", d_end < d_start - 0.2, "enemy closed %.2f→%.2f m" % [d_start, d_end])
 
 	# F3 — enemy attack damages the player. By now the enemy has reached

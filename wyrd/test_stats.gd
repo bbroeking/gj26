@@ -112,17 +112,17 @@ func _run() -> void:
 	# DB — ADR 0013 vertical progression. Uses the live /root/Game autoload.
 	var game = root.get_node_or_null("Game")
 	if game != null:
-		# DB1 — leveling Wayfinding grows the player's base power.
+		# DB1 — Huntcraft, and only Huntcraft, grows the player's base power.
 		var lv1_dmg: int = int(p.derived_stats.damage)
 		var lv1_hp: int = p.hp_max
-		game.trades.wayfinding.lv = 10
+		game.trades.huntcraft = {"lv": 10, "xp": game.xp_for_level(10)}
 		p._derive_stats()
 		_check("DB1-level-scales-power",
 			int(p.derived_stats.damage) > lv1_dmg and p.hp_max > lv1_hp,
 			"lv10 dmg %d / hp %d > lv1 dmg %d / hp %d" %
 			[p.derived_stats.damage, p.hp_max, lv1_dmg, lv1_hp])
 		# DB2 — level-delta difficulty: hits-to-kill a skeleton rises with den level.
-		game.trades.wayfinding.lv = 7
+		game.trades.huntcraft = {"lv": 7, "xp": game.xp_for_level(7)}
 		p._derive_stats()
 		var pdmg := float(p.derived_stats.damage)
 		var lp := float(game.LEVEL_POWER)
@@ -135,19 +135,19 @@ func _run() -> void:
 			"lv7 vs den 5/7/9 → hits-to-kill %d / %d / %d (rises with depth)" % [easy, fair, hard])
 		# DB3 — a level-up refreshes live stats via the leveled_up signal (no
 		# manual _derive_stats), and grows current HP by the pool increase.
-		game.trades.wayfinding.lv = 1
+		game.trades.huntcraft = {"lv": 1, "xp": 0}
 		p._derive_stats()
 		var b_dmg: int = int(p.derived_stats.damage)
 		var b_hpmax: int = p.hp_max
 		p.hp = b_hpmax
-		game.trades.wayfinding.lv = 8
-		game.leveled_up.emit("wayfinding", 8)
+		game.trades.huntcraft = {"lv": 8, "xp": game.xp_for_level(8)}
+		game.leveled_up.emit("huntcraft", 8)
 		_check("DB3-levelup-refreshes-live",
 			int(p.derived_stats.damage) > b_dmg and p.hp_max > b_hpmax \
 				and p.hp > b_hpmax,
 			"lv1→8 via signal: dmg %d→%d, hp_max %d→%d, hp grew to %d" %
 			[b_dmg, p.derived_stats.damage, b_hpmax, p.hp_max, p.hp])
-		game.trades.wayfinding.lv = 1
+		game.trades.huntcraft = {"lv": 1, "xp": 0}
 		p._derive_stats()
 		# LG — ADR 0013 source #3: boss trophies → capped ledger stat boosts.
 		if game.ledger != null:

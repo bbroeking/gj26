@@ -1,0 +1,41 @@
+# Wayfinder test manifest
+
+Updated 2026-07-20 for `0.1.5-natural-hollows`.
+
+## Canonical checkpoint gate
+
+Run every entry with `WYRD_NO_SAVE=1 godot --headless --path wyrd --script res://…`.
+
+| Entry | Assertions | Protects |
+|---|---:|---|
+| `test_wyrd_loop.gd` | 426 | Core loop, data, economy, campaign contracts |
+| `test_wyrd_dungeon_scene.gd` | 41 | Production World scene and dungeon construction |
+| `test_wyrd_transitions.gd` | 125 | Town/World transitions and return ownership |
+| `test_skills.gd` | 75 | Hotbar dispatch and Skill behavior |
+| `test_boot_smoke.gd` | 147 | Script compilation and Town/World boot paths |
+| `test_first_road_slice.gd` | 14 | Fresh 5–10 minute First Road promise |
+| `test_movement_feel.gd` | 12 | Production keyboard movement, roll feel, and named-neighbor motion |
+| `test_hollow_readability.gd` | 7 | Boundary-only natural walls, cutaway restoration, and budget |
+| `test_first_hollow_room_grammar.gd` | 8 | Archetype determinism, variation, boundary truth, and combat apertures |
+| **Total** | **855** | **Required before a checkpoint is accepted** |
+
+## Exported-browser gate
+
+`tools/web_smoke.sh` builds and audits the Web export. For the compact real-path
+receipt, run `monitor_web_smoke.mjs` with `--begin`; acceptance requires the
+ordered title/town/world/complete history and an empty diagnostic ledger.
+
+The retained `0.1.4-sure-road` proof additionally requires the strict fresh D7
+journey: all five Ashen returns, three exact Hearth-chain banks, Giant
+settlement, Ember Kiln, Starheart work, and Threadstep. The accepted run took
+362.069 seconds, loaded 112/112 audited resources from a 105,898,896-byte PCK,
+and ended with a passed harness and an empty diagnostic ledger.
+
+The `0.1.5-natural-hollows` release proof additionally requires a rendered
+1280×720 Bold Road comparison with the approved First Hollow concept, the
+export resource audit, and a real title → town → First Road → return journey
+with an empty browser diagnostic ledger.
+
+The repository also contains focused chapter, UI, authority, economy, save,
+and regression entrypoints. They remain useful for their owning specs, but are
+not silently counted as part of this compact checkpoint gate.

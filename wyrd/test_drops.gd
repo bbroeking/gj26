@@ -7,6 +7,7 @@ const CombatantScript := preload("res://scripts/combatant.gd")
 const HitstopScript := preload("res://scripts/hitstop.gd")
 const PlayerScene := preload("res://scenes/Player.tscn")
 const Items := preload("res://data/items.gd")
+const Drops := preload("res://data/drops.gd")
 
 var _pass := 0
 var _fail := 0
@@ -50,6 +51,22 @@ func _run() -> void:
 	root.add_child(host)
 	await physics_frame
 	CombatantScript.crit_enabled = false        # deterministic damage
+
+	# D2 / Slice D2 — the First Knot reprise owns one small, deterministic
+	# heirloom family. Pickup placement remains a combat/runtime concern; this
+	# asserts only the pure seeded selection contract.
+	var heirloom_a := Drops.select_first_knot_heirloom(44117)
+	var heirloom_b := Drops.select_first_knot_heirloom(44117)
+	var heirloom_ids := {}
+	for seed in range(1, 65):
+		var heirloom := Drops.select_first_knot_heirloom(seed)
+		heirloom_ids[String(heirloom.get("kind_id", ""))] = true
+	_check("D0", Drops.FIRST_KNOT_HEIRLOOM_KIND_IDS == ["shortbow", "leather_helm",
+		"longbow", "leather_chest"]
+		and heirloom_a == heirloom_b and String(heirloom_a.get("rarity", "")) == "unique"
+		and heirloom_ids.keys().size() == 4
+		and Drops.select_first_knot_heirloom(0).is_empty(),
+		"reprise heirloom is seeded, unique, and constrained to its four authored bases")
 
 	# D1 — treasure role drops ~100% of kills
 	var treas := Node3D.new()

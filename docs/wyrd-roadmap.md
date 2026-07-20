@@ -4,6 +4,110 @@ THE single where-are-we doc. Detail lives in the linked plans; when this
 disagrees with code, code wins. Repo note: the three.js prototype was
 removed 2026-06-12 (recoverable from git history).
 
+## Full-game direction locked 2026-07-17
+
+The playable build below remains the current implementation, but the next
+full-game arc now has a concrete source of truth:
+
+- [ADR 0016](adr/0016-four-trades-level-23.md) supersedes the one-Trade,
+  level-17 direction: Wayfinding, Earthcraft, Wildcraft, and Huntcraft will
+  each run from level 1 through 23.
+- [ADR 0017](adr/0017-local-norse-root-saga.md) narrowly amends the locked lore
+  ceiling: Bramblewood remains warm and local, while older rootroads may hold
+  Norse-inspired, place-bound keepers beyond the Hedgemother chapter.
+- [Spec 56](specs/56-full-game-arpg-saga.md) defines the complete ARPG system
+  inventory, per-level unlocks, staggered combat-Skill onboarding, item and
+  building ladders, boss-chart collection loop, Norse-inspired Root Saga,
+  icon/asset contract, legendary Wayweaver, and implementation waves.
+- [Research sources](research/arpg-systems-and-norse-campaign-sources.md)
+  ground the map/key, target-farming, legendary, settlement, and Norse-myth
+  patterns in first-party ARPG documentation and primary/academic texts.
+
+No code is implied shipped by this section. Implementation begins with save
+migration and progression/onboarding contracts, then re-ladders the existing
+levels 1–17 before adding the new 18–23 chapters.
+
+## Product focus amended 2026-07-20
+
+[ADR 0018](adr/0018-authored-charts-single-player-focus.md) makes Wayfinder a
+single-player product for the current build. Co-op entry points, the Lantern,
+and network boot hooks are removed; dormant transport compatibility is not a
+supported feature or release gate. Charts retain procedural layouts and
+contents, but the player authors up to three Affixes that bias distributions
+such as enemy vigor, elite frequency, and resource abundance. Early Charts
+target 5–10 minutes; mature Charts cap at roughly 20–25 minutes.
+
+## First Road vertical slice — playable 2026-07-20
+
+[Spec 60](specs/60-first-road-vertical-slice.md) is the current reaction gate.
+Fresh New Journey now proves the direction in one bounded loop: Mara offers a
+Kind or Bold three-Affix Chart, the seeded four-to-five-room road teaches bow
+and roll, a later room supplies pressure, and a successful return awards Power
+Shot and physically lights the First Road lamp in the yard. Do not expand the
+slice until the player has reacted to the actual build.
+
+## Responsive Road checkpoint — playable 2026-07-20
+
+[Spec 61](specs/61-responsive-locomotion-checkpoint.md) resolves the largest
+feel mismatch exposed by the First Road playtest: cozy pacing had leaked into
+input, camera, roll, and creature-facing latency. The checkpoint keeps the
+FATE camera composition and authored Chart loop, but makes starts, stops,
+turns, camera catch-up, and dodge recovery immediate enough for a one-verb
+action game. Creature pursuit now turns continuously and carries a readable
+stride instead of snapping as a chunky block. This is a tuning checkpoint,
+not a content expansion.
+
+## Readable Hollow checkpoint — accepted locally 2026-07-20
+
+[Spec 62](specs/62-readable-hollow-checkpoint.md) resolves the largest visual
+mismatch exposed after locomotion became responsive: procedural wall blocks
+could still hide the ranger, enemies, and the immediate combat lane. The camera
+now lowers only wall visuals inside a bounded player aperture, retaining opaque
+mass, collision, layout, and encounter truth. The eight-suite native gate is
+green at 841 assertions, and the exported compact journey passed Chromium with
+an empty diagnostic ledger. Publication remains pending because the current
+working tree contains a much larger uncommitted campaign build whose release
+provenance must be made reproducible without discarding it.
+
+## Living Yard checkpoint — playable 2026-07-20
+
+[Spec 63](specs/63-living-yard-checkpoint.md) resolves the largest mismatch in
+the hometown after the Field Journal and First Road passes: Bramblewood's
+neighbor-led loop was staged around three nearly frozen people. Mara, Hod, and
+Quill now carry restrained, staggered ambient motion from their existing rigs
+and walk sidecars, readable at the FATE camera without moving prompts,
+colliders, conversations, or authored work positions. This is intentionally a
+social-presence checkpoint, not a schedule or navigation system. The 1280×720
+W/Space production gate passes 12/12, and rendered evidence lives in
+`docs/playtests/living-yard/`.
+
+## Sure Road checkpoint — accepted locally 2026-07-20
+
+[Spec 64](specs/64-sure-road-checkpoint.md) resolves the largest reliability
+mismatch exposed by the strict late-road playthrough: the visible prompt could
+name the way home while a settled encounter prop still won the scanner. Used
+Hearth chains and relieved Oath bells are now scanner-inert, and critical
+source, chain, and far-Waystone actions carry an exact one-shot interaction
+receipt that fails closed rather than retargeting. The 845-assertion native
+gate is green. A fresh 362.069-second exported Fire route passed every phase,
+loaded all 112 audited resources from a 105,898,896-byte PCK, and produced no
+browser diagnostics. Root publication is still pending a safe provenance
+boundary for the larger mixed campaign worktree.
+
+## Natural Hollows checkpoint — accepted locally 2026-07-20
+
+[Spec 65](specs/65-first-hollow-room-grammar.md) preserves seeded procedural
+Charts and the continuous FATE camera while changing what a First Road room is.
+Role-aware clearing archetypes now own varied floor footprints and a protected
+combat aperture. The loader builds only the playable wall boundary instead of
+the unused exterior field, presenting it as lower irregular hedge-and-rootstone
+mass whose local pieces still lower and restore under camera obstruction. The
+nine-suite checkpoint gate is green at 855 assertions, and the retained corpus
+adds no new failure to its four documented driver/repro exceptions. The Web
+export audited 112/112 release resources from a 105,903,744-byte PCK; both the
+compact title → town → World → return journey and a manual Bold Road entry had
+empty diagnostic ledgers. Companion-site publication is the remaining gate.
+
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)
 
@@ -41,6 +145,141 @@ Specs 38–41 + notes.
 
 ## In flight
 
+- **Four-Trade progression foundation** — [spec 56](specs/56-full-game-arpg-saga.md)
+  + [council notes](specs/56-full-game-arpg-saga-notes.md): ~~Milestones 0A
+  pure contract + 0B atomic runtime/save/UI cutover + 0C Chart Table
+  presentation~~ **SHIPPED 2026-07-17**.
+  Four independent level-1–23 Trade records, save v2 migration, Basic-Shot-only
+  onboarding, durable owned-Skill entitlements, transient gear-Skill overlay,
+  Wayfinding-only pack growth, and the physical Chart Table are live. The ten
+  integrated gates pass 932 checks/contracts. Levels 18/20/22 remain planned
+  labels, not usable Skills, until their runtime/UI implementations land.
+- **Wayfinding + Chart Table deepening** — [spec 58](specs/58-wayfinding-chart-table.md):
+  ~~Slice A recipe resolver + compatibility migration + Slice B physical table
+  + Slice C Codex and three-source discovery journey + Slice D1 First Knot
+  campaign Seal + Slice D2 matching-Binding Deepening and First Knot Reprise~~
+  **SHIPPED 2026-07-18**.
+  The progressively revealed 3×3 grid, separate
+  four-pot Ink rail, deterministic materialization, atomic no-loss commit,
+  first-return discovery lesson, controller focus, guest authority, complete
+  roll/stability preview, four-state redacted Codex, known-recipe ghosts,
+  Practiced Measures Stage All, Green/Deep/Sallow clues and lesson kits, and a
+  fail-closed real-source/Codex Web journey are green. D1 adds three distinct
+  guaranteed Green Hollow clues, the deterministic Hedgemother Boss Chart,
+  exact-once Thorn Essence escrow, and Tusker Tusk/Green Root Rune/Trophy Hall
+  first-clear settlement. D2 adds four recipe-owned Deepening variants, one
+  authored layer beyond each recipe's native depth, a hard terminal Hearth,
+  the far-Waystone Omen choice, and the campaign-inert two-layer First Knot
+  Reprise with one seeded heirloom. Sol accepted the integrated seam after the
+  Reprise identity correction. The clean 15-stage release-Web route and all 29
+  native test entrypoints passed at D2 acceptance.
+- **First Knot Homecoming** — [spec 56 council notes](specs/56-full-game-arpg-saga-notes.md):
+  **SHIPPED 2026-07-18**. One pure campaign projection now drives a compact,
+  inspectable yard-side Trophy Hall (Green Root Rune, Tusker record, covered
+  old bow-rest), the Living Atlas wet-road handoff toward Sallow, and a warm
+  session-only debrief. The Hall is durable after a canonical or normalized
+  legacy clear; a Reprise suppresses only the debrief. Host truth projects
+  read-only to guests and is revoked immediately on join/server loss without
+  touching either player's campaign, materials, rewards, recipes, or save.
+  Sol and independent Terra QA accepted the corrected authority/modal seams.
+  The clean release-Web journey passed all 17 ordered phases and 14 feature
+  flags with 0 console warnings/errors; all 31 native test entrypoints pass.
+- **Golden Wallow** — [spec 56 council notes](specs/56-full-game-arpg-saga-notes.md):
+  **SHIPPED 2026-07-18**. The first new deterministic chapter now carries three
+  distinct Sallow Shallows clue returns, a Wildcraft-10 Mire Ink experiment,
+  the guaranteed Burrow Boar's Wallow Boss Chart, exact-once Tusker Tusk
+  escrow, Mist Root Rune and Wightpelt settlement, and the restored Sallow
+  Jetty. The proven two-chapter descriptor preserves First Knot compatibility;
+  host truth projects read-only to guests and fails closed on disconnect. The
+  release-Web route passed all 21 ordered phases and 13 production-feature
+  proofs with zero warnings/errors, including the new Jetty GLB. Sol accepted
+  the integrated contract with no P1/P2 findings; all 36 native test
+  entrypoints pass.
+- **Seventh Road** — [spec 56 council notes](specs/56-full-game-arpg-saga-notes.md):
+  **SHIPPED 2026-07-18**. Four host-frozen Cold Tracks now advance through
+  distinct Briar returns; Mothglow and the Boss Table enforce current
+  Wildcraft 14; Wightpelt escrow produces the guaranteed Wolf Alpha; and the
+  canonical death settles exactly one Alpha Fang, Fang Root Rune, and a live
+  Skald Archive. Guests are read-only at sources and receive the host's frozen
+  World clue. The protected, campaign-inert Summit handoff refunds Alpha Fang
+  once on abandon/recovery and consumes it once on Queen death. Sol accepted
+  the corrected implementation with no remaining P1/P2 findings. All 41 native
+  entrypoints pass, and the post-review Chromium route passed 32 phases and 20
+  production proofs.
+- **Queen's Summit** — [spec 56 acceptance](specs/56-full-game-arpg-saga-notes.md):
+  **SHIPPED 2026-07-18**. Four physical Crownward Ascent returns bank distinct
+  Shed Crown-Thorns; the level-17 Queen Chart escrows Alpha Fang and forces the
+  canonical Hedgemother Queen; settlement awards exactly one Oath Nail, Crown
+  Root Rune, and readable Pale Stair. Legacy Summit Charts remain campaign-
+  inert and retired from new commits, including one-time v2 Fang migration and
+  frozen D4 compatibility. Host truth projects read-only to guests. Sol found
+  no remaining P1/P2 blocker; all 47 native entrypoints pass. Final Chromium
+  D4 passed 32 phases / 20 proofs, D5 passed 28 phases / 13 proofs with two
+  scanner-driven Stair reads, and both browser error logs were empty. The Web
+  PCK explicitly contains the Stair GLB. **Next:** The Pale Oath, levels 18–19,
+  then Fire in the Bough and The Unwritten Road through level 23.
+- **Pale Oath** — [implementation and acceptance](specs/56-full-game-arpg-saga-notes.md):
+  **SHIPPED 2026-07-18**. The copy-only Pale Stair now leads through the real
+  Archive, physical Table, four distinct Pale Veins returns, and the
+  Oath-Nail-sealed Barrow Jarl road. Campaign v4, Rootroads, Stonewake,
+  Wildgold/Wellmoss, Driving Volley, Trophy Sense, exact settlement, the
+  Rootroad Lift/oath-stone, final skinned characters, and distinct reward/Skill
+  icons are live. Sol's final audit first exposed four encounter lifecycle,
+  damage, co-op-authority, and bell-model defects; Terra repaired them and Sol
+  accepted the focused re-audit with no P1/P2 remaining. All 54 native
+  entrypoints pass. The post-repair final-export D6 route passed 32 phases and
+  16 production proofs with 72 browser entries and zero warnings/errors; its
+  isolated 55-resource PCK audit measured 117,332,168 bytes. **Next:** Fire in
+  the Bough, levels 20–21.
+- **Fire in the Bough** — [locked council contract](specs/56-full-game-arpg-saga-notes.md):
+  **ACCEPTED NATIVE + RELEASE WEB 2026-07-20; PUBLICATION PROVENANCE PENDING.** Terra
+  and Sol completed a full design/architecture/QA council and accepted the
+  reconciled contract. The slice is Campaign v5 with
+  five physical Ashen Bough returns, Ember Verses, renewable Emberleaf Ink, a
+  seed-frozen elite manifest, Cinderbound twins, host-authoritative Threadstep,
+  the three-bank Hearth Giant and late-join encounter snapshot, exact Coal to
+  Wyrm Scale settlement, Ember Root Rune, Present Thread, and the sole Fire
+  restoration at the Ember Kiln. The final native D7 route passed 5/5 in 458
+  seconds across 52/60 World legs. Accepted hardening includes immutable
+  World/Chart/generation ownership for delayed Far returns, one return claim per
+  generation, authored tier-2 Briar evidence when a valid layout has no gather
+  candidates, and exact-once modal ownership. Release Web now omits only the
+  incompatible dynamic bog ReflectionProbe; a four-way Web A/B isolated that
+  probe as the framebuffer-blit source, while native Mire still contains one.
+  The final release export passed an isolated 112/112-resource audit at
+  105,898,896 bytes. A clean fresh Chromium journey completed all prior-saga
+  receipts, five Ashen returns, three exact chain banks, the Hearth Giant,
+  Ember Kiln, Starheart work, and Threadstep in 362.069 seconds. The strict
+  harness passed with zero warnings, errors, assertions, or exceptions. The
+  root commit/push remains pending because this accepted slice shares a much
+  larger mixed uncommitted campaign worktree whose ownership must not be
+  rewritten merely to publish D7. **Next:** establish a safe provenance
+  boundary, then certify The Unwritten Road in a separate strict browser run.
+- **The Unwritten Road** — [locked council and native slice acceptances](specs/56-full-game-arpg-saga-notes.md):
+  **IMPLEMENTING — CORE STORY/MASTERY/WAYWEAVER SLICES NATIVELY ACCEPTED;
+  RELEASE WEB ACCEPTANCE PENDING (STOPPING POINT 2026-07-19).** Campaign v6,
+  immutable final-story witnesses, Wyrm-only
+  escrow, the Root Below/final Table contracts, and exact authored late XP are
+  implemented. Sol rejected the first pass because queued pre-inscribed Charts
+  could lose their indexed reward when rebinding to the next Waymark; Terra
+  corrected the atomic clue-plus-reward rebind and Sol accepted the re-review
+  with no P1/P2 findings. The physical Loom lesson, renewable 10/5/7g stock,
+  five production Table/Waystone/World/return loops, deterministic reachable
+  Waysteel/Root-Sap/Waymark guarantees, Open Thread/Snagged Thread, and read-only
+  Codex/Atlas projections are now accepted. The zero-gold route reaches exactly
+  level 23 and leaves 52g after four replacement kits. The Huntcraft-22 Lodge
+  lesson, owner-reserved 35-Focus Wayfinder's Mark, six-phase physical
+  Knot-Eater ritual, stable reconnect receipts, full-party reset, blocking
+  host-only naming, and durable mechanically-identical road result are now
+  accepted. Later native slices also include pure mastery and Thread rules,
+  physical mastery components, an authoritative/persistent Master Forge, the
+  unique Wayweaver legendary and equipped LeftHand attachment, room-scoped
+  Focus-to-Basic-Shot echoes, Root Rune cosmetics, Town/Trophy projections, and
+  the physical Map of Nine Knots Loom ritual and final lesson provenance. The
+  Knot-Eater still uses the bounded Barrow Jarl placeholder model. **Next after
+  the independent D7 browser gate:** run the separate strict fresh
+  title-to-Wayweaver D8 browser marathon, then complete the remaining release
+  and art gates. A real two-process ENet gate also remains open.
 - **UI refinement rounds** (design-pass Phase 3 tail): Craft, Satchel,
   Charts, Inscribing — all already wear the kit; rounds are polish.
   ⚠️ Inscribing's round is **superseded by the crafting rebuild below**.
@@ -126,7 +365,12 @@ Specs 38–41 + notes.
     rolls + fixed Summit patches); capstone gear out of the drop pool;
     skill bar carries glyphs/tooltips for all 9 skills; vendor/waystone
     lists scroll; Hod's hint stops promising ore-selling.
-13. **Multiplayer co-op — spec 46**: ~~Phase A "town together"~~
+13. **Retired direction — multiplayer co-op (spec 46):** Phase A and Phase B
+    were previously implemented, but ADR 0018 removes co-op from the supported
+    product. The historical implementation remains recoverable from git; it is
+    not a player-facing mode or current release gate.
+    <!-- Historical detail retained below for provenance. -->
+    ~~Phase A "town together"~~
     **SHIPPED 2026-06-12**: NetGame autoload (ENet host-auth, roster,
     per-peer spawns), Esc opens The Lantern (host port 7777 / join by
     IP / roster / leave), 12 Hz transform sync + name tags, all seven

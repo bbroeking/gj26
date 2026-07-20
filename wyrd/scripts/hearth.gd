@@ -58,7 +58,14 @@ func interact(player: Node) -> Dictionary:
 		sfx.play("hearth_rest")
 	# B5 — resting is the kit-swap moment (FATE checkpoint convention).
 	var lp: CanvasLayer = LoadoutPanelScript.new()
-	get_tree().current_scene.add_child(lp)
+	# SceneTree --script harnesses do not assign current_scene. The live game
+	# still owns the panel from its active scene; root is the safe equivalent
+	# for headless/system callers and keeps the heal/checkpoint transaction from
+	# failing after it has already mutated state.
+	var ui_host: Node = get_tree().current_scene
+	if ui_host == null:
+		ui_host = get_tree().root
+	ui_host.add_child(lp)
 	if cp != null and cp.has_method("read"):
 		return cp.read()
 	return {}

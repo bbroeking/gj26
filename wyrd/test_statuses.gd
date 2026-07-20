@@ -135,7 +135,10 @@ func _t12_execute_ring() -> void:
 	root.add_child(host)
 	var e := _make_enemy(host)        # setup(100) → hp_max 100
 	await physics_frame
-	# Explicit crit_chance 0 → deterministic damage (no crit roll).
+	# `crit_chance=0` still permits the independent 4% super-crit tier. Disable
+	# the combatant's documented test seam so the threshold crossings are
+	# deterministic rather than occasionally turning 60 damage into lethal 180.
+	CombatantScript.crit_enabled = false
 	e.take_damage(10, Vector3.ZERO, 0.0, 0.0)   # hp 90, 0.90 > 0.35 → no ring
 	_check("T12a no ring above threshold", e._execute_ring == null,
 		"hp=%d ring=%s" % [int(e.hp), str(e._execute_ring != null)])
@@ -150,6 +153,7 @@ func _t12_execute_ring() -> void:
 	e.take_damage(500, Vector3.ZERO, 0.0, 0.0)   # dies → frees the ring
 	_check("T12d ring gone on death", e._execute_ring == null and bool(e.dead),
 		"dead=%s ring=%s" % [str(e.dead), str(e._execute_ring != null)])
+	CombatantScript.crit_enabled = true
 
 # ---- T8 — blightwalker elite blights nearby enemies on death ----
 func _t8_blightwalker_on_death() -> void:

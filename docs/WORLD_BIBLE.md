@@ -2,6 +2,12 @@
 
 **Status:** locked 2026-04-29.
 
+> **Full-game scope amendment (2026-07-17):**
+> [ADR 0017](adr/0017-local-norse-root-saga.md) permits a local,
+> Norse-inspired rootroad campaign beyond the Hedgemother chapter. The voice,
+> warmth, neighbor-scale emotional focus, and no-grimdark rules in this Bible
+> remain binding.
+
 The mechanical-bones game (chop/cook/fight/level) sits inside an original cozy
 fairytale setting. This file is the source of truth for *names, vibe, who-is-
 who*. Everything player-visible — quest copy, NPC names, item flavor, log

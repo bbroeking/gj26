@@ -45,9 +45,9 @@ The live camera rig lives at `wyrd/scripts/camera_rig.gd`, on a standalone pivot
 ### Follow and lead
 
 ```
-FOLLOW_SPEED = 6.0   # lerp rate toward the player (relaxed from 8.0 for cozy momentum)
-LEAD_FACTOR  = 0.25  # seconds of velocity to nudge pivot ahead
-MAX_LEAD     = 1.8   # world-unit cap so sprint doesn't overshoot
+FOLLOW_SPEED = 12.0  # responsive catch-up; cozy tone stays in framing, not latency
+LEAD_FACTOR  = 0.14  # seconds of velocity to nudge pivot ahead
+MAX_LEAD     = 1.0   # world-unit cap so quick movement stays centered
 ```
 
 The pivot is nudged ahead of the player along the horizontal velocity vector (`LEAD_FACTOR × velocity`, capped at `MAX_LEAD`). This makes the camera feel alive rather than glued. (`docs/specs/36-locomotion-research.md`, Batch B decisions.)
@@ -75,11 +75,11 @@ When geometry sits between the camera and the player, `_update_wall_occlusion()`
 
 | Constant | Value | Notes |
 |---|---|---|
-| `RUN_SPEED` | 4.0 m/s | ~25% slower than the spec-23 prototype (calmer pace) |
-| `WALK_SPEED` | 2.0 m/s | Hold Shift to walk |
-| `ACCEL` | 12.0 | Speed-up and direction-maintenance |
-| `DECEL` | 20.0 | Releasing to stop (snappier than ACCEL) |
-| `TURN_DECEL` | 28.0 | Direction-reversal (much snappier, W→S is instant) |
+| `RUN_SPEED` | 5.2 m/s | Combat-readable travel speed from spec 61 |
+| `WALK_SPEED` | 2.6 m/s | Hold Shift to walk |
+| `ACCEL` | 28.0 | Fast speed-up and direction-maintenance |
+| `DECEL` | 34.0 | Immediate release response |
+| `TURN_DECEL` | 44.0 | Direction reversal |
 | `GRAVITY` | 22.0 m/s² | Higher than 9.8 for snappy descent |
 
 The split decel rates (`DECEL` vs `TURN_DECEL`) were introduced in spec 36 Batch B. Previously a single `ACCEL` handled both speed-up and stop, making stops feel skiddy and direction-reversals feel laggy.
@@ -128,7 +128,7 @@ The chibi Wayfinder (2026-06-10) follows the same merge pattern from `player_chi
 
 ### Foot-slide fix
 
-`AnimationPlayer.speed_scale` is set per-frame to `clamp(horizontal_speed / WALK_REF_SPEED, 0.5, 1.3)` while the player is moving, keeping the stride cadence proportional to the distance covered. At rest the scale is 0.85 (calmer feel). `WALK_REF_SPEED = 4.7` is chosen so the run clip preserves its existing 0.85× feel at RUN_SPEED. (`docs/specs/36-locomotion-research.md` §4, recommendation #1 — TimeScale synced to velocity.)
+`AnimationPlayer.speed_scale` is set per-frame to `clamp(horizontal_speed / WALK_REF_SPEED, 0.5, 1.3)` while the player is moving, keeping the stride cadence proportional to the distance covered. At rest the scale is 0.85. `WALK_REF_SPEED = 5.2` matches current run speed. (`docs/specs/36-locomotion-research.md` §4; responsive retune in spec 61.)
 
 ### Enemy animations
 

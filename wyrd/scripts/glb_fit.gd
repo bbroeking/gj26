@@ -14,9 +14,10 @@ static func normalize_height(root: Node3D, target_h: float) -> void:
 
 # The shared chunky ink silhouette (one source of truth for the rim across
 # enemies, player, NPCs, and key props). A grown, front-culled, unshaded back
-# shell hugging the model — "bold ink outlines". Chained as next_pass on a
-# DUPLICATE of each surface's active material so the shared GLB resource isn't
-# mutated; a materialless surface gets a neutral plate to host the rim.
+# shell hugging the model — "bold ink outlines". GeometryInstance's overlay is
+# deliberately used instead of a per-surface `next_pass`: multiple instances of
+# one imported GLB share their source mesh/material, and Godot 4.6 releases
+# those next-pass overrides with null-material renderer errors.
 const OUTLINE_INK := Color(0.13, 0.09, 0.06)
 const OUTLINE_GROW := 0.05
 
@@ -31,23 +32,7 @@ static func ink_outline_pass() -> StandardMaterial3D:
 
 static func add_ink_outline(root: Node) -> void:
 	if root is MeshInstance3D:
-		var mi := root as MeshInstance3D
-		var mesh: Mesh = mi.mesh
-		var painted := false
-		if mesh != null:
-			for s in range(mesh.get_surface_count()):
-				var base := mi.get_active_material(s)
-				if base is BaseMaterial3D:
-					var dup := (base as BaseMaterial3D).duplicate() as BaseMaterial3D
-					dup.next_pass = ink_outline_pass()
-					mi.set_surface_override_material(s, dup)
-					painted = true
-		if not painted:
-			var fb := StandardMaterial3D.new()
-			fb.albedo_color = Color(0.70, 0.66, 0.60)
-			fb.roughness = 0.85
-			fb.next_pass = ink_outline_pass()
-			mi.material_override = fb
+		(root as MeshInstance3D).material_overlay = ink_outline_pass()
 	for c in root.get_children():
 		add_ink_outline(c)
 

@@ -28,8 +28,7 @@ Dev hooks (env vars): `WYRD_NO_SAVE=1` (never touch the real save),
 `WYRD_DEV_CHART=<template>` + `WYRD_DEV_BOSS=<den_affix>` (boot straight
 into a chart run), `WYRD_FAST_CHANNEL=1` (instant gather channels),
 `WYRD_DEV_LEVEL=<n>` (set Wayfinding level on boot — eyeball the mastery
-ladder + ADR-0013 difficulty bands), `WYRD_NET=host|join:<ip[:port]>`
-(light/join a fire at boot).
+ladder + ADR-0013 difficulty bands).
 
 ## Tests
 
@@ -40,23 +39,22 @@ WYRD_NO_SAVE=1 godot --headless --path . --script res://test_wyrd_dungeon_scene.
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_wyrd_transitions.gd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_skills.gd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_boot_smoke.gd
-WYRD_NO_SAVE=1 godot --headless --path . --script res://test_coop.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_first_road_slice.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_movement_feel.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_hollow_readability.gd
 ```
 
-All six must stay green. test_skills covers the hotbar dispatch path —
+All eight must stay green. The current assertion counts and browser gate live
+in `docs/test-manifest.md`. test_skills covers the hotbar dispatch path —
 it's the only suite that catches a dead keypress; its absence once let a
 frozen-hotbar regression ship. **test_boot_smoke** compiles every
 `scripts/*.gd` + loads Town/World.tscn — the only suite that catches a
 boot-path parse error (the others never instantiate the Town scene, so a
 broken `town.gd` once shipped green while the game was unlaunchable; use
 `(GDScript).can_instantiate()`, not `load() != null`, to detect it).
-**test_coop** locks the C-3 boss-replay receive side (aggro/phase/telegraph/hp
-the guest reproduces while the boss runs as a net_puppet). Gotchas live in
-project memory (`feedback_godot_headless_test_harness`): autoloads DO load in
---script mode (reuse the real `Game`), `_ready` needs a frame, always run with
-`WYRD_NO_SAVE=1`. Two-process co-op smoke: `WYRD_NET=host` + `WYRD_NET=join:<ip>`
-(add `WYRD_NET_RUN=<sec>` to auto-socket a chart, `WYRD_NET_RUN_BOSS=<trophy>`
-to force a boss den).
+Gotchas live in project memory (`feedback_godot_headless_test_harness`):
+autoloads DO load in --script mode (reuse the real `Game`), `_ready` needs a
+frame, always run with `WYRD_NO_SAVE=1`.
 
 ## Layout
 

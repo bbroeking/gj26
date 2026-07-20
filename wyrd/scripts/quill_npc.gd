@@ -7,7 +7,9 @@ extends Interactable
 # feed — the buff shelf beside the hearth's heal shelf. Voice rules:
 # docs/WORLD_BIBLE.md (plain-spoken, warm, no fantasy-isms).
 
-const QUILL_GLB := preload("res://models/npc_quill_v2.glb")
+const QUILL_GLB := preload("res://models/npc_quill_v3_rigged.glb")
+const QUILL_WALK_GLB := preload("res://models/npc_quill_v3_walk_anim.glb")
+const AnimDriverScript := preload("res://scripts/anim_driver.gd")
 const QuillPanelScript = preload("res://scripts/ui/quill_panel.gd")
 
 func get_prompt_text() -> String:
@@ -22,9 +24,11 @@ func get_prompt_position() -> Vector3:
 func _ready_interactable() -> void:
 	var mesh := QUILL_GLB.instantiate()
 	add_child(mesh)
-	GlbFit.normalize_height(mesh, 1.62)   # her in-lore height (npcs.js)
+	# The Meshy export is authored at Quill's 1.62 m in-lore height already.
+	mesh.scale = Vector3.ONE
 	GlbFit.unmetal(mesh)
 	GlbFit.add_ink_outline(mesh)
+	AnimDriverScript.play_sidecar_pose(mesh, QUILL_WALK_GLB, "walk", 0.5, 0.68)
 
 func interact(_player: Node) -> void:
 	# D15 — first visit, Quill greets you (and reacts if you've quaffed a tonic

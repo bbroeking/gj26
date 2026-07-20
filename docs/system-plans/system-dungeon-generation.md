@@ -9,6 +9,12 @@ tags: [wayfinder, plan]
 
 # Dungeon Generation & Scoring
 
+> **2026-07-19 correction:** the production spatial pipeline is now scatter →
+> separation → Delaunay → MST plus loops → topology semantics → carve/dress.
+> The current cross-system gap and next implementation phases for creatures,
+> gathering, and rewards are tracked in
+> [dungeon-content-generation-manifests.md](dungeon-content-generation-manifests.md).
+
 > The TinyKeep procgen pipeline (Delaunay → MST → loops → generate-and-test) is fully shipped and working; the next most valuable step is multi-floor descent and per-scope room-archetype expansion so each biome feels distinct.
 
 ## Current state

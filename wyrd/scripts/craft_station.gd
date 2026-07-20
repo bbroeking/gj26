@@ -9,6 +9,7 @@ extends Interactable
 
 const CraftingDefs = preload("res://data/crafting.gd")
 const CraftPanelScript = preload("res://scripts/ui/craft_panel.gd")
+const ThreefoldLoomSourceScript = preload("res://scripts/threefold_loom_source.gd")
 
 var station_id := "cookfire"
 var _react_light: OmniLight3D = null   # B5 — pulsed on a successful craft
@@ -36,6 +37,10 @@ func _ready_interactable() -> void:
 			_build_anvil()
 		"still":
 			_build_still()
+		"ember_kiln":
+			_build_ember_kiln()
+	if station_id == "ember_kiln":
+		add_to_group("ember_kiln")
 	var game := get_tree().root.get_node_or_null("Game")
 	if game != null and game.has_signal("crafted"):
 		game.crafted.connect(_on_crafted)   # B5 — react when our station crafts
@@ -111,6 +116,89 @@ func _build_still() -> void:
 	glow.omni_range = 2.6
 	add_child(glow)
 	_react_light = glow
+
+# Fire in the Bough restores one functional kiln.  The little three-post frame
+# beside it is deliberately only a foundation in this chapter; it advertises
+# the later Loom without exposing another station or interaction surface.
+func _build_ember_kiln() -> void:
+	var kiln_path := "res://models/building_ember_kiln_v1.glb"
+	var loom_path := "res://models/building_threefold_loom_foundation_v1.glb"
+	if ResourceLoader.exists(kiln_path, "PackedScene") \
+			and ResourceLoader.exists(loom_path, "PackedScene"):
+		var kiln_packed := ResourceLoader.load(kiln_path, "PackedScene") as PackedScene
+		var kiln_model := kiln_packed.instantiate() as Node3D if kiln_packed != null else null
+		if kiln_model != null:
+			kiln_model.name = "EmberKilnModel"
+			GlbFit.normalize_height(kiln_model, 1.65)
+			add_child(kiln_model)
+		var loom_packed := ResourceLoader.load(loom_path, "PackedScene") as PackedScene
+		var loom_model := loom_packed.instantiate() as Node3D if loom_packed != null else null
+		if loom_model != null:
+			loom_model.name = "ThreefoldLoomFoundation"
+			loom_model.add_to_group("threefold_loom_foundation")
+			GlbFit.normalize_height(loom_model, 1.25)
+			loom_model.position = Vector3(1.55, 0.0, 0.0)
+			add_child(loom_model)
+			_mount_threefold_loom_source(loom_model)
+		var authored_glow := OmniLight3D.new()
+		authored_glow.name = "BankedFireGlow"
+		authored_glow.position = Vector3(0.0, 0.78, 0.0)
+		authored_glow.light_color = Color(1.0, 0.38, 0.12)
+		authored_glow.light_energy = 1.8
+		authored_glow.omni_range = 4.0
+		add_child(authored_glow)
+		_react_light = authored_glow
+		return
+	var plinth := _prim(_box_mesh(Vector3(1.35, 0.22, 1.05)),
+		Color(0.30, 0.22, 0.18), Vector3(0.0, 0.11, 0.0))
+	plinth.name = "EmberKilnPlinth"
+	for i in 8:
+		var ang := TAU * float(i) / 8.0
+		var brick := _prim(_box_mesh(Vector3(0.34, 0.28, 0.28)),
+			Color(0.48, 0.25, 0.17),
+			Vector3(cos(ang) * 0.43, 0.35, sin(ang) * 0.43))
+		brick.rotation.y = -ang
+	var coal := _prim(_rock_mesh(0.21), Color(0.10, 0.08, 0.09),
+		Vector3(0.0, 0.38, 0.0))
+	coal.name = "BankedFire"
+	var glow := OmniLight3D.new()
+	glow.name = "BankedFireGlow"
+	glow.position = Vector3(0.0, 0.62, 0.0)
+	glow.light_color = Color(1.0, 0.38, 0.12)
+	glow.light_energy = 1.8
+	glow.omni_range = 4.0
+	add_child(glow)
+	_react_light = glow
+
+	var foundation := Node3D.new()
+	foundation.name = "ThreefoldLoomFoundation"
+	foundation.add_to_group("threefold_loom_foundation")
+	foundation.position = Vector3(1.45, 0.0, 0.0)
+	add_child(foundation)
+	for x in [-0.38, 0.0, 0.38]:
+		var post := MeshInstance3D.new()
+		post.mesh = _box_mesh(Vector3(0.13, 0.72, 0.13))
+		var post_mat := StandardMaterial3D.new()
+		post_mat.albedo_color = Color(0.39, 0.29, 0.20)
+		post_mat.roughness = 0.92
+		post.material_override = post_mat
+		post.position = Vector3(x, 0.36, 0.0)
+		foundation.add_child(post)
+	_mount_threefold_loom_source(foundation)
+
+
+# The functional kiln remains its own broad crafting interaction. Place the
+# Loom reader on the outer edge of the foundation so both GLB and fallback
+# branches preserve distinct scanner/collision targets.
+func _mount_threefold_loom_source(foundation: Node3D) -> void:
+	if foundation.get_node_or_null("ThreefoldLoomSource") != null:
+		return
+	var source: Node3D = ThreefoldLoomSourceScript.new()
+	source.name = "ThreefoldLoomSource"
+	# The fallback foundation begins 0.10m nearer the kiln than the authored
+	# GLB, so retain a small real gap beyond both interaction spheres there too.
+	source.position = Vector3(0.86, 0.0, 0.18)
+	foundation.add_child(source)
 
 func _prim(mesh: Mesh, color: Color, pos: Vector3) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
@@ -196,4 +284,5 @@ func _react_color() -> Color:
 	match station_id:
 		"forge": return Color(1.0, 0.85, 0.4)    # sparks
 		"still": return Color(0.7, 0.95, 0.65)    # green vapor
+		"ember_kiln": return Color(1.0, 0.42, 0.14) # banked giant-fire
 		_: return Color(1.0, 0.62, 0.32)          # cookfire embers / steam

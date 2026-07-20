@@ -3,6 +3,11 @@
 
 # Editor / agent state
 .claude/
+.codex/
+
+# Independently versioned companion sites (nested repositories)
+codex/
+companion-site/
 
 # Backups + research GLB iterations (not used by the game; keep repo lean)
 models/*.bak
@@ -28,6 +33,7 @@ wyrd/build/
 *.log
 *.tmp
 node_modules/
+tmp/
 
 # Python bytecode
 __pycache__/

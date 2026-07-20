@@ -19,6 +19,10 @@ const HITSTOP_SEC := 0.09
 const FLASH_SEC := 0.12
 const KNOCKBACK := 0.6
 const KNOCKBACK_DECAY := 12.0
+const DRIVING_VOLLEY_KNOCKBACK := 1.35
+const DRIVING_VOLLEY_POISE_PRESSURE := 1.0
+const DRIVING_VOLLEY_SUPPRESS_SEC := 0.30
+const CINDER_POISE_BREAK_SEC := 0.65
 const REACT_SEC := 0.18
 const DEATH_SEC := 0.4
 const LAYER_HURTBOX := 8
@@ -41,6 +45,7 @@ const ATTACK_COOLDOWN := 1.25  # playtest: enemies fire a little faster
 const TELEGRAPH_SEC := 0.35
 const MOVE_SPEED := 2.2        # playtest: a little quicker on their feet (still well under player run 4.0)
 const CHASE_REPATH := 0.25     # re-target the nav path 4×/sec
+const TURN_SPEED := 12.0       # radians/sec; flowing turns without steering lag
 
 signal died
 
@@ -86,6 +91,18 @@ var _move_mult: float = 1.0
 var _attack_speed_mult: float = 1.0
 var _cc_immune_until: float = 0.0
 var _elite_ring: GPUParticles3D = null
+# Pale Oath — collision-safe per-cast guard. The normal arrow feedback still
+# owns damage, flashes, and sparks; this only prevents its five fan arrows
+# from stacking displacement after Driving Volley's dedicated impact lands.
+var poise_pressure := 0.0
+var _driving_volley_casts: Dictionary = {}
+var _driving_volley_suppress_until := 0.0
+var _cinder_poise_break_t := 0.0
+# Trophy Sense stores only presentation of a decision already made by the
+# seeded layout. It never rolls, awards, or changes the existing drop closure.
+var seeded_trophy_sigil := ""
+var _trophy_sense_plate: Label3D = null
+var _trophy_sense_refresh_t := 0.0
 # Spec 31 — active status effects on this combatant, keyed by kind string.
 # `_root_t` from spec 30 lives in here now (`_statuses["root"]`). Each value
 # is a StatusEffect RefCounted; ticking + visual cleanup happens in
@@ -136,6 +153,8 @@ var _meshes: Array = []
 var _saved: Dictionary = {}
 var _flash_mat: StandardMaterial3D
 var _base_scale := Vector3.ONE
+var _target_yaw := 0.0
+var _has_target_yaw := false
 
 func setup(max_hp: int, hurt_radius: float, hurt_height: float) -> void:
 	hp_max = max_hp
@@ -184,6 +203,28 @@ func _collect(n: Node) -> void:
 	for c in n.get_children():
 		_collect(c)
 
+
+# Extension seam for authored encounters that must resolve into a non-terminal
+# state instead of ordinary death.  Combatant owns every normal damage path
+# (direct hits, crit/marked amplification, DoT ticks, and net snapshots), so a
+# child can declare a floor once rather than trying to pre-clamp raw inputs at
+# each caller.  Zero preserves the normal enemy contract.
+func _damage_floor() -> int:
+	return 0
+
+
+func _on_damage_floor_reached() -> void:
+	pass
+
+
+func _resolve_damage(amount: int) -> Dictionary:
+	var before := hp
+	var floor := maxi(0, _damage_floor())
+	var attempted := before - maxi(0, amount)
+	hp = maxi(floor, attempted)
+	var reached_floor := floor > 0 and before > floor and attempted <= floor
+	return {"applied": maxi(0, before - hp), "reached_floor": reached_floor}
+
 # ---- taking a hit (spec 14) ----
 func take_damage(amount: int, from_dir: Vector3,
 		crit_chance: float = -1.0, crit_mult_bonus: float = -1.0) -> void:
@@ -201,7 +242,7 @@ func take_damage(amount: int, from_dir: Vector3,
 	var cc: float = crit_chance if crit_chance >= 0.0 else CRIT_CHANCE
 	var bonus: float = crit_mult_bonus if crit_mult_bonus >= 0.0 else 0.0
 	var tier := "normal"
-	if crit_enabled:
+	if crit_enabled and not bool(get_meta("wayweaver_no_crit", false)):
 		var roll := randf()
 		if roll < SUPER_CRIT_CHANCE:
 			tier = "super"
@@ -223,8 +264,11 @@ func take_damage(amount: int, from_dir: Vector3,
 		var bleed_dpt := maxi(1, int(round(float(dmg) * BLEED_TICK_FRACTION)))
 		apply_status("bleed", 4.0, bleed_dpt, 1.0, 1.0)
 
-	hp -= dmg
-	_spawn_damage_number(dmg, tier)
+	var resolved := _resolve_damage(dmg)
+	var applied := int(resolved.applied)
+	if applied <= 0:
+		return
+	_spawn_damage_number(applied, tier)
 	# Co-op (C-2) — guests' puppet enemies never run take_damage, so they'd
 	# see no damage popups. The host broadcasts the number to them.
 	var netd := get_node_or_null("/root/NetGame")
@@ -237,6 +281,8 @@ func take_damage(amount: int, from_dir: Vector3,
 	# Spec 32c — all 6 feedback channels (flash, knockback, hitstop, spark,
 	# shake, SFX) fire through one seam now.
 	HitFeedback.play_hit(self, tier, from_dir)
+	if bool(resolved.reached_floor):
+		_on_damage_floor_reached()
 	if hp <= 0:
 		_die()
 	else:
@@ -297,11 +343,17 @@ func _nearest_player() -> Node3D:
 func net_apply_state(pos: Vector3, p_hp: int, flags: Array = []) -> void:
 	net_target_pos = pos
 	net_target_hp = p_hp
-	if p_hp < hp:
+	var floor := maxi(0, _damage_floor())
+	var before := hp
+	var resolved_hp := maxi(floor, p_hp)
+	var reached_floor := floor > 0 and before > floor and p_hp <= floor
+	if resolved_hp < hp:
 		HitFeedback.play_hit(self, "normal", Vector3.ZERO)
 		# Phase C — guests see the numbers their (and others') hits land.
-		_spawn_damage_number(hp - p_hp, "normal")
-	hp = p_hp
+		_spawn_damage_number(hp - resolved_hp, "normal")
+	hp = resolved_hp
+	if reached_floor:
+		_on_damage_floor_reached()
 	if hp <= 0 and not dead:
 		_die()			# _die clears every visual, including _net_status_vis
 	elif not dead:
@@ -318,8 +370,17 @@ func _physics_process(delta: float) -> void:
 			global_position = global_position.lerp(net_target_pos,
 				minf(1.0, delta * 8.0))
 		return
+	if _cinder_poise_break_t > 0.0:
+		_cinder_poise_break_t = maxf(0.0, _cinder_poise_break_t - delta)
+		velocity = Vector3.ZERO
+		move_and_slide()
+		return
 	# Spec 31 — status framework tick (replaces the spec 30 root-only branch).
 	_tick_statuses(delta)
+	_trophy_sense_refresh_t -= delta
+	if _trophy_sense_refresh_t <= 0.0:
+		_trophy_sense_refresh_t = 0.5
+		_refresh_trophy_sense_plate()
 	_tick_feedback(delta)
 	_tick_ai(delta)
 	# Knockback rides on top of the AI velocity.
@@ -457,6 +518,7 @@ func _tick_ai(delta: float) -> void:
 				_state = State.CHASE
 
 	AnimDriverScript.update(self, moving)
+	_tick_facing(delta)
 	# Procedural animator (the rat — spec 21) runs alongside the clip driver.
 	if _proc_anim != null:
 		_proc_anim.update(delta, moving)
@@ -577,10 +639,19 @@ func _chase_move(delta: float) -> void:
 		if _agent != null:
 			_agent.target_position = _player.global_position
 	var step := to.normalized()
+	# An agent without a synchronized path reports Vector3.ZERO as its next
+	# point. Treating that as a route makes any off-nav enemy walk toward world
+	# origin instead of the player. Only replace the direct fallback when the
+	# server has actually produced a path.
 	if _agent != null:
-		var nd := _agent.get_next_path_position() - global_position
+		# Querying the next point asks NavigationServer to compute/update the
+		# path; inspect the path only after that query.
+		var next_path_position := _agent.get_next_path_position()
+		var has_path := not _agent.get_current_navigation_path().is_empty() \
+			and not _agent.is_navigation_finished()
+		var nd := next_path_position - global_position
 		nd.y = 0.0
-		if nd.length() > 0.15:
+		if has_path and nd.length() > 0.15:
 			step = nd.normalized()
 	# Spec 31/32 — soft slows multiply (cap 0.25×); Swift elites speed up by
 	# `_move_mult`. Both compose: `MOVE_SPEED * slow * _move_mult`.
@@ -617,9 +688,17 @@ func _fire_projectile(dir: Vector3) -> void:
 func _face(dir: Vector3) -> void:
 	if dir.length() < 0.01:
 		return
+	_target_yaw = atan2(dir.x, dir.z)
+	_has_target_yaw = true
+
+
+func _tick_facing(delta: float) -> void:
+	if not _has_target_yaw or get_child_count() == 0:
+		return
 	var gfx := get_child(0)   # the GLB instance
 	if gfx is Node3D:
-		(gfx as Node3D).rotation.y = atan2(dir.x, dir.z)
+		(gfx as Node3D).rotation.y = rotate_toward(
+			(gfx as Node3D).rotation.y, _target_yaw, TURN_SPEED * delta)
 
 # ---- feedback ticks (spec 14) ----
 func _tick_feedback(delta: float) -> void:
@@ -662,9 +741,139 @@ func apply_flash(duration: float = FLASH_SEC, color: Color = Color.WHITE) -> voi
 # Spec 32c — public knockback entry point. HitFeedback calls this with the
 # tier-multiplied strength. Direction is flattened to the XZ plane.
 func apply_knockback(dir: Vector3, strength: float) -> void:
+	if float(Time.get_ticks_msec()) / 1000.0 < _driving_volley_suppress_until:
+		return
 	var flat := Vector3(dir.x, 0.0, dir.z)
 	if flat.length() > 0.001:
 		_knockback = flat.normalized() * strength * KNOCKBACK_DECAY
+
+
+# Called only by DrivingVolley's host-side collision tracker. Each cast id can
+# affect this combatant once; the target itself owns the guard so overlapping
+# fan lanes and rapid Area signals cannot stack a shove. Bosses and actors
+# marked `vow_shielded` convert the same event into Poise pressure instead.
+func apply_driving_volley_impact(cast_id: int, dir: Vector3) -> bool:
+	if dead or cast_id <= 0 or net_puppet:
+		return false
+	var now := float(Time.get_ticks_msec()) / 1000.0
+	for old_id in _driving_volley_casts.keys():
+		if float(_driving_volley_casts[old_id]) <= now:
+			_driving_volley_casts.erase(old_id)
+	if _driving_volley_casts.has(cast_id):
+		return false
+	_driving_volley_casts[cast_id] = now + 1.0
+	_driving_volley_suppress_until = now + DRIVING_VOLLEY_SUPPRESS_SEC
+	if _driving_volley_uses_poise():
+		add_poise_pressure(DRIVING_VOLLEY_POISE_PRESSURE)
+		return true
+	var flat := Vector3(dir.x, 0.0, dir.z)
+	if flat.length() > 0.001:
+		_knockback = flat.normalized() * DRIVING_VOLLEY_KNOCKBACK * KNOCKBACK_DECAY
+	return true
+
+
+func add_poise_pressure(amount: float) -> void:
+	poise_pressure = maxf(0.0, poise_pressure + maxf(0.0, amount))
+
+
+# Cinderbound's good twin turns Poise into a visible, interrupting stagger.
+# This stays host-side with the rest of Combatant AI; guests only receive the
+# resulting authoritative body/HP snapshots and never resolve a second break.
+func apply_cinder_poise_break() -> bool:
+	if dead or net_puppet:
+		return false
+	add_poise_pressure(1.0)
+	_cinder_poise_break_t = CINDER_POISE_BREAK_SEC
+	velocity = Vector3.ZERO
+	_state = State.IDLE
+	_attack_cd = maxf(_attack_cd, CINDER_POISE_BREAK_SEC)
+	if _ranged_tele != null and is_instance_valid(_ranged_tele):
+		_ranged_tele.queue_free()
+		_ranged_tele = null
+	set_meta("cinder_poise_break_seconds", CINDER_POISE_BREAK_SEC)
+	_on_cinder_poise_break()
+	return true
+
+
+func cinder_poise_break_active() -> bool:
+	return _cinder_poise_break_t > 0.0
+
+
+func _on_cinder_poise_break() -> void:
+	# Boss subclasses clear their own telegraph/charge state here. Ordinary
+	# Combatants already had their ranged wind-up cancelled above.
+	pass
+
+
+func _driving_volley_uses_poise() -> bool:
+	if is_in_group("boss") or is_in_group("vow_shielded") or has_meta("vow_shielded"):
+		return true
+	if has_method("is_vow_shielded") and bool(call("is_vow_shielded")):
+		return true
+	var vow_value = get("vow_shielded")
+	if vow_value == true:
+		return true
+	var script: Script = get_script() as Script
+	return script != null and String(script.resource_path).ends_with("/boss.gd")
+
+
+# Narrow read-only Trophy Sense API. Content/layout code may attach an already
+# seeded ordinary-trophy sigil with the setter below; this class never calls
+# RNG, Drops.roll_drop, Game.add_material, or campaign/clue APIs.
+func set_seeded_trophy_sigil(sigil: String) -> void:
+	seeded_trophy_sigil = sigil
+	_refresh_trophy_sense_plate()
+
+
+func trophy_sense_readout() -> Dictionary:
+	if not _trophy_sense_available() or dead:
+		return {}
+	var out := {}
+	if is_elite:
+		var elite_data: Dictionary = Elites.MODIFIERS.get(modifier, {})
+		out["modifier"] = String(elite_data.get("name", modifier))
+		var floor := int(Drops.ROLE_TIER_BIAS.get("elite", 0)) + int(depth / 2) \
+			+ int(elite_data.get("reward_tier_bonus", 0))
+		out["reward_tier_floor"] = floor
+	# A sigil may ride any ordinary (non-Story-Seal) trophy carrier, including
+	# an elite whose modifier/floor is shown in the same readout.
+	if seeded_trophy_sigil != "":
+		out["trophy_sigil"] = seeded_trophy_sigil
+	return out
+
+
+func _trophy_sense_available() -> bool:
+	var game := get_node_or_null("/root/Game")
+	return game != null and game.has_method("trade_lv") \
+		and int(game.call("trade_lv", "huntcraft")) >= 19
+
+
+func _refresh_trophy_sense_plate() -> void:
+	var readout := trophy_sense_readout()
+	if readout.is_empty():
+		if _trophy_sense_plate != null and is_instance_valid(_trophy_sense_plate):
+			_trophy_sense_plate.queue_free()
+		_trophy_sense_plate = null
+		return
+	if _trophy_sense_plate == null or not is_instance_valid(_trophy_sense_plate):
+		_trophy_sense_plate = Label3D.new()
+		_trophy_sense_plate.name = "TrophySenseTargetPlate"
+		_trophy_sense_plate.position = Vector3(0.0, 2.95, 0.0)
+		_trophy_sense_plate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		_trophy_sense_plate.no_depth_test = true
+		_trophy_sense_plate.font_size = 28
+		_trophy_sense_plate.pixel_size = 0.005
+		_trophy_sense_plate.outline_size = 6
+		_trophy_sense_plate.outline_modulate = Color(0.05, 0.05, 0.04, 0.95)
+		_trophy_sense_plate.modulate = Color(0.82, 0.92, 0.72)
+		add_child(_trophy_sense_plate)
+	var lines: Array[String] = ["TROPHY SENSE"]
+	if readout.has("modifier"):
+		lines.append("MODIFIER · %s" % String(readout.modifier))
+		lines.append("REWARD FLOOR · TIER %d" % int(readout.reward_tier_floor))
+	if readout.has("trophy_sigil"):
+		lines.append("SIGIL · %s" % String(readout.trophy_sigil))
+	_trophy_sense_plate.text = "\n".join(lines)
 
 func _restore_flash() -> void:
 	for mi in _saved:
@@ -822,14 +1031,19 @@ func _slow_product() -> float:
 func _apply_tick_damage(amount: int) -> void:
 	if dead or amount <= 0:
 		return
-	hp -= amount
-	_spawn_damage_number(amount, "normal")
+	var resolved := _resolve_damage(amount)
+	var applied := int(resolved.applied)
+	if applied <= 0:
+		return
+	_spawn_damage_number(applied, "normal")
 	# Spec 32c — the white flash is handled by HitFeedback.tick_pulse in the
 	# status caller (so coloured pulses for burn/bleed land correctly).
 	# Just bump _flash_t here so _tick_feedback decays correctly even if no
 	# pulse fires for this status kind.
 	if _flash_t < FLASH_SEC * 0.5:
 		_flash_t = FLASH_SEC * 0.5
+	if bool(resolved.reached_floor):
+		_on_damage_floor_reached()
 	if hp <= 0:
 		_die()
 
@@ -1024,8 +1238,8 @@ func _die() -> void:
 	# the chart rolled Volatile).
 	if burst_on_death:
 		_death_burst()
-	# B7/ADR 0005 — the kill feeds Huntcraft, scaled to the slain thing's
-	# vigor (elites and bosses are worth their weight).
+	# Huntcraft owns combat growth. The slain thing's vigor sets the award, so
+	# elites and bosses remain worth their weight without feeding other Trades.
 	var game := get_tree().root.get_node_or_null("Game")
 	var netd := get_node_or_null("/root/NetGame")
 	var in_session: bool = netd != null and bool(netd.active)
@@ -1036,9 +1250,9 @@ func _die() -> void:
 				and last_hit_peer != multiplayer.get_unique_id():
 			netd.kill_credit(last_hit_peer, hp_max)
 		else:
-			pass  # ADR 0012 — combat gives no skill XP; kills no longer award it
+			game.award_xp("huntcraft", maxi(2, int(hp_max / 3)))
 			# Spec 45-hunt — Even Breath: a clean kill steadies the hunter.
-			if game.perk_active("wayfinding", "even_breath"):
+			if game.perk_active("huntcraft", "even_breath"):
 				var pl := _nearest_player()   # the peer who was fighting it
 				if pl != null and pl.has_method("add_focus"):
 					pl.add_focus(6.0)
@@ -1169,12 +1383,12 @@ func _apply_elite_tint(tint: Color) -> void:
 	mat.emission_enabled = true
 	mat.emission = tint
 	mat.emission_energy_multiplier = 0.6
-	# Keep the chunky ink silhouette on promoted elites — the golden override
-	# would otherwise drop the rim that layout_loader painted on the base kind.
-	mat.next_pass = _ink_outline_pass()
+	# Keep the chunky ink silhouette on promoted elites. Use an overlay instead
+	# of a next-pass chain so shared imported meshes release cleanly.
 	for mi in _meshes:
 		if mi is MeshInstance3D:
 			(mi as MeshInstance3D).material_override = mat
+			(mi as MeshInstance3D).material_overlay = _ink_outline_pass()
 
 # The shared inverted-hull ink rim (mirrors layout_loader._make_outline_pass).
 func _ink_outline_pass() -> StandardMaterial3D:

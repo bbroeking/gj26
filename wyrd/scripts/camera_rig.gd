@@ -14,12 +14,12 @@ extends Node3D
 # ============================================================
 # TUNABLES
 # ============================================================
-const FOLLOW_SPEED := 6.0          # Spec 36 (Batch B) — relaxed from 8.0; cozy follow with momentum
+const FOLLOW_SPEED := 12.0         # responsive ARPG follow; atmosphere supplies the softness
 # Spec 36 (Batch B) — lead targeting. Camera pivot nudges ahead of the
 # player along velocity so the camera reads as alive, not glued. Lead scales
 # with horizontal speed and is capped so sprint doesn't overshoot the frame.
-const LEAD_FACTOR := 0.25          # seconds of velocity-ahead to lead by
-const MAX_LEAD := 1.8              # max world units the pivot can lead
+const LEAD_FACTOR := 0.14          # enough look-ahead without a rubber-band pivot
+const MAX_LEAD := 1.0              # keep the player anchored during reversals
 const ORBIT_SENSITIVITY := 0.006   # radians per pixel of mouse drag
 const KEY_YAW_SPEED := 2.2         # radians/sec for Q/E
 # Wyrd — FATE (2005) framing. The trick is a LOW pitch + a NARROW telephoto
@@ -48,6 +48,8 @@ var _zoom_target := ZOOM_DEFAULT
 var _orbiting := false
 var _snapped := false
 var _shake_amt := 0.0           # spec 26 — current screen-shake amplitude
+var _cinematic_active := false
+var _pre_cinematic_process_mode := Node.PROCESS_MODE_INHERIT
 
 func _ready() -> void:
 	_camera = $Camera
@@ -82,6 +84,8 @@ func _bind(action: String, key: Key) -> void:
 	InputMap.action_add_event(action, ev)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _cinematic_active:
+		return
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_RIGHT:
 			_orbiting = event.pressed
@@ -102,6 +106,10 @@ func _process(delta: float) -> void:
 		if _player == null:
 			return
 	if _camera == null:
+		return
+	if _cinematic_active:
+		_place_camera()
+		_update_wall_occlusion()
 		return
 
 	# Pivot = player mid-height, nudged ahead by velocity for lead.
@@ -128,16 +136,7 @@ func _process(delta: float) -> void:
 
 	_zoom = lerpf(_zoom, _zoom_target, ZOOM_LERP * delta)
 
-	# Place the camera on a sphere around the pivot, then look at the pivot.
-	# pitch is the angle above the horizon — higher pitch = more overhead.
-	var horiz := cos(_pitch)
-	var offset := Vector3(
-		sin(_yaw) * horiz,
-		sin(_pitch),
-		cos(_yaw) * horiz
-	) * _zoom
-	_camera.global_position = global_position + offset
-	_camera.look_at(global_position, Vector3.UP)
+	_place_camera()
 
 	# Screen shake (spec 26) — jitter the camera position after look_at,
 	# decaying fast. Re-derived from `offset` each frame, so it never builds up.
@@ -151,52 +150,120 @@ func _process(delta: float) -> void:
 
 	_update_wall_occlusion()
 
+# ---- onboarding micro-cutscene camera seam ----
+
+func cinematic_frame() -> Dictionary:
+	return {
+		"focus": global_position,
+		"yaw": _yaw,
+		"pitch": rad_to_deg(_pitch),
+		"zoom": _zoom,
+	}
+
+func begin_cinematic() -> void:
+	if _cinematic_active:
+		return
+	_cinematic_active = true
+	_orbiting = false
+	_pre_cinematic_process_mode = process_mode
+	# Game.modal_opened pauses offline play. The borrowed camera must keep
+	# moving while the rest of the scene holds still.
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
+func apply_cinematic_frame(frame: Dictionary) -> void:
+	global_position = frame.get("focus", global_position)
+	_yaw = float(frame.get("yaw", _yaw))
+	_pitch = deg_to_rad(clampf(float(frame.get("pitch", rad_to_deg(_pitch))),
+		PITCH_MIN, PITCH_MAX))
+	_zoom = clampf(float(frame.get("zoom", _zoom)), ZOOM_MIN, ZOOM_MAX)
+	_zoom_target = _zoom
+	if _camera != null:
+		_place_camera()
+
+func end_cinematic() -> void:
+	if not _cinematic_active:
+		return
+	_cinematic_active = false
+	process_mode = _pre_cinematic_process_mode
+	# The last frame is authored back on the player. Keep the smoothed follow
+	# warm instead of forcing a second snap on the next process tick.
+	_snapped = true
+
+func _place_camera() -> void:
+	if _camera == null:
+		return
+	# Place the camera on a sphere around the pivot, then look at the pivot.
+	# Pitch is the angle above the horizon — higher pitch = more overhead.
+	var horiz := cos(_pitch)
+	var offset := Vector3(
+		sin(_yaw) * horiz,
+		sin(_pitch),
+		cos(_yaw) * horiz
+	) * _zoom
+	_camera.global_position = global_position + offset
+	_camera.look_at(global_position, Vector3.UP)
+
 # A hit requests a shake impulse — the strongest pending wins.
 func shake(amount: float) -> void:
 	_shake_amt = maxf(_shake_amt, amount)
 
-# Fade any wall between the camera and the player so the player is never
-# hidden — the classic ARPG cut-away. Walls are in the "wall" group with a
-# per-wall alpha-capable material (see layout_loader._place_wall).
+# Fade walls that overlap a protected screen-space aperture around the player.
+# A single world-space ray was too narrow: it could report a clear line to the
+# player's center while tall nearby tiles still covered their silhouette and
+# the combat lane on screen. Walls are in the "wall" group with a per-wall
+# alpha-capable material (see layout_loader._place_wall).
+const CUTAWAY_RADIUS_PX := Vector2(175.0, 145.0)
+const CUTAWAY_WALL_SCALE_Y := 0.14
+const CUTAWAY_WALL_OFFSET_Y := -1.55
 var _occluding := {}
+var _wall_candidates: Array = []
 
 func _update_wall_occlusion() -> void:
-	if _player == null or _camera == null:
+	if _player == null or _camera == null or not is_instance_valid(_player) \
+			or not is_instance_valid(_camera) or not _player.is_inside_tree() \
+			or not _camera.is_inside_tree():
 		return
-	var space := get_world_3d().direct_space_state
-	var to := _player.global_position + Vector3(0.0, 1.0, 0.0)
-	var origin := _camera.global_position
-	var dir := (to - origin).normalized()
 	var now_occ := {}
-	for _i in 10:
-		var q := PhysicsRayQueryParameters3D.create(origin, to)
-		q.collision_mask = 1   # world layer
-		var hit := space.intersect_ray(q)
-		if hit.is_empty():
-			break
-		var col = hit.get("collider")
-		if col != null and col is Node and (col as Node).is_in_group("wall"):
-			now_occ[col] = true
-			origin = (hit.position as Vector3) + dir * 0.15
-		else:
-			break
+	if _wall_candidates.is_empty():
+		_wall_candidates = get_tree().get_nodes_in_group("wall")
+	var player_focus := _player.global_position + Vector3(0.0, 0.9, 0.0)
+	var player_local := _camera.to_local(player_focus)
+	var player_screen := _camera.unproject_position(player_focus)
+	for wall in _wall_candidates:
+		if not is_instance_valid(wall) or not (wall is Node3D) \
+				or not (wall as Node3D).is_inside_tree():
+			continue
+		var wall_node := wall as Node3D
+		var wall_focus := wall_node.global_position
+		var wall_local := _camera.to_local(wall_focus)
+		# Camera forward is -Z. Only cut geometry between camera and player.
+		if wall_local.z <= player_local.z or wall_local.z >= 0.0:
+			continue
+		# Test the projected wall silhouette, not only its center. Tall walls can
+		# cover the player even when their center lies well above the aperture.
+		var wall_bottom := _camera.unproject_position(
+			wall_focus + Vector3(0.0, -1.8, 0.0))
+		var wall_top := _camera.unproject_position(
+			wall_focus + Vector3(0.0, 1.8, 0.0))
+		var wall_rect := Rect2(wall_bottom, Vector2.ZERO).expand(wall_top).grow(42.0)
+		var aperture_rect := Rect2(player_screen - CUTAWAY_RADIUS_PX,
+			CUTAWAY_RADIUS_PX * 2.0)
+		if wall_rect.intersects(aperture_rect):
+			now_occ[wall] = true
 	for w in now_occ:
 		if not _occluding.has(w):
-			_set_wall_alpha(w, 0.25)
+			_set_wall_cutaway(w, true)
 	for w in _occluding:
 		if not now_occ.has(w) and is_instance_valid(w):
-			_set_wall_alpha(w, 1.0)
+			_set_wall_cutaway(w, false)
 	_occluding = now_occ
 
-func _set_wall_alpha(wall: Node, a: float) -> void:
-	# Walls are now crypt wall GLBs (spec 24) — fade every mesh instance
-	# under them via GeometryInstance3D.transparency (a=1 opaque → 0).
-	var glb := wall.get_node_or_null("WallMesh")
-	if glb != null:
-		_apply_transparency(glb, 1.0 - a)
-
-func _apply_transparency(n: Node, t: float) -> void:
-	if n is GeometryInstance3D:
-		(n as GeometryInstance3D).transparency = t
-	for c in n.get_children():
-		_apply_transparency(c, t)
+func _set_wall_cutaway(wall: Node, cut: bool) -> void:
+	# Keep the solid collision and a low visual boundary. Transparency exposed
+	# the floorless wall cell as a black hole; lowering the box preserves the
+	# room outline while opening the combat read.
+	var mesh := wall.get_node_or_null("WallMesh") as Node3D
+	if mesh == null:
+		return
+	mesh.scale.y = CUTAWAY_WALL_SCALE_Y if cut else 1.0
+	mesh.position.y = CUTAWAY_WALL_OFFSET_Y if cut else 0.0

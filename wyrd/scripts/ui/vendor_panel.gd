@@ -3,12 +3,16 @@ extends CanvasLayer
 # Wyrd — Hod's counter. Left: your gear (click to sell — he melts it down).
 # Right: his wares (click to buy). Gold readout updates live. Esc closes.
 #
-# Slice C — the rows are no longer text pills. Each is a drawn item card
-# (WyrdUi.draw_list_row plate + painted icon plate + name + price + rarity
-# ring) so the counter reads as a carved shelf, not a spreadsheet.
+# Spec 59 — Hod is the transaction-family pilot for the shared semantic
+# JournalListRow. Rows keep one-click buy/sell behavior while presenting icon,
+# identity, owned count/rarity, price, affordability, and focus consistently.
 
 const GatherDefs = preload("res://data/gather.gd")
 const ItemsData = preload("res://data/items.gd")
+const Tokens = preload("res://scripts/ui/foundation/ui_tokens.gd")
+const FocusPointer = preload("res://scripts/ui/components/focus_pointer.gd")
+const JournalRow = preload("res://scripts/ui/components/journal_list_row.gd")
+const FIELD_THEME := preload("res://themes/wayfinder_theme.tres")
 
 # Painted item icons come from the item catalogue (ItemsData.ICON_TEX) — the
 # same map the pack draws from. Preloaded in _ready and handed to each card;
@@ -33,94 +37,135 @@ func _ready() -> void:
 	for path in ItemsData.ICON_TEX.values():
 		if ResourceLoader.exists(String(path)):
 			_tex_cache[String(path)] = load(String(path))
+	for path in GatherDefs.ICON_TEX.values():
+		if ResourceLoader.exists(String(path)):
+			_tex_cache[String(path)] = load(String(path))
 	WyrdUi.make_backdrop(self, _close)   # spec 53 — one scrim + click-outside dismiss
 	_panel = Panel.new()
-	WyrdUi.style_panel(_panel)
+	_panel.name = "TransactionShell"
+	_panel.theme = FIELD_THEME
+	_panel.theme_type_variation = &"JournalFrame"
 	_panel.anchor_left = 0.5
 	_panel.anchor_top = 0.5
 	_panel.anchor_right = 0.5
 	_panel.anchor_bottom = 0.5
-	_panel.offset_left = -380
-	_panel.offset_top = -260
-	_panel.offset_right = 380
-	_panel.offset_bottom = 260
+	_panel.offset_left = -460
+	_panel.offset_top = -270
+	_panel.offset_right = 460
+	_panel.offset_bottom = 270
 	add_child(_panel)
 
+	var header := HBoxContainer.new()
+	header.name = "TransactionHeader"
+	header.anchor_right = 1.0
+	header.offset_left = 54.0
+	header.offset_top = 28.0
+	header.offset_right = -28.0
+	header.offset_bottom = 82.0
+	header.add_theme_constant_override("separation", Tokens.SPACE_3)
+	_panel.add_child(header)
+	var heading := VBoxContainer.new()
+	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	heading.add_theme_constant_override("separation", 0)
+	header.add_child(heading)
 	var title := Label.new()
 	title.text = "Hod's Counter"
-	WyrdUi.style_title(title)
-	title.position = Vector2(54, 34)
-	_panel.add_child(title)
-
+	title.theme_type_variation = &"PageTitle"
+	heading.add_child(title)
 	var sub := Label.new()
 	sub.text = "\"Sparks like to find sleeves. Mind the anvil, state your business.\""
-	WyrdUi.style_dim(sub, 13)
-	sub.position = Vector2(54, 66)
-	_panel.add_child(sub)
-
+	sub.theme_type_variation = &"Body"
+	sub.add_theme_color_override("font_color", Tokens.TEXT_ON_PAPER_DIM)
+	heading.add_child(sub)
 	_gold_lbl = Label.new()
+	_gold_lbl.name = "GoldChip"
 	WyrdUi.style_chip(_gold_lbl, WyrdUi.SIZE_SECTION)
 	_gold_lbl.add_theme_color_override("font_color", WyrdUi.GOLD)
-	_gold_lbl.anchor_left = 1.0
-	_gold_lbl.anchor_right = 1.0
-	_gold_lbl.offset_left = -200
-	_gold_lbl.offset_top = 36
-	_panel.add_child(_gold_lbl)
-
-	var close_hint := Label.new()
-	close_hint.text = "Esc — close"
-	WyrdUi.style_dim(close_hint)
-	close_hint.anchor_left = 1.0
-	close_hint.anchor_right = 1.0
-	close_hint.anchor_top = 1.0
-	close_hint.anchor_bottom = 1.0
-	close_hint.offset_left = -110
-	close_hint.offset_top = -28
-	_panel.add_child(close_hint)
+	_gold_lbl.custom_minimum_size = Vector2(150.0, Tokens.HIT_TARGET)
+	_gold_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_gold_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	header.add_child(_gold_lbl)
+	var close_button := Button.new()
+	close_button.name = "CloseButton"
+	close_button.text = "×"
+	close_button.tooltip_text = "Close Hod's Counter"
+	close_button.custom_minimum_size = Vector2(Tokens.HIT_TARGET, Tokens.HIT_TARGET)
+	close_button.theme_type_variation = &"SecondaryButton"
+	close_button.pressed.connect(_close)
+	header.add_child(close_button)
 
 	var columns := HBoxContainer.new()
 	columns.anchor_right = 1.0
 	columns.anchor_bottom = 1.0
 	columns.offset_left = 52
-	columns.offset_top = 94
+	columns.offset_top = 104
 	columns.offset_right = -52
-	columns.offset_bottom = -56
+	columns.offset_bottom = -42
 	columns.add_theme_constant_override("separation", 26)
 	_panel.add_child(columns)
 
+	var sell_panel := PanelContainer.new()
+	sell_panel.name = "SellSourcePanel"
+	sell_panel.theme_type_variation = &"PaperRaised"
+	sell_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sell_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	sell_panel.size_flags_stretch_ratio = 0.9
+	columns.add_child(sell_panel)
 	var col1 := VBoxContainer.new()
-	col1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	col1.add_theme_constant_override("separation", 6)
-	columns.add_child(col1)
+	col1.add_theme_constant_override("separation", Tokens.SPACE_2)
+	sell_panel.add_child(col1)
 	var sell_hdr := Label.new()
-	sell_hdr.text = "Sell (he melts it down)"
-	WyrdUi.style_section(sell_hdr)
+	sell_hdr.text = "Your Pack"
+	sell_hdr.theme_type_variation = &"SectionTitle"
 	col1.add_child(sell_hdr)
+	var sell_note := Label.new()
+	sell_note.text = "Choose gear for Hod to melt down."
+	sell_note.theme_type_variation = &"Caption"
+	col1.add_child(sell_note)
 	# A full pack outgrows the panel — the sell list scrolls now.
 	var sell_scroll := ScrollContainer.new()
 	sell_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	sell_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	col1.add_child(sell_scroll)
 	_sell_box = VBoxContainer.new()
-	_sell_box.add_theme_constant_override("separation", 5)
+	_sell_box.add_theme_constant_override("separation", Tokens.SPACE_2)
 	_sell_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sell_scroll.add_child(_sell_box)
 
+	var buy_panel := PanelContainer.new()
+	buy_panel.name = "WaresPanel"
+	buy_panel.theme_type_variation = &"PaperRaised"
+	buy_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	buy_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	buy_panel.size_flags_stretch_ratio = 1.1
+	columns.add_child(buy_panel)
 	var col2 := VBoxContainer.new()
-	col2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	col2.add_theme_constant_override("separation", 6)
-	columns.add_child(col2)
+	col2.add_theme_constant_override("separation", Tokens.SPACE_2)
+	buy_panel.add_child(col2)
 	var buy_hdr := Label.new()
-	buy_hdr.text = "Wares"
-	WyrdUi.style_section(buy_hdr)
+	buy_hdr.text = "Hod's Wares"
+	buy_hdr.theme_type_variation = &"SectionTitle"
 	col2.add_child(buy_hdr)
+	var buy_note := Label.new()
+	buy_note.text = "Supplies for the road and workbench."
+	buy_note.theme_type_variation = &"Caption"
+	col2.add_child(buy_note)
+	var buy_scroll := ScrollContainer.new()
+	buy_scroll.name = "WaresScroll"
+	buy_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	buy_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	col2.add_child(buy_scroll)
 	_buy_box = VBoxContainer.new()
-	_buy_box.add_theme_constant_override("separation", 5)
+	_buy_box.name = "WaresList"
+	_buy_box.add_theme_constant_override("separation", Tokens.SPACE_2)
 	_buy_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	col2.add_child(_buy_box)
+	buy_scroll.add_child(_buy_box)
 
 	get_node("/root/Game").modal_opened()
 	_render()
+	var focus_pointer := FocusPointer.new()
+	focus_pointer.name = "TransactionFocusPointer"
+	add_child(focus_pointer)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
@@ -136,22 +181,45 @@ func _render() -> void:
 	_gold_lbl.text = "%d gold" % int(_game.gold)
 	for c in _sell_box.get_children():
 		c.queue_free()
-	var items: Array = _game.inventory.items if _game.inventory != null else []
+	var items: Array = []
+	if _game.inventory != null:
+		for item_v in _game.inventory.items:
+			if item_v is Dictionary and bool((item_v as Dictionary).get("sellable", true)):
+				items.append(item_v)
 	if items.is_empty():
-		var l := Label.new()
-		l.text = "Your pack holds no gear. The hollows provide."
-		WyrdUi.style_dim(l, 13)
-		_sell_box.add_child(l)
-	for item in items:
+		var empty := JournalRow.new()
+		empty.name = "EmptySellRow"
+		empty.setup({
+			"title": "Nothing to melt down",
+			"subtitle": "Gear in your Pack will appear here.",
+			"glyph": "⚒",
+			"state": JournalRow.RowState.DISABLED,
+		})
+		_sell_box.add_child(empty)
+	for item_index in items.size():
+		var item = items[item_index]
 		var it: Dictionary = item
 		var rarity := String(it.get("rarity", "normal"))
 		var rc: Color = WyrdUi.RARITY.get(rarity, WyrdUi.INK_MID)
 		var path := String(ItemsData.ICON_TEX.get(String(it.get("kind_id", "")), ""))
-		var card := _VendorCard.new()
-		card.setup_sell(String(it.get("name", "?")), EconomyData.sell_value(it),
-			rarity, rc, _tex_cache.get(path, null))
-		card.tooltip_text = "%s · %s" % [rarity.capitalize(),
-			String(it.get("category", "")).capitalize()]
+		var card := JournalRow.new()
+		card.name = "SellRow%d" % item_index
+		# Keep the row's production transaction target inspectable.  The strict
+		# release driver uses this same bound Dictionary to prove that the exact
+		# ground pickup carried home is the item Hod melts; ordinary UI code still
+		# owns the sale through this row's pressed signal.
+		card.set_meta("inventory_item", it)
+		card.setup({
+			"title": String(it.get("name", "?")),
+			"subtitle": "%s %s" % [rarity.capitalize(),
+				String(it.get("category", "gear")).capitalize()],
+			"trailing": "+%dg" % EconomyData.sell_value(it),
+			"badge": "Sell",
+			"icon": _tex_cache.get(path, null),
+			"tooltip": "Sell %s. Hod melts it down." % String(it.get("name", "item")),
+			"trailing_color": rc if rarity != "normal" else Tokens.GOLD_MUTED,
+			"badge_color": Tokens.TEXT_ON_PAPER_DIM,
+		})
 		card.pressed.connect(func():
 			var price: int = _game.sell_item(it)
 			if price > 0:
@@ -160,119 +228,41 @@ func _render() -> void:
 		_sell_box.add_child(card)
 	for c in _buy_box.get_children():
 		c.queue_free()
-	for ware in EconomyData.wares_for_level(_game.trade_lv()):
+	for ware in EconomyData.wares_for_level(_game.trade_lv("wayfinding")):
 		var id := String(ware.id)
 		if id == "repair_all":
 			continue   # gold-sink ware needs a durability system first — skip
 		var price := int(ware.price)
 		var have: int = _game.material_count(id)
 		var affordable: bool = int(_game.gold) >= price
-		var card := _VendorCard.new()
-		card.setup_buy(GatherDefs.material_name(id), price, have, affordable,
-			GatherDefs.material_icon(id))
+		var icon_path := GatherDefs.material_icon_path(id)
+		var card := JournalRow.new()
+		card.setup({
+			"title": GatherDefs.material_name(id),
+			"subtitle": "In Satchel: %d" % have,
+			"trailing": "%dg" % price,
+			"badge": "Buy" if affordable else "Need %dg" % (price - int(_game.gold)),
+			"icon": _tex_cache.get(icon_path, null),
+			"glyph": GatherDefs.material_icon(id),
+			"state": JournalRow.RowState.NORMAL if affordable \
+				else JournalRow.RowState.DISABLED,
+			"tooltip": "Buy %s for %d gold." % [GatherDefs.material_name(id), price],
+			"trailing_color": Tokens.GOLD_MUTED if affordable else Tokens.TERRACOTTA,
+			"badge_color": Tokens.SAGE.darkened(0.2) if affordable else Tokens.TERRACOTTA,
+		})
 		var bid := id
 		var bprice := price
 		card.pressed.connect(func():
 			if _game.buy_ware(bid, bprice):
 				_render())
 		_buy_box.add_child(card)
+	_focus_first_action.call_deferred()
 
 
-# ---- the drawn item card (one row) ----
-# A small clickable Control: draw_list_row plate, a painted icon plate on the
-# left, the name in ink, and the price in gold (red when unaffordable on buy).
-# Magic+ items get a rarity ring + a faint glow, the pack's pickup language.
-# Fully self-contained — callers hand it everything it draws (rarity color,
-# texture) so it never reaches back into the outer script's const tables.
-class _VendorCard extends Control:
-	const ICON_W := 40.0
-
-	var _name := ""
-	var _price := 0
-	var _price_red := false        # unaffordable buy → red price
-	var _sub := ""                 # right-side note (e.g. "have 3")
-	var _rarity := "normal"
-	var _rc: Color = WyrdUi.INK_MID            # rarity tint (handed in)
-	var _tex: Texture2D = null     # painted item icon (sell), else null
-	var _glyph := ""               # material glyph (buy)
-	var _hover := false
-
-	signal pressed
-
-	func _init() -> void:
-		custom_minimum_size = Vector2(0, 54.0)
-		mouse_filter = Control.MOUSE_FILTER_STOP
-
-	func setup_sell(item_name: String, value: int, rarity: String,
-			rarity_color: Color, tex: Texture2D) -> void:
-		_name = item_name
-		_price = value
-		_rarity = rarity
-		_rc = rarity_color
-		_tex = tex
-		queue_redraw()
-
-	func setup_buy(mat_name: String, price: int, have: int, affordable: bool,
-			glyph: String) -> void:
-		_name = mat_name
-		_price = price
-		_price_red = not affordable
-		_sub = "have %d" % have
-		_glyph = glyph
-		_rarity = "normal"
-		queue_redraw()
-
-	func _gui_input(event: InputEvent) -> void:
-		if event is InputEventMouseButton and event.pressed \
-				and event.button_index == MOUSE_BUTTON_LEFT:
-			pressed.emit()
-			accept_event()
-
-	func _notification(what: int) -> void:
-		if what == NOTIFICATION_MOUSE_ENTER:
-			_hover = true
-			queue_redraw()
-		elif what == NOTIFICATION_MOUSE_EXIT:
-			_hover = false
-			queue_redraw()
-
-	func _draw() -> void:
-		var r := Rect2(Vector2.ZERO, size)
-		# Accent stripe: rarity tint carries the card's read (gold/blue/orange
-		# for magic+, quiet ink for normals).
-		var accent: Color = _rc if _rarity != "normal" else WyrdUi.INK_MID
-		WyrdUi.draw_list_row(self, r, accent)
-		if _hover:
-			draw_rect(r.grow(-1.5), Color(WyrdUi.GOLD, 0.10))
-		# --- icon plate on the left ---
-		var ir := Rect2(Vector2(9.0, (size.y - ICON_W) * 0.5),
-			Vector2(ICON_W, ICON_W))
-		WyrdUi.draw_well(self, ir)
-		if _rarity != "normal":
-			# faint rarity glow inside the plate (pickup language)
-			for i in 2:
-				var g := _rc
-				g.a = 0.12 + 0.06 * float(1 - i)
-				draw_rect(ir.grow(-2.0 - i * 2.0), g)
-		var font := get_theme_default_font()
-		if _tex != null:
-			draw_texture_rect(_tex, ir.grow(-4.0), false)
-		elif _glyph != "":
-			draw_string(font, ir.position + Vector2(0, ICON_W * 0.5 + 6.0),
-				_glyph, HORIZONTAL_ALIGNMENT_CENTER, ICON_W, WyrdUi.SIZE_SECTION,
-				WyrdUi.INK)
-		# rarity ring around the icon plate
-		if _rarity != "normal":
-			draw_rect(ir, _rc, false, 2.0)
-		# --- name (ink; rarity-tinted for magic+) ---
-		var tx := ir.end.x + 12.0
-		var name_col: Color = _rc if _rarity != "normal" else WyrdUi.INK
-		draw_string(font, Vector2(tx, size.y * 0.5 - 2.0), _name,
-			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 86.0, WyrdUi.SIZE_SECTION, name_col)
-		if _sub != "":
-			draw_string(font, Vector2(tx, size.y * 0.5 + 16.0), _sub,
-				HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 86.0, WyrdUi.SIZE_CAPTION, WyrdUi.INK_MID)
-		# --- price (gold, right-aligned; red when unaffordable on buy) ---
-		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
-		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
-			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, WyrdUi.SIZE_SECTION, price_col)
+func _focus_first_action() -> void:
+	for box in [_sell_box, _buy_box]:
+		for child in box.get_children():
+			if child is Button and not child.is_queued_for_deletion() \
+					and not (child as Button).disabled:
+				(child as Button).grab_focus()
+				return

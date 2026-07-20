@@ -89,21 +89,28 @@ func _burst_vfx(player: Node, radius: float, dmg: int) -> void:
 		if sfx != null:
 			sfx.play("thornburst_impact")
 	)
-	# Beat 4 — wither after SNAP_SEC
-	var body_end: float = TELEGRAPH_SEC + SNAP_SEC
-	player.get_tree().create_timer(body_end).timeout.connect(
-		func() -> void:
-			if not is_instance_valid(holder):
-				return
-			var tw: Tween = holder.create_tween()
-			tw.set_parallel(true)
-			var disc_mat: StandardMaterial3D = disc.material_override as StandardMaterial3D
-			if disc_mat != null:
-				tw.tween_property(disc_mat, "albedo_color:a", 0.0, WITHER_SEC)
-				tw.tween_property(disc_mat, "emission_energy_multiplier", 0.0, WITHER_SEC)
-			_wither_subtree(holder, tw)
-			tw.chain().tween_callback(holder.queue_free)
-	)
+	# Beat 4 — the delay belongs to the effect holder, rather than the
+	# SceneTree.  A chart can tear down its World while the skill is still in
+	# flight; a SceneTreeTimer would outlive that World and invoke a closure
+	# whose holder/disc captures have been freed.  A holder-bound Tween dies
+	# with the holder, so teardown simply cancels the cosmetic tail.
+	var wither_delay: Tween = holder.create_tween()
+	wither_delay.tween_interval(TELEGRAPH_SEC + SNAP_SEC)
+	wither_delay.tween_callback(_begin_wither.bind(holder, disc))
+
+
+func _begin_wither(holder: Node3D, disc: MeshInstance3D) -> void:
+	if not is_instance_valid(holder):
+		return
+	var tw: Tween = holder.create_tween()
+	tw.set_parallel(true)
+	if is_instance_valid(disc):
+		var disc_mat: StandardMaterial3D = disc.material_override as StandardMaterial3D
+		if disc_mat != null:
+			tw.tween_property(disc_mat, "albedo_color:a", 0.0, WITHER_SEC)
+			tw.tween_property(disc_mat, "emission_energy_multiplier", 0.0, WITHER_SEC)
+	_wither_subtree(holder, tw)
+	tw.chain().tween_callback(holder.queue_free)
 
 # ---- Beat 1 helpers ---------------------------------------------------
 

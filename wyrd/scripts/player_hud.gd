@@ -14,6 +14,11 @@ const FILL_FULL_W := 216.0
 const FOCUS_FILL_LEFT := 2.0
 const FOCUS_FILL_FULL_W := 216.0
 const Feel = preload("res://data/feel.gd")   # Plan.md B0 — feel tunables
+const CraftingDefs = preload("res://data/crafting.gd")
+const Progression = preload("res://data/progression.gd")
+const Tokens = preload("res://scripts/ui/foundation/ui_tokens.gd")
+const FocusPointer = preload("res://scripts/ui/components/focus_pointer.gd")
+const FIELD_THEME := preload("res://themes/wayfinder_theme.tres")
 
 @onready var _fill: ColorRect = $HPRoot/Fill
 @onready var _label: Label = $HPRoot/Label
@@ -24,26 +29,38 @@ const Feel = preload("res://data/feel.gd")   # Plan.md B0 — feel tunables
 
 # Wyrd — quest tracker, toast stack, and the Wayfinding readout.
 var _objective: Label
+var _objective_hint: Label
 var _quest_sub: Label         # D13 — chart sub-objective line
 var _quest_plate: Panel
 var _compass: CompassArrow = null      # spec 52 — points at the descent/exit
 var _quest_progress: Label
 var _toast_box: VBoxContainer
 var _skills_lbl: Label
+var _action_bar: HBoxContainer
+var _action_buttons := {}
+var _cluster_tray: Control = null
 var _last_toast_text := ""        # toast dedup (Feel.TOAST_DEDUP_WINDOW_SEC)
 var _last_toast_time := 0.0
 # Spec 38 — potion globes (PoE-style): HP red bottom-left of the skill
 # bar, Focus blue bottom-right. The liquid level IS the meter.
-var _hp_globe: GlobeGauge = null
-var _focus_globe: GlobeGauge = null
+var _hp_globe: FieldMeter = null
+var _focus_globe: FieldMeter = null
 var _pip_row: StatusPipRow = null      # active-status drain-arc pips above HP
 # Slice B — a radial hurt-vignette: transparent center darkening to a
 # terracotta rim, flashed on the player taking damage (richer than the flat
 # full-screen red _flash). A TextureRect fed by a radial GradientTexture2D —
 # no shader, no _draw, so it's safe in this CanvasLayer.
 var _vignette: TextureRect = null
+var _game_ref: Node = null
 
 func _ready() -> void:
+	add_to_group("gameplay_hud")
+	_game_ref = get_tree().root.get_node_or_null("Game")
+	var game := _game_ref
+	if game != null:
+		if game.has_signal("modal_changed") and not game.modal_changed.is_connected(_on_modal_changed):
+			game.modal_changed.connect(_on_modal_changed)
+		_on_modal_changed(int(game.get("modal_count")) > 0)
 	# Spec-35: scale up the HP + Focus bars together. Flash and Whiteout
 	# need to remain viewport-sized; reset their scale parent on each
 	# (they're full-screen ColorRects, anchored to all sides).
@@ -60,12 +77,14 @@ func _ready() -> void:
 	# read as a single low row. Added before the orbs so they sit on top of it.
 	if WyrdUi.has_maple():
 		_build_cluster_tray()
-	# The HP/Focus orbs flank the hotbar as the round end-slots of that tray.
-	_hp_globe = GlobeGauge.new()
-	_hp_globe.liquid = Color(0.70, 0.18, 0.14)
+	# Spec 59 — readable horizontal Field Journal meters flank the hotbar.
+	_hp_globe = FieldMeter.new()
+	_hp_globe.fill_color = WyrdUi.TERRACOTTA
+	_hp_globe.caption = "HP"
 	_place_globe(_hp_globe, -1)
-	_focus_globe = GlobeGauge.new()
-	_focus_globe.liquid = WyrdUi.FOCUS   # spec 53 — on-palette teal-cyan, not mana-blue
+	_focus_globe = FieldMeter.new()
+	_focus_globe.fill_color = WyrdUi.SAGE
+	_focus_globe.caption = "FOCUS"
 	_place_globe(_focus_globe, 1)
 	_hp_globe.update_to(1.0, "30/30", "")
 	_focus_globe.update_to(1.0, "50/50", "")
@@ -76,32 +95,40 @@ func _ready() -> void:
 	_pip_row.anchor_right = 0.5
 	_pip_row.anchor_top = 1.0
 	_pip_row.anchor_bottom = 1.0
-	_pip_row.offset_left = -GLOBE_FLANK - GLOBE_BOX * 0.5
-	_pip_row.offset_right = -GLOBE_FLANK + GLOBE_BOX * 0.5
-	_pip_row.offset_top = -180
-	_pip_row.offset_bottom = -158
+	_pip_row.offset_left = -119
+	_pip_row.offset_right = -37
+	_pip_row.offset_top = -116
+	_pip_row.offset_bottom = -96
 	_pip_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_pip_row)
 	_build_hurt_vignette()
 	_build_mute_indicator()
 	_build_wyrd_overlay()
-	_build_coop_hud()
+	var focus_pointer := FocusPointer.new()
+	focus_pointer.name = "HudFocusPointer"
+	add_child(focus_pointer)
+
+
+func _on_modal_changed(is_open: bool) -> void:
+	visible = not is_open
 
 # A globe FLANKING the bottom-centre hotbar cluster (2026-07-01 — user: "bring
 # the circles in"): side -1 = left of the tray, +1 = right. One fused bottom
 # cluster instead of orbs marooned in the far corners.
-const GLOBE_BOX := 132.0
-const GLOBE_FLANK := 262.0     # distance from screen centre to each orb centre
-func _place_globe(g: GlobeGauge, side: int) -> void:
+const GLOBE_BOX := 196.0
+const METER_H := 48.0
+const HOTBAR_SLOT := 56.0
+const HOTBAR_GAP := 6.0
+func _place_globe(g: FieldMeter, side: int) -> void:
 	g.anchor_left = 0.5
 	g.anchor_right = 0.5
 	g.anchor_top = 1.0
 	g.anchor_bottom = 1.0
-	var cx := GLOBE_FLANK * float(side)
+	var cx := 176.0 * float(side)
 	g.offset_left = cx - GLOBE_BOX * 0.5
 	g.offset_right = cx + GLOBE_BOX * 0.5
-	g.offset_top = -146
-	g.offset_bottom = -14
+	g.offset_top = -76
+	g.offset_bottom = -76 + METER_H
 	g.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(g)
 
@@ -115,16 +142,18 @@ func _build_hud_frame() -> void:
 # The maple cradle tray — one wide cream+wood pill spanning the bottom cluster.
 func _build_cluster_tray() -> void:
 	var tray := ClusterTray.new()
+	tray.name = "BottomCluster"
 	tray.anchor_left = 0.5
 	tray.anchor_right = 0.5
 	tray.anchor_top = 1.0
 	tray.anchor_bottom = 1.0
-	tray.offset_left = -348.0
-	tray.offset_right = 348.0
-	tray.offset_top = -142.0
-	tray.offset_bottom = -20.0
+	tray.offset_left = -124.0
+	tray.offset_right = 36.0
+	tray.offset_top = -94.0
+	tray.offset_bottom = -8.0
 	tray.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(tray)
+	_cluster_tray = tray
 
 # Spec 38 — the mute state, by the Focus globe. F10 flips it.
 func _build_mute_indicator() -> void:
@@ -139,6 +168,7 @@ func _build_wyrd_overlay() -> void:
 	# Quest tracker — a parchment scroll plate top-center, with a small-caps
 	# QUEST header, the objective, and a live progress counter.
 	_quest_plate = Panel.new()
+	_quest_plate.name = "QuestNote"
 	# Slice B — promote the quest tracker from a flat chip to a SEALED SCROLL:
 	# a painted-wood 9-patch backing + a drawn parchment-grain / flourish /
 	# wax-seal overlay (QuestScrollArt below). The button-plate art (144×80,
@@ -149,7 +179,7 @@ func _build_wyrd_overlay() -> void:
 	# dark so it reads on cream); else the soft enamel card (cream text).
 	var maple := WyrdUi.has_maple()
 	var q_hdr_col: Color = WyrdUi.MAPLE_WOOD_D if maple else WyrdUi.GOLD
-	var q_body_col: Color = WyrdUi.MAPLE_INK_DARK if maple else WyrdUi.INK
+	var q_body_col: Color = WyrdUi.MAPLE_INK_DARK if maple else WyrdUi.TEXT_ON_DARK
 	var q_prog_col: Color = Color(0.28, 0.48, 0.20) if maple else WyrdUi.SAGE
 	var sb := StyleBoxFlat.new()
 	sb.set_corner_radius_all(18)
@@ -171,10 +201,10 @@ func _build_wyrd_overlay() -> void:
 	# 520px banner centred over the world. One line + an affix sub-line.
 	_quest_plate.anchor_left = 0.0
 	_quest_plate.anchor_right = 0.0
-	_quest_plate.offset_left = 16
-	_quest_plate.offset_right = 360
-	_quest_plate.offset_top = 12
-	_quest_plate.offset_bottom = 108
+	_quest_plate.offset_left = 12
+	_quest_plate.offset_right = 332
+	_quest_plate.offset_top = 10
+	_quest_plate.offset_bottom = 82
 	add_child(_quest_plate)
 	# Drawn scroll dressing — added first so it sits behind the text. Fills the
 	# plate; redraws on resize. The _draw-on-Control pattern is proven in this
@@ -185,49 +215,63 @@ func _build_wyrd_overlay() -> void:
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_quest_plate.add_child(art)
 	var qhdr := Label.new()
-	qhdr.text = "✦ Quest"
+	qhdr.name = "QuestTitle"
+	qhdr.text = "✦ Next"
 	var hf := WyrdUi.font_header()
 	if hf != null:
 		qhdr.add_theme_font_override("font", hf)
-	qhdr.add_theme_font_size_override("font_size", 11)
+	qhdr.add_theme_font_size_override("font_size", 14)
 	qhdr.add_theme_color_override("font_color", q_hdr_col)
-	qhdr.offset_left = 16
+	qhdr.offset_left = 14
 	qhdr.anchor_right = 1.0
-	qhdr.offset_top = 9
+	qhdr.offset_top = 7
 	qhdr.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_quest_plate.add_child(qhdr)
 	# Progress counter rides the top-right corner of the chip, beside the eyebrow.
 	_quest_progress = Label.new()
-	_quest_progress.add_theme_font_size_override("font_size", 12)
+	_quest_progress.add_theme_font_size_override("font_size", 14)
 	_quest_progress.add_theme_color_override("font_color", q_prog_col)
 	_quest_progress.anchor_right = 1.0
 	_quest_progress.offset_left = -110
-	_quest_progress.offset_right = -14
-	_quest_progress.offset_top = 9
+	_quest_progress.offset_right = -12
+	_quest_progress.offset_top = 7
 	_quest_progress.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_quest_plate.add_child(_quest_progress)
 	_objective = Label.new()
-	_objective.add_theme_font_size_override("font_size", 14)
+	_objective.name = "Objective"
+	_objective.add_theme_font_size_override("font_size", 16)
 	_objective.add_theme_color_override("font_color", q_body_col)
 	_objective.anchor_right = 1.0
 	_objective.offset_top = 26
-	_objective.offset_left = 16
-	_objective.offset_right = -14
+	_objective.offset_left = 14
+	_objective.offset_right = -12
 	_objective.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_quest_plate.add_child(_objective)
+	_objective_hint = Label.new()
+	_objective_hint.add_theme_font_size_override("font_size", 14)
+	_objective_hint.add_theme_color_override("font_color", q_prog_col)
+	_objective_hint.anchor_right = 1.0
+	_objective_hint.anchor_top = 1.0
+	_objective_hint.anchor_bottom = 1.0
+	_objective_hint.offset_left = 14
+	_objective_hint.offset_right = -12
+	_objective_hint.offset_top = -22
+	_objective_hint.offset_bottom = -6
+	_objective_hint.clip_text = true
+	_quest_plate.add_child(_objective_hint)
 	# D13 — sub-objective: names the chart / affixes you're delving. Bottom-
 	# anchored so a wrapped 2-line objective can never collide with it (spec 52).
 	_quest_sub = Label.new()
-	_quest_sub.add_theme_font_size_override("font_size", 11)
+	_quest_sub.add_theme_font_size_override("font_size", 14)
 	_quest_sub.add_theme_color_override("font_color", q_prog_col)
 	_quest_sub.anchor_right = 1.0
 	_quest_sub.anchor_top = 1.0
 	_quest_sub.anchor_bottom = 1.0
 	_quest_sub.offset_top = -26
 	_quest_sub.offset_bottom = -7
-	_quest_sub.offset_left = 16
-	_quest_sub.offset_right = -14
+	_quest_sub.offset_left = 14
+	_quest_sub.offset_right = -12
 	_quest_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_quest_sub.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_quest_sub.clip_text = true
@@ -237,10 +281,10 @@ func _build_wyrd_overlay() -> void:
 	_compass = CompassArrow.new()
 	_compass.anchor_left = 0.0
 	_compass.anchor_top = 0.0
-	_compass.offset_left = 368
-	_compass.offset_top = 14
-	_compass.offset_right = 368 + 48
-	_compass.offset_bottom = 14 + 48
+	_compass.offset_left = 298
+	_compass.offset_top = 12
+	_compass.offset_right = 338
+	_compass.offset_bottom = 52
 	_compass.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_compass)
 	_build_action_bar()
@@ -249,41 +293,99 @@ func _build_wyrd_overlay() -> void:
 	_toast_box.anchor_right = 0.5
 	_toast_box.anchor_top = 1.0
 	_toast_box.anchor_bottom = 1.0
-	_toast_box.offset_top = -170
+	_toast_box.offset_top = -112
 	_toast_box.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_toast_box.alignment = BoxContainer.ALIGNMENT_END
 	add_child(_toast_box)
 	# Spec 52 (Direction A) — run-meta plaque, top-RIGHT (was bottom-right).
 	_skills_lbl = Label.new()
-	WyrdUi.style_chip(_skills_lbl, 13)
+	WyrdUi.style_chip(_skills_lbl, 14)
 	_skills_lbl.anchor_left = 1.0
 	_skills_lbl.anchor_right = 1.0
 	_skills_lbl.anchor_top = 0.0
 	_skills_lbl.anchor_bottom = 0.0
-	_skills_lbl.offset_left = -260
-	_skills_lbl.offset_right = -16
-	_skills_lbl.offset_top = 12
-	_skills_lbl.offset_bottom = 42
+	_skills_lbl.offset_left = -194
+	_skills_lbl.offset_right = -12
+	_skills_lbl.offset_top = 10
+	_skills_lbl.offset_bottom = 36
 	_skills_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	add_child(_skills_lbl)
-	var game := get_tree().root.get_node_or_null("Game")
-	if game != null:
-		game.tutorial_changed.connect(func(_s): _refresh_objective())
-		game.materials_changed.connect(_refresh_objective)
-		game.charts_changed.connect(_refresh_objective)
-		game.toast.connect(show_toast)
-		game.xp_gained.connect(func(_k, _a): _refresh_trades())
-		game.leveled_up.connect(func(k: String, l: int):
-			_refresh_trades()
-			_show_levelup_banner(k, l)   # Plan.md B3 — the level-up moment
-			_flash_skills())
-		game.gold_changed.connect(func(_g): _refresh_trades())
+	var progress_game := _game_ref
+	if progress_game != null:
+		progress_game.tutorial_changed.connect(_on_tutorial_changed)
+		if progress_game.has_signal("onboarding_changed"):
+			progress_game.onboarding_changed.connect(_on_onboarding_changed)
+		progress_game.materials_changed.connect(_on_materials_changed)
+		progress_game.charts_changed.connect(_refresh_objective)
+		progress_game.toast.connect(show_toast)
+		progress_game.xp_gained.connect(_on_xp_gained)
+		progress_game.leveled_up.connect(_on_trade_leveled)
+		progress_game.gold_changed.connect(_on_gold_changed)
 		_refresh_objective()
 		_refresh_trades()
+		_apply_progressive_hud()
 		# Toasts buffered across the scene change (run completion, level-ups)
 		# play here, in the scene the player actually sees.
-		for msg in game.drain_pending_toasts():
+		for msg in progress_game.drain_pending_toasts():
 			show_toast(msg)
+
+
+func _exit_tree() -> void:
+	# Game is an autoload; the HUD is not. Named connections make teardown
+	# deterministic even when a pause-immune toast tween briefly outlives the
+	# scene that created it during a Web transition.
+	var game := _game_ref
+	if game == null or not is_instance_valid(game):
+		_game_ref = null
+		return
+	var connections := [
+		[game.modal_changed, _on_modal_changed],
+		[game.tutorial_changed, _on_tutorial_changed],
+		[game.onboarding_changed, _on_onboarding_changed],
+		[game.materials_changed, _on_materials_changed],
+		[game.charts_changed, _refresh_objective],
+		[game.toast, show_toast],
+		[game.xp_gained, _on_xp_gained],
+		[game.leveled_up, _on_trade_leveled],
+		[game.gold_changed, _on_gold_changed],
+	]
+	for pair in connections:
+		var game_signal: Signal = pair[0]
+		var callback: Callable = pair[1]
+		if game_signal.is_connected(callback):
+			game_signal.disconnect(callback)
+	_game_ref = null
+
+
+func _on_tutorial_changed(_step: int) -> void:
+	_refresh_progress_surfaces()
+
+
+func _on_onboarding_changed() -> void:
+	_refresh_progress_surfaces()
+
+
+func _on_materials_changed() -> void:
+	_refresh_progress_surfaces()
+
+
+func _refresh_progress_surfaces() -> void:
+	_refresh_objective()
+	_apply_progressive_hud()
+
+
+func _on_xp_gained(_trade: String, _amount: int) -> void:
+	_refresh_trades()
+
+
+func _on_trade_leveled(trade: String, level: int) -> void:
+	_refresh_trades()
+	_show_levelup_banner(trade, level)
+	_flash_skills()
+
+
+func _on_gold_changed(_amount: int) -> void:
+	_refresh_trades()
 
 func _refresh_objective() -> void:
 	var game := get_tree().root.get_node_or_null("Game")
@@ -292,6 +394,10 @@ func _refresh_objective() -> void:
 	var text := String(game.objective_text())
 	_quest_plate.visible = text != ""
 	_objective.text = text
+	if _objective_hint != null:
+		_objective_hint.text = String(game.objective_hint()) \
+			if game.has_method("objective_hint") else ""
+		_objective_hint.visible = _objective_hint.text != ""
 	var prog := String(game.objective_progress())
 	_quest_progress.text = prog
 	_quest_progress.visible = prog != ""
@@ -303,6 +409,9 @@ func _refresh_objective() -> void:
 		var short := sub.split(" — ")[0] if sub.contains(" — ") else sub
 		_quest_sub.text = ("◆ " + short) if short != "" else ""
 		_quest_sub.visible = short != ""
+		if _objective_hint != null:
+			_objective_hint.offset_top = -40 if _quest_sub.visible else -22
+			_objective_hint.offset_bottom = -24 if _quest_sub.visible else -6
 	# Spec 53 — content-hug: size the chip to the wrapped objective + sub instead
 	# of a fixed 96px box (kills the dead-teal pool under a single-line objective).
 	_fit_quest_plate()
@@ -314,7 +423,12 @@ func _fit_quest_plate() -> void:
 	if _quest_plate == null or not is_instance_valid(_quest_plate):
 		return
 	var lines: int = maxi(1, _objective.get_line_count())
-	var h: float = 26.0 + float(lines) * 19.0 + (22.0 if _quest_sub.visible else 10.0)
+	var h: float = 28.0 + float(lines) * 21.0
+	if _objective_hint != null and _objective_hint.visible:
+		h += 20.0
+	if _quest_sub.visible:
+		h += 20.0
+	h += 8.0
 	_quest_plate.offset_bottom = _quest_plate.offset_top + h
 
 # Bottom-right action bar — Pack (I) and Satchel (M) as clickable parchment
@@ -324,6 +438,8 @@ func _build_action_bar() -> void:
 	# Enamel kit, matching the hotbar's visual language. The word moves to the
 	# tooltip; the key-hint sits top-left; the trade color rides a thin underline.
 	var bar := HBoxContainer.new()
+	bar.name = "ActionBar"
+	_action_bar = bar
 	# HUD "A" — the menu affordances group top-RIGHT under the run-meta readout,
 	# so the bottom edge stays clean (orbs + centred hotbar only).
 	bar.anchor_left = 1.0
@@ -331,21 +447,23 @@ func _build_action_bar() -> void:
 	bar.anchor_top = 0.0
 	bar.anchor_bottom = 0.0
 	# 3 × 50 + 2 × 8 sep = 166 wide, 50 tall; pinned top-right below the plaque.
-	bar.offset_left = -182
-	bar.offset_top = 50
-	bar.offset_right = -16
-	bar.offset_bottom = 100
-	bar.add_theme_constant_override("separation", 8)
+	bar.offset_left = -174
+	bar.offset_top = 42
+	bar.offset_right = -12
+	bar.offset_bottom = 94
+	bar.add_theme_constant_override("separation", 6)
 	add_child(bar)
 	var fallback := {"gear": "⚔", "satchel": "❖", "trades": "✎"}
 	for spec in [["Gear", "I", "toggle_inventory", "gear"],
 			["Satchel", "M", "toggle_satchel", "satchel"],
 			["Trades", "K", "toggle_trades", "trades"]]:
 		var b := Button.new()
-		WyrdUi.style_kit_button(b)
+		b.name = "%sButton" % spec[0]
+		b.theme = FIELD_THEME
+		b.theme_type_variation = &"PrimaryButton"
 		b.text = ""
 		b.tooltip_text = "%s  (%s)" % [spec[0], spec[1]]
-		b.custom_minimum_size = Vector2(50, 50)
+		b.custom_minimum_size = Vector2(48, 48)
 		b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		# Trade-color language: Gear terracotta, Satchel sage, Trades gold — now
@@ -364,10 +482,10 @@ func _build_action_bar() -> void:
 			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			tr.anchor_right = 1.0
 			tr.anchor_bottom = 1.0
-			tr.offset_left = 8
-			tr.offset_top = 8
-			tr.offset_right = -8
-			tr.offset_bottom = -8
+			tr.offset_left = 6
+			tr.offset_top = 6
+			tr.offset_right = -6
+			tr.offset_bottom = -6
 			tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			b.add_child(tr)
 		else:
@@ -377,7 +495,7 @@ func _build_action_bar() -> void:
 			if hdr != null:
 				gl.add_theme_font_override("font", hdr)
 			gl.add_theme_font_size_override("font_size", 22)
-			gl.add_theme_color_override("font_color", WyrdUi.INK)
+			gl.add_theme_color_override("font_color", WyrdUi.TEXT_ON_DARK)
 			gl.anchor_right = 1.0
 			gl.anchor_bottom = 1.0
 			gl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -413,6 +531,64 @@ func _build_action_bar() -> void:
 			if player != null and player.has_method(method):
 				player.call(method))
 		bar.add_child(b)
+		_action_buttons[String(spec[3])] = b
+
+func _apply_progressive_hud() -> void:
+	var game := get_tree().root.get_node_or_null("Game")
+	if game == null:
+		return
+	var slots := int(game.active_skill_slots()) \
+		if game.has_method("active_skill_slots") else 4
+	var combat_visible := bool(game.onboarding_surface_available("combat")) \
+		if game.has_method("onboarding_surface_available") else true
+	var focus_visible := bool(game.onboarding_surface_available("focus")) \
+		if game.has_method("onboarding_surface_available") else slots > 1
+	var has_draught := false
+	for id in CraftingDefs.DRAUGHT_ORDER:
+		if int(game.material_count(String(id))) > 0:
+			has_draught = true
+			break
+	var total_slots := slots + (1 if has_draught else 0)
+	var hotbar_w := float(total_slots) * HOTBAR_SLOT \
+		+ float(maxi(0, total_slots - 1)) * HOTBAR_GAP
+	var hp_right := -hotbar_w * 0.5 - 10.0
+	var hp_left := hp_right - GLOBE_BOX
+	var focus_left := hotbar_w * 0.5 + 10.0
+	var focus_right := focus_left + GLOBE_BOX
+	if _hp_globe != null:
+		_hp_globe.visible = combat_visible
+		_hp_globe.offset_left = hp_left
+		_hp_globe.offset_right = hp_right
+	if _focus_globe != null:
+		_focus_globe.visible = combat_visible and focus_visible
+		_focus_globe.offset_left = focus_left
+		_focus_globe.offset_right = focus_right
+	if _pip_row != null:
+		_pip_row.visible = combat_visible
+		_pip_row.offset_left = hp_left
+		_pip_row.offset_right = hp_right
+	if _cluster_tray != null:
+		_cluster_tray.visible = combat_visible
+		_cluster_tray.offset_left = hp_left - 8.0
+		_cluster_tray.offset_right = (focus_right + 8.0) \
+			if slots > 1 else hotbar_w * 0.5 + 8.0
+		_cluster_tray.queue_redraw()
+	var step := int(game.tutorial_step)
+	if _action_buttons.has("satchel"):
+		_action_buttons.satchel.visible = bool(
+			game.onboarding_surface_available("satchel"))
+	if _action_buttons.has("gear"):
+		_action_buttons.gear.visible = bool(
+			game.onboarding_surface_available("gear"))
+	if _action_buttons.has("trades"):
+		_action_buttons.trades.visible = bool(
+			game.onboarding_surface_available("trades"))
+	if _action_bar != null:
+		_action_bar.visible = bool(game.onboarding_surface_available("satchel")) \
+			or bool(game.onboarding_surface_available("gear")) \
+			or bool(game.onboarding_surface_available("trades"))
+	if _skills_lbl != null:
+		_skills_lbl.visible = step >= 6 or int(game.gold) > 0
 
 func _refresh_trades() -> void:
 	var game := get_tree().root.get_node_or_null("Game")
@@ -420,6 +596,7 @@ func _refresh_trades() -> void:
 		return
 	_skills_lbl.text = "%dg · Wayfinding %d" % [
 		int(game.gold), game.trade_lv("wayfinding")]
+	_apply_progressive_hud()
 
 func show_toast(msg: String, category: String = "info") -> void:
 	# Dedup — a burst of identical chips in one window collapses to one.
@@ -434,7 +611,7 @@ func show_toast(msg: String, category: String = "info") -> void:
 	WyrdUi.style_chip(l, 15)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	var col: Color = WyrdUi.INK
+	var col: Color = WyrdUi.TEXT_ON_DARK
 	if category == "levelup":
 		col = WyrdUi.GOLD
 	elif category == "damage":
@@ -453,14 +630,10 @@ func show_toast(msg: String, category: String = "info") -> void:
 
 # Plan.md B3 — the level-up "moment": a gold perk banner naming the unlock.
 func _show_levelup_banner(trade: String, lv: int) -> void:
-	var game := get_tree().root.get_node_or_null("Game")
-	var perk_name := "Wayfinding %d" % lv
-	if game != null:
-		for p in Array(game.PERKS.get(trade, [])):
-			if int(p.lv) == lv:
-				perk_name = String(p.name)
-				break
-	show_toast("✦ %s" % perk_name, "levelup")
+	var trade_name := String(Progression.TRADE_NAMES.get(trade, trade))
+	var unlock := Progression.unlock_for_trade_level(trade, lv)
+	var unlock_name := String(unlock.get("label", "%s %d" % [trade_name, lv]))
+	show_toast("✦ %s %d — %s" % [trade_name, lv, unlock_name], "levelup")
 
 # Gold glow + scale-punch on the Wayfinding readout when a level lands.
 func _flash_skills() -> void:
@@ -578,7 +751,7 @@ func _refresh_party() -> void:
 		row.add_theme_constant_override("separation", 6)
 		var lbl := Label.new()
 		lbl.text = nm
-		WyrdUi.style_body(lbl, 12)
+		WyrdUi.style_body(lbl, 16)
 		lbl.custom_minimum_size = Vector2(96, 0)
 		var bar := ProgressBar.new()
 		bar.min_value = 0
@@ -669,6 +842,52 @@ func update_pips(pips: Array) -> void:
 		_pip_row.set_statuses(pips)
 
 
+# Spec 59 — compact, readable vital state. This is visualization-only (not an
+# interaction), so a custom draw remains appropriate while ordinary buttons and
+# rows migrate to semantic Controls.
+class FieldMeter extends Control:
+	var ratio := 1.0
+	var value_text := ""
+	var status_text := ""
+	var caption := ""
+	var fill_color := Tokens.SAGE
+
+	func _ready() -> void:
+		name = "Vital%s" % caption.capitalize()
+
+	func update_to(next_ratio: float, next_text: String, next_status: String) -> void:
+		ratio = clampf(next_ratio, 0.0, 1.0)
+		value_text = next_text
+		status_text = next_status
+		queue_redraw()
+
+	func _draw() -> void:
+		var rect := Rect2(Vector2.ZERO, size)
+		var shell := StyleBoxFlat.new()
+		shell.bg_color = Tokens.WALNUT
+		shell.set_corner_radius_all(12)
+		shell.set_border_width_all(2)
+		shell.border_color = Tokens.WALNUT_DEEP
+		draw_style_box(shell, rect)
+		var well := rect.grow(-6.0)
+		var well_box := StyleBoxFlat.new()
+		well_box.bg_color = Tokens.MOSS
+		well_box.set_corner_radius_all(7)
+		draw_style_box(well_box, well)
+		var fill := Rect2(well.position + Vector2(3, well.size.y - 13),
+			Vector2(maxf(0.0, (well.size.x - 6.0) * ratio), 10.0))
+		draw_rect(fill, fill_color)
+		var font := WyrdUi.font_body()
+		if font != null:
+			draw_string(font, well.position + Vector2(7, 18), caption,
+				HORIZONTAL_ALIGNMENT_LEFT, well.size.x * 0.42, 14, Tokens.TEXT_ON_DARK_DIM)
+			draw_string(font, well.position + Vector2(well.size.x * 0.42, 18), value_text,
+				HORIZONTAL_ALIGNMENT_RIGHT, well.size.x * 0.53 - 7, 16, Tokens.TEXT_ON_DARK)
+			if status_text != "":
+				draw_string(font, well.position + Vector2(7, 34), status_text,
+					HORIZONTAL_ALIGNMENT_LEFT, well.size.x - 14, 14, Tokens.TEXT_ON_DARK_DIM)
+
+
 # The maple cradle tray (hud2_cradle_3) — one wide cream pill with a chunky
 # wood-brown frame + gold seam, its round ends cradling the HP/Focus orbs while
 # the round skill slots sit along its belly. Pure StyleBoxFlat draws; sits behind
@@ -679,34 +898,28 @@ class ClusterTray extends Control:
 
 	func _draw() -> void:
 		var r := Rect2(Vector2.ZERO, size)
-		var rad := int(size.y * 0.5)
+		var rad := 14
 		# soft drop shadow
 		var sh := StyleBoxFlat.new()
 		sh.bg_color = Color(0, 0, 0, 0.22)
 		sh.set_corner_radius_all(rad)
 		sh.anti_aliasing = true
 		draw_style_box(sh, Rect2(r.position + Vector2(0, 6), r.size))
-		# cream pill with a chunky wood-brown frame
+		# Field Journal: walnut shell with a moss control recess.
 		var pill := StyleBoxFlat.new()
-		pill.bg_color = WyrdUi.MAPLE_CREAM
+		pill.bg_color = Tokens.WALNUT
 		pill.set_corner_radius_all(rad)
 		pill.corner_detail = 12
 		pill.anti_aliasing = true
-		pill.set_border_width_all(8)
-		pill.border_color = WyrdUi.MAPLE_WOOD
+		pill.set_border_width_all(2)
+		pill.border_color = Tokens.WALNUT_DEEP
 		draw_style_box(pill, r)
-		# gold inner seam
-		var seam := StyleBoxFlat.new()
-		seam.draw_center = false
-		seam.set_border_width_all(2)
-		seam.border_color = Color(WyrdUi.GOLD, 0.5)
-		seam.set_corner_radius_all(maxi(2, rad - 8))
-		seam.corner_detail = 12
-		seam.anti_aliasing = true
-		draw_style_box(seam, r.grow(-8.0))
-		# a soft warm top lip along the straight middle
-		draw_rect(Rect2(r.position + Vector2(size.y * 0.6, 8.0),
-			Vector2(maxf(0.0, r.size.x - size.y * 1.2), 2.0)), Color(1, 1, 0.94, 0.4))
+		var recess := StyleBoxFlat.new()
+		recess.bg_color = Color(Tokens.MOSS, 0.72)
+		recess.set_corner_radius_all(10)
+		recess.set_border_width_all(1)
+		recess.border_color = Color(Tokens.GOLD_MUTED, 0.45)
+		draw_style_box(recess, r.grow(-5.0))
 
 
 # HUD "A" (user-picked, 2026-07-01) — a slim carved enamel + leaf-gold border
@@ -962,6 +1175,29 @@ class CompassArrow extends Control:
 		var tree := get_tree()
 		if tree == null:
 			return null
+		var game := get_node_or_null("/root/Game")
+		if game != null and not bool(game.in_dungeon):
+			if game.has_method("onboarding_compass_available") \
+					and not bool(game.onboarding_compass_available()):
+				return null
+			match int(game.tutorial_step):
+				0:
+					return tree.get_first_node_in_group("tutorial_mara") as Node3D
+				1:
+					for n in tree.get_nodes_in_group("interactable"):
+						if str(n.get("kind")) == "forage_node" \
+								and (not n.has_method("is_used") or not n.is_used()):
+							return n as Node3D
+				2, 3:
+					return tree.get_first_node_in_group("inscribing_table") as Node3D
+				4:
+					return tree.get_first_node_in_group("tutorial_waystone") as Node3D
+				6:
+					if not bool(game.seen_hints.get("power_shot_practiced", false)):
+						return tree.get_first_node_in_group("power_shot_practice") as Node3D
+					return tree.get_first_node_in_group("inscribing_table") as Node3D
+				_:
+					return null
 		for n in tree.get_nodes_in_group("interactable"):
 			var ab = n.get("abandoning")       # only the waystones carry this
 			if ab != null and not bool(ab) and n.has_method("is_used") \

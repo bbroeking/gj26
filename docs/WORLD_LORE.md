@@ -2,6 +2,11 @@
 
 **Status:** companion to `WORLD_BIBLE.md`. Use this for codex copy, journal lines, and any place text-flavor ships to the player. Anti-patterns from the Bible (no multi-page mythology, no save-the-world stakes, no grim flips) still apply — every entry below is **suggestion**, not pronouncement.
 
+> **Full-game scope amendment (2026-07-17):**
+> [ADR 0017](adr/0017-local-norse-root-saga.md) permits the Root Saga to extend
+> below Bramblewood while preserving the local stakes and brief, optional lore
+> delivery required here.
+
 ---
 
 ## Founding (one paragraph, plain)

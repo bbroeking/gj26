@@ -47,6 +47,8 @@ func setup(p_kind: String, p_item: String, p_respawns: bool = false) -> void:
 func setup_ore_tier(tier_id: String) -> void:
 	var t: Dictionary = GatherDefs.ORE_TIERS.get(tier_id, {})
 	if t.is_empty():
+		t = GatherDefs.ROOTROAD_ORE_TIERS.get(tier_id, {})
+	if t.is_empty():
 		return
 	ore_tier = tier_id
 	kind = "ore_rock"
@@ -59,6 +61,8 @@ func setup_ore_tier(tier_id: String) -> void:
 # (the herb mirror of setup_ore_tier; gated by Wildcraft).
 func setup_herb_tier(tier_id: String) -> void:
 	var t: Dictionary = GatherDefs.HERB_TIERS.get(tier_id, {})
+	if t.is_empty():
+		t = GatherDefs.ROOTROAD_HERB_TIERS.get(tier_id, {})
 	if t.is_empty():
 		return
 	herb_tier = tier_id
@@ -75,7 +79,7 @@ func locked(game) -> bool:
 		and game.trade_lv(_gate_trade()) < req_lv
 
 func _gate_trade() -> String:
-	return "wilds" if herb_tier != "" else "earth"
+	return "wildcraft" if herb_tier != "" else "earthcraft"
 
 # ---- Interactable hooks ----
 func get_prompt_text() -> String:
@@ -179,9 +183,12 @@ func _add_mesh(mesh: Mesh, color: Color, pos: Vector3) -> MeshInstance3D:
 # A6 — copper/palechalk veins tint the shared ore prop so tiers read at
 # a glance (bogiron keeps the GLB's native rust).
 func _tint_tier(root: Node) -> void:
-	var col: Color = GatherDefs.HERB_TIERS.get(herb_tier, {}).get("color",
-		Color.WHITE) if herb_tier != "" \
-		else GatherDefs.ORE_TIERS.get(ore_tier, {}).get("color", Color.WHITE)
+	var herb_defs: Dictionary = GatherDefs.HERB_TIERS.get(herb_tier,
+		GatherDefs.ROOTROAD_HERB_TIERS.get(herb_tier, {}))
+	var ore_defs: Dictionary = GatherDefs.ORE_TIERS.get(ore_tier,
+		GatherDefs.ROOTROAD_ORE_TIERS.get(ore_tier, {}))
+	var col: Color = herb_defs.get("color", Color.WHITE) if herb_tier != "" \
+		else ore_defs.get("color", Color.WHITE)
 	var m := StandardMaterial3D.new()
 	m.albedo_color = col
 	m.roughness = 0.85
@@ -294,19 +301,28 @@ func _harvest(player: Node) -> void:
 	if _depleted or player == null:
 		return
 	var def: Dictionary = GatherDefs.NODE_KINDS.get(kind, {})
-	var got := 1
+	var tier_def: Dictionary = {}
+	if ore_tier != "":
+		tier_def = GatherDefs.ORE_TIERS.get(ore_tier,
+			GatherDefs.ROOTROAD_ORE_TIERS.get(ore_tier, {}))
+	elif herb_tier != "":
+		tier_def = GatherDefs.HERB_TIERS.get(herb_tier,
+			GatherDefs.ROOTROAD_HERB_TIERS.get(herb_tier, {}))
+	var fixed_yield := int(tier_def.get("fixed_yield", 0))
+	var got := fixed_yield if fixed_yield > 0 else 1
 	var game := get_tree().root.get_node_or_null("Game")
 	if game != null:
-		got += int(game.gather_bonus(kind))   # A9 perks
-		# Spec 45-earth — Rich Seams: deep veins always give a second lump.
-		if ore_tier in ["starsilver", "hedgesteel"] \
-				and game.perk_active("earth", "rich_seams"):
-			got += 1
-		# B6 — Wellspring: every node in the chart gives one extra.
-		if bool(game.in_dungeon) and game.affix_good("wellspring"):
-			got += 1
+		if fixed_yield <= 0:
+			got += int(game.gather_bonus(kind))   # A9 perks
+			# Spec 45-earth — Rich Seams: deep veins always give a second lump.
+			if ore_tier in ["starsilver", "hedgesteel", "wildgold"] \
+					and game.perk_active("earthcraft", "rich_seams"):
+				got += 1
+			# B6 — Wellspring affects ordinary sources, never mastery guarantees.
+			if bool(game.in_dungeon) and game.affix_good("wellspring"):
+				got += 1
 		game.add_material(item_id, got)
-		game.award_xp(String(def.get("trade", "wilds")),
+		game.award_xp(String(def.get("trade", "wildcraft")),
 			_tier_xp if _tier_xp > 0 else int(def.get("xp", 8)))
 		game.first_time_hint(kind)   # one-time skill tutorial, saved
 	var sfx := get_node_or_null("/root/Sfx")
@@ -336,11 +352,11 @@ static func channel_seconds(kind: String, game, base := -1.0) -> float:
 					extra_gs += float(a.get("value", 0.0))
 			if extra_gs > 0.0:
 				t *= 1.0 - clampf(extra_gs, 0.0, 0.5)
-	if kind == "ore_rock" and game.perk_active("earth", "quick_mining"):
+	if kind == "ore_rock" and game.perk_active("earthcraft", "quick_mining"):
 		t *= 0.65
 	# Spec 45-wilds — Light Hands: forage and chop run a quarter faster.
 	if kind in ["forage_node", "log_pile"] \
-			and game.perk_active("wilds", "light_hands"):
+			and game.perk_active("wildcraft", "light_hands"):
 		t *= 0.75
 	# A8-full — Quickroot Tonic: every channel runs a quarter faster.
 	var tonic: float = float(game.buff_value("gather_speed")) \

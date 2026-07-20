@@ -23,7 +23,7 @@ const ATK_LUNGE := 0.34      # metres lunged forward on the strike
 const ATK_STRIKE_SEC := 0.16 # lunge-and-settle duration
 # Juice (Phase 5)
 const SPAWN_TIME := 0.28     # pop-in duration on spawn (overshoot)
-const LEAN_ANGLE := 0.12     # rad — forward lean while moving (~7°)
+const LEAN_ANGLE := 0.17     # rad — travel intent reads clearly at the FATE camera
 
 var _node: Node3D
 var _base_pos := Vector3.ZERO
@@ -31,8 +31,8 @@ var _base_scale := Vector3.ONE
 var _base_rot_z := 0.0
 var _phase := 0.0            # bob phase (moving)
 var _breath := 0.0           # breathing/sway phase
-var _move_bob := 0.05
-var _move_rate := 9.0
+var _move_bob := 0.10
+var _move_rate := 12.0
 var _idle_rate := IDLE_RATE
 # attack state
 var _attacking := false
@@ -45,7 +45,7 @@ var _spawn_t := 0.0          # counts 0→SPAWN_TIME; pop-in while < SPAWN_TIME
 var _lean := 0.0
 var _base_rot_x := 0.0
 
-func setup(node: Node3D, move_bob: float = 0.05, move_rate: float = 9.0,
+func setup(node: Node3D, move_bob: float = 0.10, move_rate: float = 12.0,
 		idle_rate: float = IDLE_RATE) -> void:
 	_node = node
 	_move_bob = move_bob

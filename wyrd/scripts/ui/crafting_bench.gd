@@ -1,911 +1,917 @@
 extends CanvasLayer
 
-# Spec 42 — the Crafting Bench: Minecraft-style placement crafting for
-# charts. Drag a chart base + inks + trophy from the satchel tray into
-# bench sockets; the result slot previews the chart and its odds live;
-# clicking Craft (or the result) spends materials and inscribes. The ink
-# mixing pot lives on the bench too (drag herbs/ore/ink into the pot).
-#
-# The LOGIC LAYER IS UNCHANGED from the old inscribing panel — same
-# ChartsData/Game calls in the same order (spec 42 contract). Public
-# methods (place_base / socket_ink / socket_trophy / pot_add / craft)
-# exist so tests drive the flow without pixel drags.
+# Mara's physical Chart Table. This node owns only a staged draft and delegates
+# every unlock, recipe, cost, discovery, and transaction decision to Charts/Game.
 
 const ChartsData = preload("res://data/charts.gd")
 const GatherDefs = preload("res://data/gather.gd")
+const ChartTableViewScript = preload("res://scripts/ui/chart_table_view.gd")
+const Tokens = preload("res://scripts/ui/foundation/ui_tokens.gd")
+const FIELD_THEME := preload("res://themes/wayfinder_theme.tres")
+const FIELD_ICON_DIR := "res://assets/ui/field_journal/icons/"
 
 var _game: Node
 var _panel: Panel
 var _view: Control
+var _modal_owned := false
+var _closing := false
+var _commit_busy := false
+var _source_mode := "supplies"
+var _codex_selected_id := ""
+var _feedback := ""
+var _feedback_error := false
 
-# ---- bench state ----
-var base_id := ""                 # placed template ("" = empty socket)
-var inks: Array = []              # socketed ink ids, ordered
-var trophy := ""                  # socketed trophy material id
-var pot: Dictionary = {}          # mixing pot claims: material id -> count
+var draft: Dictionary = {}
+var _preview: Dictionary = {}
+var pot: Dictionary = {}
 
-var _held: Dictionary = {}        # {"kind": base|ink|mat|trophy, "id": ...}
-var _cursor := Vector2.ZERO
-var _pulse := 0.0                 # tutorial highlight phase
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 90
 	_game = get_tree().root.get_node_or_null("Game")
-	var bg := ColorRect.new()
-	bg.color = Color(0.0, 0.0, 0.0, 0.55)
-	bg.anchor_right = 1.0
-	bg.anchor_bottom = 1.0
-	bg.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(bg)
+	WyrdUi.make_backdrop(self, close)
 	_panel = Panel.new()
-	WyrdUi.style_panel(_panel)
+	_panel.name = "ChartTablePanel"
+	_panel.theme = FIELD_THEME
+	_panel.theme_type_variation = &"JournalFrame"
 	_panel.anchor_left = 0.5
 	_panel.anchor_top = 0.5
 	_panel.anchor_right = 0.5
 	_panel.anchor_bottom = 0.5
-	_panel.offset_left = -470
-	_panel.offset_top = -330
-	_panel.offset_right = 470
-	_panel.offset_bottom = 330
+	_panel.offset_left = -600
+	_panel.offset_top = -340
+	_panel.offset_right = 600
+	_panel.offset_bottom = 340
 	add_child(_panel)
-	_view = BenchView.new()
-	_view.bench = self
-	_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_panel.add_child(_view)
-	get_node("/root/Game").modal_opened()
 
-func _process(delta: float) -> void:
-	# The tutorial highlight pulses; only redraw while one is active.
-	if _tutorial_target() != "":
-		_pulse += delta * 4.0
-		_view.queue_redraw()
+	if _game != null and _game.has_method("ensure_chart_starter_supplies"):
+		_game.ensure_chart_starter_supplies()
+	if _guided_mode() == "mix":
+		_source_mode = "mix"
+	draft = ChartsData.empty_table_draft()
+	_refresh_preview()
+	_view = ChartTableViewScript.new()
+	_view.name = "ChartTableView"
+	_view.table = self
+	_panel.add_child(_view)
+
+	if _game != null:
+		_game.modal_opened()
+		_modal_owned = true
+	tree_exiting.connect(_release_modal)
+
+
+func _process(_delta: float) -> void:
+	if _game != null and _game.has_method("_tick_onboarding_recovery"):
+		_game._tick_onboarding_recovery()
+
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		close()
+		get_viewport().set_input_as_handled()
+		return
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode in [KEY_X, KEY_BACKSPACE]:
+			return_focused_item()
+			get_viewport().set_input_as_handled()
+		elif event.keycode == KEY_Y:
+			if _source_mode == "mix":
+				clear_pot()
+			else:
+				clear_draft()
+			get_viewport().set_input_as_handled()
+	if event is InputEventJoypadButton and event.pressed:
+		match event.button_index:
+			JOY_BUTTON_X:
+				return_focused_item()
+				get_viewport().set_input_as_handled()
+			JOY_BUTTON_Y:
+				if _source_mode == "mix":
+					clear_pot()
+				else:
+					clear_draft()
+				get_viewport().set_input_as_handled()
+			JOY_BUTTON_LEFT_SHOULDER:
+				_view.focus_region(-1)
+				get_viewport().set_input_as_handled()
+			JOY_BUTTON_RIGHT_SHOULDER:
+				_view.focus_region(1)
+				get_viewport().set_input_as_handled()
+
 
 func close() -> void:
-	get_node("/root/Game").modal_closed()
+	if _closing:
+		return
+	_closing = true
+	_release_modal()
 	queue_free()
 
-# ---- the public crafting API (UI handlers + tests both use these) ----
 
-func place_base(template_id: String) -> bool:
-	var t: Dictionary = ChartsData.TEMPLATES.get(template_id, {})
-	if t.is_empty() or _carto_lv() < int(t.req_carto):
+func _release_modal() -> void:
+	if not _modal_owned:
+		return
+	_modal_owned = false
+	var game := get_tree().root.get_node_or_null("Game") if is_inside_tree() else _game
+	if game != null and is_instance_valid(game):
+		game.modal_closed()
+
+
+func _context() -> Dictionary:
+	if _game != null and _game.has_method("chart_table_context"):
+		return _game.chart_table_context()
+	return {"level": wayfinding_level(), "known_recipe_ids": []}
+
+
+func _refresh_preview() -> void:
+	_preview = ChartsData.preview_table(draft, _context())
+	var normalized: Dictionary = _preview.get("normalized_draft", {})
+	if not normalized.is_empty() and String(_preview.get("state", "")) != "invalid":
+		draft = normalized.duplicate(true)
+
+
+func _apply_candidate(candidate: Dictionary) -> bool:
+	if is_read_only():
+		_set_feedback(read_only_reason(), true)
 		return false
-	base_id = template_id
-	inks.clear()
-	trophy = ""
-	_view.pop("base")
-	_view.queue_redraw()
+	var candidate_preview: Dictionary = ChartsData.preview_table(candidate, _context())
+	if String(candidate_preview.get("state", "invalid")) == "invalid":
+		_set_feedback(String(candidate_preview.get("reason",
+			"Those marks do not settle here.")), true)
+		return false
+	draft = (candidate_preview.get("normalized_draft", candidate) as Dictionary).duplicate(true)
+	_preview = candidate_preview
+	_set_feedback("", false)
+	_refresh_view()
 	return true
 
-func clear_base() -> void:
-	base_id = ""
-	inks.clear()
-	trophy = ""
-	_view.queue_redraw()
 
-func socket_ink(ink_id: String, slot: int = -1) -> bool:
-	if base_id == "" or not ChartsData.INKS.has(ink_id):
+func place_component(slot: String, component_id: String) -> bool:
+	var candidate := draft.duplicate(true)
+	var grid: Dictionary = (candidate.get("grid", {}) as Dictionary).duplicate()
+	grid[slot] = component_id
+	candidate["grid"] = grid
+	return _apply_candidate(candidate)
+
+
+func place_ink(ink_id: String, index: int = -1) -> bool:
+	var candidate := draft.duplicate(true)
+	var rail: Array = (candidate.get("ink_rail", []) as Array).duplicate()
+	if index < 0:
+		index = _first_open_ink_index(rail)
+	if index < 0:
+		_set_feedback("Every open Ink pot is already filled.", true)
 		return false
-	if inks.size() >= ink_slots():
+	while rail.size() <= index:
+		rail.append("")
+	rail[index] = ink_id
+	candidate["ink_rail"] = rail
+	return _apply_candidate(candidate)
+
+
+func activate_supply(id: String) -> void:
+	if id == "":
+		return
+	if _source_mode == "mix":
+		pot_add(id)
+		return
+	if is_read_only():
+		_set_feedback(read_only_reason(), true)
+		return
+	if _remaining(id) <= 0:
+		if ChartsData.COMPONENTS.has(id) and _game != null \
+				and _game.has_method("buy_chart_component"):
+			var bought = _game.buy_chart_component(id, 1)
+			if not bool(bought):
+				_set_feedback("That supply is not in reach just now.", true)
+				return
+		else:
+			_set_feedback("There are none left in the Satchel.", true)
+			return
+	if ChartsData.INKS.has(id):
+		place_ink(id)
+		return
+	var kind := "seal" if ChartsData.is_chart_seal(id) else \
+		String(ChartsData.COMPONENTS.get(id, {}).get("kind", ""))
+	var slot := _first_open_slot(kind, id)
+	if slot == "":
+		_set_feedback("No open %s well can take that." % kind.capitalize(), true)
+		return
+	place_component(slot, id)
+
+
+func activate_cell(slot: String) -> void:
+	var grid: Dictionary = draft.get("grid", {})
+	if not grid.has(slot):
+		if _source_mode == "codex" and _codex_selected_id != "" \
+				and not _known_ghost_draft().is_empty():
+			stage_codex_ghost("grid", slot)
+			return
+		var state := slot_view_state(slot)
+		if not bool(state.get("unlocked", false)):
+			_set_feedback("That carving opens at Wayfinding %d." %
+				int(state.get("level", 1)), true)
+		else:
+			_set_feedback("Choose a %s from the Satchel." %
+				String(state.get("kind", "supply")).capitalize(), false)
+		return
+	var candidate := draft.duplicate(true)
+	var next_grid: Dictionary = (candidate.get("grid", {}) as Dictionary).duplicate()
+	next_grid.erase(slot)
+	candidate["grid"] = next_grid
+	_apply_candidate(candidate)
+
+
+func activate_ink(index: int) -> void:
+	var rail: Array = draft.get("ink_rail", [])
+	if index >= rail.size() or String(rail[index]) == "":
+		if _source_mode == "codex" and _codex_selected_id != "" \
+				and not _known_ghost_draft().is_empty():
+			stage_codex_ghost("ink", index)
+			return
+		var state := ink_view_state(index)
+		if not bool(state.get("unlocked", false)):
+			_set_feedback("That Ink pot opens at Wayfinding %d." %
+				int(state.get("level", 1)), true)
+		else:
+			_set_feedback("Choose an Ink from the Satchel.", false)
+		return
+	var candidate := draft.duplicate(true)
+	var next_rail: Array = (candidate.get("ink_rail", []) as Array).duplicate()
+	next_rail[index] = ""
+	candidate["ink_rail"] = next_rail
+	_apply_candidate(candidate)
+
+
+func return_focused_item() -> void:
+	if _view == null:
+		return
+	var target: Dictionary = _view.focused_draft_target()
+	match String(target.get("kind", "")):
+		"slot": activate_cell(String(target.get("slot", "")))
+		"ink": activate_ink(int(target.get("index", -1)))
+
+
+func clear_draft() -> void:
+	if is_read_only() or draft_is_empty():
+		return
+	draft = ChartsData.empty_table_draft()
+	_refresh_preview()
+	_set_feedback("The loose makings return to the Satchel.", false)
+	_refresh_view()
+
+
+func inscribe_chart() -> bool:
+	if _commit_busy or _game == null:
 		return false
-	if _remaining(ink_id) <= 0:
+	if is_read_only():
+		_set_feedback(read_only_reason(), true)
 		return false
-	if slot < 0 or slot >= inks.size():
-		inks.append(ink_id)
+	_commit_busy = true
+	var result: Dictionary = _game.try_inscribe_chart(draft,
+		String(_preview.get("fingerprint", "")))
+	_commit_busy = false
+	if not bool(result.get("ok", false)):
+		if result.has("preview"):
+			_preview = (result.preview as Dictionary).duplicate(true)
+		_set_feedback(String(result.get("reason", "The line would not take.")), true)
+		return false
+	if _view != null and _view.has_method("play_stamp"):
+		_view.play_stamp(String((result.get("chart", {}) as Dictionary)
+			.get("name", "Chart")))
+	draft = ChartsData.empty_table_draft()
+	_refresh_preview()
+	_set_feedback("The seal settles. The finished Chart slips into your Case.", false)
+	_refresh_view()
+	return true
+
+
+# Compatibility name for older callers while the physical verb is now
+# consistently presented as Inscribe Chart.
+func craft() -> bool:
+	return inscribe_chart()
+
+
+func _first_open_slot(kind: String, component_id: String = "") -> String:
+	var unlocks: Dictionary = _preview.get("unlocks", ChartsData.table_unlocks(_context()))
+	var grid_unlocks: Dictionary = unlocks.get("grid", {})
+	var placed: Dictionary = draft.get("grid", {})
+	for slot_v in ChartsData.TABLE_SLOT_ORDER:
+		var slot := String(slot_v)
+		var rule: Dictionary = grid_unlocks.get(slot, {})
+		if bool(rule.get("unlocked", false)) and String(rule.get("kind", "")) == kind \
+				and not placed.has(slot):
+			# Later milestones can open a second cell of the same kind before any
+			# current recipe can use it. Prefer the first placement that keeps a
+			# valid experiment possible instead of letting visual grid order make
+			# an ordinary supply press snap back (WF10: nw before Deep Hollow's n).
+			if component_id == "":
+				return slot
+			var candidate := draft.duplicate(true)
+			var candidate_grid := placed.duplicate()
+			candidate_grid[slot] = component_id
+			candidate["grid"] = candidate_grid
+			var candidate_preview := ChartsData.preview_table(candidate, _context())
+			if String(candidate_preview.get("state", "invalid")) != "invalid":
+				return slot
+	return ""
+
+
+func _first_open_ink_index(rail: Array) -> int:
+	var unlocks: Dictionary = _preview.get("unlocks", ChartsData.table_unlocks(_context()))
+	var records: Array = unlocks.get("ink_rail", [])
+	for record_v in records:
+		var record: Dictionary = record_v
+		var index := int(record.get("index", -1))
+		if bool(record.get("unlocked", false)) \
+				and (index >= rail.size() or String(rail[index]) == ""):
+			return index
+	return -1
+
+
+func slot_view_state(slot: String) -> Dictionary:
+	var unlocks: Dictionary = _preview.get("unlocks", ChartsData.table_unlocks(_context()))
+	var rule: Dictionary = (unlocks.get("grid", {}) as Dictionary).get(slot, {})
+	var id := String((draft.get("grid", {}) as Dictionary).get(slot, ""))
+	var metadata: Dictionary = ChartsData.COMPONENTS.get(id, {})
+	if ChartsData.TROPHY_TO_AFFIX.has(id):
+		metadata = {"name": GatherDefs.material_name(id), "kind": "seal",
+			"icon_shape": "seal"}
+	var state := {
+		"id": id,
+		"name": String(metadata.get("name", "")),
+		"kind": String(rule.get("kind", "")),
+		"icon_shape": String(metadata.get("icon_shape", rule.get("kind", "unknown"))),
+		"unlocked": bool(rule.get("unlocked", false)),
+		"level": int(rule.get("level", 1)),
+		"milestone": String(rule.get("milestone", "")),
+		"tooltip": String(metadata.get("description", "")),
+	}
+	if id == "":
+		var ghost_grid: Dictionary = _known_ghost_draft().get("grid", {})
+		var ghost_id := String(ghost_grid.get(slot, ""))
+		if ghost_id != "":
+			var ghost_meta: Dictionary = ChartsData.COMPONENTS.get(ghost_id, {})
+			state["ghost"] = true
+			state["ghost_id"] = ghost_id
+			state["ghost_name"] = String(ghost_meta.get("name", supply_name(ghost_id)))
+			state["icon_shape"] = String(ghost_meta.get("icon_shape", state.icon_shape))
+			state["ghost_available"] = bool(state.unlocked) and not is_read_only() \
+				and _remaining(ghost_id) > 0
+			state["tooltip"] = _ghost_tooltip(ghost_id, bool(state.ghost_available),
+				bool(state.unlocked), int(state.level))
+	return state
+
+
+func ink_view_state(index: int) -> Dictionary:
+	var unlocks: Dictionary = _preview.get("unlocks", ChartsData.table_unlocks(_context()))
+	var records: Array = unlocks.get("ink_rail", [])
+	var rule: Dictionary = records[index] if index >= 0 and index < records.size() else {}
+	var rail: Array = draft.get("ink_rail", [])
+	var id := String(rail[index]) if index >= 0 and index < rail.size() else ""
+	var metadata: Dictionary = ChartsData.INKS.get(id, {})
+	var state := {
+		"id": id,
+		"name": String(metadata.get("name", "")),
+		"kind": "ink",
+		"icon_shape": String(metadata.get("icon_shape", "ink")),
+		"unlocked": bool(rule.get("unlocked", false)),
+		"level": int(rule.get("level", 1)),
+		"tooltip": String(metadata.get("desc", "")),
+	}
+	if id == "":
+		var ghost_rail: Array = _known_ghost_draft().get("ink_rail", [])
+		var ghost_id := String(ghost_rail[index]) if index >= 0 \
+			and index < ghost_rail.size() else ""
+		if ghost_id != "":
+			state["ghost"] = true
+			state["ghost_id"] = ghost_id
+			state["ghost_name"] = supply_name(ghost_id)
+			state["icon_shape"] = "ink"
+			state["ghost_available"] = bool(state.unlocked) and not is_read_only() \
+				and _remaining(ghost_id) > 0
+			state["tooltip"] = _ghost_tooltip(ghost_id, bool(state.ghost_available),
+				bool(state.unlocked), int(state.level))
+	return state
+
+
+# Slice C adapter: the data module owns every knowledge-state classification,
+# redaction decision, and exact known draft. The panel only renders the result.
+func codex_pages() -> Array:
+	return ChartsData.codex_entries(_context())
+
+
+func open_codex_page(recipe_id: String) -> bool:
+	for page_v in codex_pages():
+		var page: Dictionary = page_v
+		if String(page.get("recipe_id", page.get("id", ""))) == recipe_id:
+			_codex_selected_id = recipe_id
+			_refresh_view()
+			return true
+	return false
+
+
+func close_codex_page() -> void:
+	_codex_selected_id = ""
+	_refresh_view()
+
+
+func selected_codex_page() -> Dictionary:
+	if _codex_selected_id == "":
+		return {}
+	return ChartsData.codex_entry(_codex_selected_id, _context())
+
+
+func _known_ghost_draft() -> Dictionary:
+	var page := selected_codex_page()
+	if String(page.get("state", "unknown")) != "known":
+		return {}
+	var ghost: Dictionary = page.get("ghost_draft", {})
+	if not ghost.is_empty():
+		return ghost.duplicate(true)
+	return ChartsData.known_draft(_codex_selected_id, _context())
+
+
+func stage_codex_ghost(kind: String, key) -> bool:
+	if is_read_only():
+		_set_feedback(read_only_reason(), true)
+		return false
+	var ghost := _known_ghost_draft()
+	if ghost.is_empty():
+		return false
+	var candidate := draft.duplicate(true)
+	var ghost_id := ""
+	if kind == "grid":
+		var slot := String(key)
+		ghost_id = String((ghost.get("grid", {}) as Dictionary).get(slot, ""))
+		var candidate_grid: Dictionary = (candidate.get("grid", {}) as Dictionary).duplicate()
+		if ghost_id == "" or candidate_grid.has(slot):
+			return false
+		candidate_grid[slot] = ghost_id
+		candidate["grid"] = candidate_grid
+	elif kind == "ink":
+		var index := int(key)
+		var ghost_rail: Array = ghost.get("ink_rail", [])
+		ghost_id = String(ghost_rail[index]) if index >= 0 and index < ghost_rail.size() else ""
+		var candidate_rail: Array = (candidate.get("ink_rail", []) as Array).duplicate()
+		if ghost_id == "":
+			return false
+		while candidate_rail.size() <= index:
+			candidate_rail.append("")
+		if String(candidate_rail[index]) != "":
+			return false
+		candidate_rail[index] = ghost_id
+		candidate["ink_rail"] = candidate_rail
 	else:
-		inks.insert(slot, ink_id)
-	_view.pop("ink%d" % (inks.size() - 1))
-	_view.queue_redraw()
+		return false
+	if not _candidate_stock_available(candidate):
+		_set_feedback("The Satchel lacks %s. Nothing has moved." % supply_name(ghost_id), true)
+		return false
+	return _apply_candidate(candidate)
+
+
+func stage_all_known_recipe() -> bool:
+	if is_read_only():
+		_set_feedback(read_only_reason(), true)
+		return false
+	if wayfinding_level() < 3:
+		_set_feedback("Practiced Measures opens at Wayfinding 3.", true)
+		return false
+	var ghost := _known_ghost_draft()
+	if ghost.is_empty():
+		return false
+	var candidate := draft.duplicate(true)
+	var candidate_grid: Dictionary = (candidate.get("grid", {}) as Dictionary).duplicate()
+	for slot_v in (ghost.get("grid", {}) as Dictionary):
+		var slot := String(slot_v)
+		var wanted := String((ghost.grid as Dictionary)[slot_v])
+		var present := String(candidate_grid.get(slot, ""))
+		if present != "" and present != wanted:
+			_set_feedback("%s already holds another choice. Nothing has moved." %
+				String(slot).to_upper(), true)
+			return false
+		candidate_grid[slot] = wanted
+	candidate["grid"] = candidate_grid
+	var candidate_rail: Array = (candidate.get("ink_rail", []) as Array).duplicate()
+	var ghost_rail: Array = ghost.get("ink_rail", [])
+	for ink_id_v in ghost_rail:
+		var ink_id := String(ink_id_v)
+		if ink_id == "":
+			continue
+		var already_needed := candidate_rail.count(ink_id)
+		var target_needed := ghost_rail.count(ink_id)
+		if already_needed >= target_needed:
+			continue
+		var open_index := _first_open_ink_index(candidate_rail)
+		if open_index < 0:
+			_set_feedback("No open Ink pot can take the known measure. Nothing has moved.", true)
+			return false
+		while candidate_rail.size() <= open_index:
+			candidate_rail.append("")
+		candidate_rail[open_index] = ink_id
+	candidate["ink_rail"] = candidate_rail
+	if not _candidate_stock_available(candidate):
+		_set_feedback("The Satchel is missing part of the known measure. Nothing has moved.", true)
+		return false
+	var candidate_preview: Dictionary = ChartsData.preview_table(candidate, _context())
+	if String(candidate_preview.get("state", "invalid")) == "invalid":
+		_set_feedback(String(candidate_preview.get("reason",
+			"The known measure will not fit. Nothing has moved.")), true)
+		return false
+	if not _apply_candidate(candidate):
+		return false
+	_set_feedback("Mara lays out the known measures. The seal is still yours to press.", false)
 	return true
 
-func remove_ink(slot: int) -> void:
-	if slot >= 0 and slot < inks.size():
-		inks.remove_at(slot)
-		_view.queue_redraw()
 
-func socket_trophy(trophy_id: String) -> bool:
-	if base_id == "" or affix_slots() <= 0:
-		return false
-	if not ChartsData.TROPHY_TO_AFFIX.has(trophy_id):
-		return false
-	# Spec 45-carto — the den's req_carto is a real gate now (it was dead
-	# data: possession was the only check).
-	var den: Dictionary = ChartsData.AFFIXES.get(
-		String(ChartsData.TROPHY_TO_AFFIX[trophy_id]), {})
-	if _carto_lv() < int(den.get("req_carto", 1)):
-		if _game != null:
-			_game.notify("This den asks for Wayfinder %d." %
-				int(den.get("req_carto", 1)))
-		return false
-	if _remaining(trophy_id) <= 0:
-		return false
-	trophy = trophy_id
-	_view.pop("trophy")
-	_view.queue_redraw()
+func can_offer_stage_all() -> bool:
+	return not is_read_only() and wayfinding_level() >= 3 \
+		and not _known_ghost_draft().is_empty()
+
+
+func _candidate_stock_available(candidate: Dictionary) -> bool:
+	var claimed := pot.duplicate()
+	for id_v in (candidate.get("grid", {}) as Dictionary).values():
+		var id := String(id_v)
+		claimed[id] = int(claimed.get(id, 0)) + 1
+	for id_v in candidate.get("ink_rail", []):
+		var id := String(id_v)
+		if id != "":
+			claimed[id] = int(claimed.get(id, 0)) + 1
+	for id_v in claimed:
+		var id := String(id_v)
+		if int(claimed[id_v]) > supply_count(id):
+			return false
 	return true
 
-# Drop a material into the mixing pot. Spec 43: only DISCOVERED recipes
-# stir themselves on a match — unknown combinations wait for the
-# deliberate Try (pot_try), which is where discovery happens.
+
+func _ghost_tooltip(id: String, available: bool, unlocked: bool, level: int) -> String:
+	if is_read_only():
+		return read_only_reason()
+	if not unlocked:
+		return "This carving opens at Wayfinding %d." % level
+	if available:
+		return "Set %s from the Satchel." % supply_name(id)
+	return "The Satchel lacks %s." % supply_name(id)
+
+
+func source_rows(mode: String) -> Array:
+	var rows: Array = []
+	if mode == "codex":
+		return codex_pages()
+	if mode == "mix":
+		for id_v in GatherDefs.MATERIALS:
+			var id := String(id_v)
+			if (GatherDefs.is_ink(id) and not _is_authored_ink_ingredient(id)) \
+					or ChartsData.is_protected_chart_supply(id) \
+					or _remaining(id) <= 0:
+				continue
+			rows.append(_source_row(id, GatherDefs.material_name(id),
+				GatherDefs.material_icon_path(id), "material"))
+		return rows
+	var renewable_component_ids := ChartsData.component_supply_ids(_context())
+	for id_v in ChartsData.component_stageable_ids(_context()):
+		var id := String(id_v)
+		var metadata: Dictionary = ChartsData.COMPONENTS.get(id, {})
+		var price := int(ChartsData.component_supply_price(id))
+		var label := String(metadata.get("name", id.capitalize()))
+		if _remaining(id) <= 0 and renewable_component_ids.has(id) and price > 0:
+			label += " · %dg" % price
+		rows.append(_source_row(id, label, "",
+			String(metadata.get("icon_shape", metadata.get("kind", "unknown")))))
+	for id_v in ChartsData.INKS:
+		var id := String(id_v)
+		if _remaining(id) > 0:
+			rows.append(_source_row(id, String(ChartsData.INKS[id].name), "", "ink"))
+	for id_v in ChartsData.TROPHY_TO_AFFIX:
+		var id := String(id_v)
+		if _remaining(id) > 0:
+			rows.append(_source_row(id, GatherDefs.material_name(id), "", "seal"))
+	for id_v in ChartsData.STORY_SEALS:
+		var id := String(id_v)
+		if _remaining(id) > 0:
+			rows.append(_source_row(id, String(ChartsData.STORY_SEALS[id].name), "", "seal"))
+	return rows
+
+
+func _is_authored_ink_ingredient(material_id: String) -> bool:
+	for ink_id_v in GatherDefs.INK_RECIPE_ORDER:
+		var recipe: Dictionary = GatherDefs.INK_RECIPES.get(String(ink_id_v), {})
+		if (recipe.get("inputs", {}) as Dictionary).has(material_id):
+			return true
+	return false
+
+
+func _source_row(id: String, label: String, _texture_path: String,
+		icon_shape: String) -> Dictionary:
+	var count := _remaining(id)
+	var purchasable := ChartsData.component_supply_ids(_context()).has(id) \
+		and int(ChartsData.component_supply_price(id)) > 0
+	return {
+		"id": id,
+		"label": label,
+		"count": maxi(0, count),
+		"available": not is_read_only() and (count > 0 or purchasable),
+		"icon_shape": icon_shape,
+		"icon_path": _field_icon_path(id, _texture_path),
+		"description": String(ChartsData.COMPONENTS.get(id, {}).get("description",
+			ChartsData.INKS.get(id, {}).get("desc", ""))),
+	}
+
+
+func _field_icon_path(id: String, fallback: String = "") -> String:
+	var icon_name: String = String({
+		"wild_herb": "wild_herb",
+		"bogiron_ore": "bogiron_ore",
+		"logs": "logs",
+		"hearth_draught": "hearth_draught",
+		"quickroot_tonic": "quickroot_tonic",
+		"hedge_ink": "hedge_ink",
+		"stoneground_ink": "hedge_ink",
+		"refined_ink": "refined_ink",
+		"practice_leaf": "chart_base",
+		"field_parchment": "chart_base",
+		"stitched_parchment": "chart_base",
+		"waxed_vellum": "chart_base",
+		"atlas_folio": "codex",
+		"hedge_sprig": "hedge_sprig",
+		"loop_cord": "loop_cord",
+	}.get(id, ""))
+	if icon_name == "" and ChartsData.is_chart_seal(id):
+		icon_name = "wax_seal"
+	var candidate := FIELD_ICON_DIR + String(icon_name) + ".png" \
+		if icon_name != "" else fallback
+	return candidate if candidate != "" and ResourceLoader.exists(candidate) else fallback
+
+
+func _remaining(id: String) -> int:
+	var have := supply_count(id)
+	var claimed := 0
+	for placed_id in (draft.get("grid", {}) as Dictionary).values():
+		if String(placed_id) == id:
+			claimed += 1
+	for placed_id in draft.get("ink_rail", []):
+		if String(placed_id) == id:
+			claimed += 1
+	claimed += int(pot.get(id, 0))
+	return have - claimed
+
+
+func supply_count(id: String) -> int:
+	return 0 if _game == null else int(_game.material_count(id))
+
+
+func supply_name(id: String) -> String:
+	if ChartsData.COMPONENTS.has(id):
+		return String(ChartsData.COMPONENTS[id].name)
+	if ChartsData.INKS.has(id):
+		return String(ChartsData.INKS[id].name)
+	return GatherDefs.material_name(id)
+
+
+func affix_name(id: String) -> String:
+	return String(ChartsData.AFFIXES.get(id, {}).get("name",
+		id.replace("_", " ").capitalize()))
+
+
+func affix_roll_order() -> Array:
+	return ChartsData.AFFIX_ROLL_ORDER
+
+
+func current_preview() -> Dictionary:
+	return _preview
+
+
+func can_commit_current() -> bool:
+	if is_read_only() or _game == null or not bool(_preview.get("commit_ready", false)):
+		return false
+	if _game.chart_case_full():
+		return false
+	return bool(_game.can_afford(_preview.get("costs", {})))
+
+
+func action_block_reason() -> String:
+	if is_read_only():
+		return read_only_reason()
+	if not bool(_preview.get("commit_ready", false)):
+		return String(_preview.get("reason", "The road is unfinished."))
+	if _game != null and _game.chart_case_full():
+		return "Your Chart Case is full."
+	if _game != null and not bool(_game.can_afford(_preview.get("costs", {}))):
+		return "The Satchel is missing part of the arrangement."
+	return "Press Mara's seal into this Chart."
+
+
+func draft_is_empty() -> bool:
+	return (draft.get("grid", {}) as Dictionary).is_empty() \
+		and (draft.get("ink_rail", []) as Array).is_empty()
+
+
+func wayfinding_level() -> int:
+	return 1 if _game == null else int(_game.trade_lv("wayfinding"))
+
+
+func is_read_only() -> bool:
+	var context := _context()
+	if bool(context.get("read_only", false)):
+		return true
+	var net := get_tree().root.get_node_or_null("NetGame") if is_inside_tree() else null
+	var shared := _game != null and _game.has_method("net_active") \
+		and bool(_game.net_active())
+	return shared and net != null and net.has_method("is_host") \
+		and not bool(net.is_host())
+
+
+func read_only_reason() -> String:
+	return String(_context().get("read_only_reason",
+		"Only the fire-keeper may move supplies while you travel together."))
+
+
+func table_feedback() -> String:
+	if _feedback != "":
+		return _feedback
+	if draft_is_empty():
+		return "Set a Chart Base to begin."
+	var grid: Dictionary = draft.get("grid", {})
+	var rail: Array = draft.get("ink_rail", [])
+	if _guided_mode() == "snug":
+		if not grid.has("c"):
+			return "Set the Practice Leaf in the center."
+		if not grid.has("n"):
+			return "Now lay the Hedge Sprig above it."
+		if rail.is_empty():
+			return "Finish the line with Hedge Ink."
+	var reason := String(_preview.get("reason", ""))
+	return reason if reason != "" else "The table is listening."
+
+
+func feedback_is_error() -> bool:
+	return _feedback_error
+
+
+func _set_feedback(value: String, error: bool) -> void:
+	_feedback = value
+	_feedback_error = error
+	_refresh_view()
+
+
+func _refresh_view() -> void:
+	if _view != null and is_instance_valid(_view):
+		_view.refresh()
+
+
+func set_source_mode(mode: String) -> void:
+	if mode != "codex":
+		_codex_selected_id = ""
+	_source_mode = mode
+
+
+func initial_source_mode() -> String:
+	return _source_mode
+
+
+func _guided_mode() -> String:
+	var step := 0 if _game == null else int(_game.tutorial_step)
+	match step:
+		2: return "mix"
+		3: return "snug"
+		6: return "binding"
+	return ""
+
+
+func _tutorial_target() -> String:
+	if _game != null and _game.has_method("onboarding_hint_stage") \
+			and int(_game.onboarding_hint_stage()) < 1:
+		return ""
+	match _guided_mode():
+		"mix": return "pot"
+		"snug":
+			var grid: Dictionary = draft.get("grid", {})
+			if not grid.has("c"): return "base"
+			if not grid.has("n"): return "waymark"
+			if (draft.get("ink_rail", []) as Array).is_empty(): return "ink"
+			return "result"
+		"binding": return "binding"
+	return ""
+
+
+# ---- Quill's existing ink-mixing pot ----
+
 func pot_add(mat_id: String) -> bool:
-	if _remaining(mat_id) <= 0:
+	if is_read_only() or ChartsData.is_protected_chart_supply(mat_id) \
+			or _remaining(mat_id) <= 0:
 		return false
 	pot[mat_id] = int(pot.get(mat_id, 0)) + 1
-	for ink_id in GatherDefs.INK_RECIPE_ORDER:
+	for ink_id_v in GatherDefs.INK_RECIPE_ORDER:
+		var ink_id := String(ink_id_v)
 		var inputs: Dictionary = GatherDefs.INK_RECIPES[ink_id].inputs
 		if _dict_eq(pot, inputs):
-			if _game != null and bool(_game.ink_discovered(String(ink_id))) \
-					and _game.mix_ink(ink_id):
+			if _game != null and _game.has_method("ink_recipe_status"):
+				var status: Dictionary = _game.ink_recipe_status(ink_id)
+				if not bool(status.get("unlocked", false)):
+					_set_feedback("Wildcraft %d is required to settle %s." % [
+						int(status.get("required_wildcraft", 1)),
+						GatherDefs.material_name(ink_id)], true)
+					break
+			if _game != null and bool(_game.ink_discovered(ink_id)) \
+					and bool(_game.mix_ink(ink_id)):
 				pot.clear()
-				_view.bloom(Color(0.55, 0.68, 0.38))
+				_set_feedback("A fresh pot of %s settles." %
+					GatherDefs.material_name(ink_id), false)
 			break
-	_view.queue_redraw()
+	_refresh_view()
 	return true
 
-# Spec 43 — the experiment: attempt whatever's in the pot. Game resolves
-# (discovery / mix / smudge / wild / serendipity); the pot empties either
-# way and the bloom color tells the story.
+
+func try_pot_mix() -> Dictionary:
+	return pot_try()
+
+
 func pot_try() -> Dictionary:
-	if pot.is_empty() or _game == null:
+	if pot.is_empty() or _game == null or is_read_only():
 		return {}
 	var result: Dictionary = _game.try_pot_mix(pot)
 	if result.is_empty():
 		return {}
+	if String(result.get("outcome", "")) == "locked":
+		_set_feedback("Wildcraft %d is required; the makings remain in the pot." %
+			int(result.get("required_wildcraft", 1)), true)
+		return result
 	pot.clear()
-	match String(result.outcome):
-		"discovery":
-			_view.bloom(WyrdUi.GOLD)
-		"mix":
-			_view.bloom(Color(0.55, 0.68, 0.38))
-		"wild":
-			_view.bloom(Color(0.85, 0.65, 0.35))
-		"serendipity":
-			_view.bloom(Color(0.65, 0.50, 0.80))
-		_:
-			_view.bloom(Color(0.45, 0.42, 0.40))   # the smudge — grey puff
-	_view.queue_redraw()
+	_set_feedback("The pot answers: %s." %
+		String(result.get("outcome", "a quiet lesson")).replace("_", " "), false)
 	return result
 
-func pot_clear() -> void:
+
+func clear_pot() -> void:
 	pot.clear()
-	_view.queue_redraw()
+	_refresh_view()
 
-# The craft: same calls in the same order as the old panel. Spec 45 —
-# Thrifty Quill discounts the hedge base cost; Sure Lines leans the rolls.
-func _hedge_discount() -> int:
-	return 1 if _game != null \
-		and bool(_game.perk_active("carto", "thrifty_quill")) else 0
 
-func _stab_perk_bonus() -> float:
-	return 0.05 if _game != null \
-		and bool(_game.perk_active("carto", "sure_lines")) else 0.0
+func pot_clear() -> void:
+	clear_pot()
 
-func craft() -> bool:
-	if base_id == "" or _game == null:
-		return false
-	var cost: Dictionary = ChartsData.craft_cost(base_id, inks, trophy,
-		_hedge_discount())
-	if not _game.can_afford(cost):
-		return false
-	# Gate on chart-case space BEFORE spending — never burn materials on a
-	# chart that won't fit.
-	if _game.chart_case_full():
-		_game.notify("Your chart case is full (max %d) — delve one first." \
-			% _game.CHART_CASE_MAX)
-		return false
-	if not _game.spend_materials(cost):
-		return false
-	var chart: Dictionary = ChartsData.inscribe(base_id, inks, _carto_lv(),
-		trophy, _stab_perk_bonus())
-	if chart.is_empty():
-		return false
-	_game.add_chart(chart)
-	_game.notify("Inscribed: %s." % String(chart.get("name", "a chart")))
-	# Wayfinding signature — the seal ritual: the chartmaker stone flares and
-	# a seal-press cue sounds the moment the chart is sealed.
-	var sfx := get_node_or_null("/root/Sfx")
-	if sfx != null:
-		sfx.play("inscribe_seal")
-	var table := get_tree().get_first_node_in_group("inscribing_table")
-	if table != null and table.has_method("pulse_glow"):
-		table.pulse_glow()
-	inks.clear()
-	trophy = ""
-	base_id = ""
-	_view.stamp()
-	_view.queue_redraw()
-	return true
 
-# ---- helpers ----
+func pot_description() -> String:
+	if pot.is_empty():
+		return "Mixing pot: empty"
+	var parts: Array[String] = []
+	for id_v in pot:
+		var id := String(id_v)
+		parts.append("%s ×%d" % [GatherDefs.material_name(id), int(pot[id_v])])
+	return "Mixing pot: %s" % ", ".join(parts)
 
-func _carto_lv() -> int:
-	return 1 if _game == null else _game.trade_lv("carto")
 
-func template() -> Dictionary:
-	return ChartsData.TEMPLATES.get(base_id, {})
+func pot_total() -> int:
+	var total := 0
+	for count_v in pot.values():
+		total += int(count_v)
+	return total
 
-func ink_slots() -> int:
-	var n := int(template().get("ink_slots", 0))
-	# Spec 45-carto — Master Wayfinder: every chart that takes ink holds
-	# one more pot. Slotless charts (snug/summit) stay at zero.
-	if n > 0 and _game != null \
-			and bool(_game.perk_active("carto", "master_wayfinder")):
-		n += 1
-	return n
 
-func affix_slots() -> int:
-	return int(template().get("affix_slots", 0))
+func mix_feedback() -> String:
+	if _feedback != "":
+		return _feedback
+	if pot.is_empty():
+		return "Choose a making from the pantry. Three Wild Herbs settle into Hedge Ink."
+	return "The measure is in. Add another making or try the mix."
 
-# Have-count minus everything the bench has already claimed (sockets, pot,
-# and the placed base's own base_cost) — the honest remaining number.
-func _remaining(id: String) -> int:
-	var have: int = 0 if _game == null else _game.material_count(id)
-	var claimed: int = inks.count(id) + int(pot.get(id, 0))
-	if trophy == id:
-		claimed += 1
-	claimed += int((template().get("base_cost", {}) as Dictionary).get(id, 0))
-	return have - claimed
+
+func mix_recipe_rows() -> Array:
+	var rows: Array = []
+	var hidden_count := 0
+	for ink_id_v in GatherDefs.INK_RECIPE_ORDER:
+		var ink_id := String(ink_id_v)
+		var known := ink_id == "hedge_ink" or (_game != null \
+			and bool(_game.ink_discovered(ink_id)))
+		if not known:
+			hidden_count += 1
+			continue
+		var recipe: Dictionary = GatherDefs.INK_RECIPES.get(ink_id, {})
+		var measures: Array[String] = []
+		for material_id_v in (recipe.get("inputs", {}) as Dictionary):
+			var material_id := String(material_id_v)
+			var count := int((recipe.inputs as Dictionary)[material_id_v])
+			measures.append("%d× %s" % [count,
+				GatherDefs.material_name(material_id)])
+		rows.append({
+			"name": GatherDefs.material_name(ink_id),
+			"measure": " + ".join(measures),
+		})
+	if hidden_count > 0:
+		rows.append({
+			"name": "%d unrecorded mixture%s" % [hidden_count,
+				"" if hidden_count == 1 else "s"],
+			"measure": "Experiment carefully; the page fills when the pot answers.",
+		})
+	return rows
+
 
 static func _dict_eq(a: Dictionary, b: Dictionary) -> bool:
 	if a.size() != b.size():
 		return false
-	for k in b:
-		if int(a.get(k, -1)) != int(b[k]):
+	for key in b:
+		if int(a.get(key, -1)) != int(b[key]):
 			return false
 	return true
-
-# Tutorial guidance: which bench element pulses right now.
-func _tutorial_target() -> String:
-	var step: int = 0 if _game == null else int(_game.tutorial_step)
-	match step:
-		2: return "pot"
-		3: return "base" if base_id == "" else "result"
-		6: return "ink" if (base_id != "" and inks.is_empty()) else \
-			("base" if base_id == "" else "result")
-	return ""
-
-# Tutorial soft-lock: during guided steps only the taught drop lands.
-func _allowed_drop(kind: String, target: String) -> bool:
-	var step: int = 0 if _game == null else int(_game.tutorial_step)
-	if step == 2:
-		return target == "pot"
-	if step == 3:
-		return target == "base"
-	return true
-
-# =====================================================================
-# The view: one Control that draws everything and owns the hit-testing
-# (the inventory_panel pattern — rects computed per draw, stored for hits).
-class BenchView extends Control:
-	var bench
-	var _tray_rows: Array = []      # {rect, kind, id, ok}
-	var _ink_rects: Array = []      # circles as Rect2
-	var _base_rect := Rect2()
-	var _trophy_rect := Rect2()
-	var _pot_rect := Rect2()
-	var _try_rect := Rect2()        # spec 43 — the Try the Mix button
-	var _result_rect := Rect2()
-	var _craft_rect := Rect2()
-	var _pot_bloom := Color(0.55, 0.68, 0.38)   # spec 43 — outcome color
-	var _stamp_t := 0.0
-	var _pops: Dictionary = {}      # rect-key -> remaining pop time
-	var _tip := ""                  # hover tooltip text ("" = none)
-	var _tip_at := Vector2.ZERO
-	var _press_at := Vector2.ZERO   # click-to-place vs drag discrimination
-	var _odds_rows: Array = []      # {rect, affix_id} for odds tooltips
-	var _codex_rects: Array = []    # spec 45 — {rect, id} for known recipes
-
-	# Spec 51 — Enamel Night: the old light-parchment ramp now aliases the
-	# shared WyrdUi tokens so every row / label / tooltip / pot edge reads on
-	# the dark teal frame instead of as a bright tan island.
-	const EDGE := WyrdUi.KIT_EDGE      # gold filigree edge (was sepia brown)
-	const WELL := WyrdUi.KIT_WELL      # recessed enamel groove (was tan)
-	const PLATE := WyrdUi.KIT_PLATE    # raised enamel face (was cream)
-	const TXT := WyrdUi.INK            # warm cream primary text (was near-black)
-	const DIM := WyrdUi.INK_MID        # sage-grey secondary text (was sepia)
-	# Dark text for the few LIGHT vector elements we keep (the cream chart
-	# scroll), where cream INK would vanish — ink on parchment stays dark.
-	const SCROLL_INK := Color(0.09, 0.16, 0.14)
-	const SCROLL_DIM := Color(0.31, 0.40, 0.36)
-	# Inner carved shadow lines (sockets / diamond) — near-black enamel, not brown.
-	const INNER_SHADOW := Color(0.03, 0.10, 0.09)
-	# Spec 44 — each ink's bottle color (drawn bottles replace text glyphs).
-	const INK_TINT := {
-		"hedge_ink": Color(0.42, 0.55, 0.30),
-		"stoneground_ink": Color(0.42, 0.42, 0.46),
-		"refined_ink": Color(0.93, 0.88, 0.62),
-		"ash_ink": Color(0.30, 0.28, 0.26),
-		"chalkwash_ink": Color(0.88, 0.86, 0.80),
-		"mothglow_ink": Color(0.80, 0.84, 0.90),
-		"foxglove_ink": Color(0.28, 0.30, 0.52),
-		"gildleaf_ink": Color(0.90, 0.78, 0.42),
-	}
-	const COPPER := Color(0.66, 0.40, 0.24)
-	const COPPER_LIT := Color(0.85, 0.56, 0.34)
-
-	func _ready() -> void:
-		mouse_filter = Control.MOUSE_FILTER_STOP
-
-	const STAMP_DUR := 0.6   # the inscription seal press — deliberate, ritual
-
-	func stamp() -> void:
-		_stamp_t = STAMP_DUR
-		set_process(true)
-
-	func pop(key: String) -> void:
-		_pops[key] = 0.16
-		set_process(true)
-
-	# Spec 43 — a pot bloom in the outcome's color (gold discovery, sage
-	# mix, grey smudge, amber wild, violet serendipity).
-	func bloom(c: Color) -> void:
-		_pot_bloom = c
-		pop("pot")
-
-	func _pop_scale(key: String) -> float:
-		var t: float = float(_pops.get(key, 0.0))
-		if t <= 0.0:
-			return 1.0
-		# 1.0 -> 1.12 -> 1.0 over the pop window.
-		return 1.0 + 0.12 * sin((1.0 - t / 0.16) * PI)
-
-	func _process(delta: float) -> void:
-		var busy := _stamp_t > 0.0
-		if _stamp_t > 0.0:
-			_stamp_t -= delta
-		for k in _pops.keys():
-			_pops[k] = float(_pops[k]) - delta
-			if float(_pops[k]) <= 0.0:
-				_pops.erase(k)
-			else:
-				busy = true
-		queue_redraw()
-		if not busy:
-			set_process(false)
-
-	func _gui_input(event: InputEvent) -> void:
-		if event is InputEventMouseMotion:
-			bench._cursor = event.position
-			_update_tip(event.position)
-			queue_redraw()
-		elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-			if event.pressed:
-				_press(event.position)
-			else:
-				_release(event.position)
-
-	func _press(p: Vector2) -> void:
-		_press_at = p
-		# Pick from the tray.
-		for row in _tray_rows:
-			if (row.rect as Rect2).has_point(p) and bool(row.ok):
-				bench._held = {"kind": row.kind, "id": row.id}
-				queue_redraw()
-				return
-		# Click socketed things to return them.
-		for i in _ink_rects.size():
-			if (_ink_rects[i] as Rect2).has_point(p) and i < bench.inks.size():
-				bench.remove_ink(i)
-				return
-		if _trophy_rect.has_point(p) and bench.trophy != "":
-			bench.trophy = ""
-			queue_redraw()
-			return
-		if _base_rect.has_point(p) and bench.base_id != "":
-			bench.clear_base()
-			return
-		if _try_rect != Rect2() and _try_rect.has_point(p) \
-				and not bench.pot.is_empty():
-			bench.pot_try()
-			return
-		# Spec 45-carto — Practiced Measures: click a known codex row and
-		# the pot sets out its makings (you still need the ingredients).
-		if bench._game != null \
-				and bool(bench._game.perk_active("carto", "practiced_measures")):
-			for row in _codex_rects:
-				if (row.rect as Rect2).has_point(p):
-					var inputs: Dictionary = GatherDefs.INK_RECIPES[row.id].inputs
-					if bench._game.can_afford(inputs):
-						bench.pot = inputs.duplicate()
-						pop("pot")
-						queue_redraw()
-					return
-		if _pot_rect.has_point(p) and not bench.pot.is_empty():
-			bench.pot_clear()
-			return
-		if (_craft_rect.has_point(p) or _result_rect.has_point(p)) \
-				and bench.base_id != "":
-			bench.craft()
-
-	func _release(p: Vector2) -> void:
-		if bench._held.is_empty():
-			return
-		var kind := String(bench._held.kind)
-		var id := String(bench._held.id)
-		bench._held = {}
-		# Click-to-place: a release near the press point is a click, and a
-		# click on a tray row sends the thing where it obviously goes.
-		if p.distance_to(_press_at) < 6.0:
-			match kind:
-				"base":
-					if bench._allowed_drop(kind, "base"):
-						bench.place_base(id)
-				"ink":
-					if bench._allowed_drop(kind, "ink"):
-						if not bench.socket_ink(id) \
-								and bench._allowed_drop(kind, "pot"):
-							bench.pot_add(id)
-				"mat":
-					if bench._allowed_drop(kind, "pot"):
-						bench.pot_add(id)
-				"trophy":
-					if bench._allowed_drop(kind, "trophy"):
-						bench.socket_trophy(id)
-			queue_redraw()
-			return
-		if _base_rect.has_point(p) and kind == "base" \
-				and bench._allowed_drop(kind, "base"):
-			bench.place_base(id)
-		elif kind == "ink" and bench._allowed_drop(kind, "ink"):
-			var dropped := false
-			for i in _ink_rects.size():
-				if (_ink_rects[i] as Rect2).has_point(p):
-					bench.socket_ink(id)
-					dropped = true
-					break
-			if not dropped and _pot_rect.has_point(p) \
-					and bench._allowed_drop(kind, "pot"):
-				bench.pot_add(id)
-		elif _trophy_rect.has_point(p) and kind == "trophy" \
-				and bench._allowed_drop(kind, "trophy"):
-			bench.socket_trophy(id)
-		elif _pot_rect.has_point(p) and kind == "mat" \
-				and bench._allowed_drop(kind, "pot"):
-			bench.pot_add(id)
-		queue_redraw()
-
-	# What the cursor is over, as a tooltip string ("" = nothing).
-	func _update_tip(p: Vector2) -> void:
-		_tip = ""
-		_tip_at = p
-		for row in _tray_rows:
-			if (row.rect as Rect2).has_point(p):
-				_tip = _tip_for(String(row.kind), String(row.id))
-				return
-		for row in _odds_rows:
-			if (row.rect as Rect2).has_point(p):
-				var aff: Dictionary = ChartsData.AFFIXES[row.id]
-				_tip = "%s — %s\nBad twin (%s): %s" % [String(aff.name),
-					String(aff.good_desc), String(aff.bad_name),
-					String(aff.bad_desc)]
-				return
-		if _base_rect.has_point(p):
-			_tip = _tip_for("base", bench.base_id) if bench.base_id != "" \
-				else "Drag or click a chart base from the tray."
-			return
-		for i in _ink_rects.size():
-			if (_ink_rects[i] as Rect2).has_point(p):
-				_tip = _tip_for("ink", String(bench.inks[i])) \
-					if i < bench.inks.size() \
-					else "An ink socket — inks tilt the affix odds."
-				return
-		if _trophy_rect != Rect2() and _trophy_rect.has_point(p):
-			_tip = _tip_for("trophy", bench.trophy) if bench.trophy != "" \
-				else "A trophy here inks its boss den into the chart — certain."
-			return
-		if _try_rect != Rect2() and _try_rect.has_point(p):
-			_tip = "Try whatever's in the pot. A true mix is learned for good;\na miss smudges — you keep a little, and learn that too."
-			return
-		if _pot_rect.has_point(p):
-			_tip = "The mixing pot. Known mixes stir themselves on the match.\nUnknown ones wait for Try. Click to empty."
-			return
-		if _craft_rect.has_point(p) or (_result_rect.has_point(p)
-				and bench.base_id != ""):
-			_tip = "Craft the chart — spends the cost, the chart goes to your case."
-
-	func _tip_for(kind: String, id: String) -> String:
-		match kind:
-			"base":
-				var t: Dictionary = ChartsData.TEMPLATES.get(id, {})
-				if t.is_empty():
-					return ""
-				return "%s — Tier %d · %d affix · %d ink slots\n%s" % [
-					String(t.name), int(t.tier), int(t.affix_slots),
-					int(t.ink_slots), String(t.get("desc", ""))]
-			"ink":
-				var ink: Dictionary = ChartsData.INKS.get(id, {})
-				return "%s\n%s" % [String(ink.get("name", id)),
-					String(ink.get("desc", ""))]
-			"mat", "trophy":
-				return "%s\n%s" % [GatherDefs.material_name(id),
-					String(GatherDefs.MATERIALS.get(id, {}).get("desc", ""))]
-		return ""
-
-	# ---- drawing ----
-	func _draw() -> void:
-		var hdr: Font = WyrdUi.font_header()
-		var font: Font = WyrdUi.font_body()
-		if font == null:
-			font = get_theme_default_font()
-		if hdr == null:
-			hdr = font
-		# Spec 51 — no parchment wash: the dark teal ninepatch frame IS the
-		# working surface; the sockets/cards below carve into it.
-		draw_string(hdr, Vector2(54, 56), "The Inscribing Table",
-			HORIZONTAL_ALIGNMENT_LEFT, 400, WyrdUi.SIZE_TITLE, WyrdUi.TERRACOTTA)
-		WyrdUi.draw_flourish(self, Vector2(146, 66), 180.0)
-		draw_string(font, Vector2(size.x - 180, 56), "Esc — close",
-			HORIZONTAL_ALIGNMENT_RIGHT, 130, WyrdUi.SIZE_CAPTION, DIM)
-		_odds_rows.clear()
-		_draw_tray(hdr, font)
-		_draw_bench(hdr, font)
-		_draw_result(hdr, font)
-		_draw_tip(font)
-		# Drag ghost (drawn over the tooltip).
-		if not bench._held.is_empty():
-			var r := Rect2(bench._cursor - Vector2(46, 14), Vector2(92, 28))
-			draw_rect(r, Color(PLATE, 0.85))
-			draw_rect(r, EDGE, false, 2.0)
-			draw_string(font, r.position + Vector2(0, 19),
-				_short_name(String(bench._held.id)),
-				HORIZONTAL_ALIGNMENT_CENTER, r.size.x, WyrdUi.SIZE_CAPTION, TXT)
-
-	func _short_name(id: String) -> String:
-		if ChartsData.TEMPLATES.has(id):
-			return String(ChartsData.TEMPLATES[id].name)
-		return GatherDefs.material_name(id)
-
-	func _tray_section(hdr: Font, x: float, y: float, label: String) -> float:
-		draw_string(hdr, Vector2(x, y), label,
-			HORIZONTAL_ALIGNMENT_LEFT, 200, WyrdUi.SIZE_LABEL, WyrdUi.INK)
-		WyrdUi.draw_flourish(self, Vector2(x + 106.0, y + 7.0), 204.0)
-		return y + 8.0
-
-	func _tray_row(font: Font, x: float, y: float, kind: String, id: String,
-			label: String, ok: bool) -> float:
-		var r := Rect2(Vector2(x, y), Vector2(212, 26))
-		draw_rect(r, PLATE if ok else WELL)
-		# Spec 44 — top bevel light + a painted roundel on the left.
-		draw_rect(Rect2(r.position + Vector2(1.0, 1.0),
-			Vector2(r.size.x - 2.0, 1.5)), Color(0.18, 0.34, 0.32, 0.4))
-		draw_rect(r, EDGE if ok else Color(EDGE, 0.4), false, 1.5)
-		var cc := r.position + Vector2(14.0, 13.0)
-		if kind == "ink":
-			WyrdUi.draw_ink_bottle(self, cc + Vector2(0, 2.0), 18.0,
-				INK_TINT.get(id, Color(0.4, 0.4, 0.4)))
-		elif kind == "base":
-			WyrdUi.draw_scroll(self, Rect2(cc - Vector2(9.0, 7.0),
-				Vector2(18.0, 14.0)), false)
-		else:
-			draw_circle(cc, 9.0, WELL if ok else INNER_SHADOW)
-			draw_arc(cc, 9.0, 0, TAU, 20, Color(EDGE, 0.6), 1.0, true)
-			draw_string(font, Vector2(r.position.x + 6.0, r.position.y + 18.0),
-				GatherDefs.material_icon(id), HORIZONTAL_ALIGNMENT_CENTER,
-				17, WyrdUi.SIZE_MICRO, TXT if ok else DIM)
-		draw_string(font, r.position + Vector2(28.0, 18.0), label,
-			HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 34.0, WyrdUi.SIZE_CAPTION,
-			TXT if ok else DIM)
-		_tray_rows.append({"rect": r, "kind": kind, "id": id, "ok": ok})
-		return y + 30.0
-
-	func _draw_tray(hdr: Font, font: Font) -> void:
-		_tray_rows.clear()
-		var x := 54.0
-		var y := 92.0
-		y = _tray_section(hdr, x, y, "Bases") + 12.0
-		for tid in ChartsData.TEMPLATE_ORDER:
-			var t: Dictionary = ChartsData.TEMPLATES[tid]
-			var unlocked: bool = bench._carto_lv() >= int(t.req_carto)
-			var label := "%s · T%d" % [String(t.name), int(t.tier)] if unlocked \
-				else "%s — Wayfinder %d" % [String(t.name), int(t.req_carto)]
-			y = _tray_row(font, x, y, "base", tid, label, unlocked)
-		# Spec 43: zero-count rows hide — the codex carries recipe knowledge
-		# now, and the tray must stay inside the panel with 5 inks + 4 mats.
-		y = _tray_section(hdr, x, y + 10.0, "Inks") + 12.0
-		for ink_id in ChartsData.INKS:
-			var n: int = bench._remaining(String(ink_id))
-			if n <= 0:
-				continue
-			y = _tray_row(font, x, y, "ink", String(ink_id), "%s ×%d" % [
-				GatherDefs.material_name(String(ink_id)), n], true)
-		y = _tray_section(hdr, x, y + 10.0, "Materials") + 12.0
-		for mid in ["wild_herb", "bittergrass", "crowsfoot", "mothmint",
-				"foxglove_blue", "stonebreak", "bogiron_ore", "logs",
-				"palechalk", "starsilver_ore", "hedgesteel_ore"]:
-			var n2: int = bench._remaining(mid)
-			if n2 <= 0:
-				continue
-			y = _tray_row(font, x, y, "mat", mid, "%s ×%d" % [
-				GatherDefs.material_name(mid), n2], true)
-		# Trophies — only rows the player owns.
-		var shown := false
-		for trophy_id in ChartsData.TROPHY_TO_AFFIX:
-			var n3: int = bench._remaining(String(trophy_id))
-			if n3 <= 0 and bench.trophy != String(trophy_id):
-				continue
-			if not shown:
-				y = _tray_section(hdr, x, y + 10.0, "Trophies") + 12.0
-				shown = true
-			y = _tray_row(font, x, y, "trophy", String(trophy_id), "%s ×%d" % [
-				GatherDefs.material_name(String(trophy_id)), maxi(0, n3)], n3 > 0)
-
-	func _socket_well(r: Rect2, filled: bool) -> void:
-		WyrdUi.draw_well(self, r, WELL if not filled else PLATE)
-
-	func _highlight(r: Rect2, active: bool) -> void:
-		if not active:
-			return
-		var a := 0.45 + 0.35 * sin(bench._pulse)
-		draw_rect(r.grow(5), Color(WyrdUi.GOLD, a), false, 3.5)
-
-	func _draw_bench(hdr: Font, font: Font) -> void:
-		var target: String = bench._tutorial_target()
-		var bx := 320.0
-		draw_string(hdr, Vector2(bx, 92), "Bench",
-			HORIZONTAL_ALIGNMENT_LEFT, 200, WyrdUi.SIZE_BODY, WyrdUi.INK)
-		WyrdUi.draw_flourish(self, Vector2(bx + 130.0, 88.0), 200.0)
-		# Base socket.
-		_base_rect = Rect2(Vector2(bx + 40, 116), Vector2(180, 96))
-		var bs := _pop_scale("base")
-		_socket_well(Rect2(_base_rect.get_center() - _base_rect.size * bs * 0.5,
-			_base_rect.size * bs), bench.base_id != "")
-		_highlight(_base_rect, target == "base")
-		if bench.base_id == "":
-			draw_string(font, _base_rect.position + Vector2(0, 52),
-				"chart base", HORIZONTAL_ALIGNMENT_CENTER,
-				_base_rect.size.x, WyrdUi.SIZE_LABEL, DIM)
-		else:
-			# Spec 44 — the placed base reads as a rolled chart, not a label.
-			var t: Dictionary = bench.template()
-			WyrdUi.draw_scroll(self, _base_rect.grow(-8.0), false)
-			draw_string(hdr, _base_rect.position + Vector2(0, 44),
-				String(t.name), HORIZONTAL_ALIGNMENT_CENTER,
-				_base_rect.size.x, WyrdUi.SIZE_SECTION, SCROLL_INK)
-			draw_string(font, _base_rect.position + Vector2(0, 68),
-				"Tier %d · click to clear" % int(t.tier),
-				HORIZONTAL_ALIGNMENT_CENTER, _base_rect.size.x, WyrdUi.SIZE_MICRO, SCROLL_DIM)
-		# Ink sockets (revealed by the base).
-		_ink_rects.clear()
-		var slots: int = bench.ink_slots()
-		for i in slots:
-			var r := Rect2(Vector2(bx + 40 + float(i) * 64.0, 236), Vector2(52, 52))
-			_ink_rects.append(r)
-			var c := r.get_center()
-			var filled: bool = i < bench.inks.size()
-			var ps := _pop_scale("ink%d" % i)
-			# Spec 44 — a recessed round well; a drawn bottle when filled.
-			WyrdUi.draw_round_well(self, c, 26 * ps,
-				PLATE if filled else WELL)
-			_highlight(r, target == "ink" and i == bench.inks.size())
-			if filled:
-				var tint: Color = INK_TINT.get(String(bench.inks[i]),
-					Color(0.4, 0.4, 0.4))
-				WyrdUi.draw_ink_bottle(self, c + Vector2(0, 4), 38.0 * ps, tint)
-		if bench.base_id != "" and slots == 0:
-			draw_string(font, Vector2(bx + 40, 268),
-				"This chart takes no ink.", HORIZONTAL_ALIGNMENT_LEFT,
-				240, WyrdUi.SIZE_CAPTION, DIM)
-		# Trophy socket (diamond) — only when affixes can roll.
-		if bench.affix_slots() > 0:
-			_trophy_rect = Rect2(Vector2(bx + 250, 236), Vector2(52, 52))
-			var c := _trophy_rect.get_center()
-			var pts := PackedVector2Array([c + Vector2(0, -30), c + Vector2(30, 0),
-				c + Vector2(0, 30), c + Vector2(-30, 0)])
-			draw_colored_polygon(pts, WELL if bench.trophy == "" else PLATE)
-			# Spec 44 — inner shadow + pinstripe; a gold ring when charged.
-			var inner := PackedVector2Array([c + Vector2(0, -24), c + Vector2(24, 0),
-				c + Vector2(0, 24), c + Vector2(-24, 0)])
-			draw_polyline(inner + PackedVector2Array([inner[0]]),
-				INNER_SHADOW, 1.0, true)
-			draw_line(c + Vector2(0, -27), c + Vector2(-27, 0), Color(0, 0, 0, 0.15), 3.0)
-			draw_polyline(pts + PackedVector2Array([pts[0]]), EDGE, 2.0, true)
-			if bench.trophy != "":
-				draw_arc(c, 21.0, 0, TAU, 32, Color(WyrdUi.GOLD, 0.85), 2.0, true)
-			if bench.trophy != "":
-				draw_string(font, _trophy_rect.position + Vector2(0, 32),
-					GatherDefs.material_icon(bench.trophy),
-					HORIZONTAL_ALIGNMENT_CENTER, _trophy_rect.size.x, WyrdUi.SIZE_SECTION, TXT)
-			else:
-				draw_string(font, Vector2(_trophy_rect.position.x - 14,
-					_trophy_rect.end.y + 16), "trophy",
-					HORIZONTAL_ALIGNMENT_CENTER, 80, WyrdUi.SIZE_MICRO, DIM)
-		else:
-			_trophy_rect = Rect2()
-		# Mixing pot — spec 44: a proper copper belly with lit rim, side
-		# handles, dark brew inside, and steam when something's in it.
-		_pot_rect = Rect2(Vector2(bx + 60, 360), Vector2(140, 84))
-		var pc := _pot_rect.get_center()
-		var pps := _pop_scale("pot")
-		var pr := 38.0 * pps
-		draw_circle(pc, pr, COPPER)
-		draw_arc(pc, pr - 4.0, PI * 0.85, PI * 1.85, 26, COPPER_LIT, 5.0, true)
-		draw_circle(pc, pr * 0.66, Color(0.22, 0.16, 0.12))
-		draw_arc(pc, pr * 0.66, 0, TAU, 36, Color(0.10, 0.07, 0.05), 2.0, true)
-		for hside in [-1.0, 1.0]:
-			draw_arc(pc + Vector2(hside * (pr + 5.0), 0.0), 7.0,
-				PI * (0.5 - 0.5 * hside) - PI * 0.5,
-				PI * (0.5 - 0.5 * hside) + PI * 0.5, 12, EDGE, 3.0, true)
-		draw_arc(pc, pr, 0, TAU, 48, EDGE, 2.5, true)
-		if not bench.pot.is_empty():
-			# brew glint + two steam wisps
-			draw_arc(pc + Vector2(-6.0, -6.0), pr * 0.3, PI * 1.1, PI * 1.6,
-				10, Color(0.85, 0.80, 0.62, 0.5), 2.0, true)
-			for wx in [-10.0, 8.0]:
-				draw_arc(Vector2(pc.x + wx, pc.y - pr - 10.0), 7.0,
-					PI * 0.2, PI * 1.0, 10, Color(0.92, 0.90, 0.84, 0.4),
-					2.0, true)
-		if _pops.has("pot"):
-			# Mix flash — a ring blooming off the pot in the outcome color.
-			var bloom_t: float = 1.0 - float(_pops.pot) / 0.16
-			draw_arc(_pot_rect.get_center(), 38 + bloom_t * 26.0, 0, TAU, 48,
-				Color(_pot_bloom, 1.0 - bloom_t), 3.0, true)
-		_highlight(Rect2(_pot_rect.get_center() - Vector2(40, 40),
-			Vector2(80, 80)), target == "pot")
-		var px := _pot_rect.get_center() - Vector2(0, 6)
-		var pot_label := ""
-		for id in bench.pot:
-			pot_label += "%s×%d " % [GatherDefs.material_icon(String(id)),
-				int(bench.pot[id])]
-		draw_string(font, Vector2(_pot_rect.position.x, px.y + 2.0), pot_label.strip_edges(),
-			HORIZONTAL_ALIGNMENT_CENTER, _pot_rect.size.x, WyrdUi.SIZE_SECTION,
-			WyrdUi.INK)
-		# Spec 43 — Try the Mix: the deliberate experiment, beside the pot.
-		_try_rect = Rect2(Vector2(bx + 230, 376), Vector2(112, 40))
-		var can_try: bool = not bench.pot.is_empty()
-		WyrdUi.draw_carved_button(self, _try_rect, can_try)
-		draw_string(hdr, _try_rect.position + Vector2(0, 26), "Try the Mix",
-			HORIZONTAL_ALIGNMENT_CENTER, _try_rect.size.x, WyrdUi.SIZE_LABEL,
-			WyrdUi.INK if can_try else DIM)
-		# Spec 43 — the codex: every pot recipe, in its discovery state.
-		var cy := 462.0
-		draw_string(hdr, Vector2(bx, cy), "Codex", HORIZONTAL_ALIGNMENT_LEFT,
-			200, WyrdUi.SIZE_LABEL, WyrdUi.INK)
-		cy += 16.0
-		_codex_rects.clear()
-		for rid in GatherDefs.INK_RECIPE_ORDER:
-			var rec: Dictionary = GatherDefs.INK_RECIPES[rid]
-			var line := "◌ ???"
-			var col := DIM
-			var known := false
-			# Spec 45-carto — Mara's Marginalia: every riddle, plain to read.
-			var riddle_open: bool = bench._game != null \
-				and (bool((bench._game.seen_hints as Dictionary)
-					.get(String(rec.get("hint_key", "")), false))
-				or bool(bench._game.perk_active("carto", "marginalia")))
-			if bench._game != null \
-					and bool(bench._game.ink_discovered(String(rid))):
-				known = true
-				var parts: Array = []
-				for mid in rec.inputs:
-					parts.append("%d× %s" % [int(rec.inputs[mid]),
-						GatherDefs.material_name(String(mid))])
-				line = "%s — %s" % [GatherDefs.material_name(String(rid)),
-					" + ".join(parts)]
-				col = TXT
-			elif riddle_open:
-				line = "◌ ??? — %s" % String(rec.get("riddle", ""))
-			if known:
-				# Spec 44 — a tiny bottle in the ink's color marks the find.
-				WyrdUi.draw_ink_bottle(self, Vector2(bx + 6.0, cy + 7.0), 13.0,
-					INK_TINT.get(String(rid), Color(0.4, 0.4, 0.4)))
-				draw_string(font, Vector2(bx + 16.0, cy + 11.0), line,
-					HORIZONTAL_ALIGNMENT_LEFT, 314, WyrdUi.SIZE_MICRO, col)
-				# Spec 45-carto — Practiced Measures: a known row is a button.
-				_codex_rects.append({"rect": Rect2(Vector2(bx, cy),
-					Vector2(330.0, 15.0)), "id": String(rid)})
-			else:
-				draw_string(font, Vector2(bx, cy + 11.0), line,
-					HORIZONTAL_ALIGNMENT_LEFT, 330, WyrdUi.SIZE_MICRO, col)
-			cy += 15.0
-
-	func _draw_result(hdr: Font, font: Font) -> void:
-		var rx := 660.0
-		draw_string(hdr, Vector2(rx, 92), "Result",
-			HORIZONTAL_ALIGNMENT_LEFT, 200, WyrdUi.SIZE_BODY, WyrdUi.INK)
-		WyrdUi.draw_flourish(self, Vector2(rx + 130.0, 88.0), 160.0)
-		_result_rect = Rect2(Vector2(rx, 116), Vector2(216, 110))
-		_socket_well(_result_rect, bench.base_id != "")
-		_highlight(_result_rect, bench._tutorial_target() == "result")
-		if _stamp_t > 0.0:
-			# The seal press — two gold rings converge inward onto the well and
-			# brighten as they land, like a wax seal pressing down.
-			var st: float = _stamp_t / STAMP_DUR   # 1 (far, faint) → 0 (landed, bold)
-			var land: float = 1.0 - st
-			draw_rect(_result_rect.grow(44.0 * st),
-				Color(WyrdUi.GOLD, 0.85 * land), false, 3.0)
-			draw_rect(_result_rect.grow(22.0 * st),
-				Color(WyrdUi.GOLD, 0.55 * land), false, 2.0)
-		var y := 250.0
-		if bench.base_id == "":
-			draw_string(font, _result_rect.position + Vector2(0, 60),
-				"place a base", HORIZONTAL_ALIGNMENT_CENTER,
-				_result_rect.size.x, WyrdUi.SIZE_LABEL, DIM)
-			return
-		var t: Dictionary = bench.template()
-		draw_string(hdr, _result_rect.position + Vector2(0, 48),
-			String(t.name), HORIZONTAL_ALIGNMENT_CENTER,
-			_result_rect.size.x, WyrdUi.SIZE_TITLE, TXT)
-		draw_string(font, _result_rect.position + Vector2(0, 72),
-			String(t.get("desc", "")), HORIZONTAL_ALIGNMENT_CENTER,
-			_result_rect.size.x, WyrdUi.SIZE_MICRO, DIM)
-		# Odds (same math as before: weights + stability).
-		if bench.affix_slots() > 0:
-			var weights: Dictionary = ChartsData.compute_weights(int(t.tier), bench.inks,
-				bench._carto_lv())
-			var bonus: float = ChartsData.ink_stability_bonus(bench.inks)
-			var ids := weights.keys()
-			ids.sort_custom(func(a, b): return weights[a] > weights[b])
-			for id in ids:
-				var stab: int = ChartsData.effective_stability(String(id),
-					bench._carto_lv(), bonus, bench._stab_perk_bonus())
-				draw_string(font, Vector2(rx, y),
-					"%s — %d%% · good %d%%" % [
-						String(ChartsData.AFFIXES[id].name),
-						roundi(weights[id]), stab],
-					HORIZONTAL_ALIGNMENT_LEFT, 220, WyrdUi.SIZE_LABEL, TXT)
-				_odds_rows.append({"rect": Rect2(Vector2(rx, y - 14), Vector2(220, 18)),
-					"id": String(id)})
-				y += 19.0
-			if bench.trophy != "":
-				var den: Dictionary = ChartsData.AFFIXES[
-					ChartsData.TROPHY_TO_AFFIX[bench.trophy]]
-				draw_string(font, Vector2(rx, y),
-					"★ %s — certain" % String(den.name),
-					HORIZONTAL_ALIGNMENT_LEFT, 220, WyrdUi.SIZE_CAPTION, WyrdUi.GOLD.darkened(0.15))
-				y += 19.0
-		else:
-			draw_string(font, Vector2(rx, y), "A clean run — no affixes.",
-				HORIZONTAL_ALIGNMENT_LEFT, 220, WyrdUi.SIZE_LABEL, DIM)
-			y += 19.0
-		# Cost + craft button.
-		var cost: Dictionary = ChartsData.craft_cost(bench.base_id,
-			bench.inks, bench.trophy, bench._hedge_discount())
-		y += 6.0
-		for id in cost:
-			var have: int = 0 if bench._game == null \
-				else bench._game.material_count(String(id))
-			var enough: bool = have >= int(cost[id])
-			draw_string(font, Vector2(rx, y), "%d× %s  (have %d)" % [
-				int(cost[id]), GatherDefs.material_name(String(id)), have],
-				HORIZONTAL_ALIGNMENT_LEFT, 220, WyrdUi.SIZE_LABEL,
-				WyrdUi.NUMERIC if enough else WyrdUi.TERRACOTTA)
-			y += 18.0
-		_craft_rect = Rect2(Vector2(rx, size.y - 92), Vector2(216, 40))
-		var can: bool = bench._game != null and bench._game.can_afford(cost)
-		WyrdUi.draw_carved_button(self, _craft_rect, can)
-		draw_string(hdr, _craft_rect.position + Vector2(0, 27), "Craft",
-			HORIZONTAL_ALIGNMENT_CENTER, _craft_rect.size.x, WyrdUi.SIZE_SECTION,
-			WyrdUi.INK if can else DIM)
-		# Spec 44 — a wax seal waits beside the verb when a base is set.
-		if bench.base_id != "":
-			var sc := Vector2(_craft_rect.end.x - 18.0,
-				_craft_rect.position.y - 14.0)
-			draw_circle(sc, 9.0, Color(0.62, 0.20, 0.16))
-			draw_circle(sc, 5.5, Color(0.72, 0.28, 0.22))
-			draw_arc(sc, 9.0, 0, TAU, 22, Color(0.40, 0.12, 0.10), 1.5, true)
-
-	func _draw_tip(font: Font) -> void:
-		if _tip == "" or not bench._held.is_empty():
-			return
-		var lines := _tip.split("\n")
-		var w := 0.0
-		for ln in lines:
-			w = maxf(w, font.get_string_size(ln, HORIZONTAL_ALIGNMENT_LEFT,
-				-1, WyrdUi.SIZE_LABEL).x)
-		var box := Rect2(_tip_at + Vector2(16, 12),
-			Vector2(w + 20.0, 12.0 + 19.0 * lines.size()))
-		# Keep it on the panel.
-		box.position.x = minf(box.position.x, size.x - box.size.x - 8.0)
-		box.position.y = minf(box.position.y, size.y - box.size.y - 8.0)
-		draw_rect(box, Color(WyrdUi.KIT_PLATE, 0.97))
-		draw_rect(box, EDGE, false, 2.0)
-		var ty := box.position.y + 17.0
-		for ln in lines:
-			draw_string(font, Vector2(box.position.x + 10.0, ty), ln,
-				HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 20.0, WyrdUi.SIZE_LABEL, TXT)
-			ty += 19.0

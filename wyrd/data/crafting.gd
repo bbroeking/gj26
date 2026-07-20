@@ -11,7 +11,7 @@ const STATIONS := {
 	"cookfire": {
 		"title": "The Cottage Hearth",
 		"prompt": "Cook at the Cottage Hearth",
-		"trade": "wilds",
+		"trade": "wildcraft",
 		"verb": "Cook",
 		"recipes": ["hearth_draught", "bitter_draught", "deep_draught",
 			"hale_draught", "heartsease_draught"],
@@ -20,7 +20,7 @@ const STATIONS := {
 	"still": {
 		"title": "Quill's Still",
 		"prompt": "Brew at Quill's still",
-		"trade": "wilds",
+		"trade": "wildcraft",
 		"verb": "Brew",
 		"recipes": ["quickroot_tonic", "clearwater_philter",
 			"crowsfoot_cordial", "mothmint_mend", "stonebreak_tonic",
@@ -29,7 +29,7 @@ const STATIONS := {
 	"forge": {
 		"title": "Hod's Anvil",
 		"prompt": "Smith at Hod's Anvil",
-		"trade": "earth",
+		"trade": "earthcraft",
 		"verb": "Smith",
 		"recipes": ["copper_bar", "bogiron_bar", "shortbow_smith",
 			"pickaxe_smith", "axe_smith", "longbow_smith",
@@ -40,10 +40,27 @@ const STATIONS := {
 			"starsilver_pickaxe_smith", "starsilver_axe_smith",
 			"starsilver_band_smith", "starsilver_longbow_smith",
 			"hedgesteel_bar", "hedgesteel_cap_smith", "hedgesteel_boots_smith",
-			"hedgesteel_jerkin_smith", "warbow_smith",
+			"hedgesteel_jerkin_smith", "warbow_smith", "wildgold_bar",
+			"wildgold_pickaxe_smith", "wildgold_axe_smith",
 			"emberglass", "glimmerdust"],
 	},
+	# Fire in the Bough's only new functional restoration. The Threefold Loom
+	# is a visual child of this Kiln, not another crafting station.
+	"ember_kiln": {
+		"title": "The Ember Kiln",
+		"prompt": "Work the Ember Kiln",
+		"trade": "earthcraft",
+		"verb": "Temper",
+		"recipes": ["starheart_alloy"],
+		"requires_restoration": "ember_kiln",
+	},
 }
+
+# Rootroad recipes are declared independently until the Town's existing Still
+# receives its level-18/19 catalogue surface. Keeping them out of the legacy
+# list preserves the current station's six-entry contract without making a
+# support Trade a Chart prerequisite.
+const ROOTROAD_STILL_RECIPES := ["wellmoss_salve", "wellwater_philter"]
 
 # yields_material → satchel stack; yields_item → make_item() into the pack.
 const RECIPES := {
@@ -96,6 +113,20 @@ const RECIPES := {
 		"inputs": {"stonebreak": 2, "foxglove_blue": 1},
 		"yields_material": "stonebreak_tonic", "yields_n": 1,
 		"desc": "Bites land softer for a while. Quaff with Q when hale.",
+	},
+	# Pale Oath's Wildcraft pair is independent of the boss road. Wellmoss is
+	# gathered at level 18; Wellwater is a level-19 Pale Well yield.
+	"wellmoss_salve": {
+		"name": "Wellmoss Salve", "req_lv": 18, "xp": 82,
+		"inputs": {"wellmoss": 2, "wild_herb": 1},
+		"yields_material": "wellmoss_salve", "yields_n": 1,
+		"desc": "Cool wellmoss worked into a patient salve.",
+	},
+	"wellwater_philter": {
+		"name": "Wellwater Philter", "req_lv": 19, "xp": 88,
+		"inputs": {"wellwater": 1, "wellmoss": 1},
+		"yields_material": "wellwater_philter", "yields_n": 1,
+		"desc": "A clear philter drawn from the Pale Well.",
 	},
 	# A8-full — Quill's tonics. Materials like the draughts, but Q drinks
 	# them only when vigor is full (the hearth shelf keeps priority).
@@ -286,6 +317,36 @@ const RECIPES := {
 		"inputs": {"hedgesteel_bar": 2, "starsilver_bar": 1, "logs": 2},
 		"yields_item": {"kind": "warbow", "rarity": "rare"},
 		"desc": "The bow Hod won't admit he's proud of. Rolls three affixes.",
+	},
+	# The master tools are data-only equipment foundations until their runtime
+	# item records/art arrive. They never gate either Pale Oath Chart.
+	"wildgold_bar": {
+		"name": "Wildgold Bar", "req_lv": 19, "xp": 70,
+		"inputs": {"wildgold_ore": 2, "logs": 1},
+		"yields_material": "wildgold_bar", "yields_n": 1,
+		"desc": "A renewable bar poured bright from rootroad ore.",
+	},
+	"wildgold_pickaxe_smith": {
+		"name": "Wildgold Master Pickaxe", "req_lv": 19, "xp": 96,
+		"inputs": {"wildgold_bar": 2, "logs": 1},
+		"yields_item": {"kind": "wildgold_pickaxe", "rarity": "normal"},
+		"desc": "A master pick for the patient deep veins.",
+	},
+	"wildgold_axe_smith": {
+		"name": "Wildgold Master Axe", "req_lv": 19, "xp": 96,
+		"inputs": {"wildgold_bar": 2, "logs": 1},
+		"yields_item": {"kind": "wildgold_axe", "rarity": "normal"},
+		"desc": "A master axe for old rootwood.",
+	},
+	# This is deliberately a normal, renewable post-clear craft. Starheart
+	# Alloy is neither a Story Seal nor a Giant reward, and may never be used
+	# to infer campaign truth.
+	"starheart_alloy": {
+		"name": "Starheart Alloy", "req_lv": 20, "xp": 110,
+		"inputs": {"wildgold_bar": 2, "emberglass": 2},
+		"yields_material": "starheart_alloy", "yields_n": 1,
+		"requires_restoration": "ember_kiln",
+		"desc": "Wildgold and Emberglass tempered in the relit Ember Kiln.",
 	},
 }
 

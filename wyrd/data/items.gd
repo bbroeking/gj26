@@ -79,6 +79,17 @@ const KINDS := {
 		"size": Vector2i(2, 4), "base_stat": "damage", "base_value": 11,
 		"icon_color": Color(0.36, 0.46, 0.40),
 	},
+	# D8: a single, non-sellable legendary reward. Its base damage shares the
+	# current top weapon band (11) rather than exceeding it; the room echo is
+	# its identity. The authored painted icon and rigid GLB share this kind ID.
+	"wayweaver": {
+		"name": "Wayweaver", "category": "weapon",
+		"size": Vector2i(2, 4), "base_stat": "damage", "base_value": 11,
+		"rarity": "legendary", "sellable": false,
+		"icon_color": Color(0.50, 0.62, 0.67),
+		"icon_path": "res://assets/ui/items/wayweaver.png",
+		"icon_placeholder": false,
+	},
 }
 
 # Predefined uniques (a unique drop of these kinds replaces the kind name +
@@ -189,6 +200,7 @@ const ICON_TEX := {
 	"leather_chest": "res://assets/ui/items/leather_chest.png",
 	"leather_boots": "res://assets/ui/items/leather_boots.png",
 	"copper_ring": "res://assets/ui/items/copper_ring.png",
+	"wayweaver": "res://assets/ui/items/wayweaver.png",
 }
 
 static func kind_ids() -> Array:
@@ -222,6 +234,9 @@ static func make_item(kind_id: String, rarity: String) -> Dictionary:
 		# enchant_slots(kind_id). Old-save items without the field read as [].
 		"enchants": [],
 		"icon_color": kind.icon_color,
+		"sellable": bool(kind.get("sellable", true)),
+		"icon_path": String(kind.get("icon_path", "")),
+		"icon_placeholder": bool(kind.get("icon_placeholder", false)),
 		"name": String(kind.name),
 	}
 	if rarity == "unique":

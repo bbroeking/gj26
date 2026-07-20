@@ -4,7 +4,7 @@ A cozy fairytale dungeon-crawler set in **Bramblewood**, built in
 **Godot 4.6** — where the heart of the game is a trade called
 **Wayfinding**: you forage, mix inks, and inscribe **charts** (dungeon
 keys) whose affixes shape every run. Gather → craft → chart → delve,
-with friends.
+then return to a village that grows with you.
 
 ![The Chartmaker's Yard](docs/media/town.png)
 
@@ -18,7 +18,7 @@ with friends.
 - **Recipe discovery** — ink recipes aren't given; you find them by
   experimenting at the pot. Misses smudge (or yield a wild ink, or — 
   rarely — serendipity); NPC riddles point the way; the codex tracks it.
-- **Four trades to the level-17 cap** — Wayfinding, Earthcraft,
+- **Four trades to the level-23 cap** — Wayfinding, Earthcraft,
   Wildcraft, and Huntcraft (kills feed it), each with a full unlock
   ladder: 6 herb tiers, 5 ore tiers, a 24-recipe forge, Quill's buff
   tonics, and perks that change how you play.
@@ -26,16 +26,19 @@ with friends.
   (pierce, thorn nova, hunter's mark, bark-skin ward, execute…),
   per-kind enemy AI, elites with storybook modifiers, and a trophy
   chain of three bosses leading to the Summit.
-- **Invite-your-friends co-op** — host a fire, friends join by IP; the
-  whole party crosses into the same seed. Host-authoritative enemies,
-  per-player loot rolls, kill credit, party-wipe boss rules.
+- **Authored randomness** — layouts and contents remain procedural, while
+  up to three player-made Affixes bias enemy vigor, elite frequency,
+  resources, and other encounter distributions.
 
 | | |
 |---|---|
 | ![The Crafting Bench](docs/media/crafting-bench.png) | ![The Trades page](docs/media/trades.png) |
-| ![A chart run](docs/media/dungeon.png) | ![Co-op — The Lantern](docs/media/lantern-coop.png) |
+| ![A chart run](docs/media/dungeon.png) | ![The Chartmaker's Yard](docs/media/town.png) |
 
 ## Run it
+
+**[Play Wayfinder in your browser](https://bbroeking.github.io/gj26/play/)** —
+single-player, no download required.
 
 Requires [Godot 4.6](https://godotengine.org/).
 
@@ -43,15 +46,19 @@ Requires [Godot 4.6](https://godotengine.org/).
 godot --path wyrd
 ```
 
-**Co-op:** press `Esc` → *The Lantern* → "Light a fire" (host, port
-7777), "Copy address", send it to a friend. They pick Join and paste it
-— same network or [Tailscale](https://tailscale.com). Full guide
-(hosting, the three connection paths, how it works, troubleshooting):
-**[docs/COOP.md](docs/COOP.md)**. Quick local test:
+First Road review routes:
 
 ```bash
-WYRD_NET=host godot --path wyrd          # window 1
-WYRD_NET=join:127.0.0.1 godot --path wyrd  # window 2
+WYRD_NO_SAVE=1 WYRD_DEV_FIRST_ROAD=choice godot --path wyrd
+WYRD_NO_SAVE=1 WYRD_DEV_FIRST_ROAD=kind godot --path wyrd
+WYRD_NO_SAVE=1 WYRD_DEV_FIRST_ROAD=bold godot --path wyrd
+WYRD_NO_SAVE=1 WYRD_DEV_FIRST_ROAD=returned godot --path wyrd
+```
+
+Responsive-road review capture (1280×720, production Bold Road, WASD + roll):
+
+```bash
+WYRD_NO_SAVE=1 WYRD_MOVEMENT_CAPTURE_DIR=/tmp/wayfinder-motion godot --path wyrd --script res://tools/capture_movement_checkpoint.gd
 ```
 
 **Keys:** WASD move · 1–4/F skills · E interact · Q quaff · G grab ·
@@ -59,7 +66,8 @@ I pack · M satchel · K trades · Space roll · F10 sound (off by default)
 
 ## Tests
 
-Six headless suites gate every change (~450 checks):
+Nine headless suites gate every change (855 assertions at
+`0.1.5-natural-hollows`; see `docs/test-manifest.md`):
 
 ```bash
 cd wyrd
@@ -68,7 +76,10 @@ WYRD_NO_SAVE=1 godot --headless --path . --script res://test_wyrd_dungeon_scene.
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_wyrd_transitions.gd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_skills.gd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_boot_smoke.gd
-WYRD_NO_SAVE=1 godot --headless --path . --script res://test_coop.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_first_road_slice.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_movement_feel.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_hollow_readability.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_first_hollow_room_grammar.gd
 ```
 
 ## How it's built
@@ -79,9 +90,6 @@ pipeline — is built in collaboration with **Claude** (Anthropic), with
 **Midjourney**, and SFX through **ElevenLabs**. The design history
 lives in `docs/`: per-feature specs (`docs/specs/`), architecture
 decision records (`docs/adr/`), and the world bible.
-
-Co-op networking patterns were informed by studying
-[world-of-claudecraft](https://github.com/levy-street/world-of-claudecraft).
 
 ## Layout
 
@@ -94,5 +102,5 @@ docs/        world bible, specs, ADRs, design docs, concept art
 ## Status
 
 A playable demo slice: the full tutorial → chart → trophy chain →
-Summit loop works end to end, solo or co-op (town + dungeons). No
+Summit loop works end to end as a single-player game. No
 license has been chosen yet — all rights reserved for now.

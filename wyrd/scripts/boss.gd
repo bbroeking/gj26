@@ -298,6 +298,19 @@ func _resolve_attack() -> void:
 			dir = Vector3.FORWARD
 		_player.take_damage(damage, dir.normalized())
 
+
+func _on_cinder_poise_break() -> void:
+	# The parent owns the timed stagger and body stop. A boss additionally has
+	# authored telegraph/charge state outside Combatant's ranged wind-up, so
+	# explicitly clear it rather than leaving an unavoidable decal or lunge.
+	_telegraphing = false
+	_charging = false
+	_lunges_left = 0
+	_atk_cd = maxf(_atk_cd, CINDER_POISE_BREAK_SEC)
+	if _telegraph_node != null and is_instance_valid(_telegraph_node):
+		_telegraph_node.queue_free()
+		_telegraph_node = null
+
 # B4a — a glowing lane on the floor: the charge corridor, origin → range.
 func _make_line_telegraph(origin: Vector3, dir: Vector3, length: float,
 		width: float) -> MeshInstance3D:

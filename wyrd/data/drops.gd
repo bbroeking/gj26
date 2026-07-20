@@ -23,6 +23,22 @@ const ROLE_TIER_BIAS := {   # added to the base 0-9 roll
 }
 const BOSS_DROP_COUNT := 3   # boss drops several items, always rare+
 
+# Slice D2 — the First Knot reprise names exactly this small heirloom family.
+# This is intentionally a single seeded selection helper, not a new reward
+# framework: the boss runtime still owns pickup placement and co-op delivery.
+const FIRST_KNOT_HEIRLOOM_KIND_IDS := [
+	"shortbow", "leather_helm", "longbow", "leather_chest",
+]
+
+static func select_first_knot_heirloom(seed: int) -> Dictionary:
+	if seed <= 0:
+		return {}
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed
+	var kind_id := String(FIRST_KNOT_HEIRLOOM_KIND_IDS[
+		rng.randi_range(0, FIRST_KNOT_HEIRLOOM_KIND_IDS.size() - 1)])
+	return Items.make_item(kind_id, "unique")
+
 # Roll the drop pile for an enemy with the given role + depth. May be empty.
 static func roll_drop(role: String, depth: int = 0, tier_bonus: int = 0) -> Array:
 	var out: Array = []

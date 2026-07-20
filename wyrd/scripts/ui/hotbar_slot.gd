@@ -1,4 +1,6 @@
-extends Control
+extends Button
+
+const Tokens = preload("res://scripts/ui/foundation/ui_tokens.gd")
 
 # A hotbar slot. MapleStory (2026-07-01): a ROUND glossy jade slot in a wood
 # ring — the same round family as the HP/Focus orbs, so the whole bottom row
@@ -18,7 +20,9 @@ var _maple: bool = false
 
 func _ready() -> void:
 	_seed = int(position.x) ^ 0x2b3c
-	_maple = WyrdUi.has_maple()
+	_maple = false
+	flat = true
+	focus_mode = Control.FOCUS_ALL
 
 func set_state(ratio: float, can_cast: bool) -> void:
 	if cd_ratio > 0.001 and ratio <= 0.001:
@@ -44,13 +48,19 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var r := Rect2(Vector2.ZERO, size)
-	if _maple:
-		_draw_round(r)
-		return
-	# --- fallback: carved-enamel square slot ---
-	WyrdUi.draw_carved_button(self, r, castable)
-	WyrdUi.draw_well(self, r.grow(-7.0), WyrdUi.KIT_PLATE.lightened(0.05))
-	WyrdUi.draw_parchment_grain(self, r, _seed)
+	var face := StyleBoxFlat.new()
+	face.bg_color = Tokens.MOSS if castable else Tokens.DISABLED_SURFACE.darkened(0.25)
+	face.set_corner_radius_all(10)
+	face.set_border_width_all(3 if has_focus() else 2)
+	face.border_color = Tokens.SAGE if has_focus() else Tokens.WALNUT
+	face.shadow_color = Color(0, 0, 0, 0.24)
+	face.shadow_size = 4
+	face.shadow_offset = Vector2(0, 2)
+	draw_style_box(face, r.grow(-2.0))
+	var well := StyleBoxFlat.new()
+	well.bg_color = Color(Tokens.WALNUT_DEEP, 0.42)
+	well.set_corner_radius_all(7)
+	draw_style_box(well, r.grow(-7.0))
 	_draw_cd_square()
 	_draw_ward_flash(r)
 

@@ -1,10 +1,10 @@
 extends CanvasLayer
 
-# ADR 0012 mastery — the pick-one-of-N choice modal. Fired by Game's
-# `mastery_choice_ready(level)` when a level-up reaches a multi-perk tier
-# (5/10/13/14/17). The player MUST pick one perk; the rest of that tier stay
-# closed for this save (the "most choosy" ruling, 2026-06-16). Built entirely
-# in script and kit-styled via WyrdUi — siblings: shrine_choice_modal.gd.
+# Dormant mastery-choice presentation. Game fires
+# `mastery_choice_ready(trade_key, level)` only when future authored data gives
+# one Trade multiple perks at the same level. The current 1–23 ladders contain
+# automatic single-perk tiers only, so this panel is intentionally unreachable.
+# Built in script and kit-styled via WyrdUi — sibling: shrine_choice_modal.gd.
 #
 # Self-contained modal accounting, mirroring the shrine modal: open() calls
 # Game.modal_opened(); a card press calls Game.modal_closed(). No Esc dismiss.
@@ -14,8 +14,10 @@ signal perk_chosen(perk_id: String)
 const CARD_W := 212.0
 const CARD_H := 188.0
 const SEP := 18.0
+const FocusPointer = preload("res://scripts/ui/components/focus_pointer.gd")
 
 var _level := 0
+var _trade_key := ""
 var _panel: Panel
 var _hbox: HBoxContainer
 
@@ -64,18 +66,40 @@ func _ready() -> void:
 	_hbox.offset_left = 24
 	_hbox.offset_right = -24
 	_panel.add_child(_hbox)
+	var focus_pointer := FocusPointer.new()
+	focus_pointer.name = "MenuFocusPointer"
+	add_child(focus_pointer)
 
-# Build the cards for the perks unlocked at `level` and pause the world.
-func open(level: int) -> void:
+# Build the cards for one Trade's multi-perk tier and pause the world. The
+# optional key keeps the panel compatible with the current level-only signal;
+# when omitted, infer the canonical pending Trade from Game.
+func open(level: int, trade_key: String = "") -> void:
 	_level = level
 	var game := get_node("/root/Game")
-	var perks: Array = game.perks_at_level(level)
+	_trade_key = trade_key
+	if _trade_key == "":
+		for pending in game.pending_mastery_levels():
+			if int(pending.get("level", 0)) == level:
+				_trade_key = String(pending.get("trade", ""))
+				break
+	if _trade_key == "":
+		queue_free()
+		return
+	var perks: Array = game.perks_at_level(level, _trade_key)
+	# Single-perk levels auto-grant through perk_active; they are not choices and
+	# must never strand the player in a modal with an unselectable card.
+	if perks.size() < 2:
+		queue_free()
+		return
 	var title: Label = _panel.get_node("Title")
-	title.text = "A new mastery opens — Level %d" % level
+	var trade_name := String(game.TRADE_NAMES.get(_trade_key, _trade_key))
+	title.text = "%s mastery — Level %d" % [trade_name, level]
 	for c in _hbox.get_children():
 		c.queue_free()
 	for perk in perks:
 		_hbox.add_child(_make_card(perk, String(game.PERK_CATEGORY.get(String(perk.id), ""))))
+	if _hbox.get_child_count() > 0:
+		(_hbox.get_child(0) as Button).grab_focus.call_deferred()
 	# Size the panel to the card row.
 	var n: int = perks.size()
 	var w: float = float(n) * CARD_W + float(maxi(0, n - 1)) * SEP + 56.0
@@ -112,7 +136,7 @@ func _make_card(perk: Dictionary, category: String) -> Button:
 		var cat := Label.new()
 		cat.text = category.to_upper()
 		cat.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		WyrdUi.style_dim(cat, 11)
+		WyrdUi.style_dim(cat, 14)
 		cat.add_theme_color_override("font_color", _cat_color(category))
 		vb.add_child(cat)
 	var ds := Label.new()
@@ -120,7 +144,7 @@ func _make_card(perk: Dictionary, category: String) -> Button:
 	ds.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ds.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ds.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	WyrdUi.style_body(ds, 13)
+	WyrdUi.style_body(ds, 16)
 	vb.add_child(ds)
 	return btn
 
@@ -133,7 +157,8 @@ func _cat_color(category: String) -> Color:
 
 func _on_card_pressed(perk_id: String) -> void:
 	var game := get_node("/root/Game")
-	game.choose_perk(perk_id)
+	if not game.choose_perk(perk_id):
+		return
 	game.modal_closed()
 	perk_chosen.emit(perk_id)
 	queue_free()

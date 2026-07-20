@@ -16,9 +16,31 @@ const BossScript = preload("res://scripts/boss.gd")
 const CreatureAnimScript = preload("res://scripts/creature_anim.gd")
 const BreakableScript = preload("res://scripts/breakable.gd")
 const GatherNodeScript = preload("res://scripts/gather_node.gd")
+const SecondHandClueScript = preload("res://scripts/second_hand_clue.gd")
+const CampaignClueScript = preload("res://scripts/campaign_clue.gd")
+const PaleStairScript = preload("res://scripts/pale_stair.gd")
+const OathRubbingScript = preload("res://scripts/oath_rubbing.gd")
+const StonewakeScript = preload("res://scripts/stonewake.gd")
+const BarrowJarlScript = preload("res://scripts/barrow_jarl.gd")
+const OathboundGuardScript = preload("res://scripts/oathbound_guard.gd")
+const OathBellScript = preload("res://scripts/oath_bell.gd")
+const BarrowJarlControllerScript = preload("res://scripts/barrow_jarl_controller.gd")
+const HearthGiantScript = preload("res://scripts/hearth_giant.gd")
+const HearthChainScript = preload("res://scripts/hearth_chain.gd")
+const HearthGiantEncounterScript = preload("res://scripts/hearth_giant_encounter.gd")
+const KnotEaterScript = preload("res://scripts/knot_eater.gd")
+const KnotEaterEncounterScript = preload("res://scripts/knot_eater_encounter.gd")
+const KnotEaterAnchorScript = preload("res://scripts/knot_eater_anchor.gd")
+const KnotEaterKnotScript = preload("res://scripts/knot_eater_knot.gd")
+const CinderboundVentScript = preload("res://scripts/cinderbound_vent.gd")
+const CinderFocusPickupScript = preload("res://scripts/cinder_focus_pickup.gd")
+const RootroadGatherNodeScript = preload("res://scripts/rootroad_gather_node.gd")
+const CampaignData = preload("res://data/campaign.gd")
 const ExitWaystoneScript = preload("res://scripts/exit_waystone.gd")
 const GatherDefs = preload("res://data/gather.gd")
+const ElitesData = preload("res://data/elites.gd")
 const AmbientMotesScript = preload("res://scripts/ambient_motes.gd")
+const RoomPresenceScript = preload("res://scripts/room_presence.gd")
 const SOFT_CIRCLE_TEX = preload("res://assets/vfx/soft_circle.png")
 const VIGNETTE_SHADER = preload("res://shaders/vignette.gdshader")
 const FLOOR_SHADER = preload("res://shaders/toon_ground.gdshader")
@@ -49,6 +71,14 @@ const DECOR_MODEL := {
 	"pottery":     "res://models/dungeon_crypt_pottery_v1.glb",
 	"rug":         "res://models/dungeon_crypt_rug_v1.glb",
 }
+const ROOTROAD_ID_MODEL := {
+	"pale_well": "res://models/landmark_pale_well_v1.glb",
+	"wildgold_vein": "res://models/prop_wildgold_vein_v1.glb",
+	"wellmoss_patch": "res://models/prop_wellmoss_patch_v1.glb",
+	"rootroad_lift": "res://models/landmark_rootroad_lift_wellhouse_v1.glb",
+	"hod_oathstone": "res://models/landmark_hod_oathstone_v1.glb",
+	"pale_oath_settlement_display": "res://models/settlement_pale_oath_display_v1.glb",
+}
 # ---- biome asset sets (scaffold) ----
 # Today every biome reuses the crypt decor GLBs + a palette tint. This registry
 # lets a chart `scope` pick a BIOME that supplies its own decor GLB set (and an
@@ -65,6 +95,13 @@ const SCOPE_BIOME := {
 	"briar_maze": "wood_grove",
 	"mire": "bog",
 	"summit": "summit",
+	# Pale Veins is deliberately a distinct build rather than a Summit recolour.
+	# Accept both authored template scope and the biome shorthand used by test
+	# fixtures; unknown future scopes still retain the safe crypt fallback.
+	"pale_veins": "rootroads",
+	"rootroads": "rootroads",
+	"rootroad": "rootroads",
+	"ashen_bough": "ashen_bough",
 }
 # Each biome: `decor` maps a crypt decor `kind` → that biome's GLB (empty =
 # fall back to the crypt DECOR_MODEL); `floor_tex` overrides the floor texture
@@ -156,6 +193,37 @@ const BIOMES := {
 		"pottery":     Color(0.52, 0.52, 0.54),   # cairn — grey stone
 		"bookshelf":   Color(0.48, 0.40, 0.30),   # signpost — weathered wood
 	}, "floor_tex": ""},
+	# Rootroads — authored deterministically in models/scripts/build_pale_oath_world_v1.py.
+	# They consume normal dungeon decor slots so the generator needs no Pale Oath
+	# special case, while dedicated world actors supply the focal well/rubbing.
+	"rootroads": {"decor": {
+		"altar": "res://models/landmark_pale_well_v1.glb",
+		"bones": "res://models/prop_wellmoss_patch_v1.glb",
+		"sarcophagus": "res://models/landmark_rootroad_lift_wellhouse_v1.glb",
+		"column": "res://models/biome_rootroads_roots_v1.glb",
+		"brazier": "res://models/prop_oath_bellpost_1_v1.glb",
+		"pottery": "res://models/prop_wildgold_vein_v1.glb",
+		"bookshelf": "res://models/prop_oath_rubbing_v1.glb",
+	}, "tints": {
+		"altar": Color(0.56, 0.76, 0.88), "bones": Color(0.32, 0.60, 0.38),
+		"sarcophagus": Color(0.30, 0.22, 0.15), "column": Color(0.26, 0.18, 0.13),
+		"brazier": Color(0.72, 0.54, 0.24), "pottery": Color(0.88, 0.63, 0.18),
+		"bookshelf": Color(0.68, 0.76, 0.70),
+	}, "floor_tex": ""},
+	"ashen_bough": {"decor": {
+		"altar": "res://models/biome_ashen_bough_landing_v1.glb",
+		"bones": "res://models/biome_ashen_bough_roots_v1.glb",
+		"sarcophagus": "res://models/biome_ashen_bough_roots_v1.glb",
+		"column": "res://models/biome_ashen_bough_roots_v1.glb",
+		"brazier": "res://models/biome_ashen_bough_landing_v1.glb",
+		"pottery": "res://models/biome_ashen_bough_roots_v1.glb",
+		"bookshelf": "res://models/biome_ashen_bough_landing_v1.glb",
+	}, "tints": {
+		"altar": Color(0.58, 0.27, 0.15), "bones": Color(0.27, 0.16, 0.12),
+		"sarcophagus": Color(0.33, 0.18, 0.12), "column": Color(0.24, 0.13, 0.10),
+		"brazier": Color(0.92, 0.38, 0.12), "pottery": Color(0.46, 0.22, 0.13),
+		"bookshelf": Color(0.70, 0.31, 0.14),
+	}, "floor_tex": ""},
 }
 
 # Per-biome ENVIRONMENT mood — lighting + fog + airborne motes, the thing that
@@ -196,6 +264,20 @@ const BIOME_ENV := {
 		"mote_gravity": -0.30, "mote_size": 0.06, "mote_emission": 0.0,
 		"vignette": 0.18, "sat": 1.06, "contrast": 1.04,
 	},
+	"rootroads": {
+		"ambient": Color(0.29, 0.42, 0.42), "fog": Color(0.46, 0.58, 0.56),
+		"fog_density": 0.017, "glow": 0.92, "sun": Color(0.78, 0.88, 0.76),
+		"mote_color": Color(0.66, 0.82, 0.68), "mote_amount": 72,
+		"mote_gravity": -0.03, "mote_size": 0.055, "mote_emission": 1.1,
+		"vignette": 0.22, "sat": 1.03, "contrast": 1.05,
+	},
+	"ashen_bough": {
+		"ambient": Color(0.46, 0.27, 0.22), "fog": Color(0.40, 0.20, 0.15),
+		"fog_density": 0.019, "glow": 1.0, "sun": Color(1.0, 0.62, 0.32),
+		"mote_color": Color(1.0, 0.40, 0.14), "mote_amount": 96,
+		"mote_gravity": -0.12, "mote_size": 0.055, "mote_emission": 1.8,
+		"vignette": 0.28, "sat": 1.12, "contrast": 1.07,
+	},
 }
 
 # Per-biome GROUND COVER — a cheap MultiMesh scatter of tiny chunky bits that
@@ -208,6 +290,8 @@ const BIOME_GROUND := {
 	"wood_grove":   {"mscale": Vector3(1.3, 0.08, 1.3), "color": Color(0.32, 0.46, 0.22), "size": 0.18, "density": 0.7},
 	"bog":          {"mscale": Vector3(1.2, 0.10, 1.2), "color": Color(0.34, 0.50, 0.30), "size": 0.18, "density": 0.7},
 	"summit":       {"mscale": Vector3(1.0, 0.45, 1.0), "color": Color(0.88, 0.92, 0.98), "size": 0.13, "density": 0.6},
+	"rootroads":     {"mscale": Vector3(1.2, 0.14, 0.62), "color": Color(0.34, 0.42, 0.27), "size": 0.17, "density": 0.72, "emission": 0.25},
+	"ashen_bough":   {"mscale": Vector3(0.62, 0.18, 1.25), "color": Color(0.72, 0.25, 0.10), "size": 0.15, "density": 0.78, "emission": 0.75},
 }
 
 # Per-biome uniforms for the procedural toon-ground shader (spec 50). Keys map
@@ -270,6 +354,25 @@ const FLOOR_BIOME := {
 		"warp_amount": 0.50, "warp_freq": 0.35, "domain_rotation": 0.66,
 		"rim_amt": 0.32, "rim_tint": 0.55,
 	},
+	"rootroads": {
+		"base_col": Color(0.25, 0.30, 0.25), "accent_col": Color(0.38, 0.52, 0.36),
+		"mortar_col": Color(0.10, 0.13, 0.10), "cell_scale": 0.72, "cell_strength": 0.40,
+		"mortar_width": 0.10, "noise_amt": 0.76, "mottle_scale": 0.18,
+		"snow_blend": 0.0, "wet_blend": 0.34, "puddle_thresh": 0.58,
+		"base_rough": 0.92, "bevel": 0.30, "vein_glow": 0.35, "sparkle_amt": 0.0,
+		"warp_amount": 0.82, "warp_freq": 0.34, "domain_rotation": 0.83,
+		"rim_amt": 0.28, "rim_tint": 0.46,
+	},
+	"ashen_bough": {
+		"base_col": Color(0.25, 0.15, 0.11), "accent_col": Color(0.58, 0.23, 0.10),
+		"mortar_col": Color(0.08, 0.05, 0.04), "cell_scale": 0.78,
+		"cell_strength": 0.46, "mortar_width": 0.09, "noise_amt": 0.82,
+		"mottle_scale": 0.16, "snow_blend": 0.0, "wet_blend": 0.08,
+		"puddle_thresh": 0.70, "base_rough": 0.91, "bevel": 0.34,
+		"vein_glow": 0.85, "sparkle_amt": 0.0, "warp_amount": 0.88,
+		"warp_freq": 0.38, "domain_rotation": 0.57, "rim_amt": 0.30,
+		"rim_tint": 0.50,
+	},
 }
 
 # Per-biome decal tint — soft moss/grime/frost patches biased into corners +
@@ -280,6 +383,8 @@ const BIOME_DECAL := {
 	"wood_grove":   Color(0.20, 0.34, 0.16),   # moss green
 	"bog":          Color(0.16, 0.30, 0.20),   # algae / moss
 	"summit":       Color(0.82, 0.88, 0.95),   # frost
+	"rootroads":     Color(0.24, 0.40, 0.26),   # wet moss in root seams
+	"ashen_bough":   Color(0.48, 0.16, 0.08),   # ember soot in root seams
 }
 
 # decor.kind → collider box size, or null for pass-through decor.
@@ -343,6 +448,12 @@ const ENEMY_KINDS := {
 		"hp": 14, "damage": 5, "speed": 1.35, "atk_cd": 1.5,
 		"tint": Color(0.66, 0.78, 0.90), "ethereal": true,
 		"ranged": true, "proj_speed": 9.0, "proj_damage": 5},
+	# Sallow Mire signature role — a brighter, faster ranged wisp that forces
+	# movement across the wet room while its ground-bound family closes in.
+	"bog_wisp": {"model": "res://models/enemy_ghost_v1.glb", "scale": 1.65,
+		"hp": 12, "damage": 4, "speed": 1.65, "atk_cd": 1.25,
+		"tint": Color(0.48, 0.92, 0.68), "ethereal": true,
+		"ranged": true, "proj_speed": 10.5, "proj_damage": 4},
 	"hedge_sprite": {"model": "res://models/enemy_hedge_sprite_v1.glb", "scale": 2.00,
 		"hp": 22, "damage": 6, "speed": 1.9, "atk_cd": 1.4,
 		"tint": Color(0.44, 0.56, 0.27)},
@@ -364,6 +475,9 @@ const ENEMY_KINDS := {
 	"barrow_brute": {"model": "res://models/bramble_imp_v4.glb", "fit_h": 1.7,
 		"hp": 32, "damage": 14, "speed": 1.0, "atk_cd": 3.0,
 		"tint": Color(0.28, 0.22, 0.18), "bruiser": true},
+	"bough_watcher": {"model": "res://models/enemy_oathbound_v1.glb", "fit_h": 1.95,
+		"hp": 30, "damage": 10, "speed": 1.55, "atk_cd": 1.7,
+		"tint": Color(0.52, 0.27, 0.16)},
 }
 
 # Slice A — CHUNKY INK OUTLINE. Deep-INK inverted-hull shell, attached as the
@@ -386,7 +500,7 @@ const SPAWN_TABLES := {
 	# Summit — cold and tough: spectres + heavy brutes, fewer trash.
 	"summit": [["skeleton", 30], ["ghost", 30], ["barrow_brute", 22], ["warden", 18]],
 	# Sallow Mire — wetland: wisps (ghosts), sprites, imps, skitterers.
-	"mire": [["ghost", 32], ["hedge_sprite", 26], ["bramble_imp", 24], ["skitterling", 18]],
+	"mire": [["bog_wisp", 32], ["hedge_sprite", 26], ["bramble_imp", 24], ["skitterling", 18]],
 }
 
 # Boss kinds (boss-as-affix). The Hedgemother is rigged; the boar and wolf
@@ -411,6 +525,18 @@ const BOSS_KINDS := {
 	"hedgemother_queen": {"name": "The Hedgemother Queen",
 		"model": "res://models/hedgemother_v2.glb", "scale": 4.6,
 		"hp": 160, "damage": 13, "radius": 1.1, "height": 3.6, "trophy": ""},
+	# Blender-authored skinned production boss.  The GLB embeds the Jarl's
+	# idle/walk/attack/hit/shield/Reeling/relief/kneel/defeat clips; gameplay
+	# ownership remains in BarrowJarl + BarrowJarlController.
+	"barrow_jarl": {"name": "The Barrow Jarl",
+		"model": "res://models/boss_barrow_jarl_v1.glb", "fit_h": 3.2,
+		"hp": 220, "damage": 15, "radius": 1.0, "height": 3.2, "trophy": ""},
+	"hearth_giant": {"name": "The Hearth Giant",
+		"model": "res://models/boss_hearth_giant_v1.glb", "fit_h": 3.6,
+		"hp": 260, "damage": 17, "radius": 1.15, "height": 3.6, "trophy": ""},
+	"knot_eater": {"name": "The Knot-Eater",
+		"model": "res://models/boss_barrow_jarl_v1.glb", "fit_h": 3.2,
+		"hp": 320, "damage": 12, "radius": 1.1, "height": 3.2, "trophy": ""},
 }
 
 var _floor_mat: ShaderMaterial
@@ -420,6 +546,7 @@ var _biome_id := "crypt"   # resolved from _scope via SCOPE_BIOME (decor asset s
 var _biome_decor: Dictionary = {}   # kind → biome GLB override (empty → crypt)
 var _biome_tints: Dictionary = {}   # kind → tint Color for untextured biome props
 var _rng := RandomNumberGenerator.new()
+var _wall_seed := 0
 var _net_foe_idx := 0          # Phase B — deterministic enemy naming
 var net_spawn := Vector3.ZERO  # Phase B — co-op entry spawn for NetGame
 var _entry_pos := Vector3.ZERO          # respawn target for the kill-plane
@@ -437,6 +564,23 @@ var _atk_speed_mult := 1.0
 var _dmg_mult := 1.0
 var _trophy_mult := 1.0
 var _density_mult := 1.0
+var _elite_chance_mult := 1.0
+var _guaranteed_pressure_elite := false
+# Queen settlement presentation is intentionally world-local.  Game calls the
+# public adapter below after its canonical campaign transition has committed;
+# this loader never inspects campaign state or legacy handoff records itself.
+var _boss_arena_center := Vector3.ZERO
+var _boss_arena_ready := false
+var _pale_stair: Node3D = null
+var _stonewake: Node3D = null
+var _elite_manifest_consumed := false
+var _elite_manifest_body: Node = null
+# D8 Slice 3 -- authored room rectangles are the sole spatial source for a
+# Wayweaver thread.  They are intentionally kept out of Player/Game/save data;
+# corridors and ambiguous overlap resolve ineligible in RoomPresence.
+var _wayweaver_room_bounds: Array = []
+var _wayweaver_run_epoch := -1
+var _wayweaver_layer := 0
 
 func _ready() -> void:
 	# B8 — the hollows are quiet; the theme belongs to town.
@@ -453,8 +597,10 @@ func _ready() -> void:
 		chart_seed = int(game0.active_chart.get("seed", -1))
 	if chart_seed >= 0:
 		_rng.seed = (chart_seed ^ 0x5DEECE66) & 0x7FFFFFFFFFFFFFFF
+		_wall_seed = chart_seed
 	else:
 		_rng.randomize()
+		_wall_seed = int(_rng.seed)
 
 	# Floor: a from-first-principles procedural TOON ground shader (spec 50) built
 	# per-biome in _make_floor_material(_biome_id) AFTER _resolve_biome runs, drawn
@@ -493,6 +639,7 @@ func _ready() -> void:
 	if layout.is_empty():
 		push_error("layout_loader: no layout")
 		return
+	_configure_wayweaver_room_presence(layout)
 
 	# Biome palette — recolour the walls/floor by scope so a hollow / briar
 	# run reads as a different place, not just a different spawn table. Done
@@ -514,12 +661,25 @@ func _ready() -> void:
 	# Spec 29 — _build_decor now needs the full layout dict so it can read
 	# room_depths + the dungeon seed when stamping interactables.
 	_build_decor(layout)
+	_build_story_clues(layout)
+	_build_campaign_clues(layout)
+	# A Pale Veins return always has a readable Oath-Rubbing presentation.  This
+	# is scenery only: the campaign ledger remains host-owned elsewhere, so a
+	# reread cannot fake or duplicate an oath_rubbing fact.
+	if _is_pale_veins_layout(layout):
+		_build_guaranteed_oath_rubbing(layout)
+	if _has_stonewake_affix():
+		_build_stonewake(layout)
 	# Wyrd — boss-as-affix: bossKind "" means no boss this run.
 	if String(layout.get("bossKind", "")) != "":
-		_build_boss(layout.bossRoom, layout.grid, String(layout.bossKind))
+		_build_boss(layout.bossRoom, layout.grid, String(layout.bossKind),
+			layout.get("campaign_contract", {}), layout.get("encounter_contract", {}),
+			layout.get("handoff_contract", {}))
 	else:
 		_build_empty_throne(layout)
 	var enemy_n := _build_enemies(layout)
+	_build_pack_reader_plate(layout)
+	_build_cinderbound_vent(layout)
 	_build_exit_waystone(layout)
 	# Phase B — co-op: one body per peer at the entry; offline keeps the
 	# baked player.
@@ -548,6 +708,36 @@ func _ready() -> void:
 			s.floor_ratio, s.corridor_ratio, s.dead_ends,
 			int(layout.get("attempts", 1)),
 		])
+	if game0 != null and game0.has_method("web_smoke_scene_ready"):
+		game0.web_smoke_scene_ready("World")
+
+
+func _physics_process(_delta: float) -> void:
+	# Feed every local/host-visible Player continuously, including net puppets.
+	# Remote transforms arrive through Player's state snapshots; resolving here
+	# makes the host's authoritative echo room key independent of a client claim.
+	if _wayweaver_room_bounds.is_empty():
+		return
+	for raw in get_tree().get_nodes_in_group("player"):
+		if raw is Node3D and raw.has_method("set_wayweaver_room_presence"):
+			var player := raw as Node3D
+			var presence := RoomPresenceScript.resolve(_wayweaver_run_epoch,
+				_wayweaver_layer, player.global_position, _wayweaver_room_bounds)
+			raw.call("set_wayweaver_room_presence", presence)
+
+
+func _configure_wayweaver_room_presence(layout: Dictionary) -> void:
+	_wayweaver_room_bounds = []
+	for raw in layout.get("rooms", []):
+		if raw is Dictionary:
+			_wayweaver_room_bounds.append((raw as Dictionary).duplicate(true))
+	var game := get_node_or_null("/root/Game")
+	var chart: Dictionary = game.active_chart if game != null and game.active_chart is Dictionary else {}
+	var stable := str(chart.get("chart_instance_id", layout.get("seed", "world")))
+	# String.hash is deterministic for a chart identity across host/guests and
+	# changes on a replacement run even if a debug seed is reused.
+	_wayweaver_run_epoch = stable.hash()
+	_wayweaver_layer = int(chart.get("layer", chart.get("current_layer", 0)))
 
 # Wyrd — cache the active chart's combat modifiers before any spawns.
 func _read_chart_modifiers() -> void:
@@ -556,6 +746,12 @@ func _read_chart_modifiers() -> void:
 		return
 	if game.affix_good("tyrannical"):
 		_hp_mult = 1.5
+	if game.affix_good("frail_foes"):
+		_hp_mult = 0.65
+	if game.affix_good("quiet_halls"):
+		_elite_chance_mult = 0.0
+	if game.affix_good("elite_signs"):
+		_guaranteed_pressure_elite = true
 	if game.affix_bad("tyrannical"):
 		_hp_jitter = true
 	if game.affix_good("festival_pace"):
@@ -587,6 +783,7 @@ func _read_chart_modifiers() -> void:
 	var cfg: Dictionary = game.run_cfg()
 	# Template base density (snug's gentle cellar) stacks with the affix.
 	_density_mult *= float(cfg.get("enemy_density", 1.0))
+	_dmg_mult *= float(cfg.get("enemy_damage_mult", 1.0))
 	# ADR 0013 — the den's level scales enemy HP and damage (symmetric with the
 	# player's per-level growth, so difficulty tracks level-delta, not absolutes).
 	var den_lv: int = int(cfg.get("den_level", 3))
@@ -735,17 +932,15 @@ func _make_blob_shadow(radius: float) -> Decal:
 func _decor_model(kind: String) -> String:
 	return String(_biome_decor.get(kind, DECOR_MODEL.get(kind, "")))
 
-# Build the procedural toon-ground ShaderMaterial for a biome (spec 50) and chain
-# the inverted-hull ink shell as next_pass (house convention). On the flat merged
-# slab the hull only inks the floor's OUTER boundary vs walls/void; the interior
-# linework is the shader's grout, by design.
+# Build the procedural toon-ground ShaderMaterial for a biome (spec 50). The
+# merged floor receives its inverted-hull overlay at the MeshInstance seam; the
+# interior linework is the shader's grout, by design.
 func _make_floor_material(biome_id: String) -> ShaderMaterial:
 	var m := ShaderMaterial.new()
 	m.shader = FLOOR_SHADER
 	var p: Dictionary = FLOOR_BIOME.get(biome_id, FLOOR_BIOME["crypt"])
 	for k in p:
 		m.set_shader_parameter(k, p[k])   # Color → vec4 source_color, float → float
-	m.next_pass = _make_outline_pass()
 	return m
 
 # Wall palette per scope (the floor is the procedural toon-ground shader now).
@@ -761,6 +956,8 @@ func _apply_biome_palette(scope: String) -> void:
 			_wall_mat.albedo_color = Color(0.42, 0.46, 0.52)     # cold grey rock
 		"mire":
 			_wall_mat.albedo_color = Color(0.24, 0.28, 0.22)     # dark bog stone
+		"ashen_bough":
+			_wall_mat.albedo_color = Color(0.25, 0.13, 0.10)     # charred rootstone
 		_:
 			pass   # crypt keeps the warm stone defaults
 
@@ -772,6 +969,10 @@ func _get_layout() -> Dictionary:
 		var game := get_tree().root.get_node_or_null("Game")
 		var cfg: Dictionary = game.run_cfg() if game != null else {}
 		print("[layout_loader] chart cfg: %s" % str(cfg))
+		if game != null and game.has_method("take_pending_run_layout"):
+			var prepared: Dictionary = game.take_pending_run_layout()
+			if not prepared.is_empty():
+				return prepared
 		return DungeonGenScript.generate(int(cfg.get("seed", -1)), cfg)
 	var f := FileAccess.open(JSON_PATH, FileAccess.READ)
 	if f == null:
@@ -951,6 +1152,12 @@ func _scatter_decals(grid: Array) -> void:
 # SKY (wrong). One Interior ReflectionProbe over the play area gives the pools a
 # dark cavern reflection instead — cheap, art-directed, NOT global SSR. Bog only.
 func _build_bog_reflection(grid: Array) -> void:
+	# The WebGL Compatibility path faults while resolving this one-shot cubemap
+	# capture's depth/stencil buffer. The probe is optional bog-water polish;
+	# preserve it for native renderers and let the Web floor keep its authored
+	# wetness without a browser console error.
+	if OS.has_feature("web"):
+		return
 	if _biome_id != "bog":
 		return
 	var minx := 1.0e9
@@ -980,8 +1187,18 @@ func _build_grid(grid: Array) -> void:
 	for y in grid.size():
 		var row: Array = grid[y]
 		for x in row.size():
-			if String(row[x]) == "wall":
+			if String(row[x]) == "wall" \
+					and (_scope != "snug" or _is_floor_boundary(grid, x, y)):
 				_place_wall(x, y, grid)
+
+func _is_floor_boundary(grid: Array, x: int, y: int) -> bool:
+	for dy in range(-1, 2):
+		for dx in range(-1, 2):
+			if dx == 0 and dy == 0:
+				continue
+			if _is_floor(grid, x + dx, y + dy):
+				return true
+	return false
 
 # ONE merged surface for the whole walkable floor = ONE draw call. The procedural
 # ground shader samples WORLD XZ, so the merged 1x1 quads share one continuous
@@ -1006,6 +1223,7 @@ func _build_floor_mesh(grid: Array) -> void:
 	mi.name = "FloorMerged"
 	mi.mesh = st.commit()
 	mi.material_override = _floor_mat
+	mi.material_overlay = _make_outline_pass()
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF   # floor receives, doesn't cast
 	add_child(mi)
 
@@ -1033,34 +1251,93 @@ func _place_wall(x: int, y: int, grid: Array) -> void:
 	body.collision_mask = 0
 	body.add_to_group("wall")          # camera occlusion fades these
 
-	# Visual — a plain BoxMesh wall with the procedural stone material.
-	# Per-wall material instance so the camera-occlusion fade can fade one
-	# wall without fading them all; a small HSV-value jitter so the run
-	# doesn't read as one identical slab. (The crypt wall GLBs aren't a
-	# modular kit; see spec-26 followup.)
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3(1.0, WALL_HEIGHT, 1.0)
-	var mi := MeshInstance3D.new()
-	mi.name = "WallMesh"
-	mi.mesh = mesh
-	var wmat: StandardMaterial3D = _wall_mat.duplicate()
-	wmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	var base: Color = _wall_mat.albedo_color
-	var jit := _rng.randf_range(-0.05, 0.05)
-	wmat.albedo_color = Color(
-		clampf(base.r + jit, 0.0, 1.0),
-		clampf(base.g + jit, 0.0, 1.0),
-		clampf(base.b + jit, 0.0, 1.0), 1.0)
-	mi.material_override = wmat
-	body.add_child(mi)
+	if _scope == "snug":
+		_place_first_hollow_wall_visual(body, x, y)
+	else:
+		_place_box_wall_visual(body)
 
-	# Collision stays a plain box — robust, and the GLB is purely visual.
+	# Collision stays a plain box: presentation can vary without changing the
+	# authoritative walkable boundary or opening diagonal corner leaks.
 	var shape := BoxShape3D.new()
 	shape.size = Vector3(1.0, WALL_HEIGHT, 1.0)
 	var col := CollisionShape3D.new()
 	col.shape = shape
 	body.add_child(col)
 	add_child(body)
+
+
+func _wall_material(jit: float) -> StandardMaterial3D:
+	var wmat: StandardMaterial3D = _wall_mat.duplicate()
+	wmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	var base: Color = _wall_mat.albedo_color
+	wmat.albedo_color = Color(
+		clampf(base.r + jit, 0.0, 1.0),
+		clampf(base.g + jit, 0.0, 1.0),
+		clampf(base.b + jit, 0.0, 1.0), 1.0)
+	return wmat
+
+
+func _place_box_wall_visual(body: StaticBody3D) -> void:
+	# Preserve the established wall treatment outside the bounded First Road
+	# proof until its native and Web result earns biome-wide propagation.
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(1.0, WALL_HEIGHT, 1.0)
+	var mi := MeshInstance3D.new()
+	mi.name = "WallMesh"
+	mi.mesh = mesh
+	mi.material_override = _wall_material(_rng.randf_range(-0.05, 0.05))
+	body.add_child(mi)
+
+
+func _place_first_hollow_wall_visual(body: StaticBody3D, x: int, y: int) -> void:
+	# Coordinate-derived variation remains stable even though deep exterior
+	# cells no longer consume RNG or instantiate nodes.
+	var local_rng := RandomNumberGenerator.new()
+	local_rng.seed = (_wall_seed ^ (x * 73856093) ^ (y * 19349663)) \
+		& 0x7FFFFFFFFFFFFFFF
+	var visual := Node3D.new()
+	visual.name = "WallMesh"
+	visual.rotation.y = local_rng.randf_range(-0.28, 0.28)
+	visual.scale = Vector3(local_rng.randf_range(0.88, 1.12), 1.0,
+		local_rng.randf_range(0.88, 1.12))
+	body.add_child(visual)
+
+	var tone := local_rng.randf_range(-0.025, 0.025)
+	var wmat := _wall_material(0.0)
+	wmat.albedo_color = Color(0.19 + tone, 0.27 + tone,
+		0.13 + tone * 0.5, 1.0)
+	var mass := SphereMesh.new()
+	mass.radial_segments = 7
+	mass.rings = 4
+	mass.radius = 0.76
+	mass.height = local_rng.randf_range(1.95, 2.45)
+	var mass_mi := MeshInstance3D.new()
+	mass_mi.name = "Rootstone"
+	mass_mi.mesh = mass
+	mass_mi.position.y = -0.62
+	mass_mi.scale = Vector3(local_rng.randf_range(0.88, 1.16), 1.0,
+		local_rng.randf_range(0.88, 1.16))
+	mass_mi.material_override = wmat
+	mass_mi.material_overlay = _make_outline_pass()
+	visual.add_child(mass_mi)
+
+	# A smaller shoulder overlaps the next tile's mass, softening the grid edge
+	# into a continuous root-and-fieldstone bank without raising the skyline.
+	var shoulder := SphereMesh.new()
+	shoulder.radial_segments = 7
+	shoulder.rings = 4
+	shoulder.radius = 0.48
+	shoulder.height = local_rng.randf_range(0.85, 1.30)
+	var shoulder_mi := MeshInstance3D.new()
+	shoulder_mi.name = "BrambleShoulder"
+	shoulder_mi.mesh = shoulder
+	shoulder_mi.position = Vector3(local_rng.randf_range(-0.34, 0.34),
+		-1.05, local_rng.randf_range(-0.34, 0.34))
+	shoulder_mi.scale = Vector3(local_rng.randf_range(0.85, 1.15), 1.0,
+		local_rng.randf_range(0.85, 1.15))
+	shoulder_mi.material_override = _wall_material(local_rng.randf_range(-0.04, 0.02))
+	shoulder_mi.material_overlay = _make_outline_pass()
+	visual.add_child(shoulder_mi)
 
 func _is_floor(grid: Array, x: int, y: int) -> bool:
 	if y < 0 or y >= grid.size() or x < 0 or x >= grid[0].size():
@@ -1147,9 +1424,20 @@ func _build_decor(layout: Dictionary) -> void:
 	var depths: Array = layout.get("room_depths", [])
 	var dungeon_seed: int = int(layout.get("seed", 0))
 	for d in decor:
+		# The authored rootroad IDs are not aliases for crypt dressing.  Consume
+		# them directly when a future pale_veins layout emits them, keeping static
+		# landmark identity stable while gather/campaign ownership stays external.
+		if _biome_id == "rootroads" and ROOTROAD_ID_MODEL.has(String(d.get("kind", ""))):
+			_build_rootroad_id_prop(d)
+			continue
 		# Wyrd — gather nodes (chart bias affixes) fork before everything.
 		if bool(d.get("gather", false)):
-			var gn: Node3D = GatherNodeScript.new()
+			var rootroad_ore := String(d.get("ore_tier", "")) in ["wildgold", "waysteel"]
+			var rootroad_herb := String(d.get("herb_tier", "")) in [
+				"wellmoss", "wellwater", "embersage", "root_sap"]
+			var is_rootroad_gather := _biome_id in ["rootroads", "ashen_bough"] \
+				and (rootroad_ore or rootroad_herb)
+			var gn: Node3D = RootroadGatherNodeScript.new() if is_rootroad_gather else GatherNodeScript.new()
 			gn.setup(String(d.kind), String(d.get("item", "wild_herb")))
 			if d.has("ore_tier"):
 				gn.setup_ore_tier(String(d.ore_tier))
@@ -1232,6 +1520,89 @@ func _build_decor(layout: Dictionary) -> void:
 				(body as Node).call("setup", 1, DECOR_BREAKABLE[kind],
 					maxf(bsize.x, bsize.z) * 0.55, bsize.y)
 
+
+func _build_rootroad_id_prop(d: Dictionary) -> void:
+	var model_path := String(ROOTROAD_ID_MODEL.get(String(d.get("kind", "")), ""))
+	if model_path == "" or not ResourceLoader.exists(model_path):
+		return
+	var packed: PackedScene = load(model_path)
+	if packed == null:
+		return
+	var prop: Node3D = packed.instantiate()
+	prop.name = "Rootroad_%s" % String(d.get("kind", "prop"))
+	prop.position = Vector3(float(d.get("x", 0)) + 0.5, 0.02, float(d.get("y", 0)) + 0.5)
+	_unmetal(prop)
+	_outline_only(prop)
+	add_child(prop)
+
+# Spec 55 — layout data guarantees the clues; the loader turns each one into a
+# restrained optional Interactable without adding it to the objective tracker.
+func _build_story_clues(layout: Dictionary) -> void:
+	for clue in layout.get("story_clues", []):
+		var mark: Node3D = SecondHandClueScript.new()
+		mark.setup(String(clue.get("id", "")), String(clue.get("presentation", "")))
+		mark.position = Vector3(float(clue.get("x", 0)) + 0.5, 0.02,
+			float(clue.get("y", 0)) + 0.5)
+		add_child(mark)
+
+
+# Slice D1 — campaign clues use their own Interactable and group. Do not reuse
+# the Second Hand object or its optional observation state: this record is the
+# deterministic chapter-progress promise carried by an eligible Green Hollow.
+func _build_campaign_clues(layout: Dictionary) -> void:
+	for clue_v in layout.get("campaign_clues", []):
+		if not clue_v is Dictionary:
+			continue
+		var clue: Dictionary = clue_v
+		var mark: Node3D = CampaignClueScript.new()
+		mark.setup(clue)
+		mark.position = Vector3(float(clue.get("x", 0)) + 0.5, 0.02,
+			float(clue.get("y", 0)) + 0.5)
+		add_child(mark)
+
+
+func _is_pale_veins_layout(layout: Dictionary) -> bool:
+	return String(layout.get("scope", "")) in ["pale_veins", "rootroads", "rootroad"] \
+		or String(layout.get("template_id", "")) == "pale_veins"
+
+
+func _build_guaranteed_oath_rubbing(layout: Dictionary) -> void:
+	# Prefer the deep destination, then the entry in minimal test layouts.
+	var anchor: Dictionary = layout.get("exit", layout.get("entry", {}))
+	var rubbing := OathRubbingScript.new()
+	var chart_id := "oath_rubbing_1"
+	var game := get_tree().root.get_node_or_null("Game")
+	if game != null and game.get("active_chart") is Dictionary:
+		chart_id = String((game.get("active_chart") as Dictionary).get("oath_rubbing_id", chart_id))
+	rubbing.setup(chart_id)
+	rubbing.name = "GuaranteedOathRubbing"
+	rubbing.position = Vector3(float(anchor.get("x", 0)) + 0.5, 0.02,
+		float(anchor.get("y", 0)) + 0.5)
+	add_child(rubbing)
+
+
+func _has_stonewake_affix() -> bool:
+	var game := get_tree().root.get_node_or_null("Game")
+	return game != null and ((game.has_method("affix_good") and bool(game.affix_good("stonewake"))) \
+		or (game.has_method("affix_bad") and bool(game.affix_bad("stonewake"))))
+
+
+func _build_stonewake(layout: Dictionary) -> void:
+	if _stonewake != null:
+		return
+	var wake := StonewakeScript.new()
+	var game := get_tree().root.get_node_or_null("Game")
+	var rebuke := game != null and game.has_method("affix_bad") and bool(game.affix_bad("stonewake"))
+	wake.setup(rebuke)
+	var anchor: Dictionary = layout.get("exit", layout.get("entry", {}))
+	wake.name = "StonesRebuke" if rebuke else "Stonewake"
+	wake.position = Vector3(float(anchor.get("x", 0)) + 0.5, 0.02,
+		float(anchor.get("y", 0)) + 0.5)
+	add_child(wake)
+	_stonewake = wake
+	# Start only after the world is present so the >=1s marked ring is visible.
+	wake.call_deferred("begin_cycle")
+
 # Spec 29 — instantiate the typed-room interactable for a focal-tagged decor
 # entry. The interactable handles its own visual (it carries the GLB inside)
 # + detection (Area3D on INTERACT_LAYER for the player's scanner).
@@ -1307,6 +1678,11 @@ func _resolve_model(base_path: String) -> String:
 # ---- boss (spec 17) ----
 var _gates: Array = []                  # arena-seal wall blocks
 var _boss_body: CharacterBody3D = null  # Wyrd — exit waystone waits on her death
+var _hearth_encounter: Node3D = null
+var _knot_eater_encounter: Node3D = null
+var _hearth_exit_position := Vector3.ZERO
+var _hearth_exit_ready := false
+var _hearth_exit_spawned := false
 
 # Boss-approach vista — the boss den is the run's lit CLIMAX. A warm-amber
 # beacon pokes above the arena gates so the player sees the den glow through the
@@ -1343,14 +1719,20 @@ func _build_boss_vista(cx: int, cy: int) -> void:
 	beam.material_override = bmat
 	add_child(beam)
 
-func _build_boss(boss_room, grid: Array, boss_kind: String = "hedgemother") -> void:
+func _build_boss(boss_room, grid: Array, boss_kind: String = "hedgemother",
+		campaign_contract: Dictionary = {}, encounter_contract: Dictionary = {},
+		handoff_contract: Dictionary = {}) -> void:
 	if boss_room == null:
 		return
 	var def: Dictionary = BOSS_KINDS.get(boss_kind, BOSS_KINDS["hedgemother"])
 	var cx: int = int(boss_room.x) + int(int(boss_room.w) / 2.0)
 	var cy: int = int(boss_room.y) + int(int(boss_room.h) / 2.0)
+	_boss_arena_center = Vector3(cx + 0.5, 0.0, cy + 0.5)
+	_boss_arena_ready = true
 	_build_boss_vista(cx, cy)
 	var model := _resolve_model(String(def.model))
+	if not ResourceLoader.exists(model) and boss_kind == "hearth_giant":
+		model = "res://models/boss_barrow_jarl_v1.glb"
 	var packed: PackedScene = load(model)
 	if packed == null:
 		return
@@ -1364,25 +1746,47 @@ func _build_boss(boss_room, grid: Array, boss_kind: String = "hedgemother") -> v
 	# matches the enemy silhouette language (no flat tint over her painted skin).
 	_outline_only(inst)
 	var boss_hp: int = int(def.hp)
+	var boss_script = HearthGiantScript if boss_kind == "hearth_giant" else KnotEaterScript if boss_kind == "knot_eater" else \
+		BarrowJarlScript if boss_kind == "barrow_jarl" else BossScript
 	var boss := _spawn_character(inst, cx, cy, float(def.radius),
-		float(def.height), boss_hp, BossScript)
+		float(def.height), boss_hp, boss_script)
 	# Spec 27b — boss drops the boss loot pile.
 	boss.role = "boss"
 	boss.depth = 9
 	boss.damage = int(def.get("damage", 8))
 	boss.kind = boss_kind              # B4a — selects the moveset (boar charges)
 	_boss_body = boss                  # Wyrd — exit waystone keys off her death
+	var is_campaign_boss := bool(campaign_contract.get("guaranteed", false)) \
+		and String(campaign_contract.get("boss_kind", "")) == boss_kind
+	var is_handoff_boss := bool(handoff_contract.get("guaranteed", false)) \
+		and bool(handoff_contract.get("campaign_inert", false)) \
+		and String(handoff_contract.get("boss_kind", "")) == boss_kind
+	var is_reprise_boss := bool(encounter_contract.get("suppress_chain_trophy", false)) \
+		and String(encounter_contract.get("boss_kind", "")) == boss_kind \
+		and String(encounter_contract.get("reward_family_id", "")) == "first_knot_heirlooms"
 	# The chart chain — her death yields the trophy that inks the next den.
 	var trophy := String(def.get("trophy", ""))
-	if trophy != "":
-		boss.died.connect(func():
-			var game := get_tree().root.get_node_or_null("Game")
-			if game != null:
-				game.add_material(trophy, 1)
-				if game.ledger != null:
-					game.ledger.apply(trophy)   # ADR 0013 — trophy → permanent stat
-				game.notify("Trophy claimed: %s. Slot it at the Inscribing Table." %
-					GatherDefs.material_name(trophy)))
+	if trophy != "" and not is_campaign_boss and not is_reprise_boss \
+			and not is_handoff_boss:
+		boss.died.connect(_on_boss_trophy_died.bind(trophy))
+	# Slice D1 — only a Chart carrying the explicit authored contract can settle
+	# the campaign on boss death. Legacy Hedgemother-den Affixes retain their
+	# ordinary trophy loop and remain campaign-inert, including their bad twins.
+	if is_campaign_boss and boss_kind not in ["hearth_giant", "knot_eater"]:
+		# Bind stable copies into a named instance callback. The former inline
+		# lambda captured `_build_boss` locals by reference; a later test/runtime
+		# death signal could call it after those locals had been released.
+		boss.died.connect(_on_campaign_boss_died.bind(boss_kind,
+			campaign_contract.duplicate(true)))
+	# The safe Summit handoff consumes Alpha Fang through its own persistent
+	# tombstone without minting Queen campaign truth. Existing materialized
+	# Summit Charts carry no contract and retain their legacy behavior.
+	if is_handoff_boss:
+		boss.died.connect(_on_handoff_boss_died.bind(handoff_contract.duplicate(true)))
+	# D2 replay reward is separate from both the D1 settlement and normal boss
+	# chain trophy. Combatant still supplies the ordinary boss pile first.
+	if is_reprise_boss:
+		boss.died.connect(_on_reprise_boss_died.bind(encounter_contract.duplicate(true), boss))
 	# Every boss breathes/sways at idle and bobs when moving (Meshy can't rig
 	# these). Quadrupeds pass their lumbering bob; humanoid bosses get the
 	# gentle default so they're never frozen.
@@ -1393,13 +1797,19 @@ func _build_boss(boss_room, grid: Array, boss_kind: String = "hedgemother") -> v
 		qa.setup(inst)
 	boss._proc_anim = qa
 	AnimDriverScript.play_idle(inst)
+	if boss_kind == "barrow_jarl":
+		_build_barrow_jarl_reliefs(boss as BarrowJarl, cx, cy)
+	elif boss_kind == "hearth_giant":
+		_build_hearth_giant_encounter(boss as HearthGiant, cx, cy)
+	elif boss_kind == "knot_eater":
+		_build_knot_eater_encounter(boss, cx, cy)
 
 	# Arena seal — gate blocks at the boss-room openings, raised on aggro.
 	_gates = _make_arena_gates(boss_room, grid)
 	boss.aggroed.connect(_raise_gates)
 	boss.died.connect(_drop_gates)
 	# C10 — the Queen calls a thorn-guard at phase 3.
-	boss.summon_wave.connect(func(count: int): _spawn_queen_summons(cx, cy, count))
+	boss.summon_wave.connect(_on_boss_summon_wave.bind(cx, cy))
 
 	# Wire the boss bar (spec 17).
 	var bossbar := get_node_or_null("BossBar")
@@ -1416,20 +1826,312 @@ func _build_boss(boss_room, grid: Array, boss_kind: String = "hedgemother") -> v
 	# co-op only a full party wipe does (spec 46 Phase B). Deferred wiring —
 	# in a session the per-peer bodies spawn after this builder runs.
 	_wire_party_reset.call_deferred(boss, bossbar)
+	var party_net := get_node_or_null("/root/NetGame")
+	if party_net != null and party_net.has_signal("player_body_spawned"):
+		var spawn_hook := _wire_spawned_player_for_reset.bind(boss, bossbar)
+		if not party_net.player_body_spawned.is_connected(spawn_hook):
+			party_net.player_body_spawned.connect(spawn_hook)
+
+
+func _on_campaign_boss_died(expected_boss_kind: String,
+		expected_contract: Dictionary) -> void:
+	var game := get_tree().root.get_node_or_null("Game")
+	if game == null or not game.has_method("resolve_campaign_boss_death"):
+		return
+	var active: Dictionary = game.get("active_chart")
+	var active_contract = active.get("campaign_contract", {})
+	if not active_contract is Dictionary \
+			or not bool((active_contract as Dictionary).get("guaranteed", false)) \
+			or String((active_contract as Dictionary).get("boss_kind", "")) != expected_boss_kind \
+			or (active_contract as Dictionary) != expected_contract:
+		return
+	var settlement: Dictionary = game.call("resolve_campaign_boss_death", active)
+	# This World owns the arena-local presentation. Consume only the exact
+	# authoritative transition returned by Game; never infer a Stair from a
+	# Queen-shaped boss, an old Summit flag, or campaign state inspection.
+	if bool(settlement.get("changed", false)) \
+			and String((active_contract as Dictionary).get("chapter_id", "")) \
+				== CampaignData.QUEENS_SUMMIT \
+			and (settlement.get("restoration_awards", []) as Array).has("pale_stair"):
+		reveal_pale_stair_from_campaign_settlement({
+			"canonical_queen": true, "pale_stair": true,
+		})
+
+
+func _on_boss_trophy_died(trophy: String) -> void:
+	var game := get_tree().root.get_node_or_null("Game")
+	if game == null:
+		return
+	game.add_material(trophy, 1)
+	if game.ledger != null:
+		game.ledger.apply(trophy) # ADR 0013 — trophy → permanent stat
+	game.notify("Trophy claimed: %s. Slot it at the Inscribing Table." %
+		GatherDefs.material_name(trophy))
+
+
+func _on_boss_summon_wave(count: int, center_x: int, center_y: int) -> void:
+	_spawn_queen_summons(center_x, center_y, count)
+
+
+func _on_handoff_boss_died(expected_contract: Dictionary) -> void:
+	var game := get_tree().root.get_node_or_null("Game")
+	if game == null or not game.has_method("resolve_handoff_boss_death"):
+		return
+	var active: Dictionary = game.get("active_chart")
+	var active_contract = active.get("handoff_contract", {})
+	if not active_contract is Dictionary or (active_contract as Dictionary) != expected_contract:
+		return
+	game.call("resolve_handoff_boss_death", active)
+
+
+func _on_reprise_boss_died(contract: Dictionary, boss: Node3D) -> void:
+	if boss != null and is_instance_valid(boss):
+		_spawn_reprise_heirloom(contract, boss.global_position)
+
+
+# Builds the authored encounter shell around the dedicated Jarl controller.
+# Guard/bell state lives entirely in these actors; no campaign settlement is
+# attempted until Jarl.died emits after the controller's three reliefs.
+func _build_barrow_jarl_reliefs(jarl: BarrowJarl, cx: int, cy: int) -> void:
+	if jarl == null:
+		return
+	var controller: Node3D = BarrowJarlControllerScript.new()
+	controller.name = "BarrowJarlReliefController"
+	add_child(controller)
+	var guards: Array = []
+	var bells: Array = []
+	var offsets := [Vector3(-3.0, 0.0, -1.8), Vector3(3.0, 0.0, -1.8), Vector3(0.0, 0.0, 3.0)]
+	for i in 3:
+		var packed: PackedScene = load("res://models/enemy_oathbound_v1.glb")
+		if packed == null:
+			continue
+		var guard_inst: Node3D = packed.instantiate()
+		GlbFit.normalize_height(guard_inst, 1.8)
+		_unmetal(guard_inst)
+		_outline_only(guard_inst)
+		var guard: CharacterBody3D = _spawn_character(guard_inst,
+			cx + int(offsets[i].x), cy + int(offsets[i].z), 0.55, 1.8, 44, OathboundGuardScript)
+		guard.name = "Oathbound%d" % (i + 1)
+		# Spawned guards are real Combatants, so hiding alone is unsafe: the
+		# dormant contract also suspends physics, AI, hurtbox, and body collision.
+		if guard.has_method("set_vow_dormant"):
+			guard.call("set_vow_dormant")
+		guards.append(guard)
+		var bell: Node3D = OathBellScript.new()
+		bell.name = "OathBell%d" % (i + 1)
+		# Configure before entering the tree so _ready_interactable() loads the
+		# matching 1/2/3 bellpost, not the default phase-one GLB.
+		bell.set_controller(controller, i + 1)
+		bell.position = Vector3(cx + 0.5, 0.0, cy + 0.5) + offsets[i] * 1.22
+		add_child(bell)
+		bells.append(bell)
+	controller.configure(jarl, guards, bells)
+	jarl.set_relief_controller(controller)
+
+
+func _build_hearth_giant_encounter(giant: HearthGiant, cx: int, cy: int) -> void:
+	if giant == null:
+		return
+	var controller: Node3D = HearthGiantEncounterScript.new()
+	controller.name = "HearthGiantEncounter"
+	add_child(controller)
+	var chains: Array = []
+	var offsets := [Vector3(-3.1, 0.0, -1.8), Vector3(3.1, 0.0, -1.8),
+		Vector3(0.0, 0.0, 3.2)]
+	for i in HearthGiantEncounterScript.CHAIN_ORDER.size():
+		var chain: Node3D = HearthChainScript.new()
+		chain.name = "HearthChain%d" % (i + 1)
+		chain.configure(String(HearthGiantEncounterScript.CHAIN_ORDER[i]))
+		chain.position = Vector3(cx + 0.5, 0.0, cy + 0.5) + offsets[i]
+		add_child(chain)
+		chains.append(chain)
+	controller.configure(giant, chains)
+	_hearth_encounter = controller
+	var game := get_tree().root.get_node_or_null("Game")
+	var active: Dictionary = game.get("active_chart") if game != null else {}
+	var chart_instance := String(active.get("chart_instance_id", ""))
+	var attempt := String(active.get("attempt_id", ""))
+	var net := get_node_or_null("/root/NetGame")
+	if net != null and bool(net.active) and not bool(net.is_host()):
+		controller.begin_guest_world_ready(chart_instance, attempt)
+	else:
+		controller.begin_attempt(chart_instance, attempt)
+	controller.connect("giant_banked", _on_hearth_giant_banked.bind(controller, giant))
+	controller.connect("settled_snapshot_applied", _present_hearth_giant_settlement)
+	controller.call_deferred("report_world_ready", chart_instance, attempt)
+
+
+func _build_knot_eater_encounter(eater: Node3D, cx: int, cy: int) -> void:
+	if eater == null:
+		return
+	var controller: Node3D = KnotEaterEncounterScript.new()
+	controller.name = "KnotEaterEncounter"
+	add_child(controller)
+	_knot_eater_encounter = controller
+	var anchors: Array = []
+	var knots: Array = []
+	var offsets := [Vector3(-3.2, 0, -1.8), Vector3(3.2, 0, -1.8), Vector3(0, 0, 3.1)]
+	for i in 3:
+		var anchor: Node3D = KnotEaterAnchorScript.new()
+		anchor.name = "KnotEaterAnchor%d" % (i + 1)
+		anchor.configure("anchor_%d" % (i + 1), controller)
+		anchor.position = Vector3(cx + 0.5, 0, cy + 0.5) + offsets[i]
+		add_child(anchor)
+		anchors.append(anchor)
+		var knot: Node3D = KnotEaterKnotScript.new()
+		knot.name = "KnotEaterKnot%d" % (i + 1)
+		knot.configure("knot_%d" % (i + 1), controller)
+		knot.position = Vector3(cx + 0.5, 0, cy + 0.5) + offsets[i] * 0.58
+		add_child(knot)
+		knots.append(knot)
+	controller.configure(eater, anchors, knots)
+	var game := get_node_or_null("/root/Game")
+	var active: Dictionary = game.get("active_chart") if game != null else {}
+	var chart_id := String(active.get("chart_instance_id", ""))
+	var attempt := String(active.get("attempt_id", ""))
+	if controller.begin_attempt(chart_id, attempt):
+		controller.call_deferred("report_world_ready", chart_id, attempt)
+	controller.connect("settled", _present_knot_eater_settlement.bind(controller))
+
+
+func _present_knot_eater_settlement(_controller: Node) -> void:
+	_drop_gates()
+	var bossbar := get_node_or_null("BossBar")
+	if bossbar != null:
+		bossbar.hide_boss()
+	# The nonlethal boss never emits `died`, so the ordinary boss-waystone hook
+	# cannot authorize the exit. Settlement is the sole terminal signal.
+	if get_node_or_null("KnotEaterExitWaystone") == null and _boss_body != null:
+		var waystone: Node3D = ExitWaystoneScript.new()
+		waystone.name = "KnotEaterExitWaystone"
+		waystone.position = _boss_body.global_position + Vector3(0.0, 0.0, 2.2)
+		add_child(waystone)
+
+
+func _on_hearth_giant_banked(controller: Node, giant: Node) -> void:
+	if controller != _hearth_encounter or giant != _boss_body:
+		return
+	_present_hearth_giant_settlement()
+	var game := get_tree().root.get_node_or_null("Game")
+	if game == null or not game.has_method("resolve_campaign_boss_death"):
+		return
+	var active: Dictionary = game.get("active_chart")
+	var contract = active.get("campaign_contract", {})
+	if not contract is Dictionary \
+			or String((contract as Dictionary).get("chapter_id", "")) \
+				!= CampaignData.FIRE_IN_THE_BOUGH \
+			or String((contract as Dictionary).get("boss_kind", "")) != "hearth_giant":
+		return
+	game.call("resolve_campaign_boss_death", active)
+
+
+# This is intentionally presentation-only: the host's `giant_banked` signal
+# and a guest's accepted settled snapshot take the same visual route, but only
+# the host callback below invokes Game's settlement transaction. A late join
+# can therefore see the dropped gates and usable exit without rerunning escrow.
+func _present_hearth_giant_settlement() -> void:
+	_drop_gates()
+	var bossbar := get_node_or_null("BossBar")
+	if bossbar != null:
+		bossbar.hide_boss()
+	if not _hearth_exit_ready or _hearth_exit_spawned:
+		return
+	var ws: Node3D = ExitWaystoneScript.new()
+	ws.position = _hearth_exit_position
+	add_child(ws)
+	_hearth_exit_spawned = true
+
+
+# Queen's Summit presentation adapter.  Game is the only caller allowed to
+# hand this loader the explicit post-settlement token, immediately after a
+# successful *canonical* Queen resolution.  This intentionally does not accept
+# generic `summit_cleared`, a loose Alpha Fang, a legacy Chart, or any handoff
+# phase: none of those are campaign truth.
+#
+# Expected token: {"canonical_queen": true, "pale_stair": true}.  Keeping it
+# small and explicit prevents a future presentation caller from inferring the
+# Root Saga out of an old save shape.  It is safe to call repeatedly.
+func reveal_pale_stair_from_campaign_settlement(token: Dictionary) -> bool:
+	if not bool(token.get("canonical_queen", false)) \
+			or not bool(token.get("pale_stair", false)):
+		return false
+	if _pale_stair != null and is_instance_valid(_pale_stair):
+		return true
+	# World origin is a valid generated arena centre.  Readiness must be explicit;
+	# using Vector3.ZERO as a sentinel made a canonical origin-centred Queen
+	# settle correctly while silently withholding her Pale Stair.
+	if not _boss_arena_ready and _boss_arena_center == Vector3.ZERO:
+		# The landmark belongs to the authored Queen arena only.  A direct World
+		# boot and a boss-free Crownward Ascent therefore cannot manufacture it.
+		return false
+	var stair: Node3D = PaleStairScript.new()
+	stair.name = "PaleStair"
+	# Sit just beyond the arena's centre; it faces down the visible root-road
+	# but does not block the exit or constitute a collision/transition gate.
+	stair.position = _boss_arena_center + Vector3(0.0, 0.02, -2.05)
+	stair.rotation.y = PI
+	stair.set_campaign_settlement_view(token)
+	add_child(stair)
+	_pale_stair = stair
+	return true
+
+
+# Narrow read-only test/integration seam.  Root's Queen death callback should
+# call `reveal_pale_stair_from_campaign_settlement` with the explicit token;
+# callers can use this accessor to prove repeated settlement cannot duplicate
+# the prop without looking at loader-private fields.
+func pale_stair_landmark() -> Node3D:
+	return _pale_stair if _pale_stair != null and is_instance_valid(_pale_stair) else null
+
+func _spawn_reprise_heirloom(encounter_contract: Dictionary, pos: Vector3) -> void:
+	var game := get_tree().root.get_node_or_null("Game")
+	if game == null or not game.has_method("claim_first_knot_reprise_reward"):
+		return
+	# Guest bosses are puppets. Their local death replay must never mint a
+	# second reward; the host below broadcasts the one concrete item instead.
+	var net := get_node_or_null("/root/NetGame")
+	if net != null and bool(net.active) and not bool(net.is_host()):
+		return
+	var active: Dictionary = game.get("active_chart")
+	if active.get("encounter_contract", {}) != encounter_contract:
+		return
+	var item: Dictionary = game.call("claim_first_knot_reprise_reward", active)
+	if item.is_empty():
+		return
+	if net != null and bool(net.active):
+		net.unique_drop_event(item, pos)
+	else:
+		ItemPickup.spawn_scattered(self, item, pos)
 
 func _wire_party_reset(boss: Node, bossbar: Node) -> void:
 	for p in get_tree().get_nodes_in_group("player"):
-		if (p as Node).has_signal("died"):
-			(p as Node).died.connect(_party_reset_check.bind(boss, bossbar))
+		_wire_spawned_player_for_reset(p as Node, boss, bossbar)
+
+func _wire_spawned_player_for_reset(player: Node, boss: Node, bossbar: Node) -> void:
+	if player == null or not player.has_signal("died"):
+		return
+	var callback := _party_reset_check.bind(boss, bossbar)
+	if not player.died.is_connected(callback):
+		player.died.connect(callback)
 
 func _party_reset_check(boss: Node, bossbar: Node) -> void:
 	var net := get_node_or_null("/root/NetGame")
 	if net != null and bool(net.active):
+		if not bool(net.is_host()):
+			return
 		for p in get_tree().get_nodes_in_group("player"):
 			if not bool((p as Node).get("dead")):
 				return   # someone still stands — the fight goes on
 	_drop_gates()
-	if is_instance_valid(boss) and boss.has_method("reset_fight"):
+	if boss == _boss_body and _knot_eater_encounter != null \
+			and is_instance_valid(_knot_eater_encounter) \
+			and _knot_eater_encounter.has_method("reset_for_retry"):
+		_knot_eater_encounter.call("reset_for_retry")
+	elif boss == _boss_body and _hearth_encounter != null \
+			and is_instance_valid(_hearth_encounter) \
+			and _hearth_encounter.has_method("reset_for_retry"):
+		_hearth_encounter.call("reset_for_retry")
+	elif is_instance_valid(boss) and boss.has_method("reset_fight"):
 		boss.reset_fight()
 	if bossbar != null and is_instance_valid(bossbar):
 		bossbar.hide_boss()
@@ -1506,12 +2208,67 @@ func _drop_gates() -> void:
 # Spec 25 Phase 5 — enemies spawn per room, by role + BFS depth: the crypt
 # escalates from a calm entrance toward a dense run-up to the boss.
 func _build_enemies(layout: Dictionary) -> int:
-	const ElitesData = preload("res://data/elites.gd")
 	var grid: Array = layout.grid
 	var rooms: Array = layout.get("rooms", [])
 	var depths: Array = layout.get("room_depths", [])
 	var entry = layout.entry
 	var exit = layout.exit
+	var elite_manifest: Dictionary = layout.get("elite_manifest", {}) as Dictionary \
+		if layout.get("elite_manifest", {}) is Dictionary else {}
+	var manifest_pending := bool(elite_manifest.get("eligible", false)) \
+		and String(elite_manifest.get("slot_id", "")) == "ashen_first_eligible"
+	_elite_manifest_consumed = false
+	_elite_manifest_body = null
+	var is_snug_lesson := String(layout.get("scope", "")) == "snug"
+	var lesson_room_idx := -1
+	var lesson_depth := 999999
+	var pressure_room_idx := -1
+	var pressure_depth := -1
+	if is_snug_lesson:
+		for candidate_i in rooms.size():
+			var candidate: Dictionary = rooms[candidate_i]
+			if String(candidate.get("role", "")) != "combat":
+				continue
+			var candidate_depth: int = depths[candidate_i] \
+				if candidate_i < depths.size() else 0
+			if candidate_depth < lesson_depth:
+				lesson_depth = candidate_depth
+				lesson_room_idx = candidate_i
+		# A valid small Snug can occasionally contain no room explicitly tagged
+		# `combat`. The opening still promises one normalized teaching rat, so use
+		# the shallowest ordinary room rather than letting layout grammar erase the
+		# lesson for that seed.
+		if lesson_room_idx < 0:
+			for candidate_i in rooms.size():
+				var candidate: Dictionary = rooms[candidate_i]
+				if String(candidate.get("role", "")) in ["entrance", "boss"]:
+					continue
+				var candidate_depth: int = depths[candidate_i] \
+					if candidate_i < depths.size() else 0
+				if candidate_depth < lesson_depth:
+					lesson_depth = candidate_depth
+					lesson_room_idx = candidate_i
+	if _guaranteed_pressure_elite:
+		for candidate_i in rooms.size():
+			var candidate: Dictionary = rooms[candidate_i]
+			if candidate_i == lesson_room_idx or String(candidate.get("role", "")) != "combat":
+				continue
+			var candidate_depth: int = depths[candidate_i] if candidate_i < depths.size() else 0
+			if candidate_depth > pressure_depth:
+				pressure_depth = candidate_depth
+				pressure_room_idx = candidate_i
+		# Compact four-room seeds may spend their only combat tag on the lesson.
+		# The authored pressure promise outranks decorative room grammar.
+		if pressure_room_idx < 0:
+			for candidate_i in rooms.size():
+				var candidate: Dictionary = rooms[candidate_i]
+				if candidate_i == lesson_room_idx \
+						or String(candidate.get("role", "")) in ["entrance", "boss"]:
+					continue
+				var candidate_depth: int = depths[candidate_i] if candidate_i < depths.size() else 0
+				if candidate_depth > pressure_depth:
+					pressure_depth = candidate_depth
+					pressure_room_idx = candidate_i
 	# Wyrd — the chart's scope picks the spawn table (briar mazes crawl with
 	# imps; snug cellars get rats). Unknown scopes read as crypt.
 	var table: Array = SPAWN_TABLES.get(String(layout.get("scope", "crypt")),
@@ -1532,6 +2289,8 @@ func _build_enemies(layout: Dictionary) -> int:
 			"treasure": n = 1                              # a guard
 			"shrine":   n = _rng.randi_range(0, 1)
 			"setpiece": n = 2
+		if ri == lesson_room_idx:
+			n = 1
 		# Wyrd — festival_pace density twins scale every populated room.
 		if n > 0 and _density_mult != 1.0:
 			n = maxi(1, roundi(n * _density_mult))
@@ -1543,13 +2302,36 @@ func _build_enemies(layout: Dictionary) -> int:
 		# adds 2–3 same-kind retinue alongside.
 		var elite_idx := -1
 		var elite_modifier: String = ""
-		var elite_kind: String = _pick_kind(table)
+		var elite_kind: String = ""
 		# C11 — deeper dens are eliter: the base chance rises with depth (capped).
-		if role == "combat" and _rng.randf() < minf(0.6, float(n) / 8.0 + float(depth) * 0.02):
+		if role == "combat" and ri != lesson_room_idx and manifest_pending:
+			elite_idx = 0
+			elite_modifier = String(elite_manifest.get("modifier_id", ""))
+			elite_kind = String(elite_manifest.get("elite_id", "bough_watcher"))
+			manifest_pending = false
+		elif ri != lesson_room_idx and (ri == pressure_room_idx \
+				or (role == "combat" and _rng.randf() < minf(0.6,
+				(float(n) / 8.0 + float(depth) * 0.02) * _elite_chance_mult))):
 			elite_idx = _rng.randi_range(0, n - 1)
 			elite_modifier = ElitesData.pick_random(_rng)
+			elite_kind = _pick_kind(table)
+		elif role == "combat":
+			# Retained for the ordinary random-elite branch without consuming a
+			# kind roll merely to present Pack Reader's frozen manifest.
+			elite_kind = _pick_kind(table)
 		for k in n:
 			var t: Vector2i = tiles[_rng.randi_range(0, tiles.size() - 1)]
+			if ri == lesson_room_idx:
+				var lesson_enemy = _spawn_enemy(ei, t.x, t.y, role, depth, "rat")
+				ei += 1
+				if lesson_enemy != null:
+					lesson_enemy.add_to_group("snug_lesson_enemy")
+					lesson_enemy.damage = 1
+					lesson_enemy.move_speed = minf(float(lesson_enemy.move_speed), 1.15)
+					lesson_enemy.attack_cooldown = maxf(
+						float(lesson_enemy.attack_cooldown), 2.4)
+					lesson_enemy.aggro_radius = minf(float(lesson_enemy.aggro_radius), 5.0)
+				continue
 			if k == elite_idx:
 				# Spawn the elite (forced to elite_kind so we can match the
 				# retinue against the same enemy kind).
@@ -1557,20 +2339,35 @@ func _build_enemies(layout: Dictionary) -> int:
 				ei += 1
 				if elite_body != null and elite_body.has_method("apply_elite"):
 					elite_body.apply_elite(elite_modifier)
-					# The chain's first link: the fiercer things sometimes
-					# carry a thorn essence — the Hedgemother den's key.
+					if bool(elite_manifest.get("eligible", false)) \
+							and String(elite_modifier) == String(elite_manifest.get("modifier_id", "")) \
+							and String(elite_kind) == String(elite_manifest.get("elite_id", "")) \
+							and not _elite_manifest_consumed:
+						_elite_manifest_consumed = true
+						_elite_manifest_body = elite_body
+						elite_body.add_to_group("ashen_manifest_elite")
+						elite_body.set_meta("elite_manifest_slot",
+							String(elite_manifest.get("slot_id", "")))
+					# Slice D1 — generic elite essence must not shortcut the
+					# authored first chapter. Game owns the campaign decision so
+					# this world adapter never reads campaign state or makes a
+					# co-op authority decision itself. Keep the seeded roll only
+					# after the Hedgemother has been cleared.
+					var game := get_tree().root.get_node_or_null("Game")
+					var trophy_eligible := game == null \
+						or not game.has_method("campaign_elite_trophy_eligible") \
+						or bool(game.call("campaign_elite_trophy_eligible", "thorn_essence"))
 					# B6 — marked_quarry doubles/halves the trophy odds. Roll
-					# NOW off the seeded layout RNG (not a death-time randf()),
-					# so every co-op peer agrees on which elites carry one — the
-					# build sequence is identical across peers, runtime deaths
-					# are not. (Fixes the bare-randf() co-op determinism bug.)
-					var drops_trophy: bool = _rng.randf() < 0.25 * _trophy_mult
-					elite_body.died.connect(func():
-						if drops_trophy:
-							var game := get_tree().root.get_node_or_null("Game")
-							if game != null:
-								game.add_material("thorn_essence", 1)
-								game.notify("A thorn essence gleams in the wreckage."))
+					# from the seeded layout RNG so every co-op peer agrees on
+					# which eligible elites carry one.
+					var drops_trophy: bool = trophy_eligible \
+						and _rng.randf() < 0.25 * _trophy_mult
+					if drops_trophy and elite_body.has_method("set_seeded_trophy_sigil"):
+						# Trophy Sense reads this already-seeded fact. It never
+						# participates in the roll or the death award below.
+						elite_body.call("set_seeded_trophy_sigil",
+							GatherDefs.material_name("thorn_essence"))
+					elite_body.died.connect(_on_elite_trophy_died.bind(drops_trophy))
 				# Retinue — 2–3 same-kind trash within ~2.5m of the elite.
 				var retinue_count := _rng.randi_range(2, 2 + clampi(depth / 3, 0, 3))  # C11 — bigger packs deeper
 				var elite_pos := Vector2(t.x, t.y)
@@ -1595,6 +2392,102 @@ func _build_enemies(layout: Dictionary) -> int:
 				_spawn_enemy(ei, t.x, t.y, role, depth, _pick_kind(table))
 				ei += 1
 	return ei
+
+func _on_elite_trophy_died(drops_trophy: bool) -> void:
+	if not drops_trophy:
+		return
+	var death_game := get_tree().root.get_node_or_null("Game")
+	if death_game == null:
+		return
+	death_game.add_material("thorn_essence", 1)
+	death_game.notify("A thorn essence gleams in the wreckage.")
+
+
+func elite_manifest_runtime_view() -> Dictionary:
+	return {"consumed": _elite_manifest_consumed,
+		"body": _elite_manifest_body,
+		"slot_id": String(_elite_manifest_body.get_meta("elite_manifest_slot", "")) \
+			if _elite_manifest_body != null and is_instance_valid(_elite_manifest_body) else ""}
+
+
+# Pack Reader is presentation-only. It reads the already-materialized Chart
+# descriptor through Game and creates no RNG, spawn, drop, or campaign call.
+func _build_pack_reader_plate(layout: Dictionary) -> void:
+	var game := get_tree().root.get_node_or_null("Game")
+	if game == null or not game.has_method("pack_reader_view"):
+		return
+	var view = game.call("pack_reader_view")
+	if not view is Dictionary or not bool((view as Dictionary).get("available", false)) \
+			or not bool((view as Dictionary).get("eligible", false)):
+		return
+	var entry = layout.get("entry", null)
+	if entry == null:
+		return
+	var modifier_id := String((view as Dictionary).get("modifier_id", ""))
+	var elite_id := String((view as Dictionary).get("elite_id", ""))
+	var elite_name := elite_id.replace("_", " ").capitalize()
+	var modifier_name := String((ElitesData.MODIFIERS.get(
+		modifier_id, {}) as Dictionary).get("name", modifier_id.replace("_", " ").capitalize()))
+	var plate := Label3D.new()
+	plate.name = "PackReaderManifest"
+	plate.add_to_group("pack_reader_manifest")
+	plate.text = "PACK READER\nFirst sign: %s · %s" % [elite_name, modifier_name]
+	plate.position = Vector3(int(entry.x) + 0.5, 2.15, int(entry.y) + 0.5)
+	plate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	plate.no_depth_test = true
+	plate.font_size = 22
+	plate.pixel_size = 0.004
+	plate.modulate = Color(1.0, 0.68, 0.34)
+	plate.outline_size = 8
+	plate.outline_modulate = Color(0.08, 0.04, 0.03, 0.95)
+	var font := WyrdUi.font_header()
+	if font != null:
+		plate.font = font
+	add_child(plate)
+
+
+func _build_cinderbound_vent(layout: Dictionary) -> void:
+	var game := get_tree().root.get_node_or_null("Game")
+	if game == null:
+		return
+	var outcome := "cinderbound" if bool(game.call("affix_good", "cinderbound")) \
+		else "cinders_rebuke" if bool(game.call("affix_bad", "cinderbound")) else ""
+	if outcome == "":
+		return
+	var rooms: Array = layout.get("rooms", [])
+	var depths: Array = layout.get("room_depths", [])
+	var chosen: Dictionary = {}
+	var best_depth := -1
+	for i in rooms.size():
+		var room: Dictionary = rooms[i]
+		if String(room.get("role", "")) != "combat":
+			continue
+		var depth := int(depths[i]) if i < depths.size() else 0
+		if depth > best_depth:
+			best_depth = depth
+			chosen = room
+	if chosen.is_empty():
+		return
+	var pos := Vector3(float(chosen.x) + float(chosen.w) * 0.5, 0.05,
+		float(chosen.y) + float(chosen.h) * 0.5)
+	var vent: Node3D = CinderboundVentScript.new()
+	vent.name = "CinderboundVent"
+	add_child(vent)
+	var active: Dictionary = game.get("active_chart")
+	vent.call("arm_world", outcome, String(active.get("attempt_id",
+		active.get("chart_instance_id", "ordinary-ashen"))), pos)
+	vent.call_deferred("report_world_ready", String(active.get("attempt_id",
+		active.get("chart_instance_id", "ordinary-ashen"))))
+	vent.connect("focus_pickup_spawned", func(nonce: int, pickup_pos: Vector3) -> void:
+		var pickup: Node3D = CinderFocusPickupScript.new()
+		pickup.name = "CinderFocusPickup%d" % nonce
+		pickup.configure(vent, nonce)
+		pickup.position = pickup_pos
+		add_child(pickup))
+	vent.connect("focus_pickup_cleared", func(nonce: int) -> void:
+		var pickup := get_node_or_null("CinderFocusPickup%d" % nonce)
+		if pickup != null:
+			pickup.queue_free())
 
 # Weighted pick from a [[kind, weight], ...] spawn table.
 func _pick_kind(table: Array) -> String:
@@ -1694,7 +2587,7 @@ func _spawn_enemy(ei: int, tx: int, ty: int, role: String = "combat",
 
 # Slice A — paint a kind with its archetype hue AND attach the ink outline.
 # We build ONE shared painted material per call and override every mesh with
-# it; the outline rides as its next_pass (so it deforms with skinned meshes).
+# it; each skinned mesh receives its own renderer-safe overlay.
 # `ethereal` makes ghosts read as spirits: faint cool emission + light alpha.
 func _tint(root: Node, color: Color, ethereal: bool = false) -> void:
 	var m := StandardMaterial3D.new()
@@ -1709,10 +2602,11 @@ func _tint(root: Node, color: Color, ethereal: bool = false) -> void:
 		m.emission_energy_multiplier = 0.45
 		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		m.albedo_color = Color(color.r, color.g, color.b, 0.72)
-	m.next_pass = _make_outline_pass()
 	for vi in _all_visual_instances(root):
 		if vi is MeshInstance3D:
-			(vi as MeshInstance3D).material_override = m
+			var mi := vi as MeshInstance3D
+			mi.material_override = m
+			mi.material_overlay = _make_outline_pass()
 
 # Slice A — the inverted-hull outline shell as a StandardMaterial3D, returned
 # fresh so callers can attach it as `next_pass` on a material they own. Front
@@ -1728,31 +2622,12 @@ func _make_outline_pass() -> StandardMaterial3D:
 	return o
 
 # Slice A — give the boss the same ink rim WITHOUT flattening its own GLB
-# textures. We chain the outline onto each surface's real material (via a
-# duplicate so we don't mutate the shared GLB resource); kinds with no surface
-# material fall back to a material_override carrying the outline.
+# textures. A GeometryInstance overlay keeps the imported surface materials
+# intact and remains valid when multiple instances share the same mesh.
 func _outline_only(root: Node) -> void:
 	for vi in _all_visual_instances(root):
-		if not (vi is MeshInstance3D):
-			continue
-		var mi := vi as MeshInstance3D
-		var mesh: Mesh = mi.mesh
-		var painted := false
-		if mesh != null:
-			for s in range(mesh.get_surface_count()):
-				var base := mi.get_active_material(s)
-				if base is BaseMaterial3D:
-					var dup := (base as BaseMaterial3D).duplicate() as BaseMaterial3D
-					dup.next_pass = _make_outline_pass()
-					mi.set_surface_override_material(s, dup)
-					painted = true
-		if not painted:
-			# Materialless surface — give it a neutral plate to host the outline.
-			var fallback := StandardMaterial3D.new()
-			fallback.albedo_color = Color(0.70, 0.66, 0.60)
-			fallback.roughness = 0.85
-			fallback.next_pass = _make_outline_pass()
-			mi.material_override = fallback
+		if vi is MeshInstance3D:
+			(vi as MeshInstance3D).material_overlay = _make_outline_pass()
 
 # Wrap a character GLB in a Combatant (CharacterBody3D, spec 15) — a moving
 # body on the ENEMIES layer + HP + hurtbox + chase/attack AI. Group "enemy".
@@ -1799,11 +2674,17 @@ func _build_exit_waystone(layout: Dictionary) -> void:
 		return
 	var pos := Vector3(int(exit.x) + 0.5, 0.0, int(exit.y) + 0.5)
 	if String(layout.get("bossKind", "")) != "" and _boss_body != null:
-		var spawn := func():
-			var ws: Node3D = ExitWaystoneScript.new()
-			ws.position = pos
-			add_child(ws)
-		_boss_body.died.connect(spawn)
+		if String(layout.get("bossKind", "")) == "hearth_giant" \
+				and _hearth_encounter != null:
+			_hearth_exit_position = pos
+			_hearth_exit_ready = true
+			_hearth_exit_spawned = false
+			_hearth_encounter.connect("giant_banked", _present_hearth_giant_settlement)
+		else:
+			# A bound callback retains a stable value copy of the exit position.
+			# The old lambda captured `_build_exit_waystone`'s local `pos` by
+			# reference and faulted when a later boss-death signal arrived.
+			_boss_body.died.connect(_on_boss_exit_spawned.bind(pos))
 	else:
 		var ws: Node3D = ExitWaystoneScript.new()
 		ws.position = pos
@@ -1819,6 +2700,12 @@ func _build_exit_waystone(layout: Dictionary) -> void:
 		home.position = Vector3(int(entry.x) + 0.5 + 1.6, 0.0,
 			int(entry.y) + 0.5 + 1.6)
 		add_child(home)
+
+
+func _on_boss_exit_spawned(exit_position: Vector3) -> void:
+	var ws: Node3D = ExitWaystoneScript.new()
+	ws.position = exit_position
+	add_child(ws)
 
 # A depth-scaled reward chest on a floor tile beside the exit waystone.
 func _build_exit_chest(layout: Dictionary, exit) -> void:
@@ -1876,6 +2763,12 @@ func _position_player(entry) -> void:
 			player.set_spawn(_entry_pos)
 
 func _debug_screenshot() -> void:
+	if OS.get_environment("WYRD_DEV_FIRST_ROAD") == "bold":
+		var player := get_tree().get_first_node_in_group("player") as Node3D
+		for enemy in get_tree().get_nodes_in_group("enemy"):
+			if player != null and bool(enemy.get("is_elite")) and enemy is Node3D:
+				player.global_position = (enemy as Node3D).global_position + Vector3(0.0, 0.0, 4.5)
+				break
 	await get_tree().create_timer(0.6).timeout
 	var path := OS.get_environment("WYRD_SHOT_PATH")
 	if path == "":

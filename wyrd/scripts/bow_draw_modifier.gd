@@ -9,29 +9,38 @@ extends SkeletonModifier3D
 #
 # The pose angle is ported from the (otherwise unused) ranger_anim fire pose.
 
-const DRAW_ANGLE := -1.0   # rad about the bone's X — raise the arm (ranger fire pose)
+# The bow arm and string arm do different jobs. The former stays long and
+# forward; the latter folds at the elbow toward the cheek. Keeping this table
+# beside the canonical rig names makes the pose explicit and testable.
+const DRAW_BONES := [
+	{"name": "LeftArm", "axis": Vector3.RIGHT, "angle": -0.92},
+	{"name": "LeftForeArm", "axis": Vector3.RIGHT, "angle": -0.12},
+	{"name": "RightArm", "axis": Vector3.RIGHT, "angle": -0.72},
+	{"name": "RightForeArm", "axis": Vector3.FORWARD, "angle": -2.15},
+]
 
 var draw_amount := 0.0
-var _arms: Array = []      # [{idx:int, target:Quaternion}], skipped if a bone is absent
+var _pose_bones: Array = [] # [{idx:int, target:Quaternion}], absent bones are skipped
 
 func _ready() -> void:
 	var sk := get_skeleton()
 	if sk == null:
 		return
-	var draw_q := Quaternion(Vector3.RIGHT, DRAW_ANGLE)
-	for n in ["LeftArm", "RightArm"]:
-		var idx := sk.find_bone(n)
+	for record_v in DRAW_BONES:
+		var record := record_v as Dictionary
+		var idx := sk.find_bone(String(record.name))
 		if idx >= 0:
 			var rest := sk.get_bone_rest(idx).basis.get_rotation_quaternion()
-			_arms.append({"idx": idx, "target": rest * draw_q})
+			var delta := Quaternion(record.axis as Vector3, float(record.angle))
+			_pose_bones.append({"idx": idx, "target": rest * delta})
 
 func _process_modification() -> void:
-	if draw_amount <= 0.001 or _arms.is_empty():
+	if draw_amount <= 0.001 or _pose_bones.is_empty():
 		return
 	var sk := get_skeleton()
 	if sk == null:
 		return
 	var amt := clampf(draw_amount, 0.0, 1.0)
-	for a in _arms:
+	for a in _pose_bones:
 		var cur := sk.get_bone_pose_rotation(int(a.idx))
 		sk.set_bone_pose_rotation(int(a.idx), cur.slerp(a.target, amt))

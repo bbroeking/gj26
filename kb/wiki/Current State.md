@@ -13,7 +13,7 @@ The authoritative running doc is `../docs/wyrd-roadmap.md`; this page is its
 distilled, linked form. When they disagree, the roadmap and the `../wyrd/` code
 win.
 
-## Playable today (end to end, solo or co-op)
+## Playable today (end to end, single-player)
 
 A complete demo slice runs: **tutorial → forage → mix ink → inscribe a
 [[Charts|chart]] → delve a parameterized hollow → exit → completion XP → trophy
@@ -30,9 +30,9 @@ save/load.**
   (kills feed it; Even Breath at 17).
 - **Combat as one verb:** a 9-strong [[Skills]] pool, 4-slot loadout, per-kind
   [[Enemies]] with elites + affix modifiers, the boss trophy chain.
-- **[[Multiplayer Co-op]]** — Phase A (town together) and Phase B (dungeon co-op:
-  seed-identical enemies, host snapshots, guest casts, kill credit, per-player
-  loot, party-wipe boss rules) shipped; two-process headless smoke tests green.
+- **Single-player product focus.** Co-op entry points, the Lantern, and network
+  boot hooks were retired by ADR 0018. Dormant transport compatibility remains
+  internal while campaign and encounter authority paths are simplified safely.
 - **Quality gate:** four headless suites (~350 checks) must stay green
   (see [[Godot Pipeline]]).
 

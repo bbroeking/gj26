@@ -6,7 +6,9 @@ extends Interactable
 # raw materials and inks at convenience-tax prices. Voice: cozy gruff
 # (src/data/npcs.js).
 
-const HOD_GLB := preload("res://models/npc_hod_v3.glb")
+const HOD_GLB := preload("res://models/npc_hod_tenter_v1_rigged.glb")
+const HOD_WALK_GLB := preload("res://models/npc_hod_tenter_v1_walk_anim.glb")
+const AnimDriverScript := preload("res://scripts/anim_driver.gd")
 const VendorPanelScript = preload("res://scripts/ui/vendor_panel.gd")
 
 func get_prompt_text() -> String:
@@ -21,9 +23,11 @@ func get_prompt_position() -> Vector3:
 func _ready_interactable() -> void:
 	var mesh := HOD_GLB.instantiate()
 	add_child(mesh)
-	GlbFit.normalize_height(mesh, 1.72)   # his in-lore height
+	# Measured production height is 1.336 m; avoid skinned-AABB normalization.
+	mesh.scale = Vector3.ONE * (1.72 / 1.336)
 	GlbFit.unmetal(mesh)
 	GlbFit.add_ink_outline(mesh)
+	AnimDriverScript.play_sidecar_pose(mesh, HOD_WALK_GLB, "walk", 0.5, 0.34)
 
 func interact(_player: Node) -> void:
 	# D15 — first visit, Hod greets you before opening his shelf; after that it's

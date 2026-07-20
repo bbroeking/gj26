@@ -74,6 +74,27 @@ const MODIFIERS := {
 		"on_death": "blight_pool",
 		"reward_tier_bonus": 1,
 	},
+	# Fire in the Bough's manifest-only trio. Their selection is materialized on
+	# the Chart from a separate seed domain; World applies the exact ID and Pack
+	# Reader merely reveals it.
+	"cinderclad": {
+		"name": "Cinderclad", "hp_mult": 1.45, "scale_mult": 1.25,
+		"tint": Color(0.92, 0.34, 0.14), "ring_color": Color(1.0, 0.42, 0.12),
+		"label_color": Color(1.0, 0.64, 0.25), "cc_immune_window": 4.0,
+		"on_attack": "burn_pulse", "reward_tier_bonus": 1,
+	},
+	"smokefoot": {
+		"name": "Smokefoot", "hp_mult": 1.15, "scale_mult": 1.18,
+		"tint": Color(0.42, 0.38, 0.40), "ring_color": Color(0.72, 0.55, 0.48),
+		"label_color": Color(0.88, 0.72, 0.62), "move_mult": 1.4,
+		"attack_speed_mult": 1.2, "reward_tier_bonus": 1,
+	},
+	"banked_ember": {
+		"name": "Banked Ember", "hp_mult": 1.65, "scale_mult": 1.30,
+		"tint": Color(0.78, 0.20, 0.10), "ring_color": Color(1.0, 0.28, 0.08),
+		"label_color": Color(1.0, 0.55, 0.20), "on_attack": "burn_pulse",
+		"reward_tier_bonus": 2,
+	},
 }
 
 # Deterministic pick — RNG comes from the caller (layout_loader) so a fixed

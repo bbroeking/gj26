@@ -36,6 +36,16 @@ static func snared(dur: float, slow: float) -> SkillEffect:
 	e.slow_factor = slow
 	return e
 
+
+# A hard stop, rather than a slow. Combatant/Boss owns immunity through its
+# normal apply_status contract, so a Wayweaver echo cannot bypass elite or boss
+# resistance simply by being a secondary projectile effect.
+static func root(dur: float) -> SkillEffect:
+	var e := SkillEffect.new()
+	e.status_kind = "root"
+	e.duration = dur
+	return e
+
 static func bleed(dur: float, dpt: int, interval: float) -> SkillEffect:
 	var e := SkillEffect.new()
 	e.status_kind = "bleed"

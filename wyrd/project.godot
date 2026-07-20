@@ -11,10 +11,11 @@ config_version=5
 [application]
 
 config/name="Wayfinder"
+config/version="0.1.5-natural-hollows"
 config/description="Wayfinder — a cozy fairytale dungeon-charter set in Bramblewood. You don't find dungeons; you inscribe them."
 run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
-config/icon="res://icon.svg"
+config/icon="res://assets/brand/wayfinder_icon.png"
 
 [display]
 
@@ -30,6 +31,7 @@ Sfx="*res://scripts/sfx.gd"
 Checkpoint="*res://scripts/checkpoint.gd"
 NetGame="*res://scripts/net_game.gd"
 Game="*res://scripts/game.gd"
+MapLoading="*res://scripts/ui/map_loader.gd"
 Settings="*res://scripts/settings.gd"
 Cursor="*res://scripts/ui/cursor.gd"
 

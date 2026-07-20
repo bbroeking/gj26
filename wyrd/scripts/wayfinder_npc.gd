@@ -6,8 +6,11 @@ extends Interactable
 # advances step 0 → 1. Voice rules: docs/WORLD_BIBLE.md (plain-spoken,
 # warm, short sentences, no fantasy-isms).
 
-const WANDERER_GLB := preload("res://models/wanderer_v3.glb")
+const WANDERER_GLB := preload("res://models/npc_mara_linnet_v1_rigged.glb")
+const WANDERER_WALK_GLB := preload("res://models/npc_mara_linnet_v1_walk_anim.glb")
+const AnimDriverScript := preload("res://scripts/anim_driver.gd")
 const DialogPanelScript = preload("res://scripts/ui/dialog_panel.gd")
+const MARA_PORTRAIT := preload("res://assets/ui/portraits/mara_linnet_v2.webp")
 
 func get_prompt_text() -> String:
 	return "[E] Talk to Mara Linnet"
@@ -19,16 +22,69 @@ func get_prompt_position() -> Vector3:
 	return Vector3(0.0, 2.1, 0.0)
 
 func _ready_interactable() -> void:
+	add_to_group("tutorial_mara")
 	var mesh := WANDERER_GLB.instantiate()
 	mesh.position = Vector3.ZERO
 	add_child(mesh)
-	GlbFit.normalize_height(mesh, 1.7)
+	# Meshy rig exports have unreliable skinned AABBs; this authored model is
+	# 1.627 m tall, so use its measured production scale instead.
+	mesh.scale = Vector3.ONE * (1.7 / 1.627)
+	GlbFit.unmetal(mesh)
+	GlbFit.add_ink_outline(mesh)
+	AnimDriverScript.play_sidecar_pose(mesh, WANDERER_WALK_GLB, "walk", 0.5, 0.0)
 
-func interact(_player: Node) -> void:
+func interact(player: Node) -> void:
 	var game := get_tree().root.get_node_or_null("Game")
+	if game != null and game.has_method("record_onboarding_event"):
+		game.record_onboarding_event("first_mara_conversation")
 	var step := 0 if game == null else int(game.tutorial_step)
 	var pages: Array
-	if game != null and bool(game.get("summit_cleared")):
+	var choices: Array = []
+	var choosing_first_road := false
+	var closes_first_chapter := false
+	# Face the person speaking; the dialog portrait carries expression, while the
+	# world model only needs the clear social read that Mara noticed them.
+	if player is Node3D:
+		var target := (player as Node3D).global_position
+		target.y = global_position.y
+		look_at(target, Vector3.UP, true)
+	if game != null and game.has_method("first_road_active") \
+			and bool(game.first_road_active()) \
+			and String(game.seen_hints.get("first_road_profile", "")) == "":
+		choosing_first_road = true
+		choices = [
+			"Kind Road — frail foes · few elites · lush forage",
+			"Bold Road — hardy foes · an elite sign · hidden treasure",
+		]
+		pages = [
+			"New boots. Good. A first road should tell us what sort of wayfinder wears them.",
+			"The rooms will still move when the Chart opens. You are choosing what the ink makes common.",
+			"Kind is not empty, and bold is not foolish. Choose the temper you want to walk.",
+		]
+	elif game != null and bool(game.seen_hints.get("tier1_completed", false)) \
+			and not bool(game.seen_hints.get("third_chart_choice_seen", false)):
+		closes_first_chapter = true
+		choices = ["Seek strength", "Seek materials", "Follow the mark"]
+		if game.has_second_hand_clue("inked_scrap"):
+			game.seen_hints["second_hand_mara_inked"] = true
+			pages = _pages_second_hand_inked()
+		elif game.has_second_hand_clue("far_waystone"):
+			game.seen_hints["second_hand_mara_far"] = true
+			pages = _pages_second_hand_far()
+		else:
+			pages = _pages_first_chapter_close()
+		game.save_now()
+	elif game != null and game.has_second_hand_clue("inked_scrap") \
+			and not bool(game.seen_hints.get("second_hand_mara_inked", false)):
+		game.seen_hints["second_hand_mara_inked"] = true
+		game.save_now()
+		pages = _pages_second_hand_inked()
+	elif game != null and game.has_second_hand_clue("far_waystone") \
+			and not bool(game.seen_hints.get("second_hand_mara_far", false)):
+		game.seen_hints["second_hand_mara_far"] = true
+		game.save_now()
+		pages = _pages_second_hand_far()
+	elif game != null and bool(game.get("summit_cleared")):
 		if not bool(game.seen_hints.get("summit_mara", false)):
 			game.seen_hints["summit_mara"] = true
 			pages = _pages_summit_first()
@@ -37,18 +93,41 @@ func interact(_player: Node) -> void:
 	else:
 		pages = _pages_for(step)
 	var dlg := DialogPanelScript.new()
-	dlg.open("Mara Linnet, the Wayfinder", pages)
+	dlg.open("Mara Linnet, the Wayfinder", pages, MARA_PORTRAIT, choices)
 	get_tree().current_scene.add_child(dlg)
 	if game != null and step == 0:
-		dlg.finished.connect(game.advance_tutorial)
+		if choosing_first_road:
+			dlg.choice_selected.connect(game.choose_first_road)
+		else:
+			dlg.finished.connect(game.advance_tutorial)
+	if game != null and closes_first_chapter:
+		dlg.choice_selected.connect(game.choose_onboarding_intention)
+		dlg.finished.connect(game.dismiss_onboarding_intention)
+
+func _pages_second_hand_far() -> Array:
+	return [
+		"A hooked hand, beside the far stone? No. I didn't put it there.",
+		"A new Chart should not carry an old mark. What will you seek next?",
+	]
+
+func _pages_second_hand_inked() -> Array:
+	return [
+		"Your ink? Let me see. Same hand. Fresh line.",
+		"Something answered the Chart. Or someone did. What will you seek next?",
+	]
+
+func _pages_first_chapter_close() -> Array:
+	return [
+		"You came home with the road still in your eyes. That's a beginning.",
+		"The next Chart is yours to choose. What will you seek?",
+	]
 
 func _pages_for(step: int) -> Array:
 	match step:
 		0:
 			return [
-				"New boots. Good — the yard could use a pair.",
-				"I chart the hollows. Ink a place onto paper the right way and the Waystone will take you there — the chart decides what you find inside. Ore, bramble, worse things if you ink them in.",
-				"Start small. The herb patches around the yard have a shimmer about them — you can't miss it. Pick three. Herbs make ink. Ink makes charts. Charts make the rest of your life interesting.",
+				"New boots. Good. The yard could use a pair.",
+				"Bring me three wild herbs. We'll make a road small enough to learn on.",
 			]
 		1:
 			return [
@@ -63,7 +142,7 @@ func _pages_for(step: int) -> Array:
 		3:
 			return [
 				"Now you have ink. Now you make a chart.",
-				"The bench has a base socket — set the Snug chart base there. The Snug is the smallest hollow I know; every wayfinder cuts their teeth on one.",
+				"Set the Practice Leaf in the middle, the Hedge Sprig above it, and your Hedge Ink in the first pot. Three small pieces; one kind road.",
 				"Take the finished chart from the result side. Don't crease it.",
 			]
 		4:
@@ -80,8 +159,8 @@ func _pages_for(step: int) -> Array:
 		6:
 			return [
 				"Back, and whole. That's a better result than some.",
-				"The craft settles in with every crossing — you'll feel it. Steady hands, clear eye.",
-				"Try a Tier 1 next. Set the base, then pour an ink into the round socket. Watch the odds shift on the result side before you commit.",
+				"I've set out a Field Parchment, a Loop Cord, and another Hedge Sprig. The left-hand Binding cell is awake now.",
+				"Lay the same green heading over the broader page, then loop the cord beside it. Add an ink if you want to lean the road. Watch the odds shift before you commit.",
 				"That's the whole dance: ink quantity tilts the odds; you decide how far to lean. Get comfortable with it.",
 			]
 		7:

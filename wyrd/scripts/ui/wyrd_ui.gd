@@ -1,29 +1,34 @@
 class_name WyrdUi
 extends RefCounted
 
+const Tokens = preload("res://scripts/ui/foundation/ui_tokens.gd")
+
 # Wyrd — the shared hand-drawn parchment skin for every code-built panel.
 # Textures come from the AI-imaging pass (assets/ui/, generated 2026-06-10
 # against the docs/UI_BIBLE.md master stem: wobbly sepia ink on aged cream,
 # watercolor washes). One place for palette and styleboxes; if the textures
 # go missing everything degrades to the old flat-ink look.
 
-# UI bible palette (docs/UI_BIBLE.md).
-# Spec 51 — DARK skin (was bright parchment, which floated over the dark dungeon).
-# Light-on-dark: INK is now warm CREAM body text; panels darken via PANEL_MOD/
-# BTN_MOD modulating the carved-wood ninepatch into deep enamel-teal, with
-# leaf-gold (GOLD) filigree on edges/titles. (Direction: Storybook Enamel Night,
-# spec 51 — picked over Dark Carved Walnut. Replaces the pale-parchment HUD that
-# floated over the dark dungeon.)
-const INK := Color(0.937, 0.906, 0.812)  # warm cream — body text on dark panels
-const INK_MID := Color(0.624, 0.690, 0.612)  # sage-grey — secondary / hints
+# Spec 59 — Field Journal semantic text roles. The previous Enamel Night pass
+# changed the single global INK token to cream while the panel factory later
+# changed to pale Maple paper. That deterministic seam produced cream-on-cream
+# UI. Surface ownership is explicit now; compatibility aliases below point to
+# paper roles because the legacy modal shell resolves to paper when Maple exists.
+const TEXT_ON_PAPER := Tokens.TEXT_ON_PAPER
+const TEXT_ON_PAPER_DIM := Tokens.TEXT_ON_PAPER_DIM
+const TEXT_ON_DARK := Tokens.TEXT_ON_DARK
+const TEXT_ON_DARK_DIM := Tokens.TEXT_ON_DARK_DIM
+const INK := TEXT_ON_PAPER
+const INK_MID := TEXT_ON_PAPER_DIM
 const TERRACOTTA := Color(0.835, 0.416, 0.271)  # ember — titles / accents / danger
 const SAGE := Color(0.651, 0.761, 0.392)  # good twin / fresh
 const GOLD := Color(0.890, 0.722, 0.361)  # leaf-gold filigree
-const CREAM := Color(0.953, 0.902, 0.796)
+const CREAM := TEXT_ON_DARK
 
-# Back-compat aliases (earlier panels reference these names).
-const PARCHMENT := INK                   # body text color ON parchment
-const PARCH_DIM := INK_MID
+# Back-compat aliases (earlier panels reference these names). Unlike the old
+# PARCHMENT := cream alias, these are actually readable on paper.
+const PARCHMENT := TEXT_ON_PAPER
+const PARCH_DIM := TEXT_ON_PAPER_DIM
 const GREEN := SAGE
 const RUST := TERRACOTTA
 
@@ -45,11 +50,11 @@ const RARITY := {
 # (40/56/72) stay inline for full-screen moments only.
 const SIZE_DISPLAY := 30      # screen / level-up titles
 const SIZE_TITLE := 22        # panel mastheads
-const SIZE_SECTION := 17      # section headers
-const SIZE_BODY := 14         # default body copy
-const SIZE_LABEL := 13        # labels, costs, numbers
-const SIZE_CAPTION := 12      # sub-lines, captions
-const SIZE_MICRO := 11        # eyebrows, key-hints
+const SIZE_SECTION := Tokens.TYPE_SECTION
+const SIZE_BODY := Tokens.TYPE_BODY
+const SIZE_LABEL := Tokens.TYPE_BODY
+const SIZE_CAPTION := Tokens.TYPE_CAPTION
+const SIZE_MICRO := Tokens.TYPE_CAPTION
 
 # Spec 53 — SPACING SCALE. A 4/8 rhythm so edges align across panels.
 const SPACE_1 := 4
@@ -62,8 +67,8 @@ const SPACE_6 := 32
 # Spec 53 Tier 3 — modal + disabled tokens (callers used to improvise these:
 # scrim alpha drifted 0.45–0.55, disabled inks were hardcoded per card).
 const SCRIM := Color(0.0, 0.0, 0.0, 0.55)        # one modal backdrop darkness
-const DISABLED_INK := Color(0.46, 0.52, 0.46)    # primary text on a washed card
-const DISABLED_DIM := Color(0.40, 0.46, 0.41)    # secondary text on a washed card
+const DISABLED_INK := Color(0.42, 0.38, 0.31)    # primary text on a washed card
+const DISABLED_DIM := Color(0.50, 0.46, 0.39)    # secondary text on a washed card
 
 # Spec 39 — pale carved wood frame (Midjourney, docs/ui-refs/mj_panel_wood.png).
 # Verified by tools/check_ninepatch.py (center std 9.6, margin spread 12%).
@@ -132,8 +137,35 @@ const MAPLE_JADE_HI := Color(0.61, 0.885, 0.825)
 const MAPLE_JADE_D := Color(0.165, 0.47, 0.41)
 const MAPLE_GREEN := Color(0.47, 0.71, 0.29)
 
+# --- Path B: the PAINTED kit (2026-07-02) — hand-painted MJ components sliced to
+# alpha, an upgrade over the procedural maple textures. Slots/close/ornaments are
+# real art now; the procedural kit stays as the fallback. Preloaded once at boot
+# (Game._ready → preload_kit) so draw-time load() never first-loads inside _draw.
+const KIT_SLOT := "res://assets/ui/kit/slot.png"
+const KIT_BUTTON := "res://assets/ui/kit/button.png"
+const KIT_CLOSE := "res://assets/ui/kit/close.png"
+const KIT_CREST := "res://assets/ui/kit/crest.png"
+const KIT_IVY := "res://assets/ui/kit/ivy.png"
+static var _kit_cache: Dictionary = {}
+
+static func has_kit() -> bool:
+	return ResourceLoader.exists(KIT_SLOT)
+
+static func preload_kit() -> void:
+	for p in [KIT_SLOT, KIT_BUTTON, KIT_CLOSE, KIT_CREST, KIT_IVY]:
+		if ResourceLoader.exists(p) and not _kit_cache.has(p):
+			_kit_cache[p] = load(p)
+
+static func kit_tex(path: String) -> Texture2D:
+	if not _kit_cache.has(path) and ResourceLoader.exists(path):
+		_kit_cache[path] = load(path)
+	return _kit_cache.get(path, null)
+
 # A candy-pill button stylebox from the generated art, tinted per state.
 static func maple_button(mod: Color) -> StyleBoxTexture:
+	# The painted candy button is ROUND; it won't 9-slice to wide text buttons
+	# (stretches to a squished stripe), so wide buttons keep the procedural pill.
+	# The painted button is reserved for square/icon buttons via _kit_icon_button.
 	var sb := StyleBoxTexture.new()
 	sb.texture = load(MAPLE_BTN)
 	sb.texture_margin_left = 30.0
@@ -150,6 +182,111 @@ static func maple_button(mod: Color) -> StyleBoxTexture:
 # True once the generated maple kit exists — gates every maple-vs-fallback branch.
 static func has_maple() -> bool:
 	return ResourceLoader.exists(MAPLE_BTN)
+
+# A soft rounded box (cards, chips, buttons). One place for the maple card look.
+static func _round_box(bg: Color, border: Color, radius: int, border_w := 2,
+		shadow := 0.22) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.set_corner_radius_all(radius)
+	sb.corner_detail = 8
+	sb.anti_aliasing = true
+	sb.set_border_width_all(border_w)
+	sb.border_color = border
+	if shadow > 0.0:
+		sb.shadow_color = Color(0, 0, 0, shadow)
+		sb.shadow_size = 4
+		sb.shadow_offset = Vector2(0, 2)
+	return sb
+
+# A round teal close ✕ pinned to a panel's top-right corner — the obvious dismiss
+# (shop/list-page references all have one). Wire it to the panel's _close.
+static func add_close_button(host: Control, on_close: Callable) -> Button:
+	var b := Button.new()
+	# Modal close controls must participate in the same keyboard/controller
+	# graph as their body controls. Panels that do not explicitly link it still
+	# retain mouse behavior; focusable panels can wire it as their final stop.
+	b.name = "CloseButton"
+	b.focus_mode = Control.FOCUS_ALL
+	b.tooltip_text = "Close"
+	b.set_meta("cursor_role", "action")
+	if has_kit():
+		# painted teal ✕ sprite
+		var t := kit_tex(KIT_CLOSE)
+		var n := StyleBoxTexture.new(); n.texture = t
+		var h := StyleBoxTexture.new(); h.texture = t; h.modulate_color = Color(1.14, 1.14, 1.14)
+		var p := StyleBoxTexture.new(); p.texture = t; p.modulate_color = Color(0.86, 0.9, 0.86)
+		b.add_theme_stylebox_override("normal", n)
+		b.add_theme_stylebox_override("hover", h)
+		b.add_theme_stylebox_override("pressed", p)
+		b.offset_left = -62
+		b.offset_right = -6
+		b.offset_top = 8
+		b.offset_bottom = 64
+	else:
+		b.text = "✕"
+		b.add_theme_font_size_override("font_size", 18)
+		b.add_theme_color_override("font_color", MAPLE_INK)
+		b.add_theme_color_override("font_hover_color", Color(1, 1, 1))
+		b.add_theme_color_override("font_pressed_color", MAPLE_INK)
+		b.add_theme_color_override("font_outline_color", MAPLE_INK_DARK)
+		b.add_theme_constant_override("outline_size", 4)
+		b.add_theme_stylebox_override("normal", _round_box(MAPLE_JADE, MAPLE_WOOD, 13))
+		b.add_theme_stylebox_override("hover", _round_box(MAPLE_JADE_HI, MAPLE_WOOD, 13))
+		b.add_theme_stylebox_override("pressed", _round_box(MAPLE_JADE_D, MAPLE_WOOD, 13, 2, 0.1))
+		b.offset_left = -54
+		b.offset_right = -14
+		b.offset_top = 14
+		b.offset_bottom = 54
+	b.anchor_left = 1.0
+	b.anchor_right = 1.0
+	b.anchor_top = 0.0
+	b.anchor_bottom = 0.0
+	b.pressed.connect(on_close)
+	host.add_child(b)
+	return b
+
+# Focusable twin of draw_quiet_cell. Chart Table sockets are real Buttons so
+# controller navigation, semantic cursor roles, and accessibility do not rely
+# on a custom-drawn hit-test rectangle.
+static func quiet_cell_stylebox(fill := MAPLE_CELL, border := Color(MAPLE_WOOD, 0.34),
+		border_width := 2) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = fill
+	sb.set_corner_radius_all(11)
+	sb.corner_detail = 6
+	sb.anti_aliasing = true
+	sb.set_border_width_all(border_width)
+	sb.border_color = border
+	sb.shadow_color = Color(0, 0, 0, 0.10)
+	sb.shadow_size = 2
+	sb.shadow_offset = Vector2(0, 1)
+	sb.content_margin_left = 5.0
+	sb.content_margin_right = 5.0
+	sb.content_margin_top = 5.0
+	sb.content_margin_bottom = 5.0
+	return sb
+
+static func style_chart_socket(button: Button, unlocked: bool, occupied: bool = false) -> void:
+	button.focus_mode = Control.FOCUS_ALL
+	button.add_theme_font_size_override("font_size", SIZE_LABEL)
+	button.add_theme_color_override("font_color", MAPLE_WOOD_D)
+	button.add_theme_color_override("font_hover_color", MAPLE_WOOD_D)
+	button.add_theme_color_override("font_pressed_color", MAPLE_WOOD_D)
+	button.add_theme_color_override("font_disabled_color", Color(MAPLE_WOOD_D, 0.68))
+	var face := MAPLE_CREAM_D.lightened(0.06) if occupied else MAPLE_CELL
+	if not unlocked:
+		face = MAPLE_CELL_D.darkened(0.10)
+	button.add_theme_stylebox_override("normal", quiet_cell_stylebox(face))
+	button.add_theme_stylebox_override("hover", quiet_cell_stylebox(
+		face.lightened(0.08), GOLD.darkened(0.12), 2))
+	button.add_theme_stylebox_override("pressed", quiet_cell_stylebox(
+		face.darkened(0.05), MAPLE_WOOD, 2))
+	button.add_theme_stylebox_override("disabled", quiet_cell_stylebox(face,
+		Color(MAPLE_WOOD, 0.22), 1))
+	var focus := quiet_cell_stylebox(Color(0, 0, 0, 0), GOLD, 3)
+	focus.draw_center = false
+	button.add_theme_stylebox_override("focus", focus)
 
 # The cream-and-wood panel from the generated art (9-patch; ~15px wood frame
 # holds at any panel size). Used for the framed modals (dialogue, menu plate).
@@ -186,7 +323,7 @@ static func apply_defaults() -> void:
 # three slot families). Cream micro-caps with a dark halo, reads on any plate.
 static func style_keyhint(l: Label) -> void:
 	l.add_theme_font_size_override("font_size", SIZE_MICRO)
-	l.add_theme_color_override("font_color", INK)
+	l.add_theme_color_override("font_color", TEXT_ON_DARK)
 	l.add_theme_color_override("font_outline_color", Color(0.06, 0.05, 0.04))
 	l.add_theme_constant_override("outline_size", 4)
 
@@ -242,7 +379,7 @@ static func chip_stylebox(bg := KIT_PLATE) -> StyleBoxFlat:
 
 static func style_chip(l: Label, size: int = 14) -> void:
 	l.add_theme_stylebox_override("normal", chip_stylebox())
-	l.add_theme_color_override("font_color", INK)
+	l.add_theme_color_override("font_color", TEXT_ON_DARK)
 	l.add_theme_font_size_override("font_size", size)
 
 # The one pudgy-button factory (2026-07-01 taste pass). A rounded enamel pill
@@ -288,18 +425,7 @@ static func _maple_button_theme(b: Button) -> void:
 	b.add_theme_stylebox_override("disabled", maple_button(Color(0.72, 0.74, 0.70, 0.7)))
 
 static func style_kit_button(b: Button) -> void:
-	b.add_theme_font_size_override("font_size", 15)
-	if has_maple():
-		_maple_button_theme(b)
-		return
-	b.add_theme_color_override("font_color", INK)
-	b.add_theme_color_override("font_hover_color", GOLD)
-	b.add_theme_color_override("font_pressed_color", GOLD)
-	# Pudgy rounded enamel pills (the carved-wood plate read too hard).
-	b.add_theme_stylebox_override("normal", soft_button_box(BTN_SOFT))
-	b.add_theme_stylebox_override("hover", soft_button_box(BTN_SOFT_HOVER))
-	b.add_theme_stylebox_override("pressed", soft_button_box(BTN_SOFT_PRESS, true))
-	b.add_theme_stylebox_override("disabled", soft_button_box(BTN_SOFT_DISABLED))
+	_field_button_theme(b)
 
 static func make_meter(width: float, height: float, fill_color: Color) -> Dictionary:
 	var root := Panel.new()
@@ -324,7 +450,7 @@ static func make_meter(width: float, height: float, fill_color: Color) -> Dictio
 	label.name = "MeterLabel"
 	_set_font(label, font_header())
 	label.add_theme_font_size_override("font_size", int(height * 0.52))
-	label.add_theme_color_override("font_color", INK)
+	label.add_theme_color_override("font_color", TEXT_ON_DARK)
 	label.add_theme_constant_override("outline_size", 4)
 	label.add_theme_color_override("font_outline_color", KIT_WELL)
 	label.anchor_right = 1.0
@@ -340,48 +466,45 @@ static func set_meter(parts: Dictionary, ratio: float, text: String) -> void:
 	(parts.label as Label).text = text
 
 static func style_panel(p: Panel) -> void:
-	if ResourceLoader.exists(PANEL_TEX_PATH):
-		var sb := panel_stylebox()
-		sb.set_content_margin_all(PANEL_MARGIN * 0.8)
-		p.add_theme_stylebox_override("panel", sb)
-		return
 	var fb := StyleBoxFlat.new()
-	fb.bg_color = Color(0.075, 0.231, 0.212, 0.97)
-	fb.border_color = GOLD
-	fb.set_border_width_all(2)
-	fb.set_corner_radius_all(8)
-	fb.set_content_margin_all(10)
+	fb.bg_color = Tokens.PAPER
+	fb.border_color = Tokens.WALNUT
+	fb.set_border_width_all(4)
+	fb.set_corner_radius_all(14)
+	fb.set_content_margin_all(16)
+	fb.shadow_color = Color(0, 0, 0, 0.28)
+	fb.shadow_size = 8
+	fb.shadow_offset = Vector2(0, 4)
 	p.add_theme_stylebox_override("panel", fb)
 
 static func style_button(b: Button) -> void:
-	# Buttons are read, not admired — clean default font (usability pass).
-	# 2026-07-01 — same pudgy rounded pill as style_kit_button, so the menu,
-	# dialogue choices, and panel actions all share the soft, playful read.
-	b.add_theme_font_size_override("font_size", 15)
-	if has_maple():
-		_maple_button_theme(b)
-		var mf := StyleBoxFlat.new()
-		mf.draw_center = false
-		mf.border_color = GOLD
-		mf.set_border_width_all(2)
-		mf.set_corner_radius_all(BTN_RADIUS + 4)
-		mf.corner_detail = 10
-		b.add_theme_stylebox_override("focus", mf)
-		return
-	b.add_theme_color_override("font_color", INK)
-	b.add_theme_color_override("font_hover_color", GOLD)
-	b.add_theme_color_override("font_pressed_color", GOLD)
-	b.add_theme_color_override("font_disabled_color", Color(INK_MID, 0.55))
-	b.add_theme_stylebox_override("normal", soft_button_box(BTN_SOFT))
-	b.add_theme_stylebox_override("hover", soft_button_box(BTN_SOFT_HOVER))
-	b.add_theme_stylebox_override("pressed", soft_button_box(BTN_SOFT_PRESS, true))
-	b.add_theme_stylebox_override("disabled", soft_button_box(BTN_SOFT_DISABLED))
+	_field_button_theme(b)
+
+static func _field_button_theme(b: Button) -> void:
+	b.add_theme_font_size_override("font_size", Tokens.TYPE_BODY)
+	b.add_theme_color_override("font_color", Tokens.TEXT_ON_DARK)
+	b.add_theme_color_override("font_hover_color", Color.WHITE)
+	b.add_theme_color_override("font_pressed_color", Tokens.TEXT_ON_DARK)
+	b.add_theme_color_override("font_disabled_color", Tokens.DISABLED_TEXT_ON_PAPER)
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Tokens.MOSS_HOVER if state == "hover" else \
+			(Tokens.MOSS_PRESSED if state == "pressed" else \
+			(Tokens.DISABLED_SURFACE if state == "disabled" else Tokens.MOSS))
+		sb.border_color = Tokens.SAGE if state == "hover" else Tokens.WALNUT
+		sb.set_border_width_all(2)
+		sb.set_corner_radius_all(10)
+		sb.content_margin_left = 16
+		sb.content_margin_right = 16
+		sb.content_margin_top = 10
+		sb.content_margin_bottom = 10
+		b.add_theme_stylebox_override(state, sb)
 	var focus := StyleBoxFlat.new()
 	focus.draw_center = false
-	focus.border_color = GOLD
-	focus.set_border_width_all(2)
-	focus.set_corner_radius_all(BTN_RADIUS + 2)
-	focus.corner_detail = 10
+	focus.border_color = Tokens.SAGE
+	focus.set_border_width_all(3)
+	focus.set_corner_radius_all(12)
+	focus.set_expand_margin_all(3)
 	b.add_theme_stylebox_override("focus", focus)
 
 # Selected list entry (toggled template / chart / trophy buttons) — a sage
@@ -389,42 +512,36 @@ static func style_button(b: Button) -> void:
 static func mark_selected(b: Button, selected: bool) -> void:
 	if not selected:
 		return
-	if has_maple():
-		# Warm gold-tinted candy pill = "this one's chosen".
-		b.add_theme_stylebox_override("normal", maple_button(Color(1.16, 1.02, 0.70)))
-		b.add_theme_stylebox_override("hover", maple_button(Color(1.22, 1.08, 0.76)))
-		b.add_theme_color_override("font_color", MAPLE_INK)
-		return
-	# Soft sage-enamel pill with a full gold rim — the "this one's chosen" read.
-	var sb := soft_button_box(Color(0.176, 0.404, 0.290))
-	sb.border_color = GOLD
+	var sb := soft_button_box(Tokens.SAGE.darkened(0.18))
+	sb.border_color = Tokens.GOLD_MUTED
 	sb.set_border_width_all(3)
-	var sb2 := soft_button_box(Color(0.204, 0.451, 0.325))
-	sb2.border_color = GOLD
+	var sb2 := soft_button_box(Tokens.SAGE.darkened(0.10))
+	sb2.border_color = Tokens.GOLD_MUTED
 	sb2.set_border_width_all(3)
 	b.add_theme_stylebox_override("normal", sb)
 	b.add_theme_stylebox_override("hover", sb2)
-	b.add_theme_color_override("font_color", GOLD)
+	b.add_theme_color_override("font_color", Tokens.TEXT_ON_DARK)
 
 static func style_title(l: Label) -> void:
 	_set_font(l, font_header())
 	l.add_theme_font_size_override("font_size", SIZE_DISPLAY)
-	l.add_theme_color_override("font_color", GOLD)
+	l.add_theme_color_override("font_color", TEXT_ON_PAPER)
 
 static func style_section(l: Label) -> void:
 	_set_font(l, font_header())
 	l.add_theme_font_size_override("font_size", SIZE_SECTION)
-	l.add_theme_color_override("font_color", GOLD)
+	l.add_theme_color_override("font_color", TEXT_ON_PAPER)
 
 static func style_body(l: Label, size: int = SIZE_BODY) -> void:
 	# Body copy inherits the project default face (IM Fell, set by apply_defaults)
-	# — spec 53 removed the silent +1 fudge so the token IS the rendered size.
-	l.add_theme_font_size_override("font_size", size)
-	l.add_theme_color_override("font_color", INK)
+	# and never drops below the Spec 59 readability floor, even when a legacy
+	# call site still passes the old 13–15px token.
+	l.add_theme_font_size_override("font_size", maxi(Tokens.TYPE_BODY, size))
+	l.add_theme_color_override("font_color", TEXT_ON_PAPER)
 
 static func style_dim(l: Label, size: int = SIZE_LABEL) -> void:
-	l.add_theme_font_size_override("font_size", size)
-	l.add_theme_color_override("font_color", INK_MID)
+	l.add_theme_font_size_override("font_size", maxi(Tokens.TYPE_CAPTION, size))
+	l.add_theme_color_override("font_color", TEXT_ON_PAPER_DIM)
 
 # ---- spec 44: drawn-detail primitives (the UI detail pass) ----
 # Shared by code-drawn panels (bench, pack, trades) so every recessed well,
@@ -438,6 +555,12 @@ static func style_dim(l: Label, size: int = SIZE_LABEL) -> void:
 # Accent convention: SAGE = good/available, TERRACOTTA = locked/danger,
 # GOLD = selected, INK_MID = neutral. Template: crafting_bench _tray_row.
 static func draw_list_row(c: CanvasItem, r: Rect2, accent: Color) -> void:
+	# The current compatibility shell is pale Maple paper. Use the paper row
+	# treatment there so the semantic paper text roles remain readable; dark
+	# enamel rows are retained only for the legacy no-Maple fallback.
+	if has_maple():
+		draw_cream_row(c, r, accent)
+		return
 	c.draw_rect(r, KIT_PLATE)
 	# top light bevel — the card catches the page's warm light
 	c.draw_rect(Rect2(r.position + Vector2(1.0, 1.0),
@@ -450,25 +573,61 @@ static func draw_list_row(c: CanvasItem, r: Rect2, accent: Color) -> void:
 	c.draw_rect(Rect2(r.position + Vector2(1.5, 1.5),
 		Vector2(3.0, r.size.y - 3.0)), accent)
 
+# Maple list-row (2026-07-02) — a raised warm-parchment card with a soft shadow
+# and a colour accent stripe on the left. The cream twin of draw_list_row; used
+# by the Satchel-List pack so rows read as calm cards and the item text/rarity
+# carries the colour. Separate from draw_list_row to keep the classic-skin
+# panels (vendor / loadout / craft…) untouched.
+static func draw_cream_row(c: CanvasItem, r: Rect2, accent: Color) -> void:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.925, 0.855, 0.66)
+	sb.set_corner_radius_all(9)
+	sb.corner_detail = 6
+	sb.anti_aliasing = true
+	sb.set_border_width_all(2)
+	sb.border_color = Color(MAPLE_WOOD, 0.32)
+	sb.shadow_color = Color(0, 0, 0, 0.12)
+	sb.shadow_size = 3
+	sb.shadow_offset = Vector2(0, 2)
+	c.draw_style_box(sb, r)
+	c.draw_rect(Rect2(r.position + Vector2(3.0, 5.0),
+		Vector2(3.5, r.size.y - 10.0)), accent)
+
+# Empty-cell colour for the maple skin: a warm parchment recess. Quiet on
+# purpose (2026-07-02) — a grid of empty slots should RECEDE so the filled
+# items carry the colour, not read as a wall of bright turquoise boxes.
+const MAPLE_CELL := Color(0.836, 0.741, 0.556)     # recessed cell face
+const MAPLE_CELL_D := Color(0.640, 0.520, 0.360)   # inner recess shadow
+
+# A quiet recessed cell — warm parchment socket, soft inner shadow top, a
+# light lip below, a whisper of a wood rim. The empty-slot read for the maple
+# skin: calm, so items pop against it (see _draw_item_rect_scaled backings).
+static func draw_quiet_cell(c: CanvasItem, r: Rect2) -> void:
+	var rad := mini(11, int(minf(r.size.x, r.size.y) * 0.24))
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = MAPLE_CELL
+	sb.set_corner_radius_all(rad)
+	sb.corner_detail = 6
+	sb.anti_aliasing = true
+	sb.set_border_width_all(2)
+	sb.border_color = Color(MAPLE_WOOD, 0.34)
+	c.draw_style_box(sb, r)
+	# inner recess: a soft shadow band along the top + left, a light lip below.
+	var inset := r.grow(-3.0)
+	c.draw_rect(Rect2(inset.position, Vector2(inset.size.x, 2.0)),
+		Color(MAPLE_CELL_D, 0.45))
+	c.draw_rect(Rect2(inset.position, Vector2(2.0, inset.size.y)),
+		Color(MAPLE_CELL_D, 0.28))
+	c.draw_rect(Rect2(inset.position + Vector2(2.0, inset.size.y - 2.0),
+		Vector2(inset.size.x - 2.0, 2.0)), Color(1.0, 0.97, 0.86, 0.42))
+
 # A recessed rectangular well: stepped inner shadow top-left, light lip
 # bottom — the socket reads as carved INTO the bench, not painted on.
 static func draw_well(c: CanvasItem, r: Rect2, fill := KIT_WELL) -> void:
-	# Maple: a glossy jade slot (only the DEFAULT recessed wells — i.e. item /
-	# gear slots; callers passing a custom fill keep the carved-enamel well).
-	if has_maple() and fill == KIT_WELL:
-		var sb := StyleBoxFlat.new()
-		sb.bg_color = MAPLE_JADE
-		sb.set_corner_radius_all(mini(12, int(minf(r.size.x, r.size.y) * 0.26)))
-		sb.corner_detail = 8
-		sb.anti_aliasing = true
-		sb.set_border_width_all(3)
-		sb.border_color = MAPLE_WOOD
-		c.draw_style_box(sb, r)
-		var m := minf(r.size.x, r.size.y)
-		c.draw_circle(r.position + Vector2(r.size.x * 0.5, r.size.y * 0.30),
-			m * 0.32, Color(MAPLE_JADE_HI, 0.32))
-		c.draw_circle(r.position + Vector2(r.size.x * 0.30, r.size.y * 0.26),
-			m * 0.11, Color(1, 1, 1, 0.45))
+	# Maple/kit: a quiet parchment recess (item + gear cells). Callers passing a
+	# custom fill keep the carved-enamel well below.
+	if fill == KIT_WELL and (has_maple() or has_kit()):
+		draw_quiet_cell(c, r)
 		return
 	c.draw_rect(r, fill)
 	for i in 3:

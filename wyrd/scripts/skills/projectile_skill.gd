@@ -82,6 +82,15 @@ func _spawn_arrow(player: Node, origin: Vector3, dir: Vector3, dmg: int,
 	arrow.effects = on_hit_effects if enchant_fx.is_empty() else on_hit_effects + enchant_fx
 	# C9 — gear/perks can add extra pierces on top of the skill's base.
 	arrow.pierce_left = pierce + int(player.derived_stats.get("bonus_pierce", 0))
+	# D8 — only the genuine Basic Shot may consume the pending Wayweaver
+	# primary-bolt modifier. Fan echoes instantiate Arrow directly and cannot
+	# reach this path, which keeps them nonrecursive and effect-free.
+	if skill_type == "basic" and player.has_method("take_wayweaver_basic_modifiers"):
+		var echo: Dictionary = player.take_wayweaver_basic_modifiers()
+		arrow.pierce_left += int(echo.get("pierce_bonus", 0))
+		var echo_effects = echo.get("effects", [])
+		if echo_effects is Array and not (echo_effects as Array).is_empty():
+			arrow.effects = (arrow.effects as Array) + (echo_effects as Array)
 	arrow.execute_mult = execute_mult
 	arrow.execute_below = execute_below
 	arrow.focal = focal

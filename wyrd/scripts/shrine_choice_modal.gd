@@ -1,149 +1,196 @@
 extends CanvasLayer
 
-# Spec 29 — the 3-buff choice modal a Shrine opens. The whole UI is built in
-# script so the .tscn stays a minimal CanvasLayer + script binding. Pauses
-# the tree while open so the player can't escape with a movement key; emits
-# `chosen(buff)` when the player picks one of the three cards.
-#
-# Phase 1 restyling — uses WyrdUi parchment kit (style_panel, style_title,
-# draw_list_row) matching the Loadout panel's visual weight.
+# A shrine is a one-way blessing choice, not a dismissible settings modal.
+# The shared Field Journal shell supplies the furniture while this screen keeps
+# Shrine/Game authority: setup opens one modal and a committed Button closes it.
 
 signal chosen(buff: Dictionary)
 
+const Tokens = preload("res://scripts/ui/foundation/ui_tokens.gd")
+const FocusPointer = preload("res://scripts/ui/components/focus_pointer.gd")
+const SystemFolio = preload("res://scripts/ui/components/system_folio.gd")
+
+const BLESSING_ICONS := {
+	"vigor": preload("res://assets/ui/field_journal/icons/shrine/vigor_v1.png"),
+	"fury": preload("res://assets/ui/field_journal/icons/shrine/fury_v1.png"),
+	"precision": preload("res://assets/ui/field_journal/icons/shrine/precision_v1.png"),
+	"carnage": preload("res://assets/ui/field_journal/icons/shrine/carnage_v1.png"),
+	"swiftness": preload("res://assets/ui/field_journal/icons/shrine/swiftness_v1.png"),
+	"haste": preload("res://assets/ui/field_journal/icons/shrine/haste_v1.png"),
+	"channeling": preload("res://assets/ui/field_journal/icons/shrine/channeling_v1.png"),
+	"resilience": preload("res://assets/ui/field_journal/icons/shrine/resilience_v1.png"),
+	"wanderer": preload("res://assets/ui/field_journal/icons/shrine/wanderer_v1.png"),
+	"clarity": preload("res://assets/ui/field_journal/icons/shrine/clarity_v1.png"),
+}
+
 var _buffs: Array = []
-var _panel: Panel
-var _hbox: HBoxContainer
+var _folio: SystemFolio
+var _choices: HBoxContainer
+var _owns_modal := false
+
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 100
-	# Dim backdrop — also swallows mouse clicks so the player can't click
-	# through the modal into the world.
+	_build_backdrop()
+	_build_folio()
+	var pointer := FocusPointer.new()
+	pointer.name = "MenuFocusPointer"
+	add_child(pointer)
+	if not _buffs.is_empty():
+		_populate()
+
+
+func _build_backdrop() -> void:
 	var bg := ColorRect.new()
-	bg.color = Color(0.0, 0.0, 0.0, 0.6)
-	bg.anchor_right = 1.0
-	bg.anchor_bottom = 1.0
+	bg.color = Tokens.SCRIM
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(bg)
-	# Panel centred on the viewport — styled with the WyrdUi parchment kit.
-	_panel = Panel.new()
-	WyrdUi.style_panel(_panel)
-	_panel.custom_minimum_size = Vector2(700, 340)
-	_panel.anchor_left = 0.5
-	_panel.anchor_top = 0.5
-	_panel.anchor_right = 0.5
-	_panel.anchor_bottom = 0.5
-	_panel.offset_left = -350
-	_panel.offset_top = -170
-	_panel.offset_right = 350
-	_panel.offset_bottom = 170
-	add_child(_panel)
-	# Title — WyrdUi terracotta header font (matches Loadout panel inset).
-	var title := Label.new()
-	title.text = "An Old Altar Stirs"
-	WyrdUi.style_title(title)
-	title.position = Vector2(54, 32)
-	title.anchor_right = 1.0
-	title.offset_right = -54
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_panel.add_child(title)
-	# Flourish under the title.
-	var flourish := _FlourishBar.new()
-	var flourish_w: float = _panel.custom_minimum_size.x - 108.0
-	flourish.position = Vector2(54.0, 68.0)
-	flourish.custom_minimum_size = Vector2(flourish_w, 10.0)
-	flourish.size = Vector2(flourish_w, 10.0)
-	_panel.add_child(flourish)
-	# HBox for the 3 buff cards.
-	_hbox = HBoxContainer.new()
-	_hbox.add_theme_constant_override("separation", 20)
-	_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	_hbox.anchor_left = 0.0
-	_hbox.anchor_right = 1.0
-	_hbox.anchor_bottom = 1.0
-	_hbox.offset_top = 84
-	_hbox.offset_bottom = -24
-	_hbox.offset_left = 40
-	_hbox.offset_right = -40
-	_panel.add_child(_hbox)
 
-# Populate the modal with the 3 offered buffs and pause the world.
+
+func _build_folio() -> void:
+	_folio = SystemFolio.new()
+	_folio.anchor_left = 0.5
+	_folio.anchor_top = 0.5
+	_folio.anchor_right = 0.5
+	_folio.anchor_bottom = 0.5
+	_folio.set_folio_size(Vector2(960.0, 560.0))
+	_folio.setup("An Old Altar Stirs",
+		"Choose one blessing. The shrine will not ask twice.", "✦")
+	_folio.set_close_visible(false)
+	add_child(_folio)
+
+	var instruction := Label.new()
+	instruction.name = "BlessingInstruction"
+	instruction.text = "Three old promises answer. Carry one until this delve ends."
+	instruction.theme_type_variation = &"Body"
+	instruction.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_folio.body.add_child(instruction)
+
+	_choices = HBoxContainer.new()
+	_choices.name = "BlessingChoices"
+	_choices.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_choices.add_theme_constant_override("separation", Tokens.SPACE_4)
+	_choices.alignment = BoxContainer.ALIGNMENT_CENTER
+	_folio.body.add_child(_choices)
+	_folio.add_footer_hint("Left/Right — choose  ·  Enter/A — accept  ·  One blessing only")
+
+
+# Populate the modal with the three authored offers and pause the world. Setup
+# remains callable after add_child (production) or before _ready (test tools).
 func setup(buffs: Array) -> void:
-	_buffs = buffs
-	for c in _hbox.get_children():
-		c.queue_free()
-	for b in _buffs:
-		var card := _BuffCard.new()
-		card.setup(String(b.name), String(b.desc))
-		card.pressed.connect(_on_pressed.bind(b))
-		card.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		_hbox.add_child(card)
-	get_node("/root/Game").modal_opened()
+	_buffs = buffs.duplicate(true)
+	if is_node_ready():
+		_populate()
+	_open_modal()
+
+
+func _populate() -> void:
+	for child in _choices.get_children():
+		child.queue_free()
+	var first: Button = null
+	for buff in _buffs:
+		var card := _make_card(buff)
+		_choices.add_child(card)
+		if first == null:
+			first = card
+	if first != null:
+		first.grab_focus.call_deferred()
+
+
+func _make_card(buff: Dictionary) -> Button:
+	var id := String(buff.get("id", ""))
+	var card := Button.new()
+	card.name = "BlessingCard_%s" % id
+	card.theme_type_variation = &"ChoiceCardButton"
+	card.custom_minimum_size = Vector2(270.0, 310.0)
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.tooltip_text = "%s — %s" % [buff.get("name", "Blessing"),
+		buff.get("desc", "")]
+	card.pressed.connect(_on_pressed.bind(buff))
+
+	var content := VBoxContainer.new()
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	content.offset_left = 16.0
+	content.offset_top = 12.0
+	content.offset_right = -16.0
+	content.offset_bottom = -14.0
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_theme_constant_override("separation", Tokens.SPACE_2)
+	card.add_child(content)
+
+	var icon := TextureRect.new()
+	icon.name = "BlessingIcon"
+	icon.custom_minimum_size = Vector2(118.0, 118.0)
+	icon.texture = BLESSING_ICONS.get(id) as Texture2D
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content.add_child(icon)
+
+	var name_label := Label.new()
+	name_label.name = "BlessingName"
+	name_label.text = String(buff.get("name", "Unnamed Blessing"))
+	name_label.theme_type_variation = &"SectionTitle"
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content.add_child(name_label)
+
+	var divider := HSeparator.new()
+	divider.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content.add_child(divider)
+
+	var effect := Label.new()
+	effect.name = "BlessingEffect"
+	effect.text = String(buff.get("desc", ""))
+	effect.theme_type_variation = &"RowTitle"
+	effect.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	effect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	effect.add_theme_color_override("font_color", Tokens.TERRACOTTA)
+	effect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content.add_child(effect)
+
+	var duration := Label.new()
+	duration.text = "LASTS THIS DELVE"
+	duration.theme_type_variation = &"Caption"
+	duration.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	duration.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content.add_child(duration)
+	return card
+
+
+func _open_modal() -> void:
+	if _owns_modal:
+		return
+	var game := get_node_or_null("/root/Game")
+	if game != null and game.has_method("modal_opened"):
+		game.modal_opened()
+		_owns_modal = true
+
 
 func _on_pressed(buff: Dictionary) -> void:
-	get_node("/root/Game").modal_closed()
+	_release_modal()
 	chosen.emit(buff)
 	queue_free()
 
 
-# ---- thin flourish bar (drawn — avoids any texture load) ----
-class _FlourishBar extends Control:
-	func _draw() -> void:
-		var cx := size.x * 0.5
-		var cy := size.y * 0.5
-		WyrdUi.draw_flourish(self, Vector2(cx, cy), size.x * 0.7)
+func _release_modal() -> void:
+	if not _owns_modal:
+		return
+	var game := get_node_or_null("/root/Game")
+	if game != null and game.has_method("modal_closed"):
+		game.modal_closed()
+	_owns_modal = false
 
 
-# ---- drawn buff card (one choice column) ----
-# A clickable Control that uses draw_list_row for the parchment plate,
-# with GOLD accent on hover (shrine buffs are always blessings — no
-# negative accent needed). Name in INK header font; desc in INK_MID body.
-# No icon well: shrine buffs carry no painted icon.
-class _BuffCard extends Control:
+func _exit_tree() -> void:
+	_release_modal()
 
-	var _name := ""
-	var _desc := ""
-	var _hover := false
 
-	signal pressed
-
-	func _init() -> void:
-		custom_minimum_size = Vector2(186, 220)
-		mouse_filter = Control.MOUSE_FILTER_STOP
-
-	func setup(buff_name: String, buff_desc: String) -> void:
-		_name = buff_name
-		_desc = buff_desc
-		queue_redraw()
-
-	func _gui_input(event: InputEvent) -> void:
-		if event is InputEventMouseButton and event.pressed \
-				and event.button_index == MOUSE_BUTTON_LEFT:
-			pressed.emit()
-			accept_event()
-
-	func _notification(what: int) -> void:
-		if what == NOTIFICATION_MOUSE_ENTER:
-			_hover = true
-			queue_redraw()
-		elif what == NOTIFICATION_MOUSE_EXIT:
-			_hover = false
-			queue_redraw()
-
-	func _draw() -> void:
-		var r := Rect2(Vector2.ZERO, size)
-		var accent: Color = WyrdUi.GOLD if _hover else WyrdUi.INK_MID
-		WyrdUi.draw_list_row(self, r, accent)
-		# Hover wash — warms the card so it reads as interactive.
-		if _hover:
-			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.09))
-		# Divider line below the name row.
-		draw_line(Vector2(12.0, 44.0), Vector2(size.x - 12.0, 44.0),
-			Color(WyrdUi.KIT_EDGE, 0.30), 1.0)
-		var font := get_theme_default_font()
-		# Name — sepia ink, a little larger for readability.
-		draw_string(font, Vector2(14.0, 30.0), _name,
-			HORIZONTAL_ALIGNMENT_LEFT, size.x - 28.0, 16, WyrdUi.INK)
-		# Description — secondary ink, wraps to multiple lines.
-		draw_multiline_string(font, Vector2(14.0, 60.0), _desc,
-			HORIZONTAL_ALIGNMENT_LEFT, size.x - 28.0, 13, 5, WyrdUi.INK_MID)
+# No Esc escape: praying is the commitment; only a blessing resolves it.
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()

@@ -15,6 +15,8 @@ const SELL_BY_RARITY := {
 }
 
 static func sell_value(item: Dictionary) -> int:
+	if not bool(item.get("sellable", true)):
+		return 0
 	return int(SELL_BY_RARITY.get(String(item.get("rarity", "normal")), 4))
 
 # Minimum Wayfinding level required to buy each ware from Hod.

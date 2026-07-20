@@ -31,6 +31,8 @@ func _run() -> void:
 	await _test_status_replication()
 	await _test_party_hp_replication()
 	await _test_queen_summon()
+	_test_campaign_authority_contract()
+	_test_depth_choice_authority_contract()
 	print("--- coop evals: %d PASS, %d FAIL ---" % [_pass, _fail])
 	quit(1 if _fail > 0 else 0)
 
@@ -41,6 +43,24 @@ func _count_meshes(n: Node) -> int:
 			c += 1
 		c += _count_meshes(ch)
 	return c
+
+func _test_campaign_authority_contract() -> void:
+	var game_script = load("res://scripts/game.gd")
+	var game: Node = game_script.new()
+	_check("D1 offline campaign settlement is authoritative",
+		game.campaign_settlement_allowed(false, false))
+	_check("D1 shared campaign settlement is host-only",
+		game.campaign_settlement_allowed(true, true)
+		and not game.campaign_settlement_allowed(true, false))
+	game.free()
+
+func _test_depth_choice_authority_contract() -> void:
+	var game: Node = load("res://scripts/game.gd").new()
+	_check("D2 offline depth choice is available", game.depth_choice_allowed(false, false))
+	_check("D2 shared depth choice is host-only",
+		game.depth_choice_allowed(true, true)
+		and not game.depth_choice_allowed(true, false))
+	game.free()
 
 func _test_boss_replay() -> void:
 	var host := Node3D.new()

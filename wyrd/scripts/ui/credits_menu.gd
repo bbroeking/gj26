@@ -1,62 +1,101 @@
 extends CanvasLayer
 
-# B6 — credits, reachable from the title. Also satisfies attribution for the
-# generative tools used to build the game (see docs/adr/0015-asset-attribution.md).
+# Credits remain exact attribution content, now presented as a bounded reader
+# over the title art instead of replacing the whole viewport with flat cream.
 
-const LINES := [
-	["Wayfinder", 30, Color(0.71, 0.29, 0.12)],
-	["a cozy fairytale of Bramblewood", 15, Color(0.42, 0.34, 0.25)],
-	["", 8, Color.WHITE],
-	["Design & code", 16, Color(0.20, 0.15, 0.11)],
-	["Brian Broeking · with Claude (Anthropic)", 14, Color(0.30, 0.24, 0.18)],
-	["", 6, Color.WHITE],
-	["3D models — Meshy", 14, Color(0.30, 0.24, 0.18)],
-	["Concept art — Midjourney", 14, Color(0.30, 0.24, 0.18)],
-	["Sound & music — ElevenLabs", 14, Color(0.30, 0.24, 0.18)],
-	["Engine — Godot 4.6", 14, Color(0.30, 0.24, 0.18)],
-	["", 8, Color.WHITE],
-	["Thanks for wayfaring.", 14, Color(0.42, 0.34, 0.25)],
-]
+const Tokens = preload("res://scripts/ui/foundation/ui_tokens.gd")
+const FocusPointer = preload("res://scripts/ui/components/focus_pointer.gd")
+const SystemFolio = preload("res://scripts/ui/components/system_folio.gd")
+
+var _folio: SystemFolio
+
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 97
+	_build_backdrop()
+	_build_folio()
+	var pointer := FocusPointer.new()
+	pointer.name = "MenuFocusPointer"
+	add_child(pointer)
+
+
+func _build_backdrop() -> void:
 	var bg := ColorRect.new()
-	bg.color = Color(0.91, 0.85, 0.69)
+	bg.color = Tokens.SCRIM
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(bg)
 
-	var col := VBoxContainer.new()
-	col.anchor_left = 0.5; col.anchor_right = 0.5; col.anchor_top = 0.16
-	col.offset_left = -300; col.offset_right = 300
-	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_theme_constant_override("separation", 4)
-	add_child(col)
-	for line in LINES:
-		var l := Label.new()
-		l.text = String(line[0])
-		var f := WyrdUi.font_header() if int(line[1]) >= 20 else WyrdUi.font_body()
-		if f != null:
-			l.add_theme_font_override("font", f)
-		l.add_theme_font_size_override("font_size", int(line[1]))
-		l.add_theme_color_override("font_color", line[2])
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		col.add_child(l)
 
-	var close := Button.new()
-	WyrdUi.style_kit_button(close)
-	close.text = "Back"
-	close.custom_minimum_size = Vector2(200, 42)
-	close.anchor_left = 0.5; close.anchor_right = 0.5; close.anchor_top = 0.82
-	close.offset_left = -100; close.offset_right = 100
-	close.pressed.connect(_close)
-	add_child(close)
+func _build_folio() -> void:
+	_folio = SystemFolio.new()
+	_folio.anchor_left = 0.5
+	_folio.anchor_top = 0.5
+	_folio.anchor_right = 0.5
+	_folio.anchor_bottom = 0.5
+	_folio.set_folio_size(Vector2(680.0, 610.0))
+	_folio.setup("Credits", "The hands and tools behind the road.", "✦")
+	_folio.close_requested.connect(_close)
+	add_child(_folio)
+
+	var scroll := ScrollContainer.new()
+	scroll.name = "CreditsScroll"
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_folio.body.add_child(scroll)
+	var reader := VBoxContainer.new()
+	reader.name = "CreditsReader"
+	reader.custom_minimum_size.x = 560.0
+	reader.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	reader.alignment = BoxContainer.ALIGNMENT_CENTER
+	reader.add_theme_constant_override("separation", Tokens.SPACE_2)
+	scroll.add_child(reader)
+
+	_add_centered(reader, "Wayfinder", &"Display", Tokens.TERRACOTTA)
+	_add_centered(reader, "a cozy fairytale of Bramblewood", &"Body")
+	reader.add_child(HSeparator.new())
+	_add_centered(reader, "Design & Code", &"SectionTitle")
+	_add_centered(reader, "Brian Broeking · with Claude (Anthropic)", &"Body")
+	reader.add_child(HSeparator.new())
+	_add_centered(reader, "Tools & Craft", &"SectionTitle")
+	_add_centered(reader, "3D models — Meshy", &"Body")
+	_add_centered(reader, "Concept art — Midjourney", &"Body")
+	_add_centered(reader, "Sound & music — ElevenLabs", &"Body")
+	_add_centered(reader, "Engine — Godot 4.6", &"Body")
+	reader.add_child(HSeparator.new())
+	_add_centered(reader, "Thanks for wayfaring.", &"Body", Tokens.TEXT_ON_PAPER_DIM)
+
+	var hint := _folio.add_footer_hint("Esc/B back")
+	var back := Button.new()
+	back.name = "BackButton"
+	back.text = "Back"
+	back.theme_type_variation = &"QuietButton"
+	back.custom_minimum_size = Vector2(200.0, 52.0)
+	back.pressed.connect(_close)
+	_folio.footer.add_child(back)
+	hint.size_flags_stretch_ratio = 1.0
+	back.grab_focus.call_deferred()
+
+
+func _add_centered(parent: Container, text: String, variation: StringName,
+		color: Color = Color.TRANSPARENT) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.theme_type_variation = variation
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if color != Color.TRANSPARENT:
+		label.add_theme_color_override("font_color", color)
+	parent.add_child(label)
+	return label
+
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		_close()
 		get_viewport().set_input_as_handled()
+
 
 func _close() -> void:
 	queue_free()

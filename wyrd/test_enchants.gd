@@ -145,7 +145,7 @@ func _test_on_hit_enchant(game: Node, p: Node3D, host: Node) -> void:
 	_check("unbinding clears the on-hit effect",
 		(p.get_enchant_hit_effects() as Array).is_empty())
 
-# ---- [skill] — grants a hotbar skill; unbinding sanitizes the loadout ----
+# ---- [skill] — gear grants are transient actions, never permanent ownership ----
 func _test_skill_grant(game: Node, p: Node3D) -> void:
 	print("[skill grant]")
 	_bare(game)
@@ -157,24 +157,28 @@ func _test_skill_grant(game: Node, p: Node3D) -> void:
 	var ok: bool = game.bind_enchant(bow, "galebrand")
 	_check("bind a skill-grant charm onto the bow", ok)
 	_check("the weapon now GRANTS Galecall", game.granted_skills().has("Galecall"))
-	_check("Galecall enters the slottable pool", game.available_skills().has("Galecall"))
-	var slotted: bool = game.set_loadout(["Galecall", "PowerShot", "MultiShot"])
+	_check("Galecall does not become permanent ownership",
+		not game.available_skills().has("Galecall")
+		and not (game.owned_skills as Array).has("Galecall"))
+	_check("a gear-granted Skill cannot fossilize into the saved loadout",
+		not game.set_loadout(["Galecall"]))
+	p.rebuild_skills()
 	var names: Array = []
 	for s in p.skills:
 		names.append(String(s.name))
-	_check("Galecall slots into the hotbar", slotted and names.has("Galecall"), str(names))
-	# Unbind the charm → the grant is gone → loadout must self-heal.
+	_check("Galecall enters the live hotbar while the charm is worn",
+		names.has("Galecall"), str(names))
+	# Unbind the charm → the runtime-only action disappears on rebuild.
 	game.unbind_enchant(bow, (bow.enchants as Array).find("galebrand"))
 	_check("removing the charm revokes the grant",
 		not game.granted_skills().has("Galecall"))
-	_check("loadout self-heals — no dangling Galecall",
-		not (game.loadout as Array).has("Galecall"), str(game.loadout))
+	p.rebuild_skills()
 	var names2: Array = []
 	for s in p.skills:
 		names2.append(String(s.name))
 	_check("the rebuilt hotbar drops Galecall", not names2.has("Galecall"), str(names2))
-	_check("the hotbar still holds 4 valid slots",
-		p.skills.size() == 4 and String(p.skills[0].name) == "BasicShot", str(names2))
+	_check("the innate Bow remains after the transient grant leaves",
+		p.skills.size() >= 1 and String(p.skills[0].name) == "BasicShot", str(names2))
 
 # ---- [gates] — capacity, replace, category, availability, dup ----
 func _test_gates(game: Node) -> void:
@@ -205,22 +209,17 @@ func _test_gates(game: Node) -> void:
 	_check("an undiscovered charm is refused",
 		not bool(avail.ok) and "puzzled" in String(avail.reason).to_lower(), str(avail))
 
-# ---- [factory guard] — a loadout pick with no SKILL_FACTORY entry must keep
-# the hotbar aligned (slot N → skills[N-1]), not silently shrink it ----
+# ---- [factory guard] — injected unowned/unknown picks never become actions ----
 func _test_factory_guard(game: Node, p: Node3D) -> void:
 	print("[factory guard]")
-	# Inject a bad pick directly (bypasses set_loadout validation) and rebuild.
-	# rebuild_skills logs an error and falls back to a Bow for the bad slot.
+	# Inject bad persisted state directly; rebuild must still preserve the innate
+	# action without turning unknown or unowned IDs into Skills.
 	game.loadout = ["NoSuchSkill", "PowerShot", "MultiShot"]
 	p.rebuild_skills()
-	_check("a missing factory entry keeps the hotbar at 4 slots",
-		p.skills.size() == 4, str(p.skills.size()))
-	_check("the unknown pick falls back to a Bow, later slots stay aligned",
-		String(p.skills[1].name) == "BasicShot"
-		and String(p.skills[2].name) == "PowerShot"
-		and String(p.skills[3].name) == "MultiShot",
-		"%s/%s/%s" % [p.skills[1].name, p.skills[2].name, p.skills[3].name])
-	game.set_loadout(["PowerShot", "MultiShot", "BrambleSnare"])   # restore sanity
+	_check("unknown and unowned injected picks are ignored",
+		p.skills.size() == 1 and String(p.skills[0].name) == "BasicShot",
+		str(p.skills.map(func(skill): return String(skill.name))))
+	game.loadout = []
 
 # ---- [persist] — round-trip discovered charms + bound enchants ----
 func _test_persistence() -> void:
