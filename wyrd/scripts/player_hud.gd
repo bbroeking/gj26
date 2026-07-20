@@ -296,20 +296,15 @@ func _refresh_trades() -> void:
 		int(game.gold), game.trade_lv("wayfinding")]
 
 func show_toast(msg: String) -> void:
-	var l := Label.new()
-	l.text = msg
-	# Spec 41 — toasts are kit parchment chips.
-	WyrdUi.style_chip(l, 15)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_toast_box.add_child(l)
+	var chip := ToastChip.new(msg, msg.hash() & 0x7FFF)
+	_toast_box.add_child(chip)
 	var t := create_tween()
 	# Pause-immune — most toasts (mix, inscribe, level-up) fire while a modal
 	# has the tree paused; a pause-bound tween would freeze them into a stack.
 	t.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	t.tween_interval(2.4)
-	t.tween_property(l, "modulate:a", 0.0, 0.6)
-	t.tween_callback(l.queue_free)
+	t.tween_property(chip, "modulate:a", 0.0, 0.6)
+	t.tween_callback(chip.queue_free)
 
 func set_hp(cur: int, mx: int, status_suffix: String = "") -> void:
 	var f := clampf(float(cur) / float(max(1, mx)), 0.0, 1.0)
@@ -498,3 +493,65 @@ class QuestScrollArt extends Control:
 		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
 		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
 		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+
+# A richly hand-painted toast proclamation chip — warm parchment face, top
+# bevel, sage left accent stripe (good-outcome signal), burnished gold inset
+# ring, sparse parchment grain. Replaces the plain chip_stylebox Label so
+# action feedback reads as storybook proclamations, not flat engine pills.
+# Implements _get_minimum_size() so the VBoxContainer sizes to the text;
+# _label created in _init so minimum size is correct from the first frame.
+class ToastChip extends Control:
+	var _seed: int
+	var _label: Label
+
+	func _init(msg: String, seed_v: int) -> void:
+		_seed = seed_v
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		_label = Label.new()
+		_label.text = msg
+		_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_label.anchor_right = 1.0
+		_label.anchor_bottom = 1.0
+		_label.offset_left = 18.0    # clear of sage stripe + gap
+		_label.offset_right = -12.0
+		_label.offset_top = 5.0
+		_label.offset_bottom = -5.0
+		_label.add_theme_font_size_override("font_size", 16)
+		_label.add_theme_color_override("font_color", WyrdUi.INK)
+		add_child(_label)
+
+	func _ready() -> void:
+		update_minimum_size()
+
+	func _get_minimum_size() -> Vector2:
+		if _label == null:
+			return Vector2(120.0, 40.0)
+		var lms := _label.get_minimum_size()
+		return Vector2(lms.x + 34.0, maxf(40.0, lms.y + 14.0))
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		if size.x < 4.0 or size.y < 4.0:
+			return
+		# Soft drop shadow so the chip hovers above the 3D world
+		draw_rect(Rect2(r.position + Vector2(0, 3), r.size), Color(0, 0, 0, 0.18))
+		# Warm parchment face
+		draw_rect(r, WyrdUi.KIT_PLATE)
+		# Top warm bevel — chip catches the page's warm light
+		draw_rect(Rect2(r.position + Vector2(2, 2), Vector2(r.size.x - 4.0, 2.0)),
+			Color(1.0, 1.0, 0.93, 0.55))
+		# Bottom ink shadow — grounds the chip on the HUD
+		draw_rect(Rect2(r.position + Vector2(2, r.size.y - 3.0),
+			Vector2(r.size.x - 4.0, 2.0)), Color(WyrdUi.KIT_EDGE, 0.25))
+		# Sparse parchment grain
+		WyrdUi.draw_parchment_grain(self, r.grow(-3.0), _seed)
+		# Ink border
+		draw_rect(r, WyrdUi.KIT_EDGE, false, 1.5)
+		# Burnished gold inner inset line (hotbar-tray + scroll motif)
+		draw_rect(r.grow(-3.5), Color(WyrdUi.GOLD, 0.45), false, 1.0)
+		# Sage left accent stripe — toasts signal a good-outcome action
+		draw_rect(Rect2(r.position + Vector2(1.5, 1.5),
+			Vector2(4.0, r.size.y - 3.0)), WyrdUi.SAGE.darkened(0.05))
