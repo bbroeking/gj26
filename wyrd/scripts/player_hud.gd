@@ -420,8 +420,8 @@ class GlobeGauge extends Control:
 		draw_arc(c, R + 1.5, 0, TAU, 64, RING_EDGE, 2.0, true)
 		for i in 4:
 			var a := PI * 0.25 + float(i) * PI * 0.5
-			var np := c + Vector2(cos(a), sin(a)) * (R + 8.0)
-			WyrdUi.draw_round_well(self, np, 8.0, Color(0.93, 0.88, 0.74))
+			var lc := c + Vector2(cos(a), sin(a)) * (R + 8.0)
+			_draw_leaf_ornament(lc, a)
 		# --- glass orb ---
 		draw_circle(c, R, Color(0.12, 0.10, 0.09))
 		if frac > 0.003:
@@ -473,6 +473,22 @@ class GlobeGauge extends Control:
 				HORIZONTAL_ALIGNMENT_CENTER, size.x, 11, 4, Color(0.12, 0.09, 0.06))
 			draw_string(f, Vector2(0, c.y - 16), status,
 				HORIZONTAL_ALIGNMENT_CENTER, size.x, 11, Color(0.95, 0.78, 0.5))
+
+	# Ivy-leaf knot: a SAGE teardrop pointing radially outward, gold center
+	# vein + pip, ink outline. Sits at each 45° notch on the wood ring.
+	func _draw_leaf_ornament(lc: Vector2, angle_out: float) -> void:
+		var fwd := Vector2(cos(angle_out), sin(angle_out))
+		var lft := Vector2(-fwd.y, fwd.x)
+		var tip := lc + fwd * 7.0
+		var stem := lc - fwd * 3.5
+		var lobe_l := lc + fwd * 1.5 + lft * 5.5
+		var lobe_r := lc + fwd * 1.5 - lft * 5.5
+		var pts := PackedVector2Array([tip, lobe_l, stem, lobe_r])
+		draw_colored_polygon(pts, WyrdUi.SAGE.darkened(0.12))
+		draw_polyline(PackedVector2Array([tip, lobe_l, stem, lobe_r, tip]),
+			WyrdUi.KIT_EDGE, 1.0)
+		draw_line(stem, tip, Color(WyrdUi.GOLD, 0.60), 1.0)
+		draw_circle(lc, 2.2, Color(WyrdUi.GOLD, 0.82))
 
 
 # Slice B — the quest plate's scroll dressing, drawn over the painted-wood
