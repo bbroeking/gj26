@@ -37,6 +37,13 @@ func _ready() -> void:
 	_panel.offset_bottom = 230
 	add_child(_panel)
 
+	# Header ornament: portal-seal medallion + ivy-bracketed flourish rule.
+	# Drawn first so it sits under the title/subtitle Labels.
+	var ornam := _HeaderOrnam.new()
+	ornam.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	ornam.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(ornam)
+
 	var title := Label.new()
 	title.text = "The Waystone"
 	WyrdUi.style_title(title)
@@ -154,3 +161,59 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# Drawn behind the title/subtitle — a warm header band, a portal-seal
+# medallion at top-centre, and an ivy-bracketed gold flourish rule that
+# visually marks this panel as a THRESHOLD, not a generic list modal.
+class _HeaderOrnam extends Control:
+	func _draw() -> void:
+		var w := size.x
+		var cx := w * 0.5
+		# Warm amber tint across the header strip — catches the page's light
+		draw_rect(Rect2(36.0, 10.0, w - 72.0, 78.0),
+			Color(0.95, 0.84, 0.60, 0.20))
+		# Portal-seal medallion at top-centre: nested rings suggest a waystone
+		_draw_seal(Vector2(cx, 22.0), 13.0)
+		# Ivy leaf clusters bracket the rule at each end
+		_draw_ivy(Vector2(48.0, 84.0), 1.0)
+		_draw_ivy(Vector2(w - 48.0, 84.0), -1.0)
+		# Gold ◆ flourish rule dividing header from chart list
+		WyrdUi.draw_flourish(self, Vector2(cx, 84.0), w - 100.0)
+
+	func _draw_seal(c: Vector2, r: float) -> void:
+		# Cream face so the seal reads against the wooden frame
+		draw_circle(c, r, Color(0.94, 0.88, 0.74, 0.70))
+		# Outer ink ring
+		draw_arc(c, r, 0.0, TAU, 40, Color(WyrdUi.KIT_EDGE, 0.55), 1.5, true)
+		# Gold inner ring
+		draw_arc(c, r - 4.0, 0.0, TAU, 32, Color(WyrdUi.GOLD, 0.78), 2.0, true)
+		# Cardinal tick marks
+		for i in 4:
+			var a := TAU * float(i) * 0.25
+			var from := c + Vector2(cos(a), sin(a)) * (r - 0.5)
+			var to := c + Vector2(cos(a), sin(a)) * (r + 3.5)
+			draw_line(from, to, Color(WyrdUi.KIT_EDGE, 0.55), 1.5)
+		# Centre dot — the eye of the waystone
+		draw_circle(c, 3.5, Color(WyrdUi.GOLD, 0.80))
+		draw_circle(c, 1.5, Color(WyrdUi.KIT_EDGE, 0.90))
+
+	func _draw_ivy(root: Vector2, sx: float) -> void:
+		# Short curving stem + two leaf polygons — mirrors left/right via sx ±1.
+		var tip := root + Vector2(sx * 12.0, -14.0)
+		draw_line(root, tip, Color(WyrdUi.SAGE, 0.52), 1.5)
+		# Leaf A — fans out from stem midpoint
+		var ma := root + Vector2(sx * 6.0, -7.0)
+		draw_colored_polygon(PackedVector2Array([
+			ma,
+			ma + Vector2(sx * 8.0, -5.0),
+			ma + Vector2(sx * 11.0, 0.0),
+			ma + Vector2(sx * 3.0, 4.0)]),
+			Color(WyrdUi.SAGE, 0.38))
+		# Leaf B — at tip, pointing up-outward
+		draw_colored_polygon(PackedVector2Array([
+			tip,
+			tip + Vector2(sx * -3.0, -8.0),
+			tip + Vector2(sx * 4.0, -9.0),
+			tip + Vector2(sx * 6.0, -2.0)]),
+			Color(WyrdUi.SAGE, 0.32))
