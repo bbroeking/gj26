@@ -120,6 +120,8 @@ layered visual remains a child of the existing colliding wall and therefore
 lowers and restores as one unit under the continuous FATE camera. The
 ten-suite gate is green at 866 assertions; native and Web rendered evidence
 shows a denser, more asymmetrical perimeter with a protected central stage.
+The exact game source is pushed on `codex/wayfinder-director`, and companion
+site version 5 is live with the verified playable export and release receipt.
 The next player-visible candidate is the Web renderer's bright, flat tonal
 separation, not another parallel game system.
 

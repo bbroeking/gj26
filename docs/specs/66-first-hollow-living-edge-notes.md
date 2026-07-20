@@ -54,6 +54,9 @@
   `ccd861c585e26929d8faeee3d92fcad2bbd1a28f923690d43a639e9144bfdc82`.
   Its real title → town → First Road → return receipt passed with no browser
   warnings or errors.
+- Companion-site version 5 carries the same fingerprint, the playable export,
+  and the native/Web evidence. Its owner-only production deployment succeeded
+  at `https://wayfinder-field-journal.iamactuallyinthearen.chatgpt.site`.
 
 ## Followups
 

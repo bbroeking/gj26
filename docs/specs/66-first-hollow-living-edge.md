@@ -115,4 +115,4 @@ system, encounter, reward, input, or camera mode.
 - [x] Native and Web comparison materially closes the living-edge concept gap.
 - [x] Native, Web, resource, diagnostic, and retained-corpus gates pass.
 - [x] Roadmap, notes, changelog, devlog, version, and test manifest are current.
-- [ ] Game and companion website are committed, pushed, deployed, and verified.
+- [x] Game and companion website are committed, pushed, deployed, and verified.
