@@ -44,7 +44,7 @@ var _game: Node
 var _panel: Panel
 var _picks: Array = []
 var _rows: VBoxContainer
-var _slots_lbl: Label
+var _slot_strip
 var _apply: Button
 var _tex_cache := {}
 
@@ -111,9 +111,8 @@ func _ready() -> void:
 	_rows.add_theme_constant_override("separation", 6)
 	_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_rows)
-	_slots_lbl = Label.new()
-	WyrdUi.style_body(_slots_lbl, 14)
-	col.add_child(_slots_lbl)
+	_slot_strip = _SlotStrip.new()
+	col.add_child(_slot_strip)
 	_apply = Button.new()
 	WyrdUi.style_kit_button(_apply)
 	_apply.text = "Take up this kit"
@@ -156,8 +155,7 @@ func _render() -> void:
 					_picks.append(sid)
 				_render())
 		_rows.add_child(card)
-	_slots_lbl.text = "Slots 2–4:  %s" % (" · ".join(_picks) \
-		if not _picks.is_empty() else "—")
+	_slot_strip.set_picks(_picks)
 	_apply.disabled = _picks.size() != 3
 
 
@@ -262,3 +260,64 @@ class _SkillCard extends Control:
 		# --- short desc (up to two lines) ---
 		draw_multiline_string(font, Vector2(tx, 40.0), _desc,
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 16.0, 12, 2, dim)
+
+
+# ---- drawn slot-strip: four carved slot tablets showing the active loadout ----
+# Slot 1 is always Bow (SAGE ring). Slots 2-4 show the picked skill name or a
+# quiet recessed well — the player reads "what's in, what's not" at a glance
+# instead of parsing a dotted text list. Design language: carved wood chips,
+# rounded inner shadow, sage accent ring on filled slots, dim recess on empty.
+class _SlotStrip extends Control:
+	var _picks: Array = []
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 60.0)
+
+	func set_picks(picks: Array) -> void:
+		_picks = picks
+		queue_redraw()
+
+	func _draw() -> void:
+		var font := get_theme_default_font()
+		var gap := 8.0
+		var n := 4
+		var slot_w := (size.x - gap * float(n + 1)) / float(n)
+		var slot_h := 48.0
+		var y := (size.y - slot_h) * 0.5
+		for i in n:
+			var x := gap + float(i) * (slot_w + gap)
+			var r := Rect2(Vector2(x, y), Vector2(slot_w, slot_h))
+			var filled := (i == 0) or ((i - 1) < _picks.size())
+			var skill_name := "Bow" if i == 0 \
+				else (String(_picks[i - 1]) if (i - 1) < _picks.size() else "")
+			if filled:
+				WyrdUi.draw_well(self, r, WyrdUi.KIT_PLATE)
+				# Sage accent ring — filled slot reads as "live"
+				draw_rect(r, WyrdUi.SAGE.darkened(0.12), false, 2.0)
+				# Warm light bevel on top edge
+				draw_rect(Rect2(r.position + Vector2(2.0, 2.0),
+					Vector2(r.size.x - 4.0, 2.0)), Color(1.0, 1.0, 0.92, 0.45))
+				# Slot number pip — small sage square, top-left corner
+				var pip := Rect2(r.position + Vector2(4.0, 4.0), Vector2(18.0, 18.0))
+				draw_rect(pip, WyrdUi.SAGE.darkened(0.18))
+				draw_rect(pip, WyrdUi.KIT_EDGE, false, 1.0)
+				draw_string(font, pip.position + Vector2(0.0, 13.0),
+					str(i + 1), HORIZONTAL_ALIGNMENT_CENTER, pip.size.x, 11,
+					Color(WyrdUi.CREAM, 0.9))
+				# Skill name centred in the lower portion of the tablet
+				draw_string(font,
+					Vector2(r.position.x, r.position.y + slot_h * 0.5 + 6.0),
+					skill_name, HORIZONTAL_ALIGNMENT_CENTER, slot_w, 13, WyrdUi.INK)
+			else:
+				# Empty: dim recessed well, ghost number pip, soft dash
+				WyrdUi.draw_well(self, r, WyrdUi.KIT_WELL)
+				var pip := Rect2(r.position + Vector2(4.0, 4.0), Vector2(18.0, 18.0))
+				draw_rect(pip, Color(WyrdUi.INK_MID, 0.25))
+				draw_rect(pip, Color(WyrdUi.KIT_EDGE, 0.4), false, 1.0)
+				draw_string(font, pip.position + Vector2(0.0, 13.0),
+					str(i + 1), HORIZONTAL_ALIGNMENT_CENTER, pip.size.x, 11,
+					Color(WyrdUi.INK_MID, 0.7))
+				draw_string(font,
+					Vector2(r.position.x, r.position.y + slot_h * 0.5 + 6.0),
+					"—", HORIZONTAL_ALIGNMENT_CENTER, slot_w, 14,
+					Color(WyrdUi.INK_MID, 0.4))
