@@ -66,8 +66,8 @@ I pack · M satchel · K trades · Space roll · F10 sound (off by default)
 
 ## Tests
 
-Nine headless suites gate every change (855 assertions at
-`0.1.6-living-edge`; see `docs/test-manifest.md`):
+Eleven headless suites gate every change (870 assertions at
+`0.1.7-shaded-road`; see `docs/test-manifest.md`):
 
 ```bash
 cd wyrd
@@ -80,6 +80,8 @@ WYRD_NO_SAVE=1 godot --headless --path . --script res://test_first_road_slice.gd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_movement_feel.gd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_hollow_readability.gd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_first_hollow_room_grammar.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_first_hollow_living_edge.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_web_tonal_separation.gd
 ```
 
 ## How it's built

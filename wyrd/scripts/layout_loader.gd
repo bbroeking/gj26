@@ -30,6 +30,12 @@ const HearthChainScript = preload("res://scripts/hearth_chain.gd")
 const HearthGiantEncounterScript = preload("res://scripts/hearth_giant_encounter.gd")
 const KnotEaterScript = preload("res://scripts/knot_eater.gd")
 const KnotEaterEncounterScript = preload("res://scripts/knot_eater_encounter.gd")
+
+# Compatibility rendering does not reproduce Forward+'s volumetric depth and
+# pushes the post-tonemap Wood Grove highlights into one clipped band. Keep the
+# correction small, world-only, and centralized here; Canvas UI is unaffected.
+const WEB_GRADE_BRIGHTNESS := 0.82
+const WEB_GRADE_CONTRAST := 1.08
 const KnotEaterAnchorScript = preload("res://scripts/knot_eater_anchor.gd")
 const KnotEaterKnotScript = preload("res://scripts/knot_eater_knot.gd")
 const CinderboundVentScript = preload("res://scripts/cinderbound_vent.gd")
@@ -846,10 +852,24 @@ func _apply_biome_env() -> void:
 		env.adjustment_enabled = true
 		env.adjustment_saturation = float(e.get("sat", 1.12))
 		env.adjustment_contrast = float(e.get("contrast", 1.05))
+		apply_web_tonal_grade(env, OS.has_feature("web"),
+			OS.get_environment("WYRD_FORCE_WEB_GRADE"))
 		we.environment = env
 	var sun := get_node_or_null("Sun")
 	if sun != null:
 		sun.light_color = e.sun
+
+
+# Public/static so the renderer contract can be tested without booting a full
+# dungeon. WYRD_FORCE_WEB_GRADE is dev/test-only and never set by release code.
+static func apply_web_tonal_grade(env: Environment, web_feature: bool,
+		force_value: String = "") -> bool:
+	if env == null or (not web_feature and force_value == ""):
+		return false
+	env.adjustment_enabled = true
+	env.adjustment_brightness = WEB_GRADE_BRIGHTNESS
+	env.adjustment_contrast = maxf(env.adjustment_contrast, WEB_GRADE_CONTRAST)
+	return true
 
 # One camera-following emitter of the biome's signature airborne mote.
 func _build_ambient_motes() -> void:

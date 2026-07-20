@@ -125,6 +125,22 @@ site version 5 is live with the verified playable export and release receipt.
 The next player-visible candidate is the Web renderer's bright, flat tonal
 separation, not another parallel game system.
 
+## Shaded Road checkpoint — shipped 2026-07-20
+
+[Spec 67](specs/67-web-tonal-separation.md) resolves the Web renderer mismatch
+exposed by Living Edge. Generated exploration scenes now apply one Web-only
+post-tonemap adjustment through their duplicated 3D biome environment, lowering
+clipped highlights without filtering the HUD or changing native Forward+
+rendering. The eleven-suite gate is green at 870 assertions; native before and
+after distributions match to five decimal places, while the browser
+playfield's measured mean moved from `0.371` toward the approved concept at
+`0.316` versus `0.328`. The exact 105,922,096-byte export audited all 112
+release resources and completed title → town → generated First Road → return
+with no warning/error diagnostics. The next visual comparison should address
+the remaining black-void/isolated-ring read around rooms, deepening forest
+continuity without restoring obstructive wall fields or changing the continuous
+FATE camera.
+
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)
 

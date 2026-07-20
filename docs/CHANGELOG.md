@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.7-shaded-road — 2026-07-20
+
+- Preserved the accepted native art direction while correcting the Web
+  Compatibility renderer's clipped, flat First Road presentation.
+- Added one Web-only post-tonemap grade to the duplicated 3D biome environment;
+  HUD, parchment, labels, procedural layout, walls, and camera are untouched.
+- Moved the measured browser playfield mean from `0.371` to `0.316` beside the
+  approved concept's `0.328`, restoring visible floor/foliage/wall separation.
+- Proved native before/after luminance distributions match to five decimal
+  places and completed the real browser title → town → World → return route
+  with an empty warning/error ledger.
+- Verified 870 canonical native assertions, the 116/121 retained corpus with
+  only its historical driver/timing exceptions, and all 112 release resources.
+
 ## 0.1.6-living-edge — 2026-07-20
 
 - Kept procedural Charts, randomized authored room archetypes, and the

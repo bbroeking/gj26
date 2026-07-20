@@ -1,5 +1,27 @@
 # Wayfinder devlog
 
+## 2026-07-20 — The browser road found its shade
+
+Living Edge made First Road rooms denser and more place-like, but the exact Web
+release proof exposed a renderer mismatch rather than a content shortage. In
+Compatibility rendering, floor, hedge, rootstone, and lit faces climbed into
+the same bright yellow-green band. Adding more props would only have made that
+flatness busier.
+
+Shaded Road changes one existing seam: the duplicated 3D biome environment now
+receives a small post-tonemap correction on Web. It does not place a filter over
+the screen, so parchment, prompts, and the hotbar keep their authored values.
+Native Forward+ remains a strict no-op. The procedural Chart graph, randomized
+room archetypes, living wall profiles, collision, cutaway, and continuous FATE
+camera are exactly the accepted systems from the prior checkpoint.
+
+The decision came from rendered evidence. The browser playfield's mean light
+level moved from `0.371` to `0.316`, close to the approved First Hollow
+concept's `0.328`, while its foliage banks, ground, and stones regained distinct
+planes. Native before and after distributions match to five decimal places. An
+exact exported journey then reached title, town, generated First Road, and
+return with no browser warnings or errors.
+
 ## 2026-07-20 — The hedge became a living edge
 
 Natural Hollows proved that a procedural Chart could draw authored clearing

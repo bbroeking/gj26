@@ -1,6 +1,6 @@
 # Wayfinder test manifest
 
-Updated 2026-07-20 for `0.1.6-living-edge`.
+Updated 2026-07-20 for `0.1.7-shaded-road`.
 
 ## Canonical checkpoint gate
 
@@ -18,7 +18,8 @@ Run every entry with `WYRD_NO_SAVE=1 godot --headless --path wyrd --script res:/
 | `test_hollow_readability.gd` | 9 | Boundary-only living walls, complete-profile cutaway restoration, and budget |
 | `test_first_hollow_room_grammar.gd` | 8 | Archetype determinism, variation, boundary truth, and combat apertures |
 | `test_first_hollow_living_edge.gd` | 9 | Profile ownership, landmark count, deterministic remixing, and production realization |
-| **Total** | **866** | **Required before a checkpoint is accepted** |
+| `test_web_tonal_separation.gd` | 4 | Web-only environment grade, native no-op, and forced production mutation seam |
+| **Total** | **870** | **Required before a checkpoint is accepted** |
 
 ## Exported-browser gate
 
@@ -44,12 +45,17 @@ through the production camera cutaway. The accepted export loaded all 112
 audited release resources from a 105,921,728-byte PCK and completed the compact
 journey with an empty browser diagnostic ledger.
 
+The `0.1.7-shaded-road` proof additionally requires measured native/Web/concept
+comparison, a native before/after no-op check, and a real exported title → town
+→ generated First Road → return receipt with an empty warning/error ledger. The
+accepted export loaded all 112 audited release resources from a
+105,922,096-byte PCK.
+
 The persistence-disabled retained corpus currently contains 121 direct
-entrypoints: 116 pass. Four documented exceptions still require their owning
-driver or historical state, and `test_combat.gd` retains its pre-checkpoint F2
-chase/F7 navigation fixture anomaly. None loads the living-edge generator or
-loader changes; the production dungeon, transition, boot, movement, room, and
-cutaway gates remain green.
+entrypoints: 116 pass. Its driver-required and historical timing exceptions
+remain; the rendering checkpoint introduced no new failure. The production
+dungeon, transition, boot, standalone movement, room, cutaway, and tonal-grade
+gates remain green.
 
 The repository also contains focused chapter, UI, authority, economy, save,
 and regression entrypoints. They remain useful for their owning specs, but are
