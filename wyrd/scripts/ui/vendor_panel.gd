@@ -94,11 +94,19 @@ func _ready() -> void:
 	close_hint.offset_top = -28
 	_panel.add_child(close_hint)
 
+	var rule := _VendorRule.new()
+	rule.anchor_right = 1.0
+	rule.offset_left = 52
+	rule.offset_top = 88
+	rule.offset_right = -52
+	rule.offset_bottom = 102
+	_panel.add_child(rule)
+
 	var columns := HBoxContainer.new()
 	columns.anchor_right = 1.0
 	columns.anchor_bottom = 1.0
 	columns.offset_left = 52
-	columns.offset_top = 94
+	columns.offset_top = 106
 	columns.offset_right = -52
 	columns.offset_bottom = -56
 	columns.add_theme_constant_override("separation", 26)
@@ -286,3 +294,26 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# Ink+gold ornamental separator between the header zone (title + quote) and the
+# two trade columns. Drawn rule: a dark ink line with a gold glint above it, and
+# a small gold diamond pip at each end and the centre — the kit's filigree mark.
+class _VendorRule extends Control:
+	func _draw() -> void:
+		var cy := size.y * 0.5
+		var w := size.x
+		draw_line(Vector2(0.0, cy + 1.5), Vector2(w, cy + 1.5),
+			WyrdUi.KIT_EDGE.lightened(0.2), 1.2)
+		draw_line(Vector2(0.0, cy - 1.5), Vector2(w, cy - 1.5),
+			Color(WyrdUi.GOLD, 0.32), 1.0)
+		for x in [10.0, w * 0.5, w - 10.0]:
+			var sz := 4.0 if absf(x - w * 0.5) < 1.0 else 3.2
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(x, cy - sz), Vector2(x + sz, cy),
+				Vector2(x, cy + sz), Vector2(x - sz, cy)]),
+				Color(WyrdUi.GOLD, 0.82))
+			draw_polyline(PackedVector2Array([
+				Vector2(x, cy - sz), Vector2(x + sz, cy),
+				Vector2(x, cy + sz), Vector2(x - sz, cy),
+				Vector2(x, cy - sz)]), Color(WyrdUi.KIT_EDGE, 0.7), 0.8)
