@@ -37,6 +37,29 @@ func _draw() -> void:
 	WyrdUi.draw_carved_button(self, r, castable)
 	WyrdUi.draw_well(self, r.grow(-7.0), WyrdUi.KIT_PLATE.lightened(0.05))
 	WyrdUi.draw_parchment_grain(self, r, _seed)
+	# Carved corner pip studs — four tiny gold diamonds mark the slot as a
+	# hand-crafted artifact holder, echoing the tray's end-flourish language.
+	# Placed in the border zone (3–8 px from each corner) so they sit ON the
+	# wooden frame face and never intrude into the icon well.
+	var pip_r := 2.5
+	var pip_col := Color(WyrdUi.GOLD, 0.55 if castable else 0.28)
+	var pip_edge := Color(WyrdUi.KIT_EDGE, 0.55)
+	var corners: Array[Vector2] = [
+		Vector2(5.5, 5.5),
+		Vector2(size.x - 5.5, 5.5),
+		Vector2(5.5, size.y - 5.5),
+		Vector2(size.x - 5.5, size.y - 5.5),
+	]
+	for cp in corners:
+		var pts := PackedVector2Array([
+			cp + Vector2(0.0, -pip_r),
+			cp + Vector2(pip_r, 0.0),
+			cp + Vector2(0.0, pip_r),
+			cp + Vector2(-pip_r, 0.0),
+		])
+		draw_colored_polygon(pts, pip_col)
+		for i in 4:
+			draw_line(pts[i], pts[(i + 1) % 4], pip_edge, 0.8)
 	# Radial cooldown wedge — a square-clamped pie from 12 o'clock clockwise,
 	# shrinking as the skill cools. Vertices ride the slot's own edge so it
 	# reads as the slot face darkening, with no overshoot into the gaps.
