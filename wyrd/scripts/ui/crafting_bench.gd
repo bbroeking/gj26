@@ -630,6 +630,9 @@ class BenchView extends Control:
 			_base_rect.size * bs), bench.base_id != "")
 		_highlight(_base_rect, target == "base")
 		if bench.base_id == "":
+			# Ghost scroll silhouette in the empty socket — faint watercolour
+			# suggestion of what belongs here, consistent with the filled state.
+			WyrdUi.draw_scroll(self, _base_rect.grow(-14.0), false, 0.22)
 			draw_string(font, _base_rect.position + Vector2(0, 52),
 				"chart base", HORIZONTAL_ALIGNMENT_CENTER,
 				_base_rect.size.x, 13, DIM)
