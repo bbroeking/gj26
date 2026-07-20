@@ -359,17 +359,20 @@ static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
 		Color(1, 1, 1, 0.45), 1.5)
 
 # A rolled parchment scroll with a wax seal — the chart-in-a-socket read.
-static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
+# alpha multiplies all draw-call alphas so callers can ghost the scroll at
+# low opacity (e.g. 0.22) to hint an empty socket without overwhelming it.
+static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true,
+		alpha: float = 1.0) -> void:
 	var face := Rect2(r.position + Vector2(r.size.x * 0.08, r.size.y * 0.12),
 		Vector2(r.size.x * 0.84, r.size.y * 0.76))
-	c.draw_rect(face, Color(0.96, 0.91, 0.78))
+	c.draw_rect(face, Color(0.96, 0.91, 0.78, alpha))
 	# rolled ends — darker cylinders at left + right
 	var roll_w := r.size.x * 0.07
 	c.draw_rect(Rect2(face.position - Vector2(roll_w * 0.6, 2.0),
-		Vector2(roll_w, face.size.y + 4.0)), Color(0.86, 0.78, 0.62))
+		Vector2(roll_w, face.size.y + 4.0)), Color(0.86, 0.78, 0.62, alpha))
 	c.draw_rect(Rect2(Vector2(face.end.x - roll_w * 0.4, face.position.y - 2.0),
-		Vector2(roll_w, face.size.y + 4.0)), Color(0.86, 0.78, 0.62))
-	c.draw_rect(face, KIT_EDGE, false, 1.5)
+		Vector2(roll_w, face.size.y + 4.0)), Color(0.86, 0.78, 0.62, alpha))
+	c.draw_rect(face, Color(KIT_EDGE, alpha), false, 1.5)
 	# faint chart scratches
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 11
@@ -377,9 +380,9 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		var y := face.position.y + face.size.y * (0.25 + rng.randf() * 0.5)
 		c.draw_line(Vector2(face.position.x + 6.0, y),
 			Vector2(face.position.x + 6.0 + rng.randf() * face.size.x * 0.5, y),
-			Color(KIT_EDGE, 0.25), 1.0)
+			Color(KIT_EDGE, 0.25 * alpha), 1.0)
 	if sealed:
 		var sc := Vector2(face.end.x - 10.0, face.end.y - 8.0)
-		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
-		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
-		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16, alpha))
+		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22, alpha))
+		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10, alpha), 1.5, true)
