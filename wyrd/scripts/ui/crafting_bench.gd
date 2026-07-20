@@ -866,14 +866,30 @@ class BenchView extends Control:
 			w = maxf(w, font.get_string_size(ln, HORIZONTAL_ALIGNMENT_LEFT,
 				-1, 13).x)
 		var box := Rect2(_tip_at + Vector2(16, 12),
-			Vector2(w + 20.0, 12.0 + 19.0 * lines.size()))
+			Vector2(w + 24.0, 14.0 + 19.0 * lines.size()))
 		# Keep it on the panel.
 		box.position.x = minf(box.position.x, size.x - box.size.x - 8.0)
 		box.position.y = minf(box.position.y, size.y - box.size.y - 8.0)
+		# Drop shadow so the notecard lifts above the bench surface.
+		draw_rect(Rect2(box.position + Vector2(2.5, 3.0), box.size),
+			Color(0, 0, 0, 0.20))
+		# Warm parchment face.
 		draw_rect(box, Color(0.97, 0.93, 0.80, 0.97))
-		draw_rect(box, EDGE, false, 2.0)
+		# Top catch-light bevel — the card reads as lit from above.
+		draw_rect(Rect2(box.position + Vector2(1.0, 1.0),
+			Vector2(box.size.x - 2.0, 2.0)), Color(1.0, 1.0, 0.93, 0.45))
+		# Bottom shade edge — the card rests on the parchment.
+		draw_rect(Rect2(box.position + Vector2(2.0, box.size.y - 2.5),
+			Vector2(box.size.x - 4.0, 1.5)), Color(EDGE, 0.18))
+		draw_rect(box, EDGE, false, 1.5)
+		# Sage accent stripe — the same left-edge language as drawn list rows.
+		draw_rect(Rect2(box.position + Vector2(1.5, 1.5),
+			Vector2(3.0, box.size.y - 3.0)), WyrdUi.SAGE)
+		# Sparse parchment grain across the face (fixed seed — stable on hover).
+		WyrdUi.draw_parchment_grain(self, box, 11)
+		# Text body, indented to clear the accent stripe.
 		var ty := box.position.y + 17.0
 		for ln in lines:
-			draw_string(font, Vector2(box.position.x + 10.0, ty), ln,
-				HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 20.0, 13, TXT)
+			draw_string(font, Vector2(box.position.x + 14.0, ty), ln,
+				HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 24.0, 13, TXT)
 			ty += 19.0
