@@ -870,17 +870,14 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 					Vector2(lx, cardy + CARD_H + CARD_GAP),
 					Color(0.55, 0.62, 0.40, 0.65), 3.0)
 				var cr := Rect2(Vector2(card_x, cardy), Vector2(card_w, CARD_H))
+				WyrdUi.draw_list_row(self, cr, WyrdUi.SAGE if ok else WyrdUi.INK_MID)
 				if ok:
-					draw_rect(cr, Color(0.93, 0.88, 0.74))
-					draw_rect(cr, WyrdUi.SAGE.darkened(0.12), false, 2.0)
-				else:
-					draw_rect(cr, Color(0.78, 0.72, 0.60, 0.85))
-					draw_rect(cr, Color(0.50, 0.42, 0.32, 0.7), false, 1.5)
-				# node disc on the spine
+					WyrdUi.draw_parchment_grain(self, cr, pl ^ 0x3a)
+				# node disc on the spine — round-well for depth; gold when earned
 				var dc := Vector2(lx, cardy + CARD_H * 0.5)
-				draw_circle(dc, 12.0, WyrdUi.SAGE.darkened(0.05) if ok \
-					else Color(0.62, 0.55, 0.45))
-				draw_arc(dc, 12.0, 0.0, TAU, 24, Color(0.25, 0.18, 0.12), 1.5, true)
+				var disc_fill := WyrdUi.GOLD.darkened(0.08) if ok \
+					else Color(0.62, 0.55, 0.45)
+				WyrdUi.draw_round_well(self, dc, 12.0, disc_fill)
 				draw_string(hdr, Vector2(dc.x - 12.0, dc.y + 6.0),
 					"❖" if ok else "⚿", HORIZONTAL_ALIGNMENT_CENTER, 24.0, 13,
 					Color(0.97, 0.95, 0.86) if ok else Color(0.86, 0.81, 0.73))
