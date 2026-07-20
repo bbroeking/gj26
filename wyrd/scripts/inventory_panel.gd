@@ -688,9 +688,21 @@ func _draw_scroll_marker(win: Rect2, view: Rect2, font: Font) -> void:
 		Vector2(7.0, th))
 	draw_rect(thumb, WyrdUi.SAGE.darkened(0.08))
 	draw_rect(thumb, Color(WyrdUi.KIT_EDGE, 0.7), false, 1.0)
-	draw_string(font, Vector2(view.position.x, view.end.y + 34.0),
-		"scroll to read on · I close", HORIZONTAL_ALIGNMENT_CENTER,
-		view.size.x, 13, WyrdUi.INK_MID)
+	# Parchment chip — same token language as the style_chip Labels elsewhere,
+	# but drawn so it works inside _draw without a Label node.
+	var _hint := "scroll to read on  ·  I close"
+	var _hw: float = font.get_string_size(_hint, HORIZONTAL_ALIGNMENT_LEFT,
+		-1, 13).x
+	var _chip := Rect2(
+		Vector2(view.position.x + (view.size.x - _hw) * 0.5 - 10.0,
+			view.end.y + 18.0),
+		Vector2(_hw + 20.0, 22.0))
+	draw_rect(_chip, WyrdUi.KIT_PLATE.darkened(0.02))
+	draw_rect(Rect2(_chip.position + Vector2(2, 1),
+		Vector2(_chip.size.x - 4, 1.5)), Color(1.0, 0.97, 0.86, 0.45))
+	draw_rect(_chip, Color(WyrdUi.KIT_EDGE, 0.45), false, 1.0)
+	draw_string(font, Vector2(_chip.position.x, _chip.position.y + 16.0),
+		_hint, HORIZONTAL_ALIGNMENT_CENTER, _chip.size.x, 13, WyrdUi.INK_MID)
 
 func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> void:
 	var game := get_tree().root.get_node_or_null("Game")
