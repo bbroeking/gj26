@@ -12,6 +12,7 @@ var station_id := "cookfire"
 var _game: Node
 var _panel: Panel
 var _recipe_box: VBoxContainer
+var _satchel_flow: HFlowContainer
 var _satchel_lbl: Label
 
 func _ready() -> void:
@@ -93,9 +94,12 @@ func _ready() -> void:
 	s2.text = "Satchel"
 	WyrdUi.style_section(s2)
 	col.add_child(s2)
+	_satchel_flow = HFlowContainer.new()
+	_satchel_flow.add_theme_constant_override("h_separation", 6)
+	_satchel_flow.add_theme_constant_override("v_separation", 5)
+	col.add_child(_satchel_flow)
 	_satchel_lbl = Label.new()
-	WyrdUi.style_body(_satchel_lbl, 13)
-	_satchel_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	WyrdUi.style_dim(_satchel_lbl, 13)
 	col.add_child(_satchel_lbl)
 
 	get_node("/root/Game").modal_opened()
@@ -170,6 +174,8 @@ func _render() -> void:
 
 	if _game == null:
 		_satchel_lbl.text = ""
+		_satchel_lbl.visible = true
+		_satchel_flow.visible = false
 		return
 	_render_satchel()
 
@@ -207,8 +213,33 @@ func _recipe_tint(rec: Dictionary, locked: bool) -> Color:
 	return Color(0.88, 0.83, 0.72)
 
 func _render_satchel() -> void:
-	var parts: Array = []
+	for c in _satchel_flow.get_children():
+		c.queue_free()
+	var found := false
 	for id in _game.materials:
-		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
-			GatherDefs.material_name(String(id)), int(_game.materials[id])])
-	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+		var count: int = int(_game.materials[id])
+		if count <= 0:
+			continue
+		found = true
+		var mat_id := String(id)
+		var group := String((GatherDefs.MATERIALS.get(mat_id, {}) as Dictionary)
+			.get("group", ""))
+		var chip := Label.new()
+		chip.text = "%s %s ×%d" % [GatherDefs.material_icon(mat_id),
+			GatherDefs.material_name(mat_id), count]
+		WyrdUi.style_chip(chip, 12)
+		chip.add_theme_stylebox_override("normal",
+			WyrdUi.chip_stylebox(_satchel_chip_tint(group)))
+		_satchel_flow.add_child(chip)
+	_satchel_flow.visible = found
+	_satchel_lbl.text = "empty"
+	_satchel_lbl.visible = not found
+
+func _satchel_chip_tint(group: String) -> Color:
+	match group:
+		"verdant": return Color(0.82, 0.90, 0.70)
+		"earthen": return Color(0.89, 0.82, 0.70)
+		"lumen":   return Color(0.95, 0.93, 0.80)
+		"gristle": return Color(0.90, 0.82, 0.78)
+		"echo":    return Color(0.82, 0.85, 0.92)
+	return WyrdUi.KIT_PLATE
