@@ -40,7 +40,9 @@ with an empty browser diagnostic ledger.
 The `0.1.6-living-edge` proof additionally compares native and Web First Road
 renders with the approved First Hollow concept, requires deterministic profile
 and landmark data, and verifies that the full layered edge lowers and restores
-through the production camera cutaway.
+through the production camera cutaway. The accepted export loaded all 112
+audited release resources from a 105,921,728-byte PCK and completed the compact
+journey with an empty browser diagnostic ledger.
 
 The persistence-disabled retained corpus currently contains 121 direct
 entrypoints: 116 pass. Four documented exceptions still require their owning

@@ -47,7 +47,13 @@
 - The retained direct corpus is 116/121. Its four documented driver/repro
   exceptions remain, while `test_combat.gd` repeats a pre-checkpoint chase/nav
   fixture anomaly and does not load either changed production script. All ten
-  canonical production gates pass.
+  canonical production gates pass. The older movement fixture can land just
+  below its 30-frame distance threshold after a long aggregate run; its clean
+  standalone rerun passed 12/12 and the production hands-on remained responsive.
+- The exact clean commit exported a 105,921,728-byte PCK with SHA-256
+  `ccd861c585e26929d8faeee3d92fcad2bbd1a28f923690d43a639e9144bfdc82`.
+  Its real title → town → First Road → return receipt passed with no browser
+  warnings or errors.
 
 ## Followups
 
