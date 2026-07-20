@@ -55,6 +55,17 @@ func _ready() -> void:
 	_name_lbl.offset_right = -56
 	_name_lbl.offset_top = 38
 	_panel.add_child(_name_lbl)
+	# Ruled parchment page + column separator — drawn BEFORE _body so they sit
+	# behind the text. See DialogBodyArt below.
+	var page_art := DialogBodyArt.new()
+	page_art.anchor_right = 1.0
+	page_art.anchor_bottom = 1.0
+	page_art.offset_left = 168
+	page_art.offset_top = 100
+	page_art.offset_right = -68
+	page_art.offset_bottom = -56
+	page_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(page_art)
 	_body = Label.new()
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.anchor_right = 1.0
@@ -143,3 +154,44 @@ class PortraitWell extends Control:
 		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
 		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
 		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+
+
+# A thin ink column-separator between the portrait zone and the body-text zone,
+# flanked by gold cardinal diamonds, plus faint sepia ruled lines across the
+# text column — so dialogue reads as handwritten on parchment, not floating on
+# bare wood (refs: mj_dialog_scroll, mj_dialog_ribbon).
+class DialogBodyArt extends Control:
+	func _ready() -> void:
+		resized.connect(queue_redraw)
+
+	func _draw() -> void:
+		if size.x < 4.0 or size.y < 4.0:
+			return
+		# Vertical column separator — centred in the 32px gap between portrait
+		# right (panel x=168, local x=0) and body left (panel x=200, local x=32).
+		var sx := 16.0
+		draw_line(Vector2(sx, 10.0), Vector2(sx, size.y - 10.0),
+			Color(WyrdUi.KIT_EDGE, 0.28), 1.2)
+		# Gold cardinal diamond ornaments at each end of the rule.
+		for oy in [16.0, size.y - 16.0]:
+			var pts := PackedVector2Array([
+				Vector2(sx, oy - 4.5), Vector2(sx + 4.5, oy),
+				Vector2(sx, oy + 4.5), Vector2(sx - 4.5, oy)
+			])
+			draw_colored_polygon(pts, Color(WyrdUi.GOLD, 0.62))
+			draw_line(pts[0], pts[1], Color(WyrdUi.KIT_EDGE, 0.40), 1.0)
+			draw_line(pts[1], pts[2], Color(WyrdUi.KIT_EDGE, 0.40), 1.0)
+			draw_line(pts[2], pts[3], Color(WyrdUi.KIT_EDGE, 0.40), 1.0)
+			draw_line(pts[3], pts[0], Color(WyrdUi.KIT_EDGE, 0.40), 1.0)
+		# Ruled lines across the body-text column (local x ≥ 32), spaced to
+		# match the 21pt body font — the handwriting-paper effect.
+		var lx0 := 32.0
+		var lx1 := size.x - 4.0
+		var ly := 14.0
+		while ly < size.y - 10.0:
+			draw_line(Vector2(lx0, ly), Vector2(lx1, ly),
+				Color(0.55, 0.44, 0.30, 0.09), 1.0)
+			ly += 30.0
+		# Sparse parchment grain over the text column.
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(Vector2(lx0, 0.0), Vector2(lx1 - lx0, size.y)), 63)
