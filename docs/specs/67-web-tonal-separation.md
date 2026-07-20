@@ -91,4 +91,4 @@ walls, camera, gameplay, UI, or the native art direction.
 - [x] Native rendering and accepted gameplay contracts are unchanged.
 - [x] Browser comparison materially improves tonal separation.
 - [x] Native, Web, diagnostic, canonical, and retained-corpus gates pass.
-- [ ] Documentation, version history, game release, and companion site are current.
+- [x] Documentation, version history, game release, and companion site are current.

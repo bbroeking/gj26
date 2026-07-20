@@ -48,6 +48,10 @@
 - The retained direct corpus remains 116/121. Its driver-required failures and
   historical movement timing behavior remain; the standalone 12/12 production
   movement gate passed, and no new checkpoint-caused failure appeared.
+- Companion-site version 6 ships the same playable export, `072bf30f…`
+  fingerprint, Shaded Road evidence, and 870-assertion receipt. Its owner-only
+  production deployment succeeded at
+  `https://wayfinder-field-journal.iamactuallyinthearen.chatgpt.site`.
 
 ## Followups
 
