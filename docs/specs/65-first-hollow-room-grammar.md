@@ -142,16 +142,15 @@ the Chart graph, combat rules, controls, camera, rewards, or campaign state.
 
 ## Done check
 
-- [ ] First Road archetype selection and variation are deterministic.
-- [ ] At least three archetypes/variants appear across the fixed seed sample.
-- [ ] Routes, mouths, navigation, resources, encounters, and return remain
+- [x] First Road archetype selection and variation are deterministic.
+- [x] At least three archetypes/variants appear across the fixed seed sample.
+- [x] Routes, mouths, navigation, resources, encounters, and return remain
       valid.
-- [ ] Unused deep wall fields are no longer rendered.
-- [ ] Combat apertures remain clear of collidable dressing.
-- [ ] Natural boundary walls lower and restore cleanly under the continuous
+- [x] Unused deep wall fields are no longer rendered.
+- [x] Combat apertures remain clear of collidable dressing.
+- [x] Natural boundary walls lower and restore cleanly under the continuous
       FATE camera.
-- [ ] Native and Web evidence materially closes the approved-concept gap.
-- [ ] Native, Web, performance, resource, and diagnostic gates pass.
-- [ ] Roadmap, notes, changelog, devlog, version, and test manifest are current.
-- [ ] Game and companion website are committed, pushed, deployed, and verified.
-
+- [x] Native and Web evidence materially closes the approved-concept gap.
+- [x] Native, Web, performance, resource, and diagnostic gates pass.
+- [x] Roadmap, notes, changelog, devlog, version, and test manifest are current.
+- [x] Game and companion website are committed, pushed, deployed, and verified.

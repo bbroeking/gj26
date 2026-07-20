@@ -94,7 +94,7 @@ loaded all 112 audited resources from a 105,898,896-byte PCK, and produced no
 browser diagnostics. Root publication is still pending a safe provenance
 boundary for the larger mixed campaign worktree.
 
-## Natural Hollows checkpoint — accepted locally 2026-07-20
+## Natural Hollows checkpoint — shipped 2026-07-20
 
 [Spec 65](specs/65-first-hollow-room-grammar.md) preserves seeded procedural
 Charts and the continuous FATE camera while changing what a First Road room is.
@@ -106,7 +106,9 @@ nine-suite checkpoint gate is green at 855 assertions, and the retained corpus
 adds no new failure to its four documented driver/repro exceptions. The Web
 export audited 112/112 release resources from a 105,903,744-byte PCK; both the
 compact title → town → World → return journey and a manual Bold Road entry had
-empty diagnostic ledgers. Companion-site publication is the remaining gate.
+empty diagnostic ledgers. The exact game source is pushed on
+`codex/wayfinder-director`, and companion-site version 4 is live with the new
+playable export and release evidence.
 
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)

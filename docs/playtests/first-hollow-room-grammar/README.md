@@ -37,3 +37,6 @@ future visual checkpoints, not reasons to add parallel gameplay systems here.
 - Browser journey: the rendered title → town → World → return history passed;
   a separate manual title → Mara → Bold Chart → Waystone → World route supplied
   the Web still. Both diagnostic ledgers were empty.
+- Companion site: version 4 published with the checkpoint field log, Web
+  evidence, and exact exported game at
+  `https://wayfinder-field-journal.iamactuallyinthearen.chatgpt.site`.
