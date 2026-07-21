@@ -541,14 +541,36 @@ func _draw_tooltip() -> void:
 		pos.x = 0
 	if pos.y < 0:
 		pos.y = 0
-	draw_rect(Rect2(pos, Vector2(w, h)), Color(0.93, 0.88, 0.76, 0.97))
-	draw_rect(Rect2(pos, Vector2(w, h)),
-		Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
-	var font := get_theme_default_font()
+	var r := Rect2(pos, Vector2(w, h))
+	var rc: Color = RARITY_COLOR.get(String(item.get("rarity", "normal")), WyrdUi.INK_MID)
+	# Carved-notecard treatment: drop shadow so the card sits ON the inventory,
+	# warm KIT_PLATE face, top/bottom kit bevels, a 3-px rarity accent stripe
+	# down the left edge, and parchment grain — matching the bench-tip language.
+	draw_rect(Rect2(pos + Vector2(3.0, 4.0), Vector2(w + 1.0, h + 1.0)),
+		Color(0, 0, 0, 0.22))
+	draw_rect(r, WyrdUi.KIT_PLATE)
+	draw_rect(Rect2(pos + Vector2(2.0, 1.5), Vector2(w - 4.0, 2.0)),
+		Color(1.0, 1.0, 0.93, 0.38))
+	draw_rect(Rect2(pos + Vector2(3.0, h - 3.0), Vector2(w - 6.0, 2.0)),
+		Color(WyrdUi.KIT_EDGE, 0.18))
+	draw_rect(Rect2(pos + Vector2(1.5, 2.0), Vector2(3.0, h - 4.0)), rc)
+	WyrdUi.draw_parchment_grain(self, r, 17)
+	draw_rect(r, WyrdUi.KIT_EDGE, false, 1.5)
+	var hdr_font := WyrdUi.font_header()
+	if hdr_font == null:
+		hdr_font = get_theme_default_font()
+	var body_font := get_theme_default_font()
 	var y := pos.y + ipad + 14
-	for line in lines:
-		draw_string(font, Vector2(pos.x + ipad, y), String(line.text),
-			HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2, int(line.size), line.color)
+	for i in lines.size():
+		var line: Dictionary = lines[i]
+		draw_string(hdr_font if i == 0 else body_font,
+			Vector2(pos.x + ipad + 5.0, y), String(line.text),
+			HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2 - 5.0, int(line.size),
+			line.color)
+		if i == 1 and lines.size() > 3:
+			draw_line(Vector2(pos.x + ipad, y + 4.0),
+				Vector2(pos.x + w - ipad, y + 4.0),
+				Color(WyrdUi.KIT_EDGE, 0.30), 1.0)
 		y += line_h
 
 func _draw_held() -> void:
