@@ -44,11 +44,25 @@ class CursorMark extends Control:
 		# Ink ring + cream inner lip.
 		draw_arc(m, rad, 0.0, TAU, 28, ring_c, 2.2, true)
 		draw_arc(m, rad - 2.0, 0.0, TAU, 24, Color(WyrdUi.CREAM, 0.7), 1.0, true)
-		# Four short ticks (NE/NW/SE/SW so they never read as a crosshair).
+		# Four short ticks with ivy-bud tips (NE/NW/SE/SW — never a crosshair).
+		# The bud is a small almond diamond in pip_c to echo the ivy-vine language
+		# used on flourish rules, hotbar, and globe rings throughout the kit.
 		for i in 4:
 			var a := PI * 0.25 + float(i) * PI * 0.5
 			var d := Vector2(cos(a), sin(a))
-			draw_line(m + d * (rad + 1.0), m + d * (rad + 4.0), ring_c, 1.6)
+			var perp := Vector2(-sin(a), cos(a))
+			# Slightly longer stem so the bud stands clear of the ring.
+			draw_line(m + d * (rad + 1.5), m + d * (rad + 5.0), ring_c, 1.6)
+			# Leaf-bud tip: a small almond oriented along the tick direction.
+			var tip := m + d * (rad + 7.0)
+			var bud := PackedVector2Array([
+				tip + d * 2.5,
+				tip + perp * 1.6,
+				tip - d * 0.8,
+				tip - perp * 1.6,
+			])
+			draw_colored_polygon(bud, pip_c)
+			draw_polyline(bud + PackedVector2Array([bud[0]]), ring_c, 0.8)
 		# Burnished center pip — a tiny gold diamond.
 		var s := 2.6 + recoil * 1.6
 		draw_colored_polygon(PackedVector2Array([
