@@ -26,7 +26,7 @@ var _objective: Label
 var _quest_plate: Panel
 var _quest_progress: Label
 var _toast_box: VBoxContainer
-var _skills_lbl: Label
+var _ledger_chip: _LedgerChip = null
 # Spec 38 — potion globes (PoE-style): HP red bottom-left of the skill
 # bar, Focus blue bottom-right. The liquid level IS the meter.
 var _hp_globe: GlobeGauge = null
@@ -207,16 +207,17 @@ func _build_wyrd_overlay() -> void:
 	_toast_box.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_toast_box.alignment = BoxContainer.ALIGNMENT_END
 	add_child(_toast_box)
-	_skills_lbl = Label.new()
-	WyrdUi.style_chip(_skills_lbl, 13)
-	_skills_lbl.anchor_left = 1.0
-	_skills_lbl.anchor_right = 1.0
-	_skills_lbl.anchor_top = 1.0
-	_skills_lbl.anchor_bottom = 1.0
-	_skills_lbl.offset_left = -330
-	_skills_lbl.offset_right = -10
-	_skills_lbl.offset_top = -26
-	add_child(_skills_lbl)
+	_ledger_chip = _LedgerChip.new()
+	_ledger_chip.anchor_left = 1.0
+	_ledger_chip.anchor_right = 1.0
+	_ledger_chip.anchor_top = 1.0
+	_ledger_chip.anchor_bottom = 1.0
+	_ledger_chip.offset_left = -330
+	_ledger_chip.offset_right = -10
+	_ledger_chip.offset_top = -50
+	_ledger_chip.offset_bottom = -10
+	_ledger_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_ledger_chip)
 	var game := get_tree().root.get_node_or_null("Game")
 	if game != null:
 		game.tutorial_changed.connect(func(_s): _refresh_objective())
@@ -292,8 +293,8 @@ func _refresh_trades() -> void:
 	var game := get_tree().root.get_node_or_null("Game")
 	if game == null:
 		return
-	_skills_lbl.text = "%dg · Wayfinding %d" % [
-		int(game.gold), game.trade_lv("wayfinding")]
+	if _ledger_chip != null:
+		_ledger_chip.update(int(game.gold), game.trade_lv("wayfinding"))
 
 func show_toast(msg: String) -> void:
 	var l := Label.new()
@@ -498,3 +499,48 @@ class QuestScrollArt extends Control:
 		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
 		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
 		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+
+# Two-row economy ledger: a parchment plate with a hair-thin ink rule dividing
+# a gold-coin row (amount) from a compass-diamond row (Wayfinding level). Turns
+# the plain "120g · Wayfinding 3" chip into a crafted storybook readout.
+# Pure-vector _draw — no texture loads inside _draw (white-rect gotcha).
+class _LedgerChip extends Control:
+	var _gold := 0
+	var _lv := 1
+
+	func update(gold: int, lv: int) -> void:
+		_gold = gold
+		_lv = lv
+		queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		# Parchment plate with gold inset rule.
+		draw_rect(r, WyrdUi.KIT_PLATE.darkened(0.04))
+		draw_rect(r, WyrdUi.KIT_EDGE, false, 1.5)
+		draw_rect(r.grow(-3.5), Color(WyrdUi.GOLD, 0.28), false, 1.0)
+		WyrdUi.draw_parchment_grain(self, r, 77)
+		# Ink rule at mid-height divides the two rows.
+		var my := size.y * 0.5
+		draw_line(Vector2(6, my), Vector2(size.x - 6, my),
+			Color(WyrdUi.KIT_EDGE, 0.38), 1.0)
+		var font := get_theme_default_font()
+		# Gold row — burnished coin disc + amount.
+		var gy := my * 0.5
+		draw_circle(Vector2(14, gy), 5.0, WyrdUi.GOLD.lightened(0.1))
+		draw_arc(Vector2(14, gy), 5.0, 0, TAU, 16, WyrdUi.INK, 1.0, true)
+		draw_string(font, Vector2(23, gy + 5), "%dg" % _gold,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - 27, 13, WyrdUi.INK)
+		# Wayfinding row — compass diamond pip + level.
+		var wy := my + my * 0.5
+		var wp := Vector2(14, wy)
+		draw_colored_polygon(PackedVector2Array([
+			wp + Vector2(0, -5), wp + Vector2(5, 0),
+			wp + Vector2(0, 5), wp + Vector2(-5, 0)]), WyrdUi.SAGE)
+		draw_polyline(PackedVector2Array([
+			wp + Vector2(0, -5), wp + Vector2(5, 0),
+			wp + Vector2(0, 5), wp + Vector2(-5, 0),
+			wp + Vector2(0, -5)]), WyrdUi.INK, 0.8)
+		draw_string(font, Vector2(23, wy + 5), "Wayfinding %d" % _lv,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - 27, 12, WyrdUi.INK_MID)
