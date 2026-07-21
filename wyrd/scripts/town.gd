@@ -36,6 +36,12 @@ const FIRST_ROAD_LAMP_GLB := preload("res://models/memorial_lantern_v2.glb")
 
 const YARD := 40.0                    # clearing is YARD × YARD meters
 const LAYER_WORLD := 1
+# Spec 77 — Town keeps the shared FATE camera, but gathers the north yard into
+# the playable frame. A camera-relative forward bias keeps the ranger low in
+# frame through player orbit instead of pinning the view to world north.
+const TOWN_CAMERA_PITCH := 38.0
+const TOWN_CAMERA_ZOOM := 20.5
+const TOWN_CAMERA_FORWARD_FRAME := 3.5
 
 # Net co-op: peers fan into a small arc just behind the solo spawn.
 # net_game.gd:_spawn_pos reads this before falling back to PLAYER_SPAWN.
@@ -113,6 +119,7 @@ static var _session_settlement_debriefs: Dictionary = {}
 
 func _ready() -> void:
 	_apply_town_tonal_grade(OS.get_environment("WYRD_FORCE_TOWN_WEB_GRADE"))
+	_apply_town_camera_profile()
 	# B7 — arrival beat: if we're returning from a delve, delay music and ease
 	# the camera in. On cold boot play music immediately (existing behaviour).
 	# game.gd._returning_from_delve is set in return_to_town before scene change;
@@ -372,6 +379,25 @@ func _apply_town_tonal_grade(force_web: String = "") -> bool:
 		return false
 	world_environment.environment = env
 	return true
+
+static func town_camera_profile() -> Dictionary:
+	return {
+		"pitch": TOWN_CAMERA_PITCH,
+		"zoom": TOWN_CAMERA_ZOOM,
+		"framing_forward": TOWN_CAMERA_FORWARD_FRAME,
+	}
+
+func _apply_town_camera_profile() -> void:
+	var rig := get_node_or_null("CameraRig")
+	if rig == null:
+		rig = get_tree().get_first_node_in_group("camera_rig")
+	if rig != null and rig.has_method("apply_play_profile"):
+		var profile := town_camera_profile()
+		rig.apply_play_profile(float(profile.pitch), float(profile.zoom),
+			float(profile.framing_forward))
+
+static func _town_camera_focus(world_position: Vector3) -> Vector3:
+	return world_position + Vector3(0.0, 1.0, -TOWN_CAMERA_FORWARD_FRAME)
 
 func _show_pending_run_debrief() -> void:
 	var game := get_node_or_null("/root/Game")
@@ -1267,8 +1293,8 @@ func _maybe_play_arrival_vignette() -> void:
 	# Town's deferred arrival can run before CameraRig's first follow tick. Use
 	# the authored spawn frame instead of capturing a not-yet-snapped origin.
 	var home: Dictionary = {
-		"focus": PLAYER_SPAWN + Vector3(0.0, 1.0, 0.0),
-		"yaw": 0.0, "pitch": 38.0, "zoom": 16.5,
+		"focus": _town_camera_focus(PLAYER_SPAWN),
+		"yaw": 0.0, "pitch": TOWN_CAMERA_PITCH, "zoom": TOWN_CAMERA_ZOOM,
 		"duration": 1.0, "caption": "Go and say hello.",
 	}
 	_play_tutorial_vignette("vignette_arrival", [

@@ -1,5 +1,25 @@
 # Wayfinder devlog
 
+## 2026-07-21 — Home gathered around the road
+
+Shaded Home made the yard readable enough to expose its next problem. The
+first controllable view still centered a broad lawn: the ranger stood in open
+grass, Mara pressed against the top edge, and the buildings that should make
+Bramblewood feel inhabited lived mostly outside the frame. The approved
+Arrival concept gathers those same relationships before it asks for detail.
+
+Gathered Arrival changes the camera's composition, not the yard. Town now uses
+the shared FATE rig from a slightly farther distance and looks a few metres
+ahead of the ranger along the camera's own ground direction. That keeps the
+ranger low in frame through orbit while bringing Mara, the crossing paths,
+Waystone, Chart table, and north landmarks into one readable home. Player yaw
+and zoom remain available, and First Road keeps its established defaults.
+
+Rendered native and browser play agree on the new frame. It does not make the
+current yard as richly staged as the concept; it makes the actual buildings
+and social route visible enough that landmark composition can now be judged
+without asking camera angle, lighting, and decor to solve each other's jobs.
+
 ## 2026-07-21 — Home found its shade
 
 Creature Identity made the road's inhabitants legible, then the next exact

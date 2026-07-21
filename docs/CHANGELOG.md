@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.17-gathered-arrival — 2026-07-21
+
+- Gave Town one authored profile on the established FATE camera, pulling the
+  first playable view back and framing ahead of the ranger toward Mara.
+- Brought Mara, the Waystone, Chart table, and readable north-landmark bases
+  into the same 1280×720 arrival frame while leaving every yard object fixed.
+- Kept camera-relative framing through orbit and carried it through the first-
+  arrival vignette's home frame without removing player zoom or yaw control.
+- Verified 1,004 canonical assertions, save roundtrip 120/120, all 118 release
+  resources, and the complete exported title → town → chart table → Creature
+  Codex → road → return route.
+
 ## 0.1.16-shaded-home — 2026-07-21
 
 - Restored shadow, midtone, and highlight separation to Bramblewood's Town yard

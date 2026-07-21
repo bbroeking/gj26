@@ -66,8 +66,8 @@ I pack · M satchel · K trades · Space roll · F10 sound (off by default)
 
 ## Tests
 
-Twenty headless suites gate every checkpoint (996 assertions at
-`0.1.16-shaded-home`; the authoritative list lives in
+Twenty-one headless suites gate every checkpoint (1,004 assertions at
+`0.1.17-gathered-arrival`; the authoritative list lives in
 `docs/test-manifest.md`):
 
 ```bash
@@ -92,6 +92,7 @@ WYRD_NO_SAVE=1 godot --headless --path . --script res://test_first_hollow_setpie
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_first_hollow_readable_passages.gd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_creature_codex.gd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_town_tonal_separation.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_town_arrival_framing.gd
 ```
 
 ## How it's built

@@ -47,6 +47,7 @@ var _zoom := ZOOM_DEFAULT
 var _zoom_target := ZOOM_DEFAULT
 var _orbiting := false
 var _snapped := false
+var _framing_forward := 0.0
 var _shake_amt := 0.0           # spec 26 — current screen-shake amplitude
 var _cinematic_active := false
 var _pre_cinematic_process_mode := Node.PROCESS_MODE_INHERIT
@@ -82,6 +83,24 @@ func _bind(action: String, key: Key) -> void:
 	var ev := InputEventKey.new()
 	ev.physical_keycode = key
 	InputMap.action_add_event(action, ev)
+
+# A scene may author a gameplay composition without replacing the shared FATE
+# camera or taking orbit/zoom away from the player. `framing_forward` moves the
+# follow focus along the camera's ground-plane look direction, keeping the
+# player lower in frame as yaw changes instead of baking a world-space offset.
+func apply_play_profile(pitch_degrees: float, zoom_distance: float,
+		framing_forward: float = 0.0) -> void:
+	_pitch = deg_to_rad(clampf(pitch_degrees, PITCH_MIN, PITCH_MAX))
+	_zoom = clampf(zoom_distance, ZOOM_MIN, ZOOM_MAX)
+	_zoom_target = _zoom
+	_framing_forward = maxf(framing_forward, 0.0)
+
+func play_profile() -> Dictionary:
+	return {
+		"pitch": rad_to_deg(_pitch),
+		"zoom": _zoom_target,
+		"framing_forward": _framing_forward,
+	}
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _cinematic_active:
@@ -121,7 +140,9 @@ func _process(delta: float) -> void:
 		lead = pv * LEAD_FACTOR
 		if lead.length() > MAX_LEAD:
 			lead = lead.normalized() * MAX_LEAD
-	var pivot := _player.global_position + Vector3(0.0, TARGET_HEIGHT, 0.0) + lead
+	var frame_forward := Vector3(-sin(_yaw), 0.0, -cos(_yaw)) * _framing_forward
+	var pivot := _player.global_position + Vector3(0.0, TARGET_HEIGHT, 0.0) \
+		+ lead + frame_forward
 	if not _snapped:
 		global_position = pivot
 		_snapped = true

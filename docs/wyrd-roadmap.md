@@ -338,6 +338,26 @@ Field Journal version 16 is live with the exact chunked playable export, Shaded
 Home evidence, fingerprint, and arrival-composition priority; its pushed source
 is `552de19cbccc71b818b28a2188c972f7457e7941`.
 
+## Gathered Arrival checkpoint — accepted locally 2026-07-21
+
+[Spec 77](specs/77-gathered-arrival-checkpoint.md) closes the next visual gap
+revealed by Shaded Home. Town now applies one authored profile to the shared
+FATE camera: 38° pitch, 20.5 m distance, and a 3.5 m camera-relative forward
+frame. The ranger remains low in view while Mara, the main path crossing,
+Waystone, Chart table, and readable bases of all three north landmarks share
+the first controllable 1280×720 frame. No yard object, path, spawn, interaction,
+or progression landmark moved; orbit and zoom remain under player control, and
+First Road retains the global camera defaults.
+
+Matched Forward+ and real browser captures sit beside the approved Arrival
+concept in `playtests/gathered-arrival/`. The twenty-one-suite canonical gate is
+green at 1,004 assertions after serial confirmation of the two timing-budget
+suites, save roundtrip passes 120/120, all 118 release resources audit cleanly,
+and the enhanced browser route passed title → town → chart table → Creature
+Codex → road → return. The exact 96,121,600-byte PCK has SHA-256
+`af1d1ff69fb2c47dd2e71a38816ff1b1c52b5552c80b05e9b8aa68d738edc9bd`.
+Publication is not yet claimed by this local acceptance.
+
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)
 
