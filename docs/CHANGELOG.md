@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.12-open-floor — 2026-07-20
+
+- Kept procedural Chart graphs, randomized authored room archetypes, full-size
+  forest landmarks, and the continuous FATE camera unchanged.
+- Reduced First Road ferns, toadstools, and mossy boulders from landmark scale
+  to supporting scale after their source meshes measured roughly two floor
+  tiles wide in the rendered game.
+- Reserved a three-wide, two-deep landing inside every corridor mouth so
+  supporting dressing frames the route instead of forming a barricade.
+- Preserved established collision, navigation, combat apertures, typed-room
+  focal contracts, encounters, controls, audio, rewards, and later biomes.
+- Verified 898 canonical assertions, all 112 release resources, and a clean
+  exported title → town → generated road → return route.
+
 ## 0.1.11-forest-rooms — 2026-07-20
 
 - Kept procedural Chart graphs, seeded room variation, the continuous FATE

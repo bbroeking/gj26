@@ -218,6 +218,23 @@ Companion-site version 10 is live owner-only with the exact playable export,
 Forest Rooms evidence, fingerprint, and next-replay priority; its pushed source
 is `466671dc6dea6a960226d560a61e52819b3cdfa3`.
 
+## Open Floor checkpoint — shipped 2026-07-20
+
+[Spec 72](specs/72-first-hollow-room-breathing.md) resolves the interior
+crowding exposed by replaying Forest Rooms. First Road satellites now carry an
+authored supporting scale, and each real corridor mouth reserves a three-wide,
+two-deep landing before seeded decor may resume. Full-size archetype landmarks,
+procedural graphs and placement variation, the continuous FATE camera, natural
+cutaway walls, collision, navigation, combat, typed rooms, rewards, controls,
+audio, and later biomes are unchanged. The sixteen-suite gate is green at 898
+assertions; the strict retained audit is 119/126 with the same three long-driver
+timeouts and four documented legacy exceptions as the prior 118/125 corpus.
+All 112 release resources audit cleanly, and the exact exported title → town →
+generated road → return route completed with an empty browser diagnostic
+ledger. The 105,925,552-byte PCK has SHA-256
+`097269870847107143037a5fd35054fe2937616ea65f04a26a6225c7b5a70a66`.
+Companion-site publication follows this exact verified checkpoint.
+
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)
 

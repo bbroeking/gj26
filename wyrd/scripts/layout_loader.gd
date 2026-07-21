@@ -1782,6 +1782,11 @@ func _build_decor(layout: Dictionary) -> void:
 		if packed == null:
 			continue
 		var inst: Node3D = packed.instantiate()
+		# Spec 72 — composition data owns support-prop hierarchy.  Scale only
+		# the rendered model; established conservative collision boxes remain
+		# gameplay truth and now align more closely with the visible footprint.
+		var visual_scale := clampf(float(d.get("visual_scale", 1.0)), 0.5, 1.0)
+		inst.scale = Vector3.ONE * visual_scale
 		# Biome props ship untextured (white) — paint them like the enemy GLBs
 		# (single thematic tint + ink outline) so they read as chunky toon, not
 		# flat-grey blobs. Crypt decor keeps its own baked GLB materials.

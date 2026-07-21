@@ -1,5 +1,28 @@
 # Wayfinder devlog
 
+## 2026-07-20 — The clearings found their breathing room
+
+Forest Rooms gave each clearing a recognizable sentence. Replaying that exact
+release revealed that the supporting nouns were shouting: the fern, toadstool,
+and mossy-boulder meshes were each roughly two floor tiles wide, and seeded
+clusters could curl into a U-shaped barricade just beyond a room entrance.
+The approved First Hollow concept keeps landmarks strong but lets low, sparse
+perimeter detail support an unmistakably open floor.
+
+Open Floor keeps the stump, fairy ring, bramble arch, and fallen log at full
+landmark scale. Their satellites now carry an explicit supporting scale in the
+existing procedural composition data, and every actual corridor mouth owns a
+three-wide, two-deep arrival landing. A compact room may omit a fern or boulder
+rather than pinch the player's route. The graph, seeded archetypes, wall and
+camera behavior, collision, navigation, enemies, interactions, and rewards are
+the same game.
+
+The structural sample and native render agreed: landmarks still identify the
+room, while the former interior U-shapes no longer crowd the ranger or close
+the approach. The exact Web build then completed the real title, town,
+generated road, and return route with all release resources present and no
+browser warning or error.
+
 ## 2026-07-20 — The clearings learned their own stories
 
 Open Canopy made the moving frame readable. Playing that exact release exposed

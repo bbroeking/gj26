@@ -164,29 +164,29 @@ const ROOM_THEMES := {
 	"first_lantern_landing": {
 		"focal":      {"kind": "altar",   "pattern": "walls",   "count": [1, 1]},
 		"satellites": [
-			{"kind": "brazier", "pattern": "walls",   "count": [2, 3]},
-			{"kind": "bones",   "pattern": "scatter", "count": [1, 2]},
+			{"kind": "brazier", "pattern": "walls",   "count": [2, 3], "visual_scale": 0.62},
+			{"kind": "bones",   "pattern": "scatter", "count": [1, 2], "visual_scale": 0.62},
 		],
 	},
 	"first_round_glade": {
 		"focal":      {"kind": "bookshelf", "pattern": "cluster", "count": [1, 1]},
 		"satellites": [
-			{"kind": "bones",   "pattern": "cluster", "count": [2, 4]},
-			{"kind": "pottery", "pattern": "walls",   "count": [1, 2]},
+			{"kind": "bones",   "pattern": "cluster", "count": [2, 4], "visual_scale": 0.62},
+			{"kind": "pottery", "pattern": "walls",   "count": [1, 2], "visual_scale": 0.62},
 		],
 	},
 	"first_crooked_bower": {
 		"focal":      {"kind": "column",  "pattern": "walls",   "count": [1, 1]},
 		"satellites": [
-			{"kind": "bones",   "pattern": "cluster", "count": [2, 3]},
-			{"kind": "brazier", "pattern": "walls",   "count": [1, 2]},
+			{"kind": "bones",   "pattern": "cluster", "count": [2, 3], "visual_scale": 0.62},
+			{"kind": "brazier", "pattern": "walls",   "count": [1, 2], "visual_scale": 0.62},
 		],
 	},
 	"first_long_clearing": {
 		"focal":      {"kind": "sarcophagus", "pattern": "walls",   "count": [1, 1]},
 		"satellites": [
-			{"kind": "pottery", "pattern": "scatter", "count": [1, 2]},
-			{"kind": "brazier", "pattern": "walls",   "count": [1, 2]},
+			{"kind": "pottery", "pattern": "scatter", "count": [1, 2], "visual_scale": 0.62},
+			{"kind": "brazier", "pattern": "walls",   "count": [1, 2], "visual_scale": 0.62},
 		],
 	},
 }
@@ -1926,18 +1926,20 @@ static func _apply_rule(rule: Dictionary, r: Dictionary, grid: Array,
 		decor: Array, occupied: Dictionary,
 		interact_role: String = "", is_focal: bool = false) -> void:
 	var n: int = rng.randi_range(int(rule.count[0]), int(rule.count[1]))
+	var protect_approach := not is_focal \
+		and String(r.get("theme", "")).begins_with("first_")
 	var tiles: Array = _pattern_tiles(r, String(rule.pattern), n, grid, rng,
-		false, occupied)
+		false, occupied, protect_approach)
 	# Spec 28 — never silently drop a focal (n≥1) just because every
 	# preferred candidate happened to be filtered. Fall back to any free
 	# in-room floor tile.
-	if tiles.is_empty() and n >= 1:
+	if is_focal and tiles.is_empty() and n >= 1:
 		tiles = _pattern_tiles(r, "scatter", 1, grid, rng, false, occupied)
 	# Spec 29 — last-resort fallback: in long thin rooms wedged between two
 	# corridors, EVERY floor tile is a corridor mouth and the previous
 	# scatter still returns empty. Accept a near-mouth tile rather than
 	# silently dropping the focal — chest/altar/hearth must always exist.
-	if tiles.is_empty() and n >= 1:
+	if is_focal and tiles.is_empty() and n >= 1:
 		tiles = _pattern_tiles(r, "scatter", 1, grid, rng, true, occupied)
 	for t in tiles:
 		if int(t.x) == int(entry.x) and int(t.y) == int(entry.y):
@@ -1950,6 +1952,11 @@ static func _apply_rule(rule: Dictionary, r: Dictionary, grid: Array,
 		# (the eye's anchor); layout_loader desaturates the satellites.
 		if is_focal:
 			d["focal"] = true
+		elif rule.has("visual_scale"):
+			# Spec 72 — supporting forest props are authored below landmark
+			# scale.  Keep this in generated composition data so the renderer
+			# does not need to guess which instances are satellites.
+			d["visual_scale"] = float(rule.visual_scale)
 		# Spec 29 — flag this decor as the interactable focal for a typed room.
 		# layout_loader will swap the static GLB for Chest/Shrine/Hearth.tscn.
 		# Plus carry the room id so the shrine RNG can seed deterministically
@@ -1969,7 +1976,8 @@ static func _apply_rule(rule: Dictionary, r: Dictionary, grid: Array,
 static func _pattern_tiles(r: Dictionary, pattern: String, n: int,
 		grid: Array, rng: RandomNumberGenerator,
 		allow_corridor_mouths: bool = false,
-		occupied: Dictionary = {}) -> Array:
+		occupied: Dictionary = {},
+		protect_approach: bool = false) -> Array:
 	var ix0: int = int(r.x)
 	var ix1: int = int(r.x) + int(r.w) - 1
 	var iy0: int = int(r.y)
@@ -2033,6 +2041,11 @@ static func _pattern_tiles(r: Dictionary, pattern: String, n: int,
 		# the path than no focal at all).
 		if not allow_corridor_mouths and _is_corridor_mouth(r, cx, cy, grid):
 			continue
+		# Spec 72 — First Road satellites leave a three-wide, two-deep landing
+		# inside every room entrance.  Two-tile-wide source meshes can no longer
+		# create a visual or physical barricade immediately beyond a mouth.
+		if protect_approach and _inside_room_approach(r, cx, cy, grid):
+			continue
 		var key: int = cx * 10000 + cy
 		if seen.has(key) or occupied.has(key):
 			continue
@@ -2066,6 +2079,31 @@ static func _is_corridor_mouth(r: Dictionary, x: int, y: int, grid: Array) -> bo
 			if ny >= 0 and ny < grid.size() and nx >= 0 and nx < grid[0].size():
 				if String(grid[ny][nx]) == "floor":
 					return true
+	return false
+
+
+# A mouth plus the first in-room row, widened one tile to either side.  This is
+# deliberately directional rather than a radial exclusion so compact rooms
+# retain useful perimeter dressing away from their actual travel lane.
+static func _inside_room_approach(r: Dictionary, x: int, y: int, grid: Array) -> bool:
+	var rx0: int = int(r.x)
+	var rx1: int = int(r.x) + int(r.w) - 1
+	var ry0: int = int(r.y)
+	var ry1: int = int(r.y) + int(r.h) - 1
+	for mx in range(rx0, rx1 + 1):
+		if _is_corridor_mouth(r, mx, ry0, grid) \
+				and y <= ry0 + 1 and absi(x - mx) <= 1:
+			return true
+		if _is_corridor_mouth(r, mx, ry1, grid) \
+				and y >= ry1 - 1 and absi(x - mx) <= 1:
+			return true
+	for my in range(ry0, ry1 + 1):
+		if _is_corridor_mouth(r, rx0, my, grid) \
+				and x <= rx0 + 1 and absi(y - my) <= 1:
+			return true
+		if _is_corridor_mouth(r, rx1, my, grid) \
+				and x >= rx1 - 1 and absi(y - my) <= 1:
+			return true
 	return false
 
 static func _shuffle(arr: Array, rng: RandomNumberGenerator) -> void:
