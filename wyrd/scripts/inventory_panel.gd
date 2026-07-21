@@ -402,9 +402,20 @@ func _draw() -> void:
 
 func _draw_grid() -> void:
 	var grid_size := Vector2(COLS * CELL, ROWS * CELL)
-	# Recessed well behind the cells (Diablo's sunken-grid read).
-	draw_rect(Rect2(grid_origin - Vector2(6, 6), grid_size + Vector2(12, 12)),
-		Color(0.72, 0.64, 0.50, 0.85))
+	# Carved-wood cabinet frame: recessed well + gold pinstripe + parchment
+	# grain + corner gold diamond pips — the hotbar-tray language applied to
+	# the item grid so the tray reads as a crafted object, not a flat panel.
+	var frame := Rect2(grid_origin - Vector2(8, 8), grid_size + Vector2(16, 16))
+	WyrdUi.draw_well(self, frame, WyrdUi.KIT_WELL.darkened(0.06))
+	draw_rect(frame.grow(-4.0), Color(WyrdUi.GOLD, 0.40), false, 1.0)
+	WyrdUi.draw_parchment_grain(self, frame, 53)
+	for cp in [frame.position + Vector2(6, 6),
+			Vector2(frame.end.x - 6, frame.position.y + 6),
+			frame.end - Vector2(6, 6),
+			Vector2(frame.position.x + 6, frame.end.y - 6)]:
+		var pts := PackedVector2Array([cp + Vector2(0, -3.5), cp + Vector2(3.5, 0),
+			cp + Vector2(0, 3.5), cp + Vector2(-3.5, 0)])
+		draw_colored_polygon(pts, Color(WyrdUi.GOLD, 0.70))
 	for y in ROWS:
 		for x in COLS:
 			var r := Rect2(grid_origin + Vector2(x * CELL, y * CELL),
