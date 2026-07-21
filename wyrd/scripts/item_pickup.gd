@@ -80,6 +80,25 @@ func _build_beacon() -> void:
 
 func _build_label() -> void:
 	var col: Color = RARITY_COLOR.get(String(_item.rarity), Color.WHITE)
+	# Parchment plate behind the name — sits in world space, billboarded, no
+	# depth test; sized to the text in _size_loot_plate after one frame.
+	# Mirrors the interactable.gd PromptPlate pattern so every world-space
+	# label reads as ink on a scrap of parchment, not floating debug text.
+	var plate := MeshInstance3D.new()
+	plate.name = "LabelPlate"
+	var pmesh := QuadMesh.new()
+	pmesh.size = Vector2(1.0, 0.30)          # provisional; resized below
+	plate.mesh = pmesh
+	var pmat := StandardMaterial3D.new()
+	pmat.albedo_color = Color(0.18, 0.13, 0.09, 0.88)
+	pmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	pmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	pmat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	pmat.no_depth_test = true
+	pmat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	plate.material_override = pmat
+	plate.position = Vector3(0, 1.15, 0)
+	add_child(plate)
 	var lbl := Label3D.new()
 	lbl.name = "Label"
 	lbl.text = String(_item.name)
@@ -88,10 +107,30 @@ func _build_label() -> void:
 	lbl.no_depth_test = true
 	lbl.font_size = 64
 	lbl.pixel_size = 0.005
-	lbl.outline_size = 16
+	lbl.outline_size = 20
 	lbl.outline_modulate = Color(0.08, 0.05, 0.06, 1)
-	lbl.position = Vector3(0, 1.15, 0)
+	lbl.position = Vector3(0, 1.15, 0.004)   # z-offset: in front of plate
+	# IM Fell SC — same storybook voice as interactable prompts + gather
+	# floaters so all world-space floating text reads as one consistent hand.
+	var pfont := WyrdUi.font_header()
+	if pfont != null:
+		lbl.font = pfont
 	add_child(lbl)
+	_size_loot_plate(lbl, plate)
+
+# Size the parchment plate to the item label after one frame (Label3D AABB
+# isn't ready until its mesh lays out). Exact copy of the interactable.gd
+# _size_prompt_plate logic; kept here so the two can diverge independently.
+func _size_loot_plate(lbl: Label3D, plate: MeshInstance3D) -> void:
+	await get_tree().process_frame
+	if not is_instance_valid(lbl) or not is_instance_valid(plate):
+		return
+	var char_h: float = float(lbl.font_size) * lbl.pixel_size
+	var est_w: float = float(lbl.text.length()) * char_h * 0.42
+	var aabb := lbl.get_aabb()
+	var w: float = maxf(aabb.size.x, est_w)
+	var h: float = maxf(aabb.size.y, char_h)
+	(plate.mesh as QuadMesh).size = Vector2(w + 0.28, h + 0.16)
 
 # Spec 32a — full take transaction. Returns true on success, false if the
 # player's inventory is full (pickup stays on the ground) or if we've
@@ -141,8 +180,11 @@ func _play_pickup_vfx() -> void:
 	t.set_parallel(true)
 	var beacon := get_node_or_null("Beacon")
 	var lbl := get_node_or_null("Label")
+	var plate := get_node_or_null("LabelPlate")
 	if beacon != null:
 		t.tween_property(beacon, "scale", Vector3(2.0, 2.0, 2.0), 0.20)
 	if lbl != null:
 		t.tween_property(lbl, "position:y", 1.7, 0.20)
 		t.tween_property(lbl, "modulate:a", 0.0, 0.20)
+	if plate != null:
+		plate.visible = false    # hide with the label; node frees in 0.22s anyway
