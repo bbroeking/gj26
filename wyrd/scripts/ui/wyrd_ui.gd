@@ -336,6 +336,25 @@ static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 		center + Vector2(3.5, 0), center + Vector2(0, 3.5),
 		center + Vector2(-3.5, 0)])
 	c.draw_colored_polygon(pts, Color(GOLD, 0.8))
+	# Ivy bud tips at each rule end — the vine/leaf ornament the design language
+	# calls for. Size scales with the rule so tiny hotbar flourishes stay subtle.
+	var lsz := clampf(width * 0.055, 2.0, 8.0)
+	var lc := Color(SAGE, 0.65)
+	var lx := center.x - width * 0.5
+	var rx := center.x + width * 0.5
+	var ly := center.y
+	c.draw_colored_polygon(PackedVector2Array([
+		Vector2(lx, ly),
+		Vector2(lx + lsz, ly - lsz * 0.45),
+		Vector2(lx + lsz * 1.6, ly),
+		Vector2(lx + lsz, ly + lsz * 0.45),
+	]), lc)
+	c.draw_colored_polygon(PackedVector2Array([
+		Vector2(rx, ly),
+		Vector2(rx - lsz, ly - lsz * 0.45),
+		Vector2(rx - lsz * 1.6, ly),
+		Vector2(rx - lsz, ly + lsz * 0.45),
+	]), lc)
 
 # A little hand-blown ink bottle — glass body, ink fill, neck, cork, and a
 # glass highlight. Replaces the bare text glyphs in sockets and trays.
