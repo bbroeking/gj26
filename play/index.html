@@ -4,11 +4,6 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
 		<title>Wayfinder</title>
-		<meta name="theme-color" content="#0f4a43" />
-		<meta name="description" content="Chart the Bramblewood in Wayfinder, a cozy fairytale dungeon-crawler playable in your browser." />
-		<meta property="og:title" content="Wayfinder" />
-		<meta property="og:description" content="Chart the Bramblewood. Play Wayfinder in your browser." />
-		<meta property="og:image" content="https://bbroeking.github.io/gj26/og.png" />
 		<style>
 html, body, #canvas {
 	margin: 0;
@@ -97,7 +92,11 @@ body {
 		</style>
 		<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
 <link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
-
+<meta name="theme-color" content="#0f4a43" />
+<meta name="description" content="Chart the Bramblewood in Wayfinder, a cozy fairytale dungeon-crawler playable in your browser." />
+<meta property="og:title" content="Wayfinder" />
+<meta property="og:description" content="Chart the Bramblewood. Play Wayfinder in your browser." />
+<meta property="og:image" content="https://bbroeking.github.io/gj26/og.png" />
 	</head>
 	<body>
 		<canvas id="canvas">
@@ -116,7 +115,7 @@ body {
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":44133444,"index.wasm":37695054},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":96119632,"index.wasm":37695054},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
@@ -220,5 +219,6 @@ const engine = new Engine(GODOT_CONFIG);
 	}
 }());
 		</script>
-	</body>
+	<script src="web_smoke_probe.js"></script></body>
 </html>
+
