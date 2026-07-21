@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.14-readable-passages — 2026-07-21
+
+- Kept procedural Chart graphs, randomized authored room archetypes, corridor
+  widths, full wall collision, and the continuous FATE camera unchanged.
+- Gave real First Road room connections deterministic low passage shoulders
+  instead of the same bulbous living-wall crowns used around ordinary edges.
+- Tapered each opening across a five-wide concave frame while retaining dense
+  Bramblewood depth beyond the physical boundary and away from connections.
+- Kept room landmarks off passage shoulders and preserved the established
+  opaque screen-space cutaway as the single camera-obstruction authority.
+- Verified 911 canonical assertions, all 112 release resources, and a clean
+  exported title → town → generated road → return route.
+
 ## 0.1.13-open-larder — 2026-07-21
 
 - Kept procedural Chart graphs, randomized authored room archetypes, the

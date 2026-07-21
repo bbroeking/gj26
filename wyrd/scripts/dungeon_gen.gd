@@ -1710,19 +1710,27 @@ static func _first_hollow_perimeter_dressing(rooms: Array,
 			FIRST_HOLLOW_EDGE_PROFILES["default"])
 		var cell_hash := _first_hollow_cell_hash(seed, x, y, owner_id)
 		var inward := _first_hollow_inward_direction(x, y, grid)
+		# Spec 74 — a real room connection gets a low, concave visual shoulder.
+		# The grid cell remains the same colliding wall; only its authored edge
+		# profile changes, so procedural connectivity and physical truth stay put.
+		var passage := _first_hollow_passage_shoulder(x, y, rooms, grid)
 		var row := {
 			"x": x, "y": y,
 			"room_id": owner_id,
 			"archetype": archetype,
 			"role": role,
-			"profile": String(pool[cell_hash % pool.size()]),
+			"profile": "passage_bank" if passage \
+				else String(pool[cell_hash % pool.size()]),
+			"passage": passage,
 			"landmark": false,
 			"variant": (cell_hash / 17) % 4,
 			"inward_x": int(inward.x),
 			"inward_y": int(inward.y),
 		}
 		manifest.append(row)
-		if owner_id >= 0:
+		# Landmarks identify rooms; placing one on a doorway shoulder would turn
+		# the new opening back into an obstruction.
+		if owner_id >= 0 and not passage:
 			if not indices_by_room.has(owner_id):
 				indices_by_room[owner_id] = []
 			(indices_by_room[owner_id] as Array).append(manifest.size() - 1)
@@ -1747,6 +1755,31 @@ static func _first_hollow_perimeter_dressing(rooms: Array,
 		landmark["landmark"] = true
 		manifest[landmark_idx] = landmark
 	return manifest
+
+
+# A passage shoulder is a real boundary wall within two tiles of a room-edge
+# floor cell that continues outside the room rectangle. The five-wide taper
+# gives 1–3-wide generated corridors a readable concave frame without lowering
+# unrelated perimeter runs or inventing a second source of connectivity truth.
+static func _first_hollow_passage_shoulder(x: int, y: int,
+		rooms: Array, grid: Array) -> bool:
+	for room_v in rooms:
+		var room: Dictionary = room_v
+		var rx0 := int(room.x)
+		var rx1 := int(room.x) + int(room.w) - 1
+		var ry0 := int(room.y)
+		var ry1 := int(room.y) + int(room.h) - 1
+		for mx in range(rx0, rx1 + 1):
+			for my in [ry0, ry1]:
+				if _is_corridor_mouth(room, mx, my, grid) \
+						and maxi(absi(x - mx), absi(y - my)) <= 2:
+					return true
+		for my in range(ry0 + 1, ry1):
+			for mx in [rx0, rx1]:
+				if _is_corridor_mouth(room, mx, my, grid) \
+						and maxi(absi(x - mx), absi(y - my)) <= 2:
+					return true
+	return false
 
 
 static func _first_hollow_inward_direction(x: int, y: int,

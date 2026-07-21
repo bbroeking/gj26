@@ -1,6 +1,6 @@
 # Wayfinder test manifest
 
-Updated 2026-07-21 for `0.1.13-open-larder`.
+Updated 2026-07-21 for `0.1.14-readable-passages`.
 
 ## Canonical checkpoint gate
 
@@ -25,7 +25,8 @@ Run every entry with `WYRD_NO_SAVE=1 godot --headless --path wyrd --script res:/
 | `test_first_hollow_room_composition.gd` | 5 | Archetype-owned forest themes, focal realization, aperture safety, and biome isolation |
 | `test_first_hollow_room_breathing.gd` | 5 | Seeded support scale, full-size landmarks, protected room-mouth landings, and biome isolation |
 | `test_first_hollow_setpiece_breathing.gd` | 6 | Deterministic larder support scale, hidden approach reservations, encounter stability, and biome isolation |
-| **Total** | **904** | **Required before a checkpoint is accepted** |
+| `test_first_hollow_readable_passages.gd` | 7 | Deterministic passage ownership, every room mouth, compact production realization, collision truth, and biome isolation |
+| **Total** | **911** | **Required before a checkpoint is accepted** |
 
 ## Exported-browser gate
 
@@ -106,12 +107,21 @@ completed title → town → generated road → return in 25.7 seconds with an
 empty diagnostic ledger. Its 105,926,096-byte PCK has SHA-256
 `53e32814f232d775355572878864935f0c1d54812fa3feba929f4c32cb38efac`.
 
-The persistence-disabled retained corpus currently contains 127 direct
-entrypoints. A strict 30-second-per-entrypoint audit passed 120; three known
-long-running driver fixtures exceeded that artificial watchdog, while the
-documented driver/repro and old movement exceptions remained. After updating
-the new setpiece-breathing entrypoint, every retained test that loads the changed
-generator/rendering seam passes. The production
+The `0.1.14-readable-passages` proof requires native/Web/concept comparison of
+the same generated room connections at the default camera angle and through
+yaw, deterministic passage ownership beside every room mouth, compact cutaway-
+owned visual banks, and unchanged full wall collision. The exact export audited
+all 112 resources and completed title → town → generated road → return in 29.8
+seconds with an empty diagnostic ledger. Its 105,927,600-byte PCK has SHA-256
+`646d6db35b5bdcf299907ac399b8ee04bfbe8f82bd273cd94aa94dad4e14d82f`.
+
+The persistence-disabled retained corpus currently contains 128 direct
+entrypoints. A strict 30-second-per-entrypoint serial audit passed 120; the
+three known long-running driver fixtures and the marginal Golden Wallow handoff
+exceeded that watchdog, while the same four documented historical failures
+remained. Golden Wallow passed an immediate isolated watchdog rerun in 29
+seconds. Every retained test that loads the changed generator/rendering seam
+passes. The production
 dungeon, transition, boot, standalone movement, room, cutaway, and tonal-grade
 gates remain green.
 

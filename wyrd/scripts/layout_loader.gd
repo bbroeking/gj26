@@ -1395,9 +1395,11 @@ func _place_first_hollow_wall_visual(body: StaticBody3D, x: int, y: int,
 	visual.set_meta("perimeter_profile", profile_id)
 	visual.set_meta("room_id", int(perimeter_profile.get("room_id", -1)))
 	visual.set_meta("landmark", bool(perimeter_profile.get("landmark", false)))
+	visual.set_meta("passage", bool(perimeter_profile.get("passage", false)))
 	body.set_meta("perimeter_profile", profile_id)
 	body.set_meta("perimeter_room_id", int(perimeter_profile.get("room_id", -1)))
 	body.set_meta("perimeter_landmark", bool(perimeter_profile.get("landmark", false)))
+	body.set_meta("perimeter_passage", bool(perimeter_profile.get("passage", false)))
 	body.add_child(visual)
 
 	_add_first_hollow_bank_base(visual, local_rng, profile_id)
@@ -1407,6 +1409,8 @@ func _place_first_hollow_wall_visual(body: StaticBody3D, x: int, y: int,
 		inward = Vector3.FORWARD
 	_add_first_hollow_backdrop(visual, local_rng, -inward.normalized())
 	match profile_id:
+		"passage_bank":
+			_add_first_hollow_passage_leaves(visual, local_rng)
 		"root_bank":
 			_add_first_hollow_roots(visual, local_rng, false)
 		"stone_bank":
@@ -1480,6 +1484,18 @@ func _add_first_hollow_bank_base(visual: Node3D,
 		base_color = Color(0.25 + tone, 0.24 + tone, 0.13)
 	elif profile_id == "stone_bank":
 		base_color = Color(0.29 + tone, 0.31 + tone, 0.24 + tone)
+	if profile_id == "passage_bank":
+		_first_hollow_sphere(visual, "Rootstone", Vector3(0.0, -1.40, 0.0),
+			0.50, local_rng.randf_range(0.78, 0.90), base_color,
+			Vector3(local_rng.randf_range(0.92, 1.08), 1.0,
+				local_rng.randf_range(0.72, 0.90)), true)
+		_first_hollow_sphere(visual, "BrambleShoulder",
+			Vector3(local_rng.randf_range(-0.24, 0.24), -1.46,
+				local_rng.randf_range(-0.18, 0.18)), 0.30,
+			local_rng.randf_range(0.50, 0.62), base_color.lightened(0.035),
+			Vector3(local_rng.randf_range(0.88, 1.06), 1.0,
+				local_rng.randf_range(0.82, 1.02)))
+		return
 	_first_hollow_sphere(visual, "Rootstone", Vector3(0.0, -1.13, 0.0),
 		0.64, local_rng.randf_range(1.28, 1.48), base_color,
 		Vector3(local_rng.randf_range(1.05, 1.32), 1.0,
@@ -1498,26 +1514,50 @@ func _add_first_hollow_backdrop(visual: Node3D,
 	# It supplies the concept's continuous forest depth without rebuilding the
 	# deleted exterior wall field. Both tiers still lower with WallMesh.
 	var tangent := Vector3(-outward.z, 0.0, outward.x)
+	var passage := String(visual.get_meta("perimeter_profile", "")) == "passage_bank"
 	for i in 2:
 		var far_tier := i == 1
-		var tier_depth := 1.72 if far_tier else 0.92
+		var tier_depth := (1.55 if far_tier else 0.72) if passage \
+			else (1.72 if far_tier else 0.92)
 		var side := (0.38 if far_tier else -0.32) \
 			+ local_rng.randf_range(-0.16, 0.16)
 		var color := Color(0.055, 0.135, 0.040) if far_tier \
 			else Color(0.085, 0.185, 0.060)
+		var vertical := local_rng.randf_range(-1.40, -1.24) if passage \
+			else local_rng.randf_range(-1.08, -0.88)
 		var mass := _first_hollow_sphere(visual, "RearFoliage%d" % i,
 			outward * (tier_depth + local_rng.randf_range(-0.10, 0.14)) \
 				+ tangent * side \
-				+ Vector3(0.0, local_rng.randf_range(-1.08, -0.88), 0.0),
-			0.58 if far_tier else 0.45,
-			local_rng.randf_range(1.30, 1.55) if far_tier \
-				else local_rng.randf_range(0.96, 1.18),
+				+ Vector3(0.0, vertical, 0.0),
+			(0.44 if far_tier else 0.34) if passage \
+				else (0.58 if far_tier else 0.45),
+			(local_rng.randf_range(0.82, 0.96) if far_tier \
+				else local_rng.randf_range(0.64, 0.76)) if passage \
+				else (local_rng.randf_range(1.30, 1.55) if far_tier \
+				else local_rng.randf_range(0.96, 1.18)),
 			color,
 			Vector3(local_rng.randf_range(0.94, 1.10), 1.0,
 				local_rng.randf_range(0.94, 1.10)))
 		mass.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mass.set_meta("presentation_only", true)
 		mass.set_meta("depth_tier", i)
+
+
+func _add_first_hollow_passage_leaves(visual: Node3D,
+		local_rng: RandomNumberGenerator) -> void:
+	# Two low asymmetric clumps make the mouth feel grown-in without placing a
+	# crown in the sightline. They remain part of WallMesh and therefore follow
+	# the established opaque camera cutaway as one unit.
+	var colors := [Color(0.16, 0.29, 0.10), Color(0.22, 0.36, 0.12)]
+	for i in 2:
+		_first_hollow_sphere(visual, "PassageLeaf%d" % i,
+			Vector3(float(i * 2 - 1) * 0.28 + local_rng.randf_range(-0.05, 0.05),
+				-1.26 + local_rng.randf_range(-0.05, 0.04),
+				local_rng.randf_range(-0.12, 0.12)),
+			local_rng.randf_range(0.26, 0.34),
+			local_rng.randf_range(0.48, 0.60), colors[i],
+			Vector3(local_rng.randf_range(0.94, 1.12), 0.78,
+				local_rng.randf_range(0.82, 1.00)))
 
 
 func _add_first_hollow_leaves(visual: Node3D,

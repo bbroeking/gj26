@@ -1,5 +1,29 @@
 # Wayfinder devlog
 
+## 2026-07-21 — The road showed its openings
+
+Open Larder removed the last authored rock barricade. Replaying that exact
+build, moving and rolling between rooms, then yawing the continuous FATE camera
+exposed the next wall problem: a corridor could be physically open while the
+same bulbous crowns used around the ordinary perimeter made its shoulders read
+like another hedge barrier. The approved First Hollow concept keeps a dense
+forest surround but gives its exit a quiet concave frame and uninterrupted
+floor direction.
+
+Readable Passages changes no route. The generator now marks only colliding
+boundary cells beside actual room-edge floor that continues into a corridor.
+Those cells receive low rootstone, leaf, and forest-depth masses across a
+five-wide taper; ordinary perimeter profiles and one archetype landmark per
+room remain untouched. The same wall body still owns collision, projectile
+truth, and the existing opaque camera cutaway.
+
+The first one-cell taper was structurally correct but visually too subtle, so
+rendered play rejected it. The accepted two-cell shoulder makes the connected
+floor legible at the default angle and after camera yaw without exposing void
+or flattening the whole room edge. Native and Web play both preserve the dense
+Bramblewood frame, and the exact browser journey completed without a warning or
+error.
+
 ## 2026-07-21 — The larder opened its door
 
 Open Floor taught ordinary room dressing to leave a proper arrival landing.

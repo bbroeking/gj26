@@ -260,6 +260,26 @@ Companion-site version 13 is live owner-only with the exact playable export,
 Open Larder evidence, fingerprint, and next-replay priority; its pushed source
 is `a178c4053f21545e2843a2906738f3096026bdf5`.
 
+## Readable Passages checkpoint — shipped 2026-07-21
+
+[Spec 74](specs/74-first-hollow-readable-passages.md) resolves the doorway
+silhouette exposed by replaying Open Larder through continuous camera yaw.
+Actual First Road room connections now tag only their neighboring physical wall
+cells with a compact `passage_bank` profile: low rootstone and leaf masses form
+a five-wide concave shoulder while the deeper forest tier remains beyond the
+boundary. Procedural graphs, randomized archetypes, corridor widths, wall
+cells, collision, navigation, projectile truth, room landmarks, encounters,
+controls, audio, rewards, and the established opaque cutaway are unchanged.
+The eighteen-suite gate is green at 911 assertions. The strict retained sweep
+is 120/128 with four timeouts and the same four historical failures; the only
+additional timeout, the marginal Golden Wallow handoff, passed an immediate
+isolated 30-second rerun in 29 seconds, and every changed-seam entrypoint passes.
+All 112 release resources audit cleanly, and the exact exported title → town →
+generated road → return route completed in 29.8 seconds with an empty browser
+diagnostic ledger. The 105,927,600-byte PCK has SHA-256
+`646d6db35b5bdcf299907ac399b8ee04bfbe8f82bd273cd94aa94dad4e14d82f`.
+Companion publication receipt follows in the release commit.
+
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)
 
