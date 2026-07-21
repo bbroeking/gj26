@@ -10,6 +10,8 @@
   browser yard back toward native play and the approved Arrival concept.
 - Verified 996 canonical assertions, all 118 release resources, and the full
   exported title → town → chart table → Creature Codex → road → return route.
+- Published the exact versioned build behind stable `/play/`, verified that
+  hosted journey, and updated the owner-only Field Journal to version 16.
 
 ## 0.1.15-creature-identity — 2026-07-21
 

@@ -54,3 +54,9 @@
   chart_table_closed → world → complete`. The final versioned PCK is
   96,120,576 bytes with SHA-256
   `7499e80d380ba0a6b82d392ffd7db17787bf90f81fbaad1e4a5d625cca7987ce`.
+- Source checkpoint `9125935b99e31853f91109fa4a159a76377fdd82` and GitHub
+  Pages deployment `0bddb09339449079b68815774b386cf7ce07e0d6` are pushed.
+  The exact public versioned journey passed after deployment.
+- Owner-only companion Field Journal version 16 deployed successfully from
+  source `552de19cbccc71b818b28a2188c972f7457e7941`; its page, hero evidence,
+  playable export, and release fingerprint were verified from production.

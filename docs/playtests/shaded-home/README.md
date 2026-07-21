@@ -1,6 +1,6 @@
 # Shaded Home checkpoint evidence
 
-Accepted locally on 2026-07-21 against Spec 76.
+Shipped on 2026-07-21 against Spec 76.
 
 - `before-native.png` — exact settled `0.1.15` Town presentation with the new
   grade disabled: grass, route, ranger, Mara, and props share a pale band.
@@ -26,3 +26,6 @@ export audit, and the passed rendered browser journey.
 
 The final versioned export is 96,120,576 bytes with SHA-256
 `7499e80d380ba0a6b82d392ffd7db17787bf90f81fbaad1e4a5d625cca7987ce`.
+Its public versioned journey passed after GitHub Pages deployment
+`0bddb09339449079b68815774b386cf7ce07e0d6`; owner-only Field Journal version
+16 is live from source `552de19cbccc71b818b28a2188c972f7457e7941`.

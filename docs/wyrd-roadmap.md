@@ -311,7 +311,7 @@ exact chunked playable export, Creature Identity evidence, fingerprint, and
 next director priority; its pushed source is
 `a3ab1f8d49d9f9b510eb4a5f130fde8536553b99`.
 
-## Shaded Home checkpoint — accepted locally 2026-07-21
+## Shaded Home checkpoint — shipped 2026-07-21
 
 [Spec 76](specs/76-shaded-home-checkpoint.md) corrects the clearest weakness in
 the exact shipped Creature Identity replay: Town's grass, paths, ranger, Mara,
@@ -329,7 +329,14 @@ resources audit cleanly, and the enhanced browser journey passed title → town
 → chart table → Creature Codex → road → return. The exact 96,120,576-byte PCK
 has SHA-256
 `7499e80d380ba0a6b82d392ffd7db17787bf90f81fbaad1e4a5d625cca7987ce`.
-Publication is not yet claimed by this local acceptance.
+Game source is pushed at
+`9125935b99e31853f91109fa4a159a76377fdd82`. GitHub Pages deployment
+`0bddb09339449079b68815774b386cf7ce07e0d6` keeps `/play/` stable while routing
+to versioned `v0.1.16` assets; the public fail-closed title → town → chart table
+→ Codex → road → return route passed from that exact path. Owner-only companion
+Field Journal version 16 is live with the exact chunked playable export, Shaded
+Home evidence, fingerprint, and arrival-composition priority; its pushed source
+is `552de19cbccc71b818b28a2188c972f7457e7941`.
 
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)
