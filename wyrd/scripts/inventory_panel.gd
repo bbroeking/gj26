@@ -428,32 +428,78 @@ func _draw_grid() -> void:
 func _draw_slots() -> void:
 	if equipment == null:
 		return
-	var font: Font = get_theme_default_font()
 	# Spec 41 (Pack design) — the tool pair gets its section label.
 	var hdr2: Font = WyrdUi.font_header()
 	if hdr2 == null:
-		hdr2 = font
+		hdr2 = get_theme_default_font()
 	draw_string(hdr2, _slot_top("pickaxe") + Vector2(0, -10), "Trade Tools",
 		HORIZONTAL_ALIGNMENT_LEFT, 160.0, 14, WyrdUi.INK)
 	for name in SLOT_OFFSET:
 		var top := _slot_top(String(name))
 		var r := Rect2(top, Vector2(SLOT_SIZE, SLOT_SIZE))
-		# Recessed slot well.
-		draw_rect(r, Color(0.80, 0.72, 0.58))
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(SLOT_SIZE - 1, 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(1, SLOT_SIZE - 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+		# Carved well — stepped inner shadow + light lip reads as socketed,
+		# not flat. Replaces the old two-line partial shadow.
+		WyrdUi.draw_well(self, r)
 		var it = equipment.get_slot(String(name))
 		if it != null:
 			_draw_item_rect_scaled(it, top + Vector2(6, 6),
 				Vector2(SLOT_SIZE - 12, SLOT_SIZE - 12), false)
 		else:
-			# Empty slot — name ghosted in the well, Diablo-style.
-			draw_string(font, top + Vector2(0, SLOT_SIZE * 0.5 + 5),
-				String(name).capitalize(), HORIZONTAL_ALIGNMENT_CENTER,
-				SLOT_SIZE, 12, Color(0.50, 0.42, 0.32, 0.85))
+			_draw_slot_ghost(String(name), r)
+
+# Faint ink silhouette centred in an empty equipment well: hints at the
+# slot's purpose without competing with filled items (design rule: colour
+# lives on filled slots, empties stay quiet).
+func _draw_slot_ghost(slot_name: String, r: Rect2) -> void:
+	var c := r.get_center()
+	var ink := Color(WyrdUi.INK, 0.22)
+	const W := 2.0
+	const SZ := 14.0
+	match slot_name:
+		"helmet":
+			# dome arc + brim line
+			draw_arc(c + Vector2(0, 2), SZ, PI, TAU, 22, ink, W)
+			draw_line(c + Vector2(-SZ, 2), c + Vector2(SZ, 2), ink, W)
+		"chest":
+			# V-neck collar + torso outline
+			draw_line(c + Vector2(-SZ * 0.8, -SZ), c + Vector2(0, -SZ * 0.3), ink, W)
+			draw_line(c + Vector2(SZ * 0.8, -SZ), c + Vector2(0, -SZ * 0.3), ink, W)
+			draw_line(c + Vector2(-SZ * 0.8, -SZ), c + Vector2(-SZ * 0.8, SZ), ink, W)
+			draw_line(c + Vector2(SZ * 0.8, -SZ), c + Vector2(SZ * 0.8, SZ), ink, W)
+			draw_line(c + Vector2(-SZ * 0.8, SZ), c + Vector2(SZ * 0.8, SZ), ink, W)
+		"ring":
+			# band circle + small diamond gem at the top
+			draw_arc(c + Vector2(0, 3), SZ * 0.75, 0, TAU, 32, ink, W)
+			var gem := c + Vector2(0, 3 - SZ * 0.75)
+			draw_polyline(PackedVector2Array([gem - Vector2(0, 4), gem + Vector2(4, 0),
+				gem + Vector2(0, 4), gem - Vector2(4, 0), gem - Vector2(0, 4)]), ink, 1.5)
+		"weapon":
+			# shortbow curve + bowstring
+			draw_arc(c - Vector2(SZ * 0.3, 0), SZ, -PI * 0.42, PI * 0.42, 18, ink, W)
+			var sx := c.x + SZ * 0.65
+			draw_line(Vector2(sx, c.y - SZ * 0.82), Vector2(sx, c.y + SZ * 0.82),
+				Color(ink, 0.14), 1.5)
+		"boots":
+			# shaft + ankle arc + sole
+			var shx := c.x - SZ * 0.15
+			draw_line(Vector2(shx, c.y - SZ), Vector2(shx, c.y), ink, W)
+			draw_arc(Vector2(shx + SZ * 0.5, c.y), SZ * 0.5, PI, PI * 1.5, 10, ink, W)
+			draw_line(Vector2(shx + SZ * 0.5, c.y + SZ * 0.5),
+				Vector2(c.x + SZ * 0.75, c.y + SZ * 0.5), ink, W)
+		"pickaxe":
+			# angled handle + crossed pick head
+			draw_line(c + Vector2(-SZ * 0.7, SZ * 0.6), c + Vector2(SZ * 0.3, -SZ * 0.4), ink, W)
+			draw_line(c + Vector2(-SZ * 0.3, -SZ * 0.85), c + Vector2(SZ * 0.65, -SZ * 0.05), ink, W)
+		"axe":
+			# handle + wedge blade
+			draw_line(c + Vector2(-SZ * 0.2, -SZ * 0.5), c + Vector2(-SZ * 0.2, SZ), ink, W)
+			draw_polyline(PackedVector2Array([
+				c + Vector2(-SZ * 0.2, -SZ * 0.8), c + Vector2(SZ * 0.85, -SZ * 0.15),
+				c + Vector2(SZ * 0.75, SZ * 0.42), c + Vector2(-SZ * 0.2, SZ * 0.18),
+				c + Vector2(-SZ * 0.2, -SZ * 0.8)]), ink, W)
+	draw_string(get_theme_default_font(), r.position + Vector2(0, float(SLOT_SIZE) - 13.0),
+		slot_name.capitalize(), HORIZONTAL_ALIGNMENT_CENTER, SLOT_SIZE, 10,
+		Color(WyrdUi.INK, 0.30))
 
 func _draw_item_in_grid(it: Dictionary) -> void:
 	var rotated: bool = it.get("rotated", false)
