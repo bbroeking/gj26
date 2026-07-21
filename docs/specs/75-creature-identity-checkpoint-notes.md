@@ -34,6 +34,9 @@
 - Kept the Wayfinder chest on the existing Interactable and two-roll treasure
   contract. A bespoke chest system would add a parallel reward path without
   improving what the player can read.
+- Kept editable UI source and comparison sheets in the repository while
+  excluding only their unreferenced copies from the Web package. This reduced
+  delivery weight without weakening the audited 118-resource runtime contract.
 
 ## Surprises
 
@@ -43,6 +46,10 @@
 - The accepted local checkpoint still advertised `0.1.14` in `project.godot`
   and had no changelog or devlog entry. Those provenance gaps are part of the
   release work, not evidence against the accepted gameplay implementation.
+- The first Pages push exceeded GitHub's 100 MiB hard limit by about 1.1 MiB.
+  After the export trim passed, returning-browser play still exposed a stale
+  stable-path PCK; `/play/` now redirects to versioned release assets so the
+  public checkpoint has a fresh cache identity.
 
 ## Followups
 
@@ -76,4 +83,12 @@
 - The final versioned release rerun passed the fail-closed enhanced sequence
   `title → town → chart_table → codex → chart_table_closed → world → complete`.
   Its harness reported PASS and its warning/error ledger remained empty.
+- The public GitHub Pages build serves the exact 96,119,632-byte PCK and passed
+  the same fail-closed enhanced sequence from `/play/v0.1.15/`. Source commit
+  `2948dfb473645506384664b6d1a7a3412006d50d` and deployment commit
+  `aca5e5865267c68e77f847a2a3b6f217f605ec23` are pushed.
+- Owner-only companion-site version 15 succeeded with pushed source
+  `a3ab1f8d49d9f9b510eb4a5f130fde8536553b99`. Its rendered production HTML
+  names Creature Identity, the exact fingerprint, and the next Arrival replay;
+  its chunked game payload is present and access remains owner-only.
 - Evidence is retained in `docs/playtests/creature-identity/`.

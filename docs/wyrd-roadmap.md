@@ -282,7 +282,7 @@ Companion-site version 14 is live owner-only with the exact playable export,
 Readable Passages evidence, fingerprint, and next-replay priority; its pushed
 source is `a7900d5bd8bcc6a69b284cd09ffc0b821bfd8d6c`.
 
-## Creature Identity checkpoint — accepted locally 2026-07-21
+## Creature Identity checkpoint — shipped 2026-07-21
 
 [Spec 75](specs/75-creature-identity-checkpoint.md) closes the clearest combat-
 readability and world-coherence gaps in the current campaign. Every production
@@ -301,9 +301,15 @@ resources, completed title → town → generated road → return in Chromium, a
 left an empty warning/error ledger. Authoring-only UI source sheets are excluded
 from the release package; its 96,119,632-byte PCK has SHA-256
 `41e4db15838ce053a8cc0a3486688210f99da32ead1019724373e9656fa5d2d2`.
-Native and Web evidence lives in `playtests/creature-identity/`. Publication is
-not claimed by this local checkpoint; the mixed working tree has not been
-committed, pushed, or deployed as part of this acceptance.
+Native and Web evidence lives in `playtests/creature-identity/`. Game source is
+pushed at `2948dfb473645506384664b6d1a7a3412006d50d`. GitHub Pages deployment
+`aca5e5865267c68e77f847a2a3b6f217f605ec23` keeps `/play/` stable while routing
+to versioned `v0.1.15` assets so returning browsers cannot reuse an older PCK;
+the public fail-closed title → town → chart table → Codex → road → return route
+passed from that URL. Owner-only companion-site version 15 is live with the
+exact chunked playable export, Creature Identity evidence, fingerprint, and
+next director priority; its pushed source is
+`a3ab1f8d49d9f9b510eb4a5f130fde8536553b99`.
 
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)

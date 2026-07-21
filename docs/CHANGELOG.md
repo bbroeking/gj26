@@ -17,6 +17,8 @@
   the Web export audit to 118 required resources.
 - Kept editable UI source sheets in the repository but out of the release PCK,
   bringing the verified Web artifact beneath GitHub Pages' file-size limit.
+- Published the exact build behind a stable `/play/` entry and versioned asset
+  path, then updated the owner-only Field Journal to checkpoint version 15.
 
 ## 0.1.14-readable-passages — 2026-07-21
 

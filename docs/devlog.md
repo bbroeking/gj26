@@ -30,6 +30,14 @@ release copies were removed. The rebuilt package is nine megabytes smaller,
 loads the same 118 required resources, and passed the same rendered browser
 journey before publication resumed.
 
+Publication found one more player-facing trap: a returning browser could keep
+the old game because every release had reused the same package URL. The public
+trailhead now remains `/play/`, but it points each checkpoint at versioned
+assets. The real hosted journey passed from that fresh path, and the private
+Field Journal now carries Creature Identity, its exact proof, and the next
+honest mark: compare the bright, foliage-heavy Web arrival with the approved
+Arrival concept before touching another system.
+
 ## 2026-07-21 — The road showed its openings
 
 Open Larder removed the last authored rock barricade. Replaying that exact

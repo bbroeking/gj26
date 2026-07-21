@@ -1,6 +1,6 @@
 # Creature Identity checkpoint evidence
 
-Accepted locally on 2026-07-21 against Spec 75.
+Shipped on 2026-07-21 against Spec 75.
 
 - `native-creature-codex.png` — deterministic native Town capture of Pause →
   Creature Codex at 1366×768. Verifies the full folio composition, first common-
@@ -17,3 +17,5 @@ the representative later-chapter gates listed in Spec 75's implementation
 notes, and the 118-resource PCK audit. The exact export excludes authoring-only
 UI source sheets and is 96,119,632 bytes with SHA-256
 `41e4db15838ce053a8cc0a3486688210f99da32ead1019724373e9656fa5d2d2`.
+The public versioned Pages build passed the same enhanced fail-closed journey,
+and owner-only Field Journal version 15 carries this exact checkpoint.
