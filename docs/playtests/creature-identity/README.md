@@ -14,6 +14,6 @@ Accepted locally on 2026-07-21 against Spec 75.
 
 The visual receipts are paired with the canonical 986-assertion native gate,
 the representative later-chapter gates listed in Spec 75's implementation
-notes, and the 118-resource PCK audit. The exact export was 105,974,844 bytes
-with SHA-256
-`a0ea96cdcb1e45ade3b4ec64530c6a8129f5fdf00a6b1d9befd5dba3871d31ea`.
+notes, and the 118-resource PCK audit. The exact export excludes authoring-only
+UI source sheets and is 96,119,632 bytes with SHA-256
+`41e4db15838ce053a8cc0a3486688210f99da32ead1019724373e9656fa5d2d2`.

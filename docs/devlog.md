@@ -23,6 +23,13 @@ storybook creatures, and the journal should tell the truth about how they
 fight. Native and Web evidence, the 986-assertion gate, representative later
 chapters, and the exact 118-resource export all agree on that contract.
 
+The first publication build crossed GitHub Pages' per-file ceiling by barely a
+megabyte because it also packed several unreferenced UI source and comparison
+sheets. Those editable originals still live beside the game; only their
+release copies were removed. The rebuilt package is nine megabytes smaller,
+loads the same 118 required resources, and passed the same rendered browser
+journey before publication resumed.
+
 ## 2026-07-21 — The road showed its openings
 
 Open Larder removed the last authored rock barricade. Replaying that exact

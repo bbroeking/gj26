@@ -298,8 +298,9 @@ The nineteen-suite native gate is green at 986 assertions, including a new
 71-assertion identity contract. Representative chapter gates from First Road
 through The Unwritten Road pass. The final Web export audited all 118 required
 resources, completed title → town → generated road → return in Chromium, and
-left an empty warning/error ledger. Its 105,974,844-byte PCK has SHA-256
-`a0ea96cdcb1e45ade3b4ec64530c6a8129f5fdf00a6b1d9befd5dba3871d31ea`.
+left an empty warning/error ledger. Authoring-only UI source sheets are excluded
+from the release package; its 96,119,632-byte PCK has SHA-256
+`41e4db15838ce053a8cc0a3486688210f99da32ead1019724373e9656fa5d2d2`.
 Native and Web evidence lives in `playtests/creature-identity/`. Publication is
 not claimed by this local checkpoint; the mixed working tree has not been
 committed, pushed, or deployed as part of this acceptance.

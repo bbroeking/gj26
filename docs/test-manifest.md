@@ -122,8 +122,9 @@ without erasing established roles, opt-in named-creature casts, the authored
 Wayfinder chest, and native/Web Codex evidence. Representative production
 chapter gates from First Road through The Unwritten Road pass. The exact export
 audited all 118 required resources and completed title → town → generated road
-→ return with an empty warning/error ledger. Its 105,974,844-byte PCK has
-SHA-256 `a0ea96cdcb1e45ade3b4ec64530c6a8129f5fdf00a6b1d9befd5dba3871d31ea`.
+→ return with an empty warning/error ledger. Authoring-only UI source sheets
+are excluded from the release package; its 96,119,632-byte PCK has SHA-256
+`41e4db15838ce053a8cc0a3486688210f99da32ead1019724373e9656fa5d2d2`.
 
 The persistence-disabled retained corpus currently contains 128 direct
 entrypoints. A strict 30-second-per-entrypoint serial audit passed 120; the

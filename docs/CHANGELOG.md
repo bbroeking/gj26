@@ -15,6 +15,8 @@
   rolls agree. Gilded roads now add exactly one bonus chest.
 - Expanded the canonical checkpoint gate to 19 suites and 986 assertions and
   the Web export audit to 118 required resources.
+- Kept editable UI source sheets in the repository but out of the release PCK,
+  bringing the verified Web artifact beneath GitHub Pages' file-size limit.
 
 ## 0.1.14-readable-passages — 2026-07-21
 

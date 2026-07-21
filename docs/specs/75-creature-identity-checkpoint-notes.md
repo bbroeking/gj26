@@ -65,8 +65,10 @@
   17/17, Fire in the Bough world 10/10, and Knot-Eater encounter 21/21. The
   canonical First Road/First Hollow suites cover the opening chapter.
 - The final Web resource audit loaded 118 required resources from a
-  105,974,844-byte PCK with SHA-256
-  `a0ea96cdcb1e45ade3b4ec64530c6a8129f5fdf00a6b1d9befd5dba3871d31ea`.
+  96,119,632-byte PCK with SHA-256
+  `41e4db15838ce053a8cc0a3486688210f99da32ead1019724373e9656fa5d2d2`.
+  The release export omits only unreferenced UI source/reference sheets; the
+  editable originals remain in the repository.
 - A fresh Chromium tab completed the compact title → town → generated road →
   return route with ordered observations `title`, `town`, `world`, `complete`.
   The warning/error ledger was empty. Pause → Creature Codex then rendered at
