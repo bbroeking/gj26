@@ -26,5 +26,6 @@ stage stay clear, and the continuous FATE camera and natural wall cutaway hold.
 - PCK: 105,925,552 bytes; SHA-256
   `097269870847107143037a5fd35054fe2937616ea65f04a26a6225c7b5a70a66`.
 - Browser history: title → town → world → complete; diagnostics empty.
-- Companion receipt: pending version 11 publication from the exact verified
-  game commit.
+- Companion receipt: owner-only Field Journal version 12, pushed source
+  `8d1e4023c3ae39860134ec598585fc97b59bea69`, deployed and visually verified at
+  `https://wayfinder-field-journal.iamactuallyinthearen.chatgpt.site`.

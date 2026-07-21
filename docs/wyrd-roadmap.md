@@ -233,7 +233,11 @@ All 112 release resources audit cleanly, and the exact exported title → town �
 generated road → return route completed with an empty browser diagnostic
 ledger. The 105,925,552-byte PCK has SHA-256
 `097269870847107143037a5fd35054fe2937616ea65f04a26a6225c7b5a70a66`.
-Companion-site publication follows this exact verified checkpoint.
+Companion-site version 12 is live owner-only with the exact playable export,
+Open Floor evidence, fingerprint, and next-replay priority; its pushed source
+is `8d1e4023c3ae39860134ec598585fc97b59bea69`. Version 11's source-only publish
+attempt hit the host's fetch path, so the identical verified build was saved
+and published through the supported archive fallback as version 12.
 
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)

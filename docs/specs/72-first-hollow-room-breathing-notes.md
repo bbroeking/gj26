@@ -31,5 +31,12 @@
 - Export audit: 112/112 resources; 105,925,552-byte PCK; SHA-256
   `097269870847107143037a5fd35054fe2937616ea65f04a26a6225c7b5a70a66`.
 - Render evidence: `docs/playtests/first-hollow-room-breathing/`.
-- Companion Field Journal publication is pending the game commit and exact
-  release receipt.
+- Companion Field Journal version 12 was generated from the exact verified
+  export, passed its rendered HTML and packaged-build tests, and deployed
+  owner-only from pushed source
+  `8d1e4023c3ae39860134ec598585fc97b59bea69` at
+  `https://wayfinder-field-journal.iamactuallyinthearen.chatgpt.site`.
+- The first source-only version-11 publish attempt hit the host's source-fetch
+  path twice. The independently verified remote commit was unchanged; saving
+  the same built artifact through the supported archive path produced version
+  12, which deployed successfully and rendered the Open Floor receipt.
