@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.16-shaded-home — 2026-07-21
+
+- Restored shadow, midtone, and highlight separation to Bramblewood's Town yard
+  without changing its geometry, paths, stations, camera, or interactions.
+- Kept the correction on Town's cloned 3D Environment so quest parchment,
+  Field Journal UI, prompts, and input feedback retain their exact colors.
+- Gave Web Compatibility its own bounded brightness value, bringing the pale
+  browser yard back toward native play and the approved Arrival concept.
+- Verified 996 canonical assertions, all 118 release resources, and the full
+  exported title → town → chart table → Creature Codex → road → return route.
+
 ## 0.1.15-creature-identity — 2026-07-21
 
 - Added a complete Creature Codex to the Pause folio, covering every production

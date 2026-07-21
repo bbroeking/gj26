@@ -311,6 +311,26 @@ exact chunked playable export, Creature Identity evidence, fingerprint, and
 next director priority; its pushed source is
 `a3ab1f8d49d9f9b510eb4a5f130fde8536553b99`.
 
+## Shaded Home checkpoint — accepted locally 2026-07-21
+
+[Spec 76](specs/76-shaded-home-checkpoint.md) corrects the clearest weakness in
+the exact shipped Creature Identity replay: Town's grass, paths, ranger, Mara,
+flowers, and station props collapsed into one pale value band, with Web
+Compatibility clipping further toward white. Town now duplicates its 3D
+Environment and applies one post-tonemap grade, using a stronger bounded Web
+brightness value. Canvas UI, geometry, camera, collision, controls,
+interactions, quests, audio, progression, and saves are unchanged.
+
+Matched Forward+ before/after and forced Compatibility captures sit beside the
+approved Arrival concept in `playtests/shaded-home/`; a real 1280×720 browser
+arrival agrees with the Compatibility result. The twenty-suite canonical gate
+is green at 996 assertions, save roundtrip passes 120/120, all 118 release
+resources audit cleanly, and the enhanced browser journey passed title → town
+→ chart table → Creature Codex → road → return. The exact 96,120,576-byte PCK
+has SHA-256
+`7499e80d380ba0a6b82d392ffd7db17787bf90f81fbaad1e4a5d625cca7987ce`.
+Publication is not yet claimed by this local acceptance.
+
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)
 

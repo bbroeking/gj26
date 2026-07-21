@@ -1,5 +1,27 @@
 # Wayfinder devlog
 
+## 2026-07-21 — Home found its shade
+
+Creature Identity made the road's inhabitants legible, then the next exact
+playthrough returned attention to the first thing a new Wayfinder sees: home.
+Against the approved Arrival concept, the live yard was not merely sparse. Its
+grass, paths, ranger, Mara, flowers, and station props occupied almost the same
+pale value band in native play, and Web Compatibility pushed that band close to
+white. The route existed, but light had rubbed away its hierarchy.
+
+Shaded Home changes one authority. Town now duplicates and grades its 3D
+Environment after tonemapping, with a stronger bounded brightness correction
+for Web's additional highlight lift. It does not move a path, prop, neighbor,
+station, spawn, or camera; it does not place a filter over the parchment UI.
+Native, Compatibility, and real browser captures now separate actors and route
+from the grass while keeping the green-and-amber welcome.
+
+That clearer view also makes the next question more honest. The current yard
+still cannot borrow the concept's dense cottage frame through color alone.
+After this checkpoint ships, the next replay must decide whether arrival
+framing, landmark composition, or foreground cover is the single strongest
+remaining gap—without pretending they are the same task.
+
 ## 2026-07-21 — The road learned its creatures
 
 Readable Passages made the route trustworthy, then the next playthrough made

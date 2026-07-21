@@ -112,6 +112,7 @@ static var _session_homecoming_debriefs: Dictionary = {}
 static var _session_settlement_debriefs: Dictionary = {}
 
 func _ready() -> void:
+	_apply_town_tonal_grade(OS.get_environment("WYRD_FORCE_TOWN_WEB_GRADE"))
 	# B7 — arrival beat: if we're returning from a delve, delay music and ease
 	# the camera in. On cold boot play music immediately (existing behaviour).
 	# game.gd._returning_from_delve is set in return_to_town before scene change;
@@ -218,6 +219,7 @@ func _ready() -> void:
 	# settles (layout_loader's DEBUG_SHOT pattern).
 	if OS.get_environment("WYRD_SHOT") != "":
 		get_tree().create_timer(2.0).timeout.connect(_debug_screenshot)
+
 	# Dev: WYRD_UI_SHOT=1 — pop the Inscribing Table panel (with sample
 	# satchel contents) before the screenshot fires, for UI iteration.
 	if OS.get_environment("WYRD_UI_SHOT") != "":
@@ -359,6 +361,17 @@ func _ready() -> void:
 					panel.place_ink.call_deferred("hedge_ink", 0)
 					panel.pot_add.call_deferred("wild_herb")
 					panel.pot_add.call_deferred("wild_herb"))
+
+
+func _apply_town_tonal_grade(force_web: String = "") -> bool:
+	var world_environment := get_node_or_null("WorldEnvironment") as WorldEnvironment
+	if world_environment == null or world_environment.environment == null:
+		return false
+	var env := world_environment.environment.duplicate() as Environment
+	if not TownEnvironment.apply_tonal_grade(env, OS.has_feature("web"), force_web):
+		return false
+	world_environment.environment = env
+	return true
 
 func _show_pending_run_debrief() -> void:
 	var game := get_node_or_null("/root/Game")

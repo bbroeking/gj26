@@ -22,6 +22,14 @@ const BRAMBLE_GLB := preload("res://models/withered_bramble_v2.glb")
 const FENCE_GLB := preload("res://models/prop_fence_v1.glb")
 const FLOWERS_GLB := preload("res://models/prop_flowers_v1.glb")
 
+# Spec 76 — Town's authored materials currently land in a narrow, pale value
+# band even in Forward+, then clip further in Web Compatibility. Adjust only
+# the duplicated 3D Environment so parchment and Field Journal UI stay exact.
+const GRADE_BRIGHTNESS_NATIVE := 0.62
+const GRADE_BRIGHTNESS_WEB := 0.56
+const GRADE_CONTRAST := 1.15
+const GRADE_SATURATION := 1.08
+
 const GRASS_COUNT := 700
 const FLOWER_COUNT := 140
 const PATH_CLEAR := 1.5            # grass keeps this far from path centers
@@ -42,6 +50,18 @@ var _mote_phases: Array = []       # float phase offset per mote (varied drift)
 var _lantern_lights: Array = []    # OmniLight3D refs for flicker
 var _lantern_phases: Array = []    # float phase offset per lantern
 var _ambient_t := 0.0              # running time for procedural sway
+
+
+static func apply_tonal_grade(env: Environment, web_feature: bool,
+		force_web: String = "") -> bool:
+	if env == null:
+		return false
+	env.adjustment_enabled = true
+	env.adjustment_brightness = GRADE_BRIGHTNESS_WEB \
+		if web_feature or force_web != "" else GRADE_BRIGHTNESS_NATIVE
+	env.adjustment_contrast = GRADE_CONTRAST
+	env.adjustment_saturation = GRADE_SATURATION
+	return true
 
 func setup(yard: float, plaza: Vector3, stations: Array, spokes: Array,
 		treeline_breaks: Array = []) -> void:

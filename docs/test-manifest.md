@@ -1,6 +1,6 @@
 # Wayfinder test manifest
 
-Updated 2026-07-21 for `0.1.15-creature-identity`.
+Updated 2026-07-21 for `0.1.16-shaded-home`.
 
 ## Canonical checkpoint gate
 
@@ -27,7 +27,8 @@ Run every entry with `WYRD_NO_SAVE=1 godot --headless --path wyrd --script res:/
 | `test_first_hollow_setpiece_breathing.gd` | 6 | Deterministic larder support scale, hidden approach reservations, encounter stability, and biome isolation |
 | `test_first_hollow_readable_passages.gd` | 7 | Deterministic passage ownership, every room mouth, compact production realization, collision truth, and biome isolation |
 | `test_creature_codex.gd` | 71 | Exact creature roster, distinct combat tells, named signatures, Wayfinder chest, and nested Codex interaction |
-| **Total** | **986** | **Required before a checkpoint is accepted** |
+| `test_town_tonal_separation.gd` | 10 | Town-only cloned environment grade, native/Web values, and absence of a Canvas overlay |
+| **Total** | **996** | **Required before a checkpoint is accepted** |
 
 ## Exported-browser gate
 
@@ -125,6 +126,14 @@ audited all 118 required resources and completed title → town → generated ro
 → return with an empty warning/error ledger. Authoring-only UI source sheets
 are excluded from the release package; its 96,119,632-byte PCK has SHA-256
 `41e4db15838ce053a8cc0a3486688210f99da32ead1019724373e9656fa5d2d2`.
+
+The `0.1.16-shaded-home` proof requires matched native before/after and forced
+Compatibility captures beside the approved Arrival concept, a real 1280×720
+browser arrival inspection, and the fail-closed enhanced journey through title
+→ town → chart table → Codex → road → return. The Town correction must remain
+on its cloned 3D Environment so Canvas UI and every gameplay authority stay
+unchanged. The exact 96,120,576-byte PCK has SHA-256
+`7499e80d380ba0a6b82d392ffd7db17787bf90f81fbaad1e4a5d625cca7987ce`.
 
 The persistence-disabled retained corpus currently contains 128 direct
 entrypoints. A strict 30-second-per-entrypoint serial audit passed 120; the
