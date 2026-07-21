@@ -29,4 +29,6 @@ through continuous camera yaw.
   `646d6db35b5bdcf299907ac399b8ee04bfbe8f82bd273cd94aa94dad4e14d82f`.
 - Browser history: title → town → world → complete in 29.8 seconds;
   diagnostics empty.
-- Companion receipt: pending publication.
+- Companion receipt: owner-only Field Journal version 14, pushed source
+  `a7900d5bd8bcc6a69b284cd09ffc0b821bfd8d6c`, deployed and visually verified at
+  `https://wayfinder-field-journal.iamactuallyinthearen.chatgpt.site`.

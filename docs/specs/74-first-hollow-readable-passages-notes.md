@@ -39,4 +39,7 @@
   `646d6db35b5bdcf299907ac399b8ee04bfbe8f82bd273cd94aa94dad4e14d82f`.
 - Exact browser route: title → town → world → complete in 29.841 seconds;
   diagnostic ledger empty.
-- Companion-site publication receipt pending the source commit.
+- Companion-site version 14 was saved from exact pushed source
+  `a7900d5bd8bcc6a69b284cd09ffc0b821bfd8d6c`, deployed owner-only, and visually
+  verified at
+  `https://wayfinder-field-journal.iamactuallyinthearen.chatgpt.site`.
