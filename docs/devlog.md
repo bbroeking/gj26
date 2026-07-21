@@ -20,6 +20,12 @@ current yard as richly staged as the concept; it makes the actual buildings
 and social route visible enough that landmark composition can now be judged
 without asking camera angle, lighting, and decor to solve each other's jobs.
 
+The cache-safe public build passed the complete hosted journey, and owner-only
+Field Journal version 17 now serves the same browser package, rendered arrival,
+fingerprint, and next priority. The next mark is therefore narrow: gather the
+existing north landmarks into a convincing working edge while keeping the
+crossing open.
+
 ## 2026-07-21 — Home found its shade
 
 Creature Identity made the road's inhabitants legible, then the next exact

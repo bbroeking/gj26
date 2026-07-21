@@ -11,6 +11,8 @@
 - Verified 1,004 canonical assertions, save roundtrip 120/120, all 118 release
   resources, and the complete exported title → town → chart table → Creature
   Codex → road → return route.
+- Published the exact versioned build behind stable `/play/`, verified the
+  hosted route, and updated the owner-only Field Journal to version 17.
 
 ## 0.1.16-shaded-home — 2026-07-21
 

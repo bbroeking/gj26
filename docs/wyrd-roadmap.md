@@ -338,7 +338,7 @@ Field Journal version 16 is live with the exact chunked playable export, Shaded
 Home evidence, fingerprint, and arrival-composition priority; its pushed source
 is `552de19cbccc71b818b28a2188c972f7457e7941`.
 
-## Gathered Arrival checkpoint — accepted locally 2026-07-21
+## Gathered Arrival checkpoint — shipped 2026-07-21
 
 [Spec 77](specs/77-gathered-arrival-checkpoint.md) closes the next visual gap
 revealed by Shaded Home. Town now applies one authored profile to the shared
@@ -356,7 +356,14 @@ suites, save roundtrip passes 120/120, all 118 release resources audit cleanly,
 and the enhanced browser route passed title → town → chart table → Creature
 Codex → road → return. The exact 96,121,600-byte PCK has SHA-256
 `af1d1ff69fb2c47dd2e71a38816ff1b1c52b5552c80b05e9b8aa68d738edc9bd`.
-Publication is not yet claimed by this local acceptance.
+Game source is pushed at
+`ea09704d099269a62782070d88e8e1fbd7aad206`. GitHub Pages deployment
+`9bcd14278c8c552fc62f5cfc892ec2a9ad3f7d17` routes stable `/play/` to the
+versioned `v0.1.17` assets; the public fail-closed title → town → chart table →
+Codex → road → return route passed from that exact path. Owner-only companion
+Field Journal version 17 is live with the chunked playable export, Gathered
+Arrival evidence, fingerprint, and north-landmark priority; its pushed source
+is `f13148e22aa4ab1379ead73e7fb0e1418dabb8a8`.
 
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)

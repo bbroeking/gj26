@@ -50,3 +50,9 @@
   route passed `title → town → chart_table → codex → chart_table_closed → world
   → complete`. The exact PCK is 96,121,600 bytes with SHA-256
   `af1d1ff69fb2c47dd2e71a38816ff1b1c52b5552c80b05e9b8aa68d738edc9bd`.
+- Source checkpoint `ea09704d099269a62782070d88e8e1fbd7aad206` and GitHub
+  Pages deployment `9bcd14278c8c552fc62f5cfc892ec2a9ad3f7d17` are pushed.
+  Stable `/play/` redirected to `v0.1.17`, and the exact hosted route passed.
+- Owner-only companion Field Journal version 17 deployed successfully from
+  source `f13148e22aa4ab1379ead73e7fb0e1418dabb8a8`; its page, rendered
+  arrival, playable export, assertion receipt, and fingerprint were verified.
