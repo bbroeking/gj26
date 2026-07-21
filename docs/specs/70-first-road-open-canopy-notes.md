@@ -39,4 +39,9 @@
   passed, no warning/error diagnostics. Accumulated WebGL test tabs initially
   throttled a healthy route beyond the old watchdog; closing them restored the
   normal pass, and the compact probe now shares the robust 15-minute ceiling.
-- Companion deployment pending.
+- Companion Field Journal version 9 built from pushed source
+  `5e5532d9671bac7b1e85a09d58080dc68006067a`, passed its rendered HTML and
+  packaged-build tests, and deployed owner-only at
+  `https://wayfinder-field-journal.iamactuallyinthearen.chatgpt.site`.
+  The production URL presented the expected ChatGPT sign-in boundary from the
+  current browser context, confirming the access posture without widening it.
