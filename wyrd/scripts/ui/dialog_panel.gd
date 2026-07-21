@@ -132,14 +132,44 @@ func _finish() -> void:
 	queue_free()
 
 
-# Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
-# silhouette placeholder until painted portraits exist.
+# Spec 41 — the round portrait well: parchment disc, leaf-wreath medallion
+# ring, and a ghosted silhouette placeholder until painted portraits exist.
 class PortraitWell extends Control:
 	func _draw() -> void:
 		var c := size * 0.5
-		var r := minf(c.x, c.y)
+		# Inset so the leaf wreath ornaments sit inside the control bounds.
+		var r := minf(c.x, c.y) - 8.0
+		# Parchment face.
 		draw_circle(c, r, Color(0.88, 0.82, 0.67))
+		# Ghosted silhouette placeholder.
 		draw_circle(c + Vector2(0, r * 0.28), r * 0.34, Color(0.55, 0.47, 0.36, 0.55))
 		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
-		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
-		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+		# Burnished gold inner ring — the gilt face of the medallion.
+		draw_arc(c, r - 4.0, 0, TAU, 48, Color(WyrdUi.GOLD, 0.5), 1.5, true)
+		# Outer ink ring.
+		draw_arc(c, r, 0, TAU, 64, Color(0.26, 0.19, 0.13), 2.5, true)
+		# Leaf wreath: sage leaf buds at N/S/E/W, gold diamonds at NE/SE/SW/NW.
+		var _SAGE := WyrdUi.SAGE.darkened(0.1)
+		var _GOLD := Color(WyrdUi.GOLD, 0.85)
+		var _INK := Color(0.26, 0.19, 0.13)
+		for i in 4:
+			var angle := float(i) * PI * 0.5 - PI * 0.5   # start at north
+			var ax := Vector2(cos(angle), sin(angle))
+			var perp := Vector2(-sin(angle), cos(angle))
+			# Leaf bud on the ring, pointing radially outward.
+			var bc := c + ax * r
+			var tip := bc + ax * 6.5
+			var base_l := bc - ax * 1.5 + perp * 3.5
+			var base_r := bc - ax * 1.5 - perp * 3.5
+			draw_colored_polygon(PackedVector2Array([tip, base_l, base_r]), _SAGE)
+			draw_polyline(PackedVector2Array([tip, base_l, base_r, tip]),
+				Color(_INK, 0.55), 0.7, true)
+			# Gold diamond at the intercardinal between this leaf and the next.
+			var d_angle := angle + PI * 0.25
+			var dc := c + Vector2(cos(d_angle), sin(d_angle)) * (r + 1.5)
+			draw_colored_polygon(PackedVector2Array([
+				dc + Vector2(0, -3.5),
+				dc + Vector2(3.5, 0),
+				dc + Vector2(0, 3.5),
+				dc + Vector2(-3.5, 0)
+			]), _GOLD)
