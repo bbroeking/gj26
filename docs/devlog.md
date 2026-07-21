@@ -1,5 +1,21 @@
 # Wayfinder devlog
 
+## 2026-07-20 — The forest learned to frame the road
+
+Soft Ground gave the clearing a believable stage. Playing that exact release
+at the preserved FATE angle exposed the next wall problem: Deep Wood's darkest
+foliage tiers became giant foreground blobs, and neighboring wall crowns stood
+tall beside the small cutaway even when the ranger remained technically
+visible. The forest felt closer, but the room felt smaller.
+
+Open Canopy keeps the same procedural boundary and all of its gameplay truth.
+The two non-authoritative rear tiers now sit lower and tighter, while the
+existing solid cutaway protects a wider patch around the ranger. Two rendered
+passes were rejected before that combination: shrinking the rear tier alone
+did not make the neighboring real wall crowns yield. The accepted moving frame
+keeps a continuous dark wood, a low natural boundary, and a legible corridor
+mouth without changing the continuous camera.
+
 ## 2026-07-20 — The stone road found soft ground
 
 Deep Wood fixed what happened outside the room. The next replay made the

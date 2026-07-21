@@ -178,6 +178,24 @@ archetype landmark identity. Companion-site version 8 is live owner-only with
 the exact playable export, fingerprint, accepted render, and replay priority;
 its pushed source is `b31880de5417103ab8c72dcf83337f4a5283f09b`.
 
+## Open Canopy checkpoint — shipped 2026-07-20
+
+[Spec 70](specs/70-first-road-open-canopy.md) resolves the foreground crowding
+exposed by replaying Soft Ground at the continuous FATE angle. The two existing
+presentation-only forest-depth tiers now sit lower and inside a tighter visual
+envelope, and the established opaque cutaway protects a wider nearby combat
+stage so adjacent natural crowns yield with the direct occluder. Procedural
+rooms, randomized archetypes, wall collision, navigation, encounters,
+corridors, camera control, audio, and later biomes are unchanged. Native moving
+play rejected two geometry-only passes before accepting the wider low opening.
+The fourteen-suite gate is green at 888 assertions; the retained corpus is
+120/124 with only historical driver/repro and old movement exceptions; all 112
+release resources audit cleanly; and the exact browser route passed title →
+town → generated First Road → return with no warning/error diagnostics. The
+exact 105,923,952-byte PCK has SHA-256
+`add43de81df0b0416608d86d02a6356b804e69f9a7149aae644cf98f5c363bb8`.
+Companion publication remains the final release receipt.
+
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)
 

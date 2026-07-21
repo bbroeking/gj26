@@ -1,6 +1,6 @@
 # Wayfinder test manifest
 
-Updated 2026-07-20 for `0.1.9-soft-ground`.
+Updated 2026-07-20 for `0.1.10-open-canopy`.
 
 ## Canonical checkpoint gate
 
@@ -21,7 +21,8 @@ Run every entry with `WYRD_NO_SAVE=1 godot --headless --path wyrd --script res:/
 | `test_web_tonal_separation.gd` | 4 | Web-only environment grade, native no-op, and forced production mutation seam |
 | `test_first_hollow_forest_continuity.gd` | 8 | Forest-bed coverage, cutaway ownership, depth, and non-authority |
 | `test_first_road_soft_ground.gd` | 5 | One-surface First Road soil morph and later-biome isolation |
-| **Total** | **883** | **Required before a checkpoint is accepted** |
+| `test_first_road_open_canopy.gd` | 5 | Compact forest shoulder and wider opaque camera cutaway stage |
+| **Total** | **888** | **Required before a checkpoint is accepted** |
 
 ## Exported-browser gate
 
@@ -70,8 +71,16 @@ completed the compact browser route with no warning/error diagnostics. Its
 105,923,984-byte PCK has SHA-256
 `372e3d0c71b3f732beaa9b4f2f8564782af3f5e3a649ce8fc62aa11bc70a467f`.
 
-The persistence-disabled retained corpus currently contains 123 direct
-entrypoints: 119 pass. Its driver-required and historical timing exceptions
+The `0.1.10-open-canopy` proof requires native/Web comparison of the moving
+foreground beside the approved First Hollow concept, compact presentation-only
+depth tiers, the wider opaque cutaway stage, and unchanged procedural/gameplay
+authority. The exact export audited 112 resources and completed title → town →
+generated First Road → return with an empty diagnostic ledger. Its
+105,923,952-byte PCK has SHA-256
+`add43de81df0b0416608d86d02a6356b804e69f9a7149aae644cf98f5c363bb8`.
+
+The persistence-disabled retained corpus currently contains 124 direct
+entrypoints: 120 pass. Its driver-required and historical timing exceptions
 remain; the rendering checkpoint introduced no new failure. The production
 dungeon, transition, boot, standalone movement, room, cutaway, and tonal-grade
 gates remain green.

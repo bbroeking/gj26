@@ -1508,13 +1508,13 @@ func _add_first_hollow_backdrop(visual: Node3D,
 		var mass := _first_hollow_sphere(visual, "RearFoliage%d" % i,
 			outward * (tier_depth + local_rng.randf_range(-0.10, 0.14)) \
 				+ tangent * side \
-				+ Vector3(0.0, local_rng.randf_range(-0.66, -0.46), 0.0),
-			0.82 if far_tier else 0.70,
-			local_rng.randf_range(1.82, 2.18) if far_tier \
-				else local_rng.randf_range(1.48, 1.82),
+				+ Vector3(0.0, local_rng.randf_range(-1.08, -0.88), 0.0),
+			0.58 if far_tier else 0.45,
+			local_rng.randf_range(1.30, 1.55) if far_tier \
+				else local_rng.randf_range(0.96, 1.18),
 			color,
-			Vector3(local_rng.randf_range(1.12, 1.42), 1.0,
-				local_rng.randf_range(1.08, 1.38)))
+			Vector3(local_rng.randf_range(0.94, 1.10), 1.0,
+				local_rng.randf_range(0.94, 1.10)))
 		mass.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mass.set_meta("presentation_only", true)
 		mass.set_meta("depth_tier", i)

@@ -212,7 +212,10 @@ func shake(amount: float) -> void:
 # player's center while tall nearby tiles still covered their silhouette and
 # the combat lane on screen. Walls are in the "wall" group with a per-wall
 # alpha-capable material (see layout_loader._place_wall).
-const CUTAWAY_RADIUS_PX := Vector2(175.0, 145.0)
+# The low FATE angle projects neighboring natural-wall crowns into the same
+# foreground band. Protect a wider stage than the ranger's body alone so the
+# edge frames nearby combat instead of forming two tall shoulders around it.
+const CUTAWAY_RADIUS_PX := Vector2(255.0, 170.0)
 const CUTAWAY_WALL_SCALE_Y := 0.14
 const CUTAWAY_WALL_OFFSET_Y := -1.55
 var _occluding := {}

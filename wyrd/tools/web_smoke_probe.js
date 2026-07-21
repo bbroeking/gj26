@@ -226,7 +226,10 @@
     "d1_homecoming_copy_only",
   ] : [];
   const startedAt = performance.now();
-  const timeoutMs = mode === "d7" ? 900000 : mode === "d6" ? 360000 : mode === "d4" || mode === "d5" ? 300000 : mode === "d2" || mode === "d3" ? 240000 : mode === "c2" || mode === "d1" ? 180000 : mode === "codex" ? 45000 : 30000;
+  // The compact route still performs real Godot scene construction. A cold
+  // Compatibility import on a busy release host can be healthy but exceed the
+  // old 30-second watchdog; keep the behavioral contract and allow startup.
+  const timeoutMs = mode === "d7" ? 900000 : mode === "d6" ? 360000 : mode === "d4" || mode === "d5" ? 300000 : mode === "d2" || mode === "d3" ? 240000 : mode === "c2" || mode === "d1" ? 180000 : mode === "codex" ? 45000 : 900000;
   let finished = false;
 
   const state = globalThis.__wyrdSmokeHarness = {

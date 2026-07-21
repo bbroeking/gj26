@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.10-open-canopy — 2026-07-20
+
+- Preserved procedural Chart graphs, randomized authored clearing archetypes,
+  continuous FATE camera control, and every gameplay wall/corridor boundary.
+- Tightened and lowered only the two presentation-only Deep Wood foliage tiers
+  after rendered play showed them becoming oversized foreground blobs.
+- Widened the existing opaque screen-space cutaway so adjacent natural wall
+  crowns yield with the direct occluder, protecting the nearby combat stage.
+- Kept collision, navigation, encounters, room footprints, camera framing,
+  controls, audio, and later-biome walls unchanged.
+- Verified 888 canonical native assertions, the retained direct corpus with no
+  checkpoint-caused failure, all release resources, and a clean browser title
+  → town → generated First Road → return route.
+
 ## 0.1.9-soft-ground — 2026-07-20
 
 - Kept the procedural Chart, authored clearing archetypes, merged floor,
