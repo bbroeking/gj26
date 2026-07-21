@@ -18,9 +18,11 @@ from the grass while keeping the green-and-amber welcome.
 
 That clearer view also makes the next question more honest. The current yard
 still cannot borrow the concept's dense cottage frame through color alone.
-After this checkpoint ships, the next replay must decide whether arrival
-framing, landmark composition, or foreground cover is the single strongest
-remaining gap—without pretending they are the same task.
+The exact versioned public build passed that whole journey after deployment,
+and owner-only Field Journal version 16 now carries the same build, evidence,
+fingerprint, and next director priority. The next replay must decide whether
+arrival framing, landmark composition, or foreground cover is the single
+strongest remaining gap—without pretending they are the same task.
 
 ## 2026-07-21 — The road learned its creatures
 
