@@ -62,16 +62,23 @@ func _ready() -> void:
 	_panel.offset_bottom = 260
 	add_child(_panel)
 
+	# Spec art-vendor — NPC portrait medallion: a carved disc nestled in the
+	# frame corner so Hod has a visual presence, not just a name and a quote.
+	var medallion := _VendorMedallion.new()
+	medallion.position = Vector2(14, 16)
+	medallion.size = Vector2(56, 56)
+	_panel.add_child(medallion)
+
 	var title := Label.new()
 	title.text = "Hod's Counter"
 	WyrdUi.style_title(title)
-	title.position = Vector2(54, 34)
+	title.position = Vector2(82, 34)
 	_panel.add_child(title)
 
 	var sub := Label.new()
 	sub.text = "\"Sparks like to find sleeves. Mind the anvil, state your business.\""
 	WyrdUi.style_dim(sub, 13)
-	sub.position = Vector2(54, 66)
+	sub.position = Vector2(82, 66)
 	_panel.add_child(sub)
 
 	_gold_lbl = Label.new()
@@ -286,3 +293,49 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# ---- NPC portrait medallion ----
+# A carved disc for Hod: outer gold ring, warm parchment face with parchment
+# grain, terracotta inner stamp with a gold anvil silhouette, and four SAGE
+# ivy-bud points at the compass — same language as the hotbar-slot corner pips.
+class _VendorMedallion extends Control:
+	func _draw() -> void:
+		var c := size * 0.5
+		var r := minf(c.x, c.y) - 2.0
+		# Drop shadow
+		draw_circle(c + Vector2(2, 3), r, Color(0, 0, 0, 0.18))
+		# Gold outer ring
+		draw_circle(c, r, WyrdUi.GOLD)
+		# Warm parchment face
+		draw_circle(c, r - 3.0, WyrdUi.KIT_PLATE)
+		# Parchment grain on the face disc
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(c - Vector2(r - 4, r - 4), Vector2((r - 4) * 2, (r - 4) * 2)), 42)
+		# Terracotta wax-stamp inner disc
+		draw_circle(c, r * 0.53, WyrdUi.TERRACOTTA.darkened(0.10))
+		# Anvil silhouette in burnished gold on the stamp:
+		#   three rectangles — head bar, neck, base.
+		var aw := r * 0.28
+		# head (widest; includes the horn shelf on the left)
+		draw_rect(Rect2(c + Vector2(-aw - r * 0.09, -r * 0.24),
+			Vector2(aw * 2.0 + r * 0.09, r * 0.15)), WyrdUi.GOLD)
+		# neck
+		draw_rect(Rect2(c + Vector2(-aw * 0.30, -r * 0.09),
+			Vector2(aw * 0.60, r * 0.16)), WyrdUi.GOLD)
+		# base
+		draw_rect(Rect2(c + Vector2(-aw * 0.50, r * 0.07),
+			Vector2(aw * 1.0, r * 0.12)), WyrdUi.GOLD)
+		# Highlight arc (light catches top-right of parchment ring)
+		draw_arc(c, r - 4.5, -PI * 0.78, -PI * 0.08, 18,
+			Color(1.0, 1.0, 0.93, 0.40), 2.0, true)
+		# Inner ink ring on the stamp edge
+		draw_arc(c, r * 0.53, 0, TAU, 40, Color(WyrdUi.KIT_EDGE, 0.55), 1.5, true)
+		# Outer ink ring
+		draw_arc(c, r, 0, TAU, 48, WyrdUi.KIT_EDGE, 2.0, true)
+		# Four SAGE ivy-bud compass points (the ivy design language)
+		for i in 4:
+			var angle := PI * 0.5 * float(i)
+			var bp := c + Vector2(cos(angle), sin(angle)) * (r + 0.5)
+			draw_circle(bp, 3.5, WyrdUi.SAGE)
+			draw_arc(bp, 3.5, 0, TAU, 12, WyrdUi.KIT_EDGE, 1.0, true)
