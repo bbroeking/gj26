@@ -1,5 +1,27 @@
 # Wayfinder devlog
 
+## 2026-07-21 — The larder opened its door
+
+Open Floor taught ordinary room dressing to leave a proper arrival landing.
+Playing that exact release found one stubborn exception: the next Crooked
+Bower could still contain a tall grey U-shaped barricade. It was not ordinary
+dressing at all. The seeded larder setpiece stamped eight old pottery marks
+after the room pass, and the First Road biome translated every one into a
+full-size mossy boulder.
+
+Open Larder keeps that authored discovery and its place in the procedural
+Chart. Its supports now use the same low forest tier as other room satellites,
+and supports inside a corridor approach are not rendered. Their occupied cells
+remain in the generated record so enemy selection does not silently reroll.
+The graph, archetype, room footprint, encounters, continuous FATE camera,
+natural wall cutaway, controls, audio, interactions, and rewards are unchanged.
+
+The native before-and-after replay shows the difference clearly: the former
+stone U no longer closes the chamber, while low perimeter stones still suggest
+an authored cache. The exact Web build audited every resource and completed the
+real title, town, generated road, and return route without a browser warning or
+error.
+
 ## 2026-07-20 — The clearings found their breathing room
 
 Forest Rooms gave each clearing a recognizable sentence. Replaying that exact

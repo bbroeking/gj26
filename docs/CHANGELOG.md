@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.13-open-larder — 2026-07-21
+
+- Kept procedural Chart graphs, randomized authored room archetypes, the
+  continuous FATE camera, natural cutaway walls, and the larder setpiece.
+- Reduced the First Road larder's legacy pottery markers to the accepted forest
+  support scale after biome remapping made them full-size mossy boulders.
+- Omitted only the supports inside protected room approaches while retaining
+  their seeded occupancy records, so encounter placement remains deterministic.
+- Preserved room connectivity, collision, navigation, encounters, controls,
+  rewards, audio, typed interactions, and later-biome setpieces.
+- Verified 904 canonical assertions, all 112 release resources, and a clean
+  exported title → town → generated road → return route.
+
 ## 0.1.12-open-floor — 2026-07-20
 
 - Kept procedural Chart graphs, randomized authored room archetypes, full-size

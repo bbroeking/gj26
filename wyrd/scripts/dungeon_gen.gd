@@ -1500,7 +1500,17 @@ static func _stamp_setpiece(grid: Array, room: Dictionary, decor: Array) -> void
 				grid[gy][gx] = "floor"
 			elif SETPIECE_DECOR.has(ch):
 				grid[gy][gx] = "floor"
+				# Spec 73 — the First Road larder is still an authored discovery,
+				# but its old pottery ring remaps to large forest boulders.  Keep
+				# those supports below landmark scale and out of every approach.
 				var d := {"kind": SETPIECE_DECOR[ch], "x": gx, "y": gy}
+				if _is_first_hollow_room(room):
+					d["visual_scale"] = 0.62
+					d["setpiece_support"] = true
+					if _inside_room_approach(room, gx, gy, grid):
+						# Preserve the occupied-cell contract consumed by later enemy
+						# placement while omitting only the obstructive presentation.
+						d["presentation_hidden"] = true
 				if String(room.get("setpiece", "")) == "wisp_pool" and ch == "a":
 					d["interact_role"] = "shrine"
 					d["room_id"] = int(room.get("id", -1))
@@ -2105,6 +2115,10 @@ static func _inside_room_approach(r: Dictionary, x: int, y: int, grid: Array) ->
 				and x >= rx1 - 1 and absi(y - my) <= 1:
 			return true
 	return false
+
+
+static func _is_first_hollow_room(r: Dictionary) -> bool:
+	return FIRST_HOLLOW_ARCHETYPE_SHAPES.has(String(r.get("archetype", "")))
 
 static func _shuffle(arr: Array, rng: RandomNumberGenerator) -> void:
 	for i in range(arr.size() - 1, 0, -1):

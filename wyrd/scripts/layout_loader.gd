@@ -1741,6 +1741,10 @@ func _build_decor(layout: Dictionary) -> void:
 	var depths: Array = layout.get("room_depths", [])
 	var dungeon_seed: int = int(layout.get("seed", 0))
 	for d in decor:
+		# Spec 73 — generator reservations can preserve downstream seeded
+		# placement without realizing an obstructive setpiece support mesh.
+		if bool(d.get("presentation_hidden", false)):
+			continue
 		# The authored rootroad IDs are not aliases for crypt dressing.  Consume
 		# them directly when a future pale_veins layout emits them, keeping static
 		# landmark identity stable while gather/campaign ownership stays external.

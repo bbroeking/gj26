@@ -239,6 +239,25 @@ is `8d1e4023c3ae39860134ec598585fc97b59bea69`. Version 11's source-only publish
 attempt hit the host's fetch path, so the identical verified build was saved
 and published through the supported archive fallback as version 12.
 
+## Open Larder checkpoint — shipped 2026-07-21
+
+[Spec 73](specs/73-first-hollow-setpiece-breathing.md) resolves the setpiece
+exception exposed by replaying Open Floor. The First Road larder remains an
+authored, seeded discovery inside the procedural Chart, but its legacy pottery
+markers now resolve at the accepted forest-support scale and do not render
+inside protected room approaches. Hidden occupancy reservations keep downstream
+enemy placement deterministic. The procedural graph, randomized archetypes,
+continuous FATE camera, natural cutaway walls, collision, navigation,
+encounters, controls, audio, rewards, typed interactions, and later-biome
+setpieces are unchanged. The seventeen-suite gate is green at 904 assertions;
+the strict retained audit is 120/127 with the same three long-driver timeouts
+and four documented historical exceptions. All 112 release resources audit
+cleanly, and the exact exported title → town → generated road → return
+route completed in 25.7 seconds with an empty browser diagnostic ledger. The
+105,926,096-byte PCK has SHA-256
+`53e32814f232d775355572878864935f0c1d54812fa3feba929f4c32cb38efac`.
+Companion publication receipt follows in the release commit.
+
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)
 

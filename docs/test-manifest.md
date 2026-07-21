@@ -1,6 +1,6 @@
 # Wayfinder test manifest
 
-Updated 2026-07-20 for `0.1.12-open-floor`.
+Updated 2026-07-21 for `0.1.13-open-larder`.
 
 ## Canonical checkpoint gate
 
@@ -24,7 +24,8 @@ Run every entry with `WYRD_NO_SAVE=1 godot --headless --path wyrd --script res:/
 | `test_first_road_open_canopy.gd` | 5 | Compact forest shoulder and wider opaque camera cutaway stage |
 | `test_first_hollow_room_composition.gd` | 5 | Archetype-owned forest themes, focal realization, aperture safety, and biome isolation |
 | `test_first_hollow_room_breathing.gd` | 5 | Seeded support scale, full-size landmarks, protected room-mouth landings, and biome isolation |
-| **Total** | **898** | **Required before a checkpoint is accepted** |
+| `test_first_hollow_setpiece_breathing.gd` | 6 | Deterministic larder support scale, hidden approach reservations, encounter stability, and biome isolation |
+| **Total** | **904** | **Required before a checkpoint is accepted** |
 
 ## Exported-browser gate
 
@@ -97,11 +98,19 @@ title → town → generated road → return with an empty diagnostic ledger. It
 105,925,552-byte PCK has SHA-256
 `097269870847107143037a5fd35054fe2937616ea65f04a26a6225c7b5a70a66`.
 
-The persistence-disabled retained corpus currently contains 126 direct
-entrypoints. A strict 30-second-per-entrypoint audit passed 119; three known
+The `0.1.13-open-larder` proof requires native/Web/concept comparison of the
+same generated larder, retained seeded setpiece composition, accepted 0.62
+support scale, no rendered support inside a protected approach, and unchanged
+downstream encounter placement. The exact export audited all 112 resources and
+completed title → town → generated road → return in 25.7 seconds with an
+empty diagnostic ledger. Its 105,926,096-byte PCK has SHA-256
+`53e32814f232d775355572878864935f0c1d54812fa3feba929f4c32cb38efac`.
+
+The persistence-disabled retained corpus currently contains 127 direct
+entrypoints. A strict 30-second-per-entrypoint audit passed 120; three known
 long-running driver fixtures exceeded that artificial watchdog, while the
 documented driver/repro and old movement exceptions remained. After updating
-the new room-breathing entrypoint, every retained test that loads the changed
+the new setpiece-breathing entrypoint, every retained test that loads the changed
 generator/rendering seam passes. The production
 dungeon, transition, boot, standalone movement, room, cutaway, and tonal-grade
 gates remain green.
