@@ -37,17 +37,15 @@ func _ready() -> void:
 	_panel.offset_bottom = 230
 	add_child(_panel)
 
-	var title := Label.new()
-	title.text = "The Waystone"
-	WyrdUi.style_title(title)
-	title.position = Vector2(54, 34)
-	_panel.add_child(title)
-
-	var sub := Label.new()
-	sub.text = "Socket a chart. The crossing spends it."
-	WyrdUi.style_dim(sub, 13)
-	sub.position = Vector2(54, 66)
-	_panel.add_child(sub)
+	# Drawn compass-medallion header — replaces the bare title/sub labels so
+	# the most-seen first impression reads as a carved waymarker object, not
+	# an engine text widget.
+	var hdr := _WaystoneHeader.new()
+	hdr.anchor_right = 1.0
+	hdr.offset_left = 42
+	hdr.offset_top = 14
+	hdr.offset_right = -42
+	_panel.add_child(hdr)
 
 	# A full chart case outgrows the panel — the list scrolls now,
 	# bounded above the detail block.
@@ -154,3 +152,62 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# A code-drawn header for the Waystone modal.
+# Draws a carved stone compass medallion beside the title so the panel's
+# most-seen first impression reads as a hand-crafted waymarker rather than
+# an engine widget. The flourish at the bottom acts as a visual divider
+# between the header and the scrolling chart list.
+class _WaystoneHeader extends Control:
+	func _ready() -> void:
+		custom_minimum_size = Vector2(0, 72)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		var hf := WyrdUi.font_header()
+		var font := hf if hf != null else get_theme_default_font()
+		# ── compass medallion ──────────────────────────────────────────────
+		var cx := 40.0
+		var cy := size.y * 0.5 - 4.0   # vertical centre of the header
+		var r  := 26.0
+		# Parchment-cream stone disc.
+		draw_circle(Vector2(cx, cy), r, WyrdUi.KIT_PLATE)
+		# Warm top-left gleam (the stone catches the page's light).
+		draw_arc(Vector2(cx, cy), r - 4.0, PI * 1.05, PI * 1.80, 14,
+			Color(1.0, 0.98, 0.88, 0.50), 3.0, true)
+		# Cardinal arms (N / E / S / W).
+		for i in 4:
+			var ang := PI * 0.5 * float(i)
+			var d := Vector2(cos(ang), sin(ang))
+			draw_line(Vector2(cx, cy) + d * 7.0,
+				Vector2(cx, cy) + d * (r - 4.5),
+				WyrdUi.KIT_EDGE, 1.5)
+		# Diagonal ticks (lighter, shorter — ordinal compass points).
+		for i in 4:
+			var ang := PI * 0.25 + PI * 0.5 * float(i)
+			var d := Vector2(cos(ang), sin(ang))
+			draw_line(Vector2(cx, cy) + d * 14.0,
+				Vector2(cx, cy) + d * (r - 7.0),
+				Color(WyrdUi.KIT_EDGE, 0.42), 1.0)
+		# Gold waymark diamond at the centre — the "here / crossing" symbol.
+		var s    := 6.5
+		var cd   := Vector2(cx, cy)
+		var pts  := PackedVector2Array([cd + Vector2(0, -s),
+			cd + Vector2(s * 0.70, 0), cd + Vector2(0, s),
+			cd + Vector2(-s * 0.70, 0)])
+		draw_colored_polygon(pts, Color(WyrdUi.GOLD, 0.90))
+		draw_polyline(PackedVector2Array([pts[0], pts[1], pts[2], pts[3], pts[0]]),
+			Color(WyrdUi.KIT_EDGE, 0.65), 1.0, true)
+		# Outer ink ring.
+		draw_arc(Vector2(cx, cy), r, 0.0, TAU, 48, WyrdUi.KIT_EDGE, 2.0, true)
+		# ── title + subtitle to the right of the medallion ────────────────
+		var tx := cx + r + 16.0
+		draw_string(font, Vector2(tx, cy + 9.0), "The Waystone",
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx, 24, WyrdUi.TERRACOTTA)
+		draw_string(get_theme_default_font(), Vector2(tx, cy + 27.0),
+			"Socket a chart. The crossing spends it.",
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx, 13, WyrdUi.INK_MID)
+		# ── flourish divider at the bottom of the header ──────────────────
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y - 3.0),
+			size.x - tx + 8.0)
