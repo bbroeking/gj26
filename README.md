@@ -66,8 +66,9 @@ I pack · M satchel · K trades · Space roll · F10 sound (off by default)
 
 ## Tests
 
-Eleven headless suites gate every change (870 assertions at
-`0.1.7-shaded-road`; see `docs/test-manifest.md`):
+Nineteen headless suites gate every checkpoint (986 assertions at
+`0.1.15-creature-identity`; the authoritative list lives in
+`docs/test-manifest.md`):
 
 ```bash
 cd wyrd
@@ -82,6 +83,14 @@ WYRD_NO_SAVE=1 godot --headless --path . --script res://test_hollow_readability.
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_first_hollow_room_grammar.gd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_first_hollow_living_edge.gd
 WYRD_NO_SAVE=1 godot --headless --path . --script res://test_web_tonal_separation.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_first_hollow_forest_continuity.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_first_road_soft_ground.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_first_road_open_canopy.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_first_hollow_room_composition.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_first_hollow_room_breathing.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_first_hollow_setpiece_breathing.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_first_hollow_readable_passages.gd
+WYRD_NO_SAVE=1 godot --headless --path . --script res://test_creature_codex.gd
 ```
 
 ## How it's built

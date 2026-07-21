@@ -1,6 +1,6 @@
 # Wayfinder test manifest
 
-Updated 2026-07-21 for `0.1.14-readable-passages`.
+Updated 2026-07-21 for `0.1.15-creature-identity`.
 
 ## Canonical checkpoint gate
 
@@ -8,13 +8,13 @@ Run every entry with `WYRD_NO_SAVE=1 godot --headless --path wyrd --script res:/
 
 | Entry | Assertions | Protects |
 |---|---:|---|
-| `test_wyrd_loop.gd` | 426 | Core loop, data, economy, campaign contracts |
+| `test_wyrd_loop.gd` | 427 | Core loop, data, economy, campaign contracts, Gilded chest count |
 | `test_wyrd_dungeon_scene.gd` | 41 | Production World scene and dungeon construction |
 | `test_wyrd_transitions.gd` | 125 | Town/World transitions and return ownership |
 | `test_skills.gd` | 75 | Hotbar dispatch and Skill behavior |
-| `test_boot_smoke.gd` | 147 | Script compilation and Town/World boot paths |
+| `test_boot_smoke.gd` | 148 | Script compilation and Town/World boot paths |
 | `test_first_road_slice.gd` | 14 | Fresh 5–10 minute First Road promise |
-| `test_movement_feel.gd` | 12 | Production keyboard movement, roll feel, and named-neighbor motion |
+| `test_movement_feel.gd` | 14 | Production keyboard movement, roll feel, named-neighbor motion, and creature opening-to-pursuit behavior |
 | `test_hollow_readability.gd` | 9 | Boundary-only living walls, complete-profile cutaway restoration, and budget |
 | `test_first_hollow_room_grammar.gd` | 8 | Archetype determinism, variation, boundary truth, and combat apertures |
 | `test_first_hollow_living_edge.gd` | 9 | Profile ownership, landmark count, deterministic remixing, and production realization |
@@ -26,7 +26,8 @@ Run every entry with `WYRD_NO_SAVE=1 godot --headless --path wyrd --script res:/
 | `test_first_hollow_room_breathing.gd` | 5 | Seeded support scale, full-size landmarks, protected room-mouth landings, and biome isolation |
 | `test_first_hollow_setpiece_breathing.gd` | 6 | Deterministic larder support scale, hidden approach reservations, encounter stability, and biome isolation |
 | `test_first_hollow_readable_passages.gd` | 7 | Deterministic passage ownership, every room mouth, compact production realization, collision truth, and biome isolation |
-| **Total** | **911** | **Required before a checkpoint is accepted** |
+| `test_creature_codex.gd` | 71 | Exact creature roster, distinct combat tells, named signatures, Wayfinder chest, and nested Codex interaction |
+| **Total** | **986** | **Required before a checkpoint is accepted** |
 
 ## Exported-browser gate
 
@@ -114,6 +115,15 @@ owned visual banks, and unchanged full wall collision. The exact export audited
 all 112 resources and completed title → town → generated road → return in 29.8
 seconds with an empty diagnostic ledger. Its 105,927,600-byte PCK has SHA-256
 `646d6db35b5bdcf299907ac399b8ee04bfbe8f82bd273cd94aa94dad4e14d82f`.
+
+The `0.1.15-creature-identity` proof requires exact Codex coverage of every
+production common and named creature, kind-owned common-creature opening tells
+without erasing established roles, opt-in named-creature casts, the authored
+Wayfinder chest, and native/Web Codex evidence. Representative production
+chapter gates from First Road through The Unwritten Road pass. The exact export
+audited all 118 required resources and completed title → town → generated road
+→ return with an empty warning/error ledger. Its 105,974,844-byte PCK has
+SHA-256 `a0ea96cdcb1e45ade3b4ec64530c6a8129f5fdf00a6b1d9befd5dba3871d31ea`.
 
 The persistence-disabled retained corpus currently contains 128 direct
 entrypoints. A strict 30-second-per-entrypoint serial audit passed 120; the

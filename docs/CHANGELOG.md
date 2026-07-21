@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.15-creature-identity — 2026-07-21
+
+- Added a complete Creature Codex to the Pause folio, covering every production
+  common and named creature with its Nature, Roads, battle sign, and
+  Bramblewood lore.
+- Gave every common creature a kind-owned, color-matched ranged opening before
+  it resumes its established melee, pursuit, kiting, support, or bruiser role.
+- Kept named signatures primary: Hedgemother, Barrow Jarl, and Hearth Giant may
+  weave in their colored cast, while Burrow Boar, Wolf Alpha, and Knot-Eater
+  remain signature-only.
+- Replaced the pale crypt-era chest with an authored Wayfinder chest whose
+  visible footprint, prompt, scanner reach, one-shot opening, and two treasure
+  rolls agree. Gilded roads now add exactly one bonus chest.
+- Expanded the canonical checkpoint gate to 19 suites and 986 assertions and
+  the Web export audit to 118 required resources.
+
 ## 0.1.14-readable-passages — 2026-07-21
 
 - Kept procedural Chart graphs, randomized authored room archetypes, corridor

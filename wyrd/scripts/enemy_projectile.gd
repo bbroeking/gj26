@@ -22,18 +22,32 @@ const PROJ_COLOR := Color(0.96, 0.42, 0.86)   # bright magenta — pops vs dark 
 var _dir := Vector3.FORWARD
 var _speed := 9.0
 var _damage := 5
+var _color := PROJ_COLOR
+var _spawn_position := Vector3.ZERO
 var _life := 0.0
 var _armed := false          # don't move/collide until setup() has positioned us
 
-func setup(from: Vector3, dir: Vector3, speed: float, damage: int) -> void:
-	global_position = from
+func setup(from: Vector3, dir: Vector3, speed: float, damage: int,
+		color: Color = PROJ_COLOR) -> void:
+	_spawn_position = from
+	# Configuration normally happens before add_child so _ready can build the
+	# right colored material. A detached Node3D has no global transform yet.
+	if is_inside_tree():
+		global_position = from
+	else:
+		position = from
 	var d := Vector3(dir.x, 0.0, dir.z)
 	_dir = d.normalized() if d.length() > 0.01 else Vector3.FORWARD
 	_speed = speed
 	_damage = damage
+	_color = color
 	_armed = true
 
 func _ready() -> void:
+	if is_inside_tree():
+		global_position = _spawn_position
+	else:
+		position = _spawn_position
 	collision_layer = 0
 	collision_mask = (1 << 0) | (1 << 1)   # world + player
 	monitoring = true
@@ -48,9 +62,9 @@ func _ready() -> void:
 	sm.height = RADIUS * 2.0
 	mi.mesh = sm
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = PROJ_COLOR
+	mat.albedo_color = _color
 	mat.emission_enabled = true
-	mat.emission = PROJ_COLOR
+	mat.emission = _color
 	mat.emission_energy_multiplier = 1.6
 	mi.material_override = mat
 	add_child(mi)
@@ -76,7 +90,8 @@ func _on_body(body: Node) -> void:
 # A floor aim-line telegraph from the shooter toward `dir` (the readable "a shot
 # is coming" tell). The combatant adds it as a child, tweens scale.z 0→1 over the
 # windup, and frees it on the strike. Returned at full length; start it thin.
-static func make_telegraph(dir: Vector3, length: float) -> MeshInstance3D:
+static func make_telegraph(dir: Vector3, length: float,
+		color: Color = PROJ_COLOR) -> MeshInstance3D:
 	var d := Vector3(dir.x, 0.0, dir.z)
 	d = d.normalized() if d.length() > 0.01 else Vector3.FORWARD
 	var mi := MeshInstance3D.new()
@@ -84,9 +99,9 @@ static func make_telegraph(dir: Vector3, length: float) -> MeshInstance3D:
 	bm.size = Vector3(0.16, 0.03, length)
 	mi.mesh = bm
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(PROJ_COLOR.r, PROJ_COLOR.g, PROJ_COLOR.b, 0.5)
+	mat.albedo_color = Color(color.r, color.g, color.b, 0.5)
 	mat.emission_enabled = true
-	mat.emission = PROJ_COLOR
+	mat.emission = color
 	mat.emission_energy_multiplier = 1.2
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED

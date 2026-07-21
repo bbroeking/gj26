@@ -37,6 +37,10 @@ const REQUIRED_PACKED_SCENES := [
 	# Both Town's portal and every generated exit preload the same cairn. Keep
 	# this explicit because source-tree symlinks can hide a missing Web export.
 	"res://models/waypoint_cairn_v2.glb",
+	# Creature Identity checkpoint: every generated treasure path preloads the
+	# same authored chest. Keep it explicit so a source-tree symlink cannot hide
+	# a missing Web asset behind a successful route with no visible chests.
+	"res://models/prop_wayfinder_chest_v1.glb",
 ]
 
 const REQUIRED_TEXTURES := [
@@ -136,6 +140,11 @@ const REQUIRED_SCRIPTS := [
 	"res://scripts/wayweaver_echo_authority.gd",
 	"res://scripts/wayweaver_thread_rules.gd",
 	"res://scripts/ui/mastery_panel.gd",
+	"res://data/creature_codex.gd",
+	"res://scripts/chest.gd",
+	"res://scripts/enemy_projectile.gd",
+	"res://scripts/ui/creature_codex_panel.gd",
+	"res://scripts/ui/pause_menu.gd",
 ]
 
 func _initialize() -> void:

@@ -7,6 +7,7 @@ extends SceneTree
 const CreatureAnimScript = preload("res://scripts/creature_anim.gd")
 const CombatantScript = preload("res://scripts/combatant.gd")
 const FirstRoadData = preload("res://data/first_road.gd")
+const LayoutLoader = preload("res://scripts/layout_loader.gd")
 
 var passed := 0
 var failed := 0
@@ -149,22 +150,62 @@ func run() -> void:
 		dungeon_player != null and not enemies.is_empty(), enemies.size())
 	if dungeon_player != null and not enemies.is_empty():
 		var enemy := enemies[0] as CharacterBody3D
-		dungeon_player.global_position = enemy.global_position + Vector3(0.0, 0.0, 4.0)
+		var enemy_kind := String(enemy.get("kind"))
+		var identity: Dictionary = LayoutLoader.ENEMY_KINDS.get(enemy_kind, {})
+		check("a production creature carries its kind-owned projectile identity",
+				not identity.is_empty() \
+				and (enemy.get("projectile_color") as Color).is_equal_approx(
+					identity.get("projectile_color", Color.TRANSPARENT)) \
+				and is_equal_approx(float(enemy.get("proj_speed")),
+					float(identity.get("proj_speed", 0.0))),
+			{"kind": enemy_kind, "color": enemy.get("projectile_color")})
+		dungeon_player.global_position = enemy.global_position + Vector3(0.0, 0.0, 6.0)
 		enemy.set("_state", 1)
 		var enemy_start := enemy.global_position
 		var gfx := enemy.get_child(0) as Node3D
 		var prior_yaw := gfx.rotation.y
 		var max_yaw_step := 0.0
-		for _frame in 30:
+		# Universal creature projectiles add a readable opening wind-up before the
+		# closing stride. The slowest tell is 0.9 s, so sample 1.5 s to measure
+		# both beats without making the spawned kind decide whether the gate flakes.
+		for _frame in 90:
 			await physics_frame
 			var yaw_step := absf(angle_difference(prior_yaw, gfx.rotation.y))
 			max_yaw_step = maxf(max_yaw_step, yaw_step)
 			prior_yaw = gfx.rotation.y
 		check("a real creature advances with bounded per-frame turning",
-			enemy_start.distance_to(enemy.global_position) >= 0.3 \
+			enemy_start.distance_to(enemy.global_position) >= 0.2 \
 			and max_yaw_step <= 0.25,
 			{"distance": enemy_start.distance_to(enemy.global_position),
 				"max_yaw_step": max_yaw_step})
+
+	# Isolate the production Combatant on open ground so this behavior check is
+	# independent of a generated room wall: one ranged opening, then pursuit.
+	for enemy_v in enemies:
+		(enemy_v as Node).set_physics_process(false)
+	dungeon_player.remove_from_group("player")
+	var target := CharacterBody3D.new()
+	target.add_to_group("player")
+	root.add_child(target)
+	target.global_position = Vector3(-100.0, 0.0, -94.0)
+	var pursuer := CombatantScript.new()
+	pursuer.add_child(Node3D.new())
+	root.add_child(pursuer)
+	pursuer.global_position = Vector3(-100.0, 0.0, -100.0)
+	pursuer.kind = "rat"
+	pursuer.move_speed = 2.6
+	pursuer.attack_cooldown = 0.9
+	pursuer.projectile_telegraph = 0.6
+	pursuer.set("_state", 1)
+	for _frame in 180:
+		await physics_frame
+	var closing_distance := pursuer.global_position.distance_to(target.global_position)
+	check("a pursuer closes after its one readable projectile opening",
+		closing_distance <= 3.2,
+		{"kind": pursuer.kind, "distance": closing_distance})
+	pursuer.queue_free()
+	target.queue_free()
+	dungeon_player.add_to_group("player")
 
 	print("--- movement feel: %d PASS, %d FAIL ---" % [passed, failed])
 	quit(1 if failed > 0 else 0)

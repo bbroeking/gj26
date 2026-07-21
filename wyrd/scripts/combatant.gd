@@ -59,6 +59,9 @@ var dead := false
 var damage := ENEMY_DAMAGE
 var move_speed := MOVE_SPEED
 var attack_cooldown := ATTACK_COOLDOWN
+# Production roster id. Keeping it on the actor lets combat presentation,
+# diagnostics, and the Codex speak about the same creature after spawn.
+var kind := "skeleton"
 # Spec 27b — drop context. layout_loader sets these per-spawn.
 var role := "combat"
 var depth := 0
@@ -70,12 +73,19 @@ var depth := 0
 # B6 — bursting chart affix: this corpse pops on death (2m, 6 dmg to
 # kin; Volatile also hits the player).
 var burst_on_death := false
-# Phase 3 — ranged attack (a ghost lobs slow spectral orbs you strafe around).
+# Every creature owns a readable projectile opening. `is_ranged` still controls
+# stance (ghosts/wisps kite); the rest fire while closing, then use their melee,
+# support, or bruiser identity at close range.
+var has_projectile := true
 var is_ranged := false
 var proj_speed := 10.5   # playtest: orbs travel a little faster (still dodgeable; player dash 11.0)
 var proj_damage := 5
+var projectile_color := Color(0.96, 0.42, 0.86)
+var projectile_telegraph := 0.6
 var _aim_dir := Vector3.FORWARD
 var _ranged_tele: Node3D = null
+var _attack_is_projectile := false
+var _opening_projectile_spent := false
 var burst_hits_player := false
 var is_elite: bool = false
 var modifier: String = ""
@@ -457,8 +467,7 @@ func _tick_ai(delta: float) -> void:
 		State.CHASE:
 			if dist > LEASH_RADIUS:
 				_state = State.IDLE
-			elif is_support:
-				moving = _support_tick(delta)   # warden heals, never attacks
+				_opening_projectile_spent = false
 			elif is_ranged and dist < RANGED_MIN:
 				# Ranged kiter — keep a fair standoff so shots stay dodgeable
 				# (never a point-blank orb the player can't outrun). Back off,
@@ -468,26 +477,15 @@ func _tick_ai(delta: float) -> void:
 				velocity.z = away.z * move_speed
 				_face(to.normalized())
 				moving = true
-			elif dist <= (RANGED_RANGE if is_ranged else ATTACK_RANGE) and _attack_cd <= 0.0:
-				_state = State.ATTACK
-				# Phase 2 — telegraph scales with the attack's weight so heavy,
-				# slow hitters tell longer (fairer to read). Drives the damage
-				# timing, the wind-back animation, and (ranged) the aim-line tell.
-				_telegraph_t = clampf(attack_cooldown * 0.3, 0.32, 0.6)
-				if is_ranged:
-					_telegraph_t = maxf(_telegraph_t, 0.6)   # ranged reads longer
-				if is_bruiser:
-					_telegraph_t = BRUTE_TELEGRAPH           # heavy AoE tells longest
-				_did_hit = false
-				velocity.x = 0.0
-				velocity.z = 0.0
-				_aim_dir = to.normalized()                   # locked aim for the shot
-				if _proc_anim != null and _proc_anim.has_method("attack"):
-					_proc_anim.attack(_telegraph_t, _aim_dir)
-				if is_ranged:
-					_spawn_ranged_telegraph(_aim_dir, dist)
-				if is_bruiser:
-					_spawn_brute_ring()
+			elif has_projectile and (is_ranged or not _opening_projectile_spent) \
+					and dist <= RANGED_RANGE \
+					and dist >= (RANGED_MIN if is_ranged else ATTACK_RANGE * 1.4) \
+					and _attack_cd <= 0.0:
+				_begin_combat_attack(to, dist, true)
+			elif is_support:
+				moving = _support_tick(delta)   # heals its pack between opening shots
+			elif dist <= ATTACK_RANGE and _attack_cd <= 0.0:
+				_begin_combat_attack(to, dist, false)
 			else:
 				_chase_move(delta)
 				moving = true
@@ -499,7 +497,7 @@ func _tick_ai(delta: float) -> void:
 				_did_hit = true
 				if _proc_anim != null and _proc_anim.has_method("strike"):
 					_proc_anim.strike()    # Phase 2 — the lunge / throw
-				if is_ranged:
+				if _attack_is_projectile:
 					_fire_projectile(_aim_dir)
 				elif _player.has_method("take_damage"):
 					# Bruiser lands anyone still inside the (bigger) ring; others
@@ -522,6 +520,31 @@ func _tick_ai(delta: float) -> void:
 	# Procedural animator (the rat — spec 21) runs alongside the clip driver.
 	if _proc_anim != null:
 		_proc_anim.update(delta, moving)
+
+
+func _begin_combat_attack(to: Vector3, distance: float,
+		projectile: bool) -> void:
+	_state = State.ATTACK
+	_attack_is_projectile = projectile
+	if projectile and not is_ranged:
+		_opening_projectile_spent = true
+	# The opening shot always gets the longer tell. Heavy melee keeps its own
+	# floor-ring language once the creature has closed the distance.
+	_telegraph_t = clampf(attack_cooldown * 0.3, 0.32, 0.6)
+	if projectile:
+		_telegraph_t = maxf(_telegraph_t, projectile_telegraph)
+	if is_bruiser and not projectile:
+		_telegraph_t = BRUTE_TELEGRAPH
+	_did_hit = false
+	velocity.x = 0.0
+	velocity.z = 0.0
+	_aim_dir = to.normalized()
+	if _proc_anim != null and _proc_anim.has_method("attack"):
+		_proc_anim.attack(_telegraph_t, _aim_dir)
+	if projectile:
+		_spawn_ranged_telegraph(_aim_dir, distance)
+	if is_bruiser and not projectile:
+		_spawn_brute_ring()
 
 # Chain aggro — waking one wakes the pack. When this enemy first spots the
 # player, nearby IDLE peers also give chase, so a room threatens as a group.
@@ -664,7 +687,8 @@ func _chase_move(delta: float) -> void:
 func _spawn_ranged_telegraph(dir: Vector3, length: float) -> void:
 	if _ranged_tele != null and is_instance_valid(_ranged_tele):
 		_ranged_tele.queue_free()
-	var tg := EnemyProjectile.make_telegraph(dir, clampf(length, 2.0, RANGED_RANGE))
+	var tg := EnemyProjectile.make_telegraph(dir,
+		clampf(length, 2.0, RANGED_RANGE), projectile_color)
 	add_child(tg)
 	_ranged_tele = tg
 	# Grow the aim-line over the windup so it reads as a charging shot, not a
@@ -681,9 +705,11 @@ func _fire_projectile(dir: Vector3) -> void:
 	if scene == null:
 		return
 	var proj := EnemyProjectile.new()
-	scene.add_child(proj)
 	proj.setup(global_position + Vector3(0.0, 0.6, 0.0) + dir.normalized() * 0.5,
-		dir, proj_speed, proj_damage)
+		dir, proj_speed, proj_damage, projectile_color)
+	# Configure before _ready builds the orb material, otherwise every creature
+	# briefly (and permanently) receives the old magenta default skin.
+	scene.add_child(proj)
 
 func _face(dir: Vector3) -> void:
 	if dir.length() < 0.01:

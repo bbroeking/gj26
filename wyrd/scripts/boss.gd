@@ -25,9 +25,8 @@ const STOMP_RADIUS := 2.3          # root-stomp — targeted at the player's spo
 # `damage` now lives on Combatant (B3) — layout_loader sets the per-boss
 # value from BOSS_KINDS; 8 was the old hedgemother default.
 
-# B4a — which BOSS_KINDS entry this is; layout_loader sets it. The Boar
-# swaps the radial sweep for a line-telegraphed charge you dodge sideways.
-var kind := "hedgemother"
+# B4a — inherited `kind` names the BOSS_KINDS entry; layout_loader sets it.
+# The Boar swaps the radial sweep for a line-telegraphed charge you dodge sideways.
 
 const CHARGE_RANGE := 8.0
 const CHARGE_WIDTH := 1.7
@@ -59,6 +58,7 @@ var _pending := "sweep"            # "sweep" | "stomp"
 var _stomp_point := Vector3.ZERO
 var _telegraph_node: MeshInstance3D
 var _atk_count := 0
+var projectile_every := 0
 
 # Spec 31 — Hedgemother status immunity table.
 # - Fully immune to lock-down statuses (root, snared) — the player can't
@@ -210,6 +210,23 @@ func _tick_ai(delta: float) -> void:
 
 func _begin_attack() -> void:
 	_atk_count += 1
+	# Every named creature shares the cast's projectile language as a periodic
+	# ranged beat. Signature sweeps/charges remain the first read and the main
+	# identity; every third attack becomes a dodgeable, color-matched shot.
+	if has_projectile and projectile_every > 0 \
+			and _atk_count % projectile_every == 0:
+		_pending = "projectile"
+		_tele_total = maxf(0.6, _phase_telegraph())
+		_tele_t = _tele_total
+		_telegraphing = true
+		var shot_dir := _player.global_position - global_position
+		shot_dir.y = 0.0
+		_aim_dir = shot_dir.normalized() if shot_dir.length() > 0.01 else Vector3.FORWARD
+		_telegraph_node = EnemyProjectile.make_telegraph(_aim_dir,
+			minf(ENGAGE_RANGE, shot_dir.length()), projectile_color)
+		add_child(_telegraph_node)
+		_play_sfx("telegraph")
+		return
 	# Hedgemother family: phase 1 thorn-sweep, later phases alternate with
 	# root-stomp. The Boar (B4a): the charge IS the signature — phase 1 is
 	# charge-only, later phases alternate charge with stomp.
@@ -276,6 +293,9 @@ func _resolve_attack() -> void:
 		_charge_speed = CHARGE_SPEED
 		_charge_t = CHARGE_RANGE / CHARGE_SPEED
 		_play_sfx("charge")
+		return
+	if _pending == "projectile":
+		_fire_projectile(_aim_dir)
 		return
 	if _pending == "lunge":
 		_charging = true

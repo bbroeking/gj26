@@ -37,7 +37,7 @@ func _build_folio() -> void:
 	_folio.anchor_top = 0.5
 	_folio.anchor_right = 0.5
 	_folio.anchor_bottom = 0.5
-	_folio.set_folio_size(Vector2(440.0, 510.0 if _game != null and bool(_game.in_dungeon) else 460.0))
+	_folio.set_folio_size(Vector2(440.0, 590.0 if _game != null and bool(_game.in_dungeon) else 540.0))
 	_folio.setup("Paused", "The road waits.", "Ⅱ")
 	_folio.close_requested.connect(_close)
 	add_child(_folio)
@@ -52,6 +52,11 @@ func _build_folio() -> void:
 	rail.add_theme_constant_override("separation", 10)
 	_folio.body.add_child(rail)
 	var resume := _button(rail, "Resume", &"PrimaryButton", _close)
+	_button(rail, "Creature Codex", &"QuietButton", func():
+		if get_node_or_null("CreatureCodexPanel") == null:
+			var codex: CanvasLayer = load("res://scripts/ui/creature_codex_panel.gd").new()
+			codex.name = "CreatureCodexPanel"
+			add_child(codex))
 	_button(rail, "Options", &"QuietButton", func():
 		var options: CanvasLayer = load("res://scripts/ui/options_menu.gd").new()
 		add_child(options))
@@ -86,6 +91,9 @@ func _button(parent: Container, text: String, variation: StringName,
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
+		# Nested journal leaves own their first cancel; the next one resumes.
+		if get_node_or_null("CreatureCodexPanel") != null:
+			return
 		_close()
 		get_viewport().set_input_as_handled()
 

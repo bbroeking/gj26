@@ -8,7 +8,7 @@ extends Interactable
 # spawns them as ItemPickups (spec 32a). After one use the chest sinks
 # and stops detecting; `is_used()` gates the prompt.
 
-const CHEST_GLB := preload("res://models/dungeon_crypt_chest_v1.glb")
+const CHEST_GLB := preload("res://models/prop_wayfinder_chest_v1.glb")
 const Drops := preload("res://data/drops.gd")
 
 # Set by layout_loader from the host room's BFS depth so deep-dungeon chests
@@ -27,9 +27,24 @@ func get_prompt_color() -> Color:
 
 func _ready_interactable() -> void:
 	_glb = CHEST_GLB.instantiate()
-	_glb.position = Vector3(0.0, 0.05, 0.0)
+	_glb.position = Vector3(0.0, 0.02, 0.0)
 	add_child(_glb)
 	GlbFit.add_ink_outline(_glb)
+
+func get_collision_radius() -> float:
+	return 0.78
+
+func get_solid_radius() -> float:
+	return 0.46
+
+func get_solid_height() -> float:
+	return 0.72
+
+func get_collision_offset() -> Vector3:
+	return Vector3(0.0, 0.34, 0.0)
+
+func get_prompt_position() -> Vector3:
+	return Vector3(0.0, 1.02, 0.0)
 
 func is_used() -> bool:
 	return _opened

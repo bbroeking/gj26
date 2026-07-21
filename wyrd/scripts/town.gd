@@ -294,6 +294,13 @@ func _ready() -> void:
 				add_child(load("res://scripts/ui/options_menu.gd").new())
 			elif OS.get_environment("WYRD_UI_SHOT") == "feedback":
 				add_child(load("res://scripts/ui/feedback_menu.gd").new())
+			elif OS.get_environment("WYRD_UI_SHOT") == "creature_codex":
+				var pause: CanvasLayer = load("res://scripts/ui/pause_menu.gd").new()
+				add_child(pause)
+				var codex: CanvasLayer = load( \
+					"res://scripts/ui/creature_codex_panel.gd").new()
+				codex.name = "CreatureCodexPanel"
+				pause.add_child(codex)
 			elif OS.get_environment("WYRD_UI_SHOT") == "enchant":
 				# The Charm Table — stage equipped gear + reagents + a learned
 				# rare charm so every column renders.

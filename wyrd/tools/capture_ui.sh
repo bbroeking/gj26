@@ -7,7 +7,7 @@ failures=0
 
 node --check tools/validate_capture_manifest.js
 
-for mode in hud pack satchel charts trades dialog vendor cook smith inscribe enchant feedback; do
+for mode in hud pack satchel charts trades dialog vendor cook smith inscribe enchant feedback creature_codex; do
   rm -f /tmp/wyrd_town.png
   env_mode="$mode"
   [ "$mode" = "inscribe" ] && env_mode="table"   # the else-branch opens the table

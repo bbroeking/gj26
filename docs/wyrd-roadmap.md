@@ -282,6 +282,28 @@ Companion-site version 14 is live owner-only with the exact playable export,
 Readable Passages evidence, fingerprint, and next-replay priority; its pushed
 source is `a7900d5bd8bcc6a69b284cd09ffc0b821bfd8d6c`.
 
+## Creature Identity checkpoint — accepted locally 2026-07-21
+
+[Spec 75](specs/75-creature-identity-checkpoint.md) closes the clearest combat-
+readability and world-coherence gaps in the current campaign. Every production
+common creature now owns a fair, colored ranged opening before returning to its
+existing melee, kiting, support, or bruiser role. Named creatures opt into the
+same language only where it complements their authored signature; Boar, Wolf,
+and Knot-Eater remain signature-only. Pause now opens a complete Creature Codex,
+and treasure rooms use the authored Wayfinder chest with aligned collision,
+scanner reach, prompt, one-shot opening, and two-roll loot behavior. Gilded adds
+exactly one bonus chest.
+
+The nineteen-suite native gate is green at 986 assertions, including a new
+71-assertion identity contract. Representative chapter gates from First Road
+through The Unwritten Road pass. The final Web export audited all 118 required
+resources, completed title → town → generated road → return in Chromium, and
+left an empty warning/error ledger. Its 105,974,844-byte PCK has SHA-256
+`a0ea96cdcb1e45ade3b4ec64530c6a8129f5fdf00a6b1d9befd5dba3871d31ea`.
+Native and Web evidence lives in `playtests/creature-identity/`. Publication is
+not claimed by this local checkpoint; the mixed working tree has not been
+committed, pushed, or deployed as part of this acceptance.
+
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)
 

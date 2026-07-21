@@ -72,7 +72,7 @@ const DECOR_MODEL := {
 	"sarcophagus": "res://models/dungeon_crypt_sarcophagus_v1.glb",
 	"altar":       "res://models/dungeon_crypt_altar_v1.glb",
 	"brazier":     "res://models/dungeon_crypt_brazier_v1.glb",
-	"chest":       "res://models/dungeon_crypt_chest_v1.glb",
+	"chest":       "res://models/prop_wayfinder_chest_v1.glb",
 	"column":      "res://models/dungeon_crypt_column_v1.glb",
 	"pottery":     "res://models/dungeon_crypt_pottery_v1.glb",
 	"rug":         "res://models/dungeon_crypt_rug_v1.glb",
@@ -446,44 +446,62 @@ const DECOR_FACING_OFFSET := {}
 const ENEMY_KINDS := {
 	"skeleton": {"model": "res://models/enemy_skeleton_v1.glb", "scale": 1.45,
 		"hp": 18, "damage": 7, "speed": 1.55, "atk_cd": 1.7,
-		"tint": Color(0.86, 0.82, 0.70)},
+		"tint": Color(0.86, 0.82, 0.70),
+		"projectile_color": Color(0.95, 0.88, 0.66), "proj_speed": 7.5,
+		"proj_damage": 5, "projectile_telegraph": 0.72},
 	"rat": {"model": "res://models/enemy_rat_v1.glb", "scale": 0.55,
 		"hp": 10, "damage": 2, "speed": 2.6, "atk_cd": 0.9,
-		"tint": Color(0.42, 0.32, 0.24), "bob": [0.14, 13.0]},
+		"tint": Color(0.42, 0.32, 0.24), "bob": [0.14, 13.0],
+		"projectile_color": Color(0.62, 0.38, 0.18), "proj_speed": 12.0,
+		"proj_damage": 2, "projectile_telegraph": 0.60},
 	"ghost": {"model": "res://models/enemy_ghost_v1.glb", "scale": 2.00,
 		"hp": 14, "damage": 5, "speed": 1.35, "atk_cd": 1.5,
 		"tint": Color(0.66, 0.78, 0.90), "ethereal": true,
-		"ranged": true, "proj_speed": 9.0, "proj_damage": 5},
+		"ranged": true, "projectile_color": Color(0.55, 0.78, 1.0),
+		"proj_speed": 9.0, "proj_damage": 5, "projectile_telegraph": 0.72},
 	# Sallow Mire signature role — a brighter, faster ranged wisp that forces
 	# movement across the wet room while its ground-bound family closes in.
 	"bog_wisp": {"model": "res://models/enemy_ghost_v1.glb", "scale": 1.65,
 		"hp": 12, "damage": 4, "speed": 1.65, "atk_cd": 1.25,
 		"tint": Color(0.48, 0.92, 0.68), "ethereal": true,
-		"ranged": true, "proj_speed": 10.5, "proj_damage": 4},
+		"ranged": true, "projectile_color": Color(0.35, 1.0, 0.62),
+		"proj_speed": 10.5, "proj_damage": 4, "projectile_telegraph": 0.62},
 	"hedge_sprite": {"model": "res://models/enemy_hedge_sprite_v1.glb", "scale": 2.00,
 		"hp": 22, "damage": 6, "speed": 1.9, "atk_cd": 1.4,
-		"tint": Color(0.44, 0.56, 0.27)},
+		"tint": Color(0.44, 0.56, 0.27),
+		"projectile_color": Color(0.72, 0.90, 0.25), "proj_speed": 8.5,
+		"proj_damage": 4, "projectile_telegraph": 0.68},
 	"bramble_imp": {"model": "res://models/bramble_imp_v4.glb", "fit_h": 1.05,
 		"hp": 12, "damage": 4, "speed": 2.2, "atk_cd": 1.1,
-		"tint": Color(0.34, 0.46, 0.22), "bob": [0.12, 10.0]},
+		"tint": Color(0.34, 0.46, 0.22), "bob": [0.12, 10.0],
+		"projectile_color": Color(0.72, 0.22, 0.38), "proj_speed": 11.0,
+		"proj_damage": 3, "projectile_telegraph": 0.60},
 	"skitterling": {"model": "res://models/skitterling.glb", "fit_h": 0.55,
 		"hp": 7, "damage": 2, "speed": 3.0, "atk_cd": 0.8,
-		"tint": Color(0.70, 0.30, 0.20), "bob": [0.10, 15.0]},
+		"tint": Color(0.70, 0.30, 0.20), "bob": [0.10, 15.0],
+		"projectile_color": Color(1.0, 0.38, 0.14), "proj_speed": 12.5,
+		"proj_damage": 2, "projectile_telegraph": 0.60},
 	# Support archetype — a hedge-sprite reskin that follows and HEALS its pack
 	# instead of attacking; greener, slower, low HP. Kill it first or the room
 	# never goes down. (combatant.gd reads `support`.)
 	"warden": {"model": "res://models/enemy_hedge_sprite_v1.glb", "scale": 1.7,
 		"hp": 20, "damage": 3, "speed": 1.6, "atk_cd": 2.2,
-		"tint": Color(0.44, 0.72, 0.40), "support": true},
+		"tint": Color(0.44, 0.72, 0.40), "support": true,
+		"projectile_color": Color(0.38, 1.0, 0.72), "proj_speed": 8.0,
+		"proj_damage": 3, "projectile_telegraph": 0.80},
 	# Bruiser archetype — a chunky bramble-imp reskin that telegraphs an
 	# expanding floor ring (~0.7s) then lands a heavy AoE strike. The first
 	# "get out of the circle" tell in the cast. (combatant.gd reads `bruiser`.)
 	"barrow_brute": {"model": "res://models/bramble_imp_v4.glb", "fit_h": 1.7,
 		"hp": 32, "damage": 14, "speed": 1.0, "atk_cd": 3.0,
-		"tint": Color(0.28, 0.22, 0.18), "bruiser": true},
+		"tint": Color(0.28, 0.22, 0.18), "bruiser": true,
+		"projectile_color": Color(0.90, 0.56, 0.20), "proj_speed": 6.5,
+		"proj_damage": 7, "projectile_telegraph": 0.90},
 	"bough_watcher": {"model": "res://models/enemy_oathbound_v1.glb", "fit_h": 1.95,
 		"hp": 30, "damage": 10, "speed": 1.55, "atk_cd": 1.7,
-		"tint": Color(0.52, 0.27, 0.16)},
+		"tint": Color(0.52, 0.27, 0.16),
+		"projectile_color": Color(1.0, 0.66, 0.28), "proj_speed": 9.5,
+		"proj_damage": 7, "projectile_telegraph": 0.72},
 }
 
 # Slice A — CHUNKY INK OUTLINE. Deep-INK inverted-hull shell, attached as the
@@ -517,32 +535,41 @@ const BOSS_KINDS := {
 	"hedgemother": {"name": "The Hedgemother",
 		"model": "res://models/hedgemother_v2.glb", "scale": 3.75,
 		"hp": 60, "damage": 8, "radius": 0.9, "height": 3.0,
-		"trophy": "tusker_tusk"},
+		"trophy": "tusker_tusk", "projectile_every": 3,
+		"projectile_color": Color(0.64, 0.92, 0.28), "proj_speed": 8.0,
+		"proj_damage": 6},
 	"burrow_boar": {"name": "The Burrow Boar",
 		"model": "res://models/burrow_boar_v3.glb", "fit_h": 2.2,
 		"hp": 80, "damage": 11, "radius": 1.0, "height": 2.2, "bob": [0.10, 6.0],
-		"trophy": "wightpelt"},
+		"trophy": "wightpelt", "projectile_every": 0},
 	"wolf_alpha": {"name": "The Wolf Alpha",
 		"model": "res://models/wolf_alpha_v2.glb", "fit_h": 1.8,
 		"hp": 55, "damage": 7, "radius": 0.8, "height": 1.8, "bob": [0.13, 9.5],
-		"trophy": "alpha_fang"},
+		"trophy": "alpha_fang", "projectile_every": 0},
 	# The Summit's nest-mother — the final chart's boss. Same silhouette the
 	# player learned at level 8, scaled into a monarch.
 	"hedgemother_queen": {"name": "The Hedgemother Queen",
 		"model": "res://models/hedgemother_v2.glb", "scale": 4.6,
-		"hp": 160, "damage": 13, "radius": 1.1, "height": 3.6, "trophy": ""},
+		"hp": 160, "damage": 13, "radius": 1.1, "height": 3.6, "trophy": "",
+		"projectile_every": 3, "projectile_color": Color(0.82, 1.0, 0.62),
+		"proj_speed": 9.0, "proj_damage": 9},
 	# Blender-authored skinned production boss.  The GLB embeds the Jarl's
 	# idle/walk/attack/hit/shield/Reeling/relief/kneel/defeat clips; gameplay
 	# ownership remains in BarrowJarl + BarrowJarlController.
 	"barrow_jarl": {"name": "The Barrow Jarl",
 		"model": "res://models/boss_barrow_jarl_v1.glb", "fit_h": 3.2,
-		"hp": 220, "damage": 15, "radius": 1.0, "height": 3.2, "trophy": ""},
+		"hp": 220, "damage": 15, "radius": 1.0, "height": 3.2, "trophy": "",
+		"projectile_every": 4, "projectile_color": Color(0.46, 0.78, 1.0),
+		"proj_speed": 8.5, "proj_damage": 10},
 	"hearth_giant": {"name": "The Hearth Giant",
 		"model": "res://models/boss_hearth_giant_v1.glb", "fit_h": 3.6,
-		"hp": 260, "damage": 17, "radius": 1.15, "height": 3.6, "trophy": ""},
+		"hp": 260, "damage": 17, "radius": 1.15, "height": 3.6, "trophy": "",
+		"projectile_every": 3, "projectile_color": Color(1.0, 0.42, 0.12),
+		"proj_speed": 7.5, "proj_damage": 12},
 	"knot_eater": {"name": "The Knot-Eater",
 		"model": "res://models/boss_barrow_jarl_v1.glb", "fit_h": 3.2,
-		"hp": 320, "damage": 12, "radius": 1.1, "height": 3.2, "trophy": ""},
+		"hp": 320, "damage": 12, "radius": 1.1, "height": 3.2, "trophy": "",
+		"projectile_every": 0},
 }
 
 var _floor_mat: ShaderMaterial
@@ -1813,6 +1840,12 @@ func _build_decor(layout: Dictionary) -> void:
 			_build_interactable(ir, d, depths, dungeon_seed)
 			continue
 		var kind := String(d.kind)
+		# Legacy/static layouts may lack the typed-room tag. A chest is still a
+		# treasure verb, never inert dressing, and must use the same Wayfinder
+		# prop/loot contract as generated rooms.
+		if kind == "chest":
+			_build_interactable("treasure", d, depths, dungeon_seed)
+			continue
 		var model_path := _decor_model(kind)
 		if model_path == "":
 			continue
@@ -2121,6 +2154,11 @@ func _build_boss(boss_room, grid: Array, boss_kind: String = "hedgemother",
 	boss.depth = 9
 	boss.damage = int(def.get("damage", 8))
 	boss.kind = boss_kind              # B4a — selects the moveset (boar charges)
+	boss.projectile_every = int(def.get("projectile_every", 0))
+	boss.has_projectile = boss.projectile_every > 0
+	boss.projectile_color = def.get("projectile_color", boss.projectile_color)
+	boss.proj_speed = float(def.get("proj_speed", boss.proj_speed))
+	boss.proj_damage = int(def.get("proj_damage", boss.damage))
 	_boss_body = boss                  # Wyrd — exit waystone keys off her death
 	var is_campaign_boss := bool(campaign_contract.get("guaranteed", false)) \
 		and String(campaign_contract.get("boss_kind", "")) == boss_kind
@@ -2922,6 +2960,7 @@ func _spawn_enemy(ei: int, tx: int, ty: int, role: String = "combat",
 	var hp := maxi(4, roundi(int(def.hp) * _hp_mult * jitter))
 	var body := _spawn_character(inst, tx, ty, 0.4, 1.4, hp)
 	# B3 — per-kind feel: how hard it hits, how fast it closes, how often.
+	body.kind = kind
 	body.damage = int(round(float(def.get("damage", 5)) * _dmg_mult))
 	body.move_speed = float(def.get("speed", 1.8)) * _speed_mult
 	body.attack_cooldown = float(def.get("atk_cd", 1.5)) / _atk_speed_mult
@@ -2932,6 +2971,8 @@ func _spawn_enemy(ei: int, tx: int, ty: int, role: String = "combat",
 	body.is_bruiser = bool(def.get("bruiser", false))   # barrow brute — AoE ring
 	body.proj_speed = float(def.get("proj_speed", 9.0))
 	body.proj_damage = int(def.get("proj_damage", body.damage))
+	body.projectile_color = def.get("projectile_color", body.projectile_color)
+	body.projectile_telegraph = float(def.get("projectile_telegraph", 0.6))
 	# B6 — bursting corpses.
 	body.burst_on_death = _burst_on_death
 	body.burst_hits_player = _burst_hits_player
@@ -3129,8 +3170,14 @@ func _position_player(entry) -> void:
 			player.set_spawn(_entry_pos)
 
 func _debug_screenshot() -> void:
-	if OS.get_environment("WYRD_DEV_FIRST_ROAD") == "bold":
-		var player := get_tree().get_first_node_in_group("player") as Node3D
+	var player := get_tree().get_first_node_in_group("player") as Node3D
+	if OS.get_environment("WYRD_SHOT_FOCUS") == "chest" and player != null:
+		for candidate in get_tree().get_nodes_in_group("interactable"):
+			if candidate is Chest:
+				player.global_position = (candidate as Node3D).global_position \
+					+ Vector3(0.0, 0.0, 2.4)
+				break
+	elif OS.get_environment("WYRD_DEV_FIRST_ROAD") == "bold":
 		for enemy in get_tree().get_nodes_in_group("enemy"):
 			if player != null and bool(enemy.get("is_elite")) and enemy is Node3D:
 				player.global_position = (enemy as Node3D).global_position + Vector3(0.0, 0.0, 4.5)

@@ -1,5 +1,28 @@
 # Wayfinder devlog
 
+## 2026-07-21 — The road learned its creatures
+
+Readable Passages made the route trustworthy, then the next playthrough made
+the inhabitants feel like the least-authored part of the Hollow. Skeletons,
+rats, wisps, sprites, and brutes had different numbers and pursuit rules, but
+their first readable action still shared too much visual language. The pale
+crypt chest beside them belonged to an even older version of the road.
+
+Creature Identity gives every common creature one fair, kind-colored opening
+before it returns to the role it already owned. A Bog Wisp still kites, a
+Warden still heals, and a Brute still announces its heavy floor ring. Named
+creatures only borrow that cast when it leaves their authored signature intact;
+the Boar, Wolf, and Knot-Eater remain themselves. The new Creature Codex records
+the same tells in the Field Journal, and treasure rooms now hold an authored
+Wayfinder chest whose solid shape and reward behavior agree with what the
+player sees.
+
+The checkpoint adds no creature, encounter, reward, Trade, Skill, or progression
+track. Its job is recognition: the road should feel inhabited by distinct
+storybook creatures, and the journal should tell the truth about how they
+fight. Native and Web evidence, the 986-assertion gate, representative later
+chapters, and the exact 118-resource export all agree on that contract.
+
 ## 2026-07-21 — The road showed its openings
 
 Open Larder removed the last authored rock barricade. Replaying that exact

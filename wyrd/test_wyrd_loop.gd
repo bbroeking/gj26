@@ -438,15 +438,21 @@ func _test_b6_affixes() -> void:
 	_check("15 affixes rollable at carto 20", w.size() == 15, str(w.size()))
 	_check("dens never in the random pool", not w.has("hedgemother_den")
 		and not w.has("burrow_boar_den") and not w.has("wolf_alpha_den"))
-	# Gilded scatters exactly two extra chests (not gather nodes).
+	# Gilded scatters one extra chest (not a gather node). Ordinary layouts own
+	# one treasure-room chest, so this caps the readable map total at two.
 	var lay := DungeonGenScript.generate(909, {"grid": 36, "room_min": 7,
 		"room_max": 11, "boss_kind": "", "tier": 2,
 		"affixes": [{"id": "gilded", "good": true}]})
 	var chests := 0
+	var gilded_chests_are_interactable := true
 	for d in lay.decor:
 		if String(d.get("kind", "")) == "chest" and not bool(d.get("gather", true)):
 			chests += 1
-	_check("gilded adds 2 chests", chests >= 2, str(chests))
+			gilded_chests_are_interactable = gilded_chests_are_interactable \
+				and String(d.get("interact_role", "")) == "treasure"
+	_check("gilded adds 1 chest", chests == 1, str(chests))
+	_check("gilded chest uses the production treasure interaction",
+		gilded_chests_are_interactable)
 	# Wave-2 behaviors reachable without a scene: the affix twins feed the
 	# player/loader mults, and Barren Veins taxes the channel.
 	var game = load("res://scripts/game.gd").new()

@@ -662,10 +662,11 @@ static func _campaign_clue_guarantee_valid(raw_contract, clues: Array,
 # Mirrors the shipped three.js consumer (src/scene/dungeon.js:253-303):
 # the good twin scatters nodes on random non-entry/non-boss room floor
 # tiles; the bad twin simply places nothing.
-# B6 — gilded (good twin) hides two extra chests; reuses the gather
-# scatter machinery with chest decor instead of nodes.
+# B6 — Gilded (good twin) hides one extra chest; ordinary treasure rooms
+# already own one authored chest, so a Gilded road presents two memorable
+# chest moments without turning the room grammar into a prop field.
 const GATHER_BY_AFFIX := {
-	"gilded": {"kind": "chest", "item": "", "count": [2, 2]},
+	"gilded": {"kind": "chest", "item": "", "count": [1, 1]},
 	"mineral_vein":  {"kind": "ore_rock",    "item": "bogiron_ore", "count": [3, 5]},
 	"bramble_bloom": {"kind": "forage_node", "item": "wild_herb",   "count": [4, 6]},
 	# herbal_patch is the Lv-14 upgrade over bramble_bloom: same herb, richer
@@ -787,6 +788,11 @@ static func _scatter_gather_nodes(rooms: Array, grid: Array, entry: Dictionary,
 				"x": x, "y": y, "orient": "center", "room_id": ri,
 				"room_depth": int(room_depths[ri]) if ri < room_depths.size() else 0,
 				"source": "affix", "source_affix": affix_id}
+			# Gilded chests are real treasure Interactables, not static crypt-era
+			# decor. The loader now takes the same ChestScene path as an authored
+			# treasure-room focal and preserves depth-biased two-roll loot.
+			if String(spec.kind) == "chest":
+				entry_d["interact_role"] = "treasure"
 			# A6/45 — gather nodes roll a tier from the data tables; deeper
 			# charts carry the richer veins and the rarer herbs. Briar Maze's first
 			# node from each good gather Affix is the lowest authored tier in that
