@@ -323,10 +323,15 @@ func _show_bar() -> void:
 	_bar_root = Node3D.new()
 	_bar_root.position = Vector3(0.0, 1.15, 0.0)
 	add_child(_bar_root)
-	var bg := _bar_quad(Vector2(0.7, 0.1), Color(0.10, 0.08, 0.06, 0.85))
+	# Three layers: ink border → warm parchment trough → sage fill.
+	# z-offsets ensure the correct draw order among billboard quads.
+	var border := _bar_quad(Vector2(0.74, 0.14), Color(0.22, 0.16, 0.12, 0.92))
+	_bar_root.add_child(border)
+	var bg := _bar_quad(Vector2(0.70, 0.10), Color(0.84, 0.78, 0.60, 0.92))
+	bg.position.z = 0.005
 	_bar_root.add_child(bg)
-	_bar_fill = _bar_quad(Vector2(0.66, 0.06), Color(0.78, 0.92, 0.62))
-	_bar_fill.position.z = 0.01     # in front of the bg quad
+	_bar_fill = _bar_quad(Vector2(0.66, 0.06), Color(0.46, 0.72, 0.38))
+	_bar_fill.position.z = 0.01
 	_bar_root.add_child(_bar_fill)
 	_set_bar(0.0)
 
