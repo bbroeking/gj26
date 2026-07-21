@@ -27,4 +27,6 @@ and the continuous FATE camera and natural wall cutaway hold.
   `53e32814f232d775355572878864935f0c1d54812fa3feba929f4c32cb38efac`.
 - Browser history: title → town → world → complete in 25.7 seconds;
   diagnostics empty.
-- Companion receipt: pending publication.
+- Companion receipt: owner-only Field Journal version 13, pushed source
+  `a178c4053f21545e2843a2906738f3096026bdf5`, deployed and visually verified at
+  `https://wayfinder-field-journal.iamactuallyinthearen.chatgpt.site`.

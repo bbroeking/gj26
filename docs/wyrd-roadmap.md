@@ -256,7 +256,9 @@ cleanly, and the exact exported title → town → generated road → return
 route completed in 25.7 seconds with an empty browser diagnostic ledger. The
 105,926,096-byte PCK has SHA-256
 `53e32814f232d775355572878864935f0c1d54812fa3feba929f4c32cb38efac`.
-Companion publication receipt follows in the release commit.
+Companion-site version 13 is live owner-only with the exact playable export,
+Open Larder evidence, fingerprint, and next-replay priority; its pushed source
+is `a178c4053f21545e2843a2906738f3096026bdf5`.
 
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)
