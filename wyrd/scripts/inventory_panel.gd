@@ -769,9 +769,26 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 				continue
 			if _span_visible(y - 14.0, y + 5.0, scroll, view):
 				var good: bool = bool(a.get("good", false))
-				draw_string(font, Vector2(x + 30, y),
-					("✓ " + String(aff.name)) if good else ("✗ " + String(aff.bad_name)),
-					HORIZONTAL_ALIGNMENT_LEFT, w - 30, 13,
+				# Mini diamond pip in the left margin — sage for good twin,
+				# terracotta for bad; X cross inside bad ones.  Mirrors the
+				# kit's ◆ flourish motif; reads as a manuscript rubric mark.
+				var pip_c := Vector2(x + 14.5, y - 5.5)
+				var pip_col := WyrdUi.SAGE.darkened(0.05) if good else WyrdUi.TERRACOTTA
+				var pip_pts := PackedVector2Array([
+					pip_c + Vector2(0.0, -4.5), pip_c + Vector2(4.5, 0.0),
+					pip_c + Vector2(0.0, 4.5), pip_c + Vector2(-4.5, 0.0)])
+				draw_colored_polygon(pip_pts, Color(pip_col, 0.88))
+				var pip_outline := pip_pts.duplicate()
+				pip_outline.append(pip_pts[0])
+				draw_polyline(pip_outline, Color(WyrdUi.KIT_EDGE, 0.50), 0.9)
+				if not good:
+					draw_line(pip_c + Vector2(-2.2, -2.2), pip_c + Vector2(2.2, 2.2),
+						Color(0.97, 0.92, 0.80, 0.78), 1.1)
+					draw_line(pip_c + Vector2(2.2, -2.2), pip_c + Vector2(-2.2, 2.2),
+						Color(0.97, 0.92, 0.80, 0.78), 1.1)
+				draw_string(font, Vector2(x + 30.0, y),
+					String(aff.name) if good else String(aff.bad_name),
+					HORIZONTAL_ALIGNMENT_LEFT, w - 30.0, 13,
 					WyrdUi.SAGE.darkened(0.2) if good else WyrdUi.TERRACOTTA)
 			y += 20.0
 		y += 10.0
