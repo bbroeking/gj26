@@ -369,19 +369,39 @@ func _regrow() -> void:
 		t.tween_property(_body, "scale", Vector3.ONE, 0.35) \
 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
-# A small rising "+1 X" label at the node.
+# A small rising "+N X" / "interrupted" label at the node.
+# Spec 44 — material-group tint: verdant harvests rise in sage green,
+# earthen in warm copper, lumen in ivory gold. "interrupted" warns in
+# terracotta. IM Fell storybook font + a scale pop for delight.
 func _float_text(text: String) -> void:
 	var lbl := Label3D.new()
 	lbl.text = text
 	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	lbl.no_depth_test = true
-	lbl.font_size = 40
+	lbl.font_size = 44
 	lbl.pixel_size = 0.005
-	lbl.outline_size = 10
+	lbl.outline_size = 12
 	lbl.outline_modulate = Color(0.08, 0.05, 0.06, 1.0)
-	lbl.modulate = Color(0.85, 0.95, 0.7)
+	var hf := WyrdUi.font_header()
+	if hf != null:
+		lbl.font = hf
+	if text.begins_with("+"):
+		var group := String((GatherDefs.MATERIALS.get(item_id, {}) as Dictionary)
+			.get("group", ""))
+		match group:
+			"verdant": lbl.modulate = Color(0.68, 0.92, 0.48)
+			"earthen": lbl.modulate = Color(0.95, 0.82, 0.50)
+			"lumen":   lbl.modulate = Color(0.98, 0.92, 0.58)
+			_:         lbl.modulate = Color(0.85, 0.95, 0.70)
+	else:
+		lbl.modulate = Color(0.88, 0.40, 0.30)
 	lbl.position = Vector3(0.0, 1.0, 0.0)
 	add_child(lbl)
+	lbl.scale = Vector3.ZERO
+	var pop := create_tween()
+	pop.tween_property(lbl, "scale", Vector3.ONE * 1.18, 0.09) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	pop.tween_property(lbl, "scale", Vector3.ONE, 0.07)
 	var t := create_tween()
 	t.set_parallel(true)
 	t.tween_property(lbl, "position:y", 2.0, 0.9)
