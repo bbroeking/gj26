@@ -174,7 +174,9 @@ green at 883 assertions, all 112 release resources audit cleanly, and the exact
 browser route completed title → town → generated First Road → return without a
 warning or error. The next cycle should replay the shipped build before choosing
 between foreground canopy bulk, corridor-mouth direction, and stronger
-archetype landmark identity.
+archetype landmark identity. Companion-site version 8 is live owner-only with
+the exact playable export, fingerprint, accepted render, and replay priority;
+its pushed source is `b31880de5417103ab8c72dcf83337f4a5283f09b`.
 
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)

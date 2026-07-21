@@ -33,6 +33,12 @@
   title → town → generated First Road → return route with an empty diagnostic
   ledger. Its 105,923,984-byte PCK has SHA-256
   `372e3d0c71b3f732beaa9b4f2f8564782af3f5e3a649ce8fc62aa11bc70a467f`.
+- Companion Field Journal version 8 built from pushed source
+  `b31880de5417103ab8c72dcf83337f4a5283f09b`, passed its rendered HTML and
+  packaged-build tests, and deployed owner-only at
+  `https://wayfinder-field-journal.iamactuallyinthearen.chatgpt.site`.
+  The production URL presented the expected ChatGPT sign-in boundary from the
+  current browser context, confirming the access posture without widening it.
 
 ## Followups
 
