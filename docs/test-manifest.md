@@ -1,6 +1,6 @@
 # Wayfinder test manifest
 
-Updated 2026-07-20 for `0.1.10-open-canopy`.
+Updated 2026-07-20 for `0.1.11-forest-rooms`.
 
 ## Canonical checkpoint gate
 
@@ -22,7 +22,8 @@ Run every entry with `WYRD_NO_SAVE=1 godot --headless --path wyrd --script res:/
 | `test_first_hollow_forest_continuity.gd` | 8 | Forest-bed coverage, cutaway ownership, depth, and non-authority |
 | `test_first_road_soft_ground.gd` | 5 | One-surface First Road soil morph and later-biome isolation |
 | `test_first_road_open_canopy.gd` | 5 | Compact forest shoulder and wider opaque camera cutaway stage |
-| **Total** | **888** | **Required before a checkpoint is accepted** |
+| `test_first_hollow_room_composition.gd` | 5 | Archetype-owned forest themes, focal realization, aperture safety, and biome isolation |
+| **Total** | **893** | **Required before a checkpoint is accepted** |
 
 ## Exported-browser gate
 
@@ -79,9 +80,20 @@ generated First Road → return with an empty diagnostic ledger. Its
 105,923,952-byte PCK has SHA-256
 `add43de81df0b0416608d86d02a6356b804e69f9a7149aae644cf98f5c363bb8`.
 
-The persistence-disabled retained corpus currently contains 124 direct
-entrypoints: 120 pass. Its driver-required and historical timing exceptions
-remain; the rendering checkpoint introduced no new failure. The production
+The `0.1.11-forest-rooms` proof requires native/Web/concept comparison of the
+same generated road, distinct authored composition kits across the seeded
+archetype sample, protected combat apertures, and unchanged typed-room focal
+contracts. The exact export audited 112 resources and completed title → town →
+generated road → return with an empty diagnostic ledger. Its 105,924,736-byte
+PCK has SHA-256
+`f3ea722c0a716db7615d83250e9dacb305ff5fa81759445c8ea7ea9ca6f62509`.
+
+The persistence-disabled retained corpus currently contains 125 direct
+entrypoints. A strict 30-second-per-entrypoint audit passed 118; three known
+long-running driver fixtures exceeded that artificial watchdog, while the
+documented driver/repro and old movement exceptions remained. After updating
+the obsolete snug-theme assertion, every retained test that loads the changed
+composition seam passes. The production
 dungeon, transition, boot, standalone movement, room, cutaway, and tonal-grade
 gates remain green.
 

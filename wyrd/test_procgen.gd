@@ -62,7 +62,8 @@ func _run_baseline() -> void:
 func _check_scope_variance() -> void:
 	print("--- scope variance checks ---")
 
-	# snug: at least one room has root_cellar or wine_rack, score >= 0.70 first pass
+	# snug: at least one ordinary room exposes its authored First Road
+	# composition theme, score >= 0.70 first pass
 	var snug_layout: Dictionary = DungeonGenScript.generate(42, {
 		"scope": "snug", "grid": 28, "room_min": 6, "room_max": 10,
 		"room_count_min": 3, "room_count_max": 7,
@@ -71,10 +72,10 @@ func _check_scope_variance() -> void:
 	var snug_scope_themes := false
 	for r in snug_rooms:
 		var t: String = String(r.get("theme", ""))
-		if t == "root_cellar" or t == "wine_rack":
+		if t.begins_with("first_"):
 			snug_scope_themes = true
 			break
-	_check("snug: at least one room is root_cellar or wine_rack", snug_scope_themes,
+	_check("snug: at least one room owns a First Road composition", snug_scope_themes,
 		str(snug_rooms.map(func(r): return r.get("theme", ""))))
 	var snug_score: float = float(snug_layout.score.total)
 	_check("snug: score >= 0.70", snug_score >= 0.70,

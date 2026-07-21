@@ -198,6 +198,23 @@ Companion-site version 9 is live owner-only with the exact playable export,
 fingerprint, accepted render, and next-replay priority; its pushed source is
 `5e5532d9671bac7b1e85a09d58080dc68006067a`.
 
+## Forest Rooms checkpoint — shipped 2026-07-20
+
+[Spec 71](specs/71-first-hollow-room-composition.md) resolves the room-identity
+gap exposed by replaying Open Canopy. The generator's existing Lantern Landing,
+Round Glade, Crooked Bower, and Long Clearing choices now control compact forest
+composition kits rather than inheriting generic crypt-era themes beneath asset
+remapping. Shapes, graph connections, counts, and placement remain seeded and
+procedural; the continuous FATE camera, natural cutaway walls, protected combat
+stage, typed interactions, enemies, rewards, controls, audio, and later biomes
+are unchanged. The fifteen-suite gate is green at 893 assertions. All 112
+release resources audit cleanly, and the exact exported title → town → generated
+road → return route completed with no browser diagnostic. The 105,924,736-byte
+PCK has SHA-256
+`f3ea722c0a716db7615d83250e9dacb305ff5fa81759445c8ea7ea9ca6f62509`.
+The next replay should judge the oversized pale treasure-chest presentation and
+remaining creature/prop coherence rather than adding another room system.
+
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)
 

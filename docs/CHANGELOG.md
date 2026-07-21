@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.11-forest-rooms — 2026-07-20
+
+- Kept procedural Chart graphs, seeded room variation, the continuous FATE
+  camera, natural cutaway walls, encounters, rewards, and controls unchanged.
+- Gave Lantern Landing, Round Glade, Crooked Bower, and Long Clearing their own
+  compact forest composition kits instead of dressing them from crypt-era room
+  themes hidden beneath biome remapping.
+- Preserved the protected combat aperture and every Chest, Shrine, Hearth, and
+  boss focal contract; later biomes retain their existing themes.
+- Shifted the First Road fallen log from grey-green toward bark brown so its
+  room anchor no longer reads as pale crypt stone at play distance.
+- Verified 893 canonical assertions, all 112 release resources, and a clean
+  exported title → town → generated road → return route.
+
 ## 0.1.10-open-canopy — 2026-07-20
 
 - Preserved procedural Chart graphs, randomized authored clearing archetypes,

@@ -156,6 +156,39 @@ const ROOM_THEMES := {
 			{"kind": "brazier", "pattern": "corners", "count": [1, 2]},
 		],
 	},
+	# Spec 71 — First Road room compositions. These are deliberately compact:
+	# one recognizable forest anchor plus a restrained supporting rhythm. The
+	# graph still chooses and varies authored archetypes; these themes make that
+	# choice visible in the room instead of leaving crypt-era theme names in
+	# charge of its dressing.
+	"first_lantern_landing": {
+		"focal":      {"kind": "altar",   "pattern": "walls",   "count": [1, 1]},
+		"satellites": [
+			{"kind": "brazier", "pattern": "walls",   "count": [2, 3]},
+			{"kind": "bones",   "pattern": "scatter", "count": [1, 2]},
+		],
+	},
+	"first_round_glade": {
+		"focal":      {"kind": "bookshelf", "pattern": "cluster", "count": [1, 1]},
+		"satellites": [
+			{"kind": "bones",   "pattern": "cluster", "count": [2, 4]},
+			{"kind": "pottery", "pattern": "walls",   "count": [1, 2]},
+		],
+	},
+	"first_crooked_bower": {
+		"focal":      {"kind": "column",  "pattern": "walls",   "count": [1, 1]},
+		"satellites": [
+			{"kind": "bones",   "pattern": "cluster", "count": [2, 3]},
+			{"kind": "brazier", "pattern": "walls",   "count": [1, 2]},
+		],
+	},
+	"first_long_clearing": {
+		"focal":      {"kind": "sarcophagus", "pattern": "walls",   "count": [1, 1]},
+		"satellites": [
+			{"kind": "pottery", "pattern": "scatter", "count": [1, 2]},
+			{"kind": "brazier", "pattern": "walls",   "count": [1, 2]},
+		],
+	},
 }
 # Crypt fallback combat themes — used for unknown scopes.
 const COMBAT_THEMES := ["tomb_hall", "ossuary", "archive"]
@@ -227,6 +260,12 @@ const FIRST_HOLLOW_LANDMARK_PROFILES := {
 	"crooked_bower": "bramble_oak",
 	"long_clearing": "fallen_log",
 	"hearth_court": "hearth_oak",
+}
+const FIRST_HOLLOW_ARCHETYPE_THEMES := {
+	"lantern_landing": "first_lantern_landing",
+	"round_glade": "first_round_glade",
+	"crooked_bower": "first_crooked_bower",
+	"long_clearing": "first_long_clearing",
 }
 
 # Spec 25 Phase 3 — authored setpieces. ASCII templates in data/rooms/;
@@ -1499,6 +1538,11 @@ static func _assign_archetypes(rooms: Array, rng: RandomNumberGenerator,
 		var archetype := String(pool[rng.randi_range(0, pool.size() - 1)])
 		r["archetype"] = archetype
 		r["shape"] = String(FIRST_HOLLOW_ARCHETYPE_SHAPES[archetype])
+		# Typed reward rooms keep their established focal interaction contract.
+		# Arrival and ordinary fights can safely expose the archetype wholesale.
+		if role == "entrance" or role == "combat":
+			r["theme"] = String(FIRST_HOLLOW_ARCHETYPE_THEMES.get(
+				archetype, r.get("theme", "")))
 		r["footprint_variant"] = rng.randi_range(0, 3)
 		var cx := float(r.x) + float(r.w) * 0.5
 		var cy := float(r.y) + float(r.h) * 0.5

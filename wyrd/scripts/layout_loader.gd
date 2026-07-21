@@ -152,7 +152,7 @@ const BIOMES := {
 		"bookshelf":   "res://models/biome_wood_grove_fairyring_v1.glb",
 	}, "tints": {
 		"altar":       Color(0.42, 0.30, 0.20),   # hollow stump — bark
-		"sarcophagus": Color(0.40, 0.42, 0.28),   # fallen log — mossy wood
+		"sarcophagus": Color(0.34, 0.24, 0.13),   # fallen log — bark, not pale stone
 		"column":      Color(0.26, 0.34, 0.20),   # bramble arch — deep briar
 		"bones":       Color(0.72, 0.28, 0.24),   # toadstools — red cap
 		"brazier":     Color(0.40, 0.60, 0.30),   # fern — fresh green

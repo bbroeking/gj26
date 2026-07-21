@@ -1,5 +1,25 @@
 # Wayfinder devlog
 
+## 2026-07-20 — The clearings learned their own stories
+
+Open Canopy made the moving frame readable. Playing that exact release exposed
+the next layer underneath: the generator already named rooms Lantern Landing,
+Round Glade, Crooked Bower, and Long Clearing, but their interiors still took
+orders from old `ossuary`, `wine_rack`, and `root_cellar` themes. The floor and
+walls said forest; the composition still said reskinned dungeon.
+
+Forest Rooms makes the existing archetype choice visible. An arrival gathers
+around a stump, a round glade around a fairy ring, a crooked bower around a
+bramble arch, and a long clearing around a fallen log. Counts and positions
+remain seeded, room shapes and connections remain procedural, and combat keeps
+the protected central stage. Treasure, Shrine, Hearth, and boss rooms keep
+their established interaction anchors.
+
+Rendered native and Web play—not the new structural test alone—earned the
+checkpoint. The road now changes visual sentence as it moves from one clearing
+to the next, while the camera, wall cutaway, collision, navigation, combat,
+audio, rewards, and later biomes remain the accepted game.
+
 ## 2026-07-20 — The forest learned to frame the road
 
 Soft Ground gave the clearing a believable stage. Playing that exact release
