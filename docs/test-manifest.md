@@ -1,6 +1,6 @@
 # Wayfinder test manifest
 
-Updated 2026-07-20 for `0.1.8-deep-wood`.
+Updated 2026-07-20 for `0.1.9-soft-ground`.
 
 ## Canonical checkpoint gate
 
@@ -20,7 +20,8 @@ Run every entry with `WYRD_NO_SAVE=1 godot --headless --path wyrd --script res:/
 | `test_first_hollow_living_edge.gd` | 9 | Profile ownership, landmark count, deterministic remixing, and production realization |
 | `test_web_tonal_separation.gd` | 4 | Web-only environment grade, native no-op, and forced production mutation seam |
 | `test_first_hollow_forest_continuity.gd` | 8 | Forest-bed coverage, cutaway ownership, depth, and non-authority |
-| **Total** | **878** | **Required before a checkpoint is accepted** |
+| `test_first_road_soft_ground.gd` | 5 | One-surface First Road soil morph and later-biome isolation |
+| **Total** | **883** | **Required before a checkpoint is accepted** |
 
 ## Exported-browser gate
 
@@ -61,8 +62,16 @@ browser route produced no warning/error diagnostics. The exact PCK is
 105,923,504 bytes with SHA-256
 `1b77869a37ec656e664e4d0b4212667812c0808ff47b35377b0f501472d06ce7`.
 
-The persistence-disabled retained corpus currently contains 122 direct
-entrypoints: 118 pass. Its driver-required and historical timing exceptions
+The `0.1.9-soft-ground` proof additionally requires native/Web comparison of
+the First Road floor beside the approved forest concepts, one unchanged merged
+floor surface, and a snug-only material override that does not spill into later
+wood-grove Charts. The accepted export audited all 112 release resources and
+completed the compact browser route with no warning/error diagnostics. Its
+105,923,984-byte PCK has SHA-256
+`372e3d0c71b3f732beaa9b4f2f8564782af3f5e3a649ce8fc62aa11bc70a467f`.
+
+The persistence-disabled retained corpus currently contains 123 direct
+entrypoints: 119 pass. Its driver-required and historical timing exceptions
 remain; the rendering checkpoint introduced no new failure. The production
 dungeon, transition, boot, standalone movement, room, cutaway, and tonal-grade
 gates remain green.

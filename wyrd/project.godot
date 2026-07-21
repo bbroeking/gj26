@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Wayfinder"
-config/version="0.1.8-deep-wood"
+config/version="0.1.9-soft-ground"
 config/description="Wayfinder — a cozy fairytale dungeon-charter set in Bramblewood. You don't find dungeons; you inscribe them."
 run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")

@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.9-soft-ground — 2026-07-20
+
+- Kept the procedural Chart, authored clearing archetypes, merged floor,
+  collision, navigation, walls, and continuous FATE camera unchanged.
+- Morphed only the First Road's existing toon-ground controls from evenly
+  weighted polygonal stone toward warm dirt with broad moss variation.
+- Rejected a flat olive pass and a second large-polygon pass before accepting
+  the quieter warm soil treatment in native and Web play.
+- Preserved later wood-grove materials and added no mesh, texture, decal,
+  shader, scatter system, draw call, or gameplay authority.
+- Verified 883 canonical native assertions, the retained direct corpus with no
+  checkpoint-caused failure, all 112 release resources, and a clean browser
+  title → town → generated First Road → return route.
+
 ## 0.1.8-deep-wood — 2026-07-20
 
 - Kept procedural Chart graphs, randomized authored clearing archetypes, and

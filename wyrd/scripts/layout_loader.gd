@@ -962,6 +962,27 @@ func _make_floor_material(biome_id: String) -> ShaderMaterial:
 	var p: Dictionary = FLOOR_BIOME.get(biome_id, FLOOR_BIOME["crypt"])
 	for k in p:
 		m.set_shader_parameter(k, p[k])   # Color → vec4 source_color, float → float
+	# Spec 69 — the First Road is a walked forest clearing, not another stone
+	# dungeon wearing green light. Keep the shared one-draw-call shader, but push
+	# its existing morph controls toward broad dirt-and-moss clumps with almost
+	# no grout. Other wood-grove scopes retain their accepted material contract.
+	if _scope == "snug":
+		var first_road_ground := {
+			"base_col": Color(0.50, 0.25, 0.11),
+			"accent_col": Color(0.17, 0.32, 0.095),
+			"mortar_col": Color(0.18, 0.15, 0.085),
+			"cell_scale": 1.25,
+			"cell_strength": 0.04,
+			"mortar_width": 0.18,
+			"noise_amt": 0.85,
+			"mottle_scale": 0.16,
+			"bevel": 0.05,
+			"warp_amount": 1.10,
+			"warp_freq": 0.28,
+			"domain_rotation": 0.37,
+		}
+		for k in first_road_ground:
+			m.set_shader_parameter(k, first_road_ground[k])
 	return m
 
 # Wall palette per scope (the floor is the procedural toon-ground shader now).

@@ -161,6 +161,21 @@ The next cycle should begin by replaying the shipped build
 and deciding whether foreground canopy bulk, interior ground sameness, or room
 landmark identity is now the highest-leverage visible weakness.
 
+## Soft Ground checkpoint — shipped 2026-07-20
+
+[Spec 69](specs/69-first-road-soft-ground.md) resolves the uniform stone-sheet
+read exposed by the Deep Wood replay. The First Road now morphs the existing
+one-surface toon-ground shader toward warm soil and broad moss variation with
+almost no grout or bevel. No mesh, texture, draw call, route, collision,
+navigation, encounter, wall, camera, control, or later-biome material changed.
+Native and Web evidence shows a quieter dirt clearing closer to the approved
+forest concepts after two rejected material passes. The thirteen-suite gate is
+green at 883 assertions, all 112 release resources audit cleanly, and the exact
+browser route completed title → town → generated First Road → return without a
+warning or error. The next cycle should replay the shipped build before choosing
+between foreground canopy bulk, corridor-mouth direction, and stronger
+archetype landmark identity.
+
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)
 

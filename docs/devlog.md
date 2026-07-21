@@ -1,5 +1,24 @@
 # Wayfinder devlog
 
+## 2026-07-20 — The stone road found soft ground
+
+Deep Wood fixed what happened outside the room. The next replay made the
+remaining board-like signal obvious inside it: every clearing and corridor was
+covered by the same evenly weighted polygon cells. The wall had become forest,
+but the floor still looked like a dungeon material under green light.
+
+Soft Ground changes no geometry. The existing one-surface, world-space
+toon-ground shader now uses a First Road-only morph: warmer soil, green macro
+mottle, broad domain warp, almost no grout, and almost no cobble bevel. Later
+wood-grove Charts retain their prior material. Collision, navigation, room
+footprints, encounters, ground scatter, camera, controls, and audio are intact.
+
+Rendered iteration mattered again. One pass became a flat olive sheet; another
+brought back a field of large polygons. The accepted native and Web frames keep
+warm dirt quiet beneath the ranger while sparse moss drift and leaf flecks stop
+it becoming a flat color card. The clean exported route completed without a
+browser warning or error.
+
 ## 2026-07-20 — The road entered the deep wood
 
 Shaded Road made the browser renderer honest enough to expose the next spatial
