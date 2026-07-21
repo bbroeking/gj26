@@ -811,21 +811,32 @@ class BenchView extends Control:
 			for id in ids:
 				var stab: int = ChartsData.effective_stability(String(id),
 					bench._carto_lv(), bonus, bench._stab_perk_bonus())
-				draw_string(font, Vector2(rx, y),
-					"%s — %d%% · good %d%%" % [
-						String(ChartsData.AFFIXES[id].name),
-						roundi(weights[id]), stab],
-					HORIZONTAL_ALIGNMENT_LEFT, 220, 13, TXT)
-				_odds_rows.append({"rect": Rect2(Vector2(rx, y - 14), Vector2(220, 18)),
-					"id": String(id)})
-				y += 19.0
+				# Carved odds chip — left stripe signals twin likelihood at a
+				# glance before you read the number. Sage stripe = good twin
+				# more likely (≥ 50% stability); terracotta = bad twin more likely.
+				var accent: Color = WyrdUi.SAGE if stab >= 50 \
+					else WyrdUi.TERRACOTTA
+				var odds_r := Rect2(Vector2(rx, y - 17.0), Vector2(216, 22.0))
+				WyrdUi.draw_list_row(self, odds_r, accent)
+				draw_string(font, Vector2(rx + 10.0, y - 1.0),
+					String(ChartsData.AFFIXES[id].name),
+					HORIZONTAL_ALIGNMENT_LEFT, 136, 13, TXT)
+				draw_string(font, Vector2(rx + 148.0, y - 1.0),
+					"%d%% ◆%d%%" % [roundi(weights[id]), stab],
+					HORIZONTAL_ALIGNMENT_RIGHT, 66.0, 11,
+					WyrdUi.SAGE.darkened(0.1) if stab >= 50 else WyrdUi.TERRACOTTA)
+				_odds_rows.append({"rect": odds_r, "id": String(id)})
+				y += 26.0
 			if bench.trophy != "":
 				var den: Dictionary = ChartsData.AFFIXES[
 					ChartsData.TROPHY_TO_AFFIX[bench.trophy]]
-				draw_string(font, Vector2(rx, y),
+				# Trophy pin chip — gold accent marks the certain affix.
+				var den_r := Rect2(Vector2(rx, y - 17.0), Vector2(216, 22.0))
+				WyrdUi.draw_list_row(self, den_r, WyrdUi.GOLD)
+				draw_string(font, Vector2(rx + 10.0, y - 1.0),
 					"★ %s — certain" % String(den.name),
-					HORIZONTAL_ALIGNMENT_LEFT, 220, 12, WyrdUi.GOLD.darkened(0.15))
-				y += 19.0
+					HORIZONTAL_ALIGNMENT_LEFT, 216, 12, WyrdUi.GOLD.darkened(0.15))
+				y += 26.0
 		else:
 			draw_string(font, Vector2(rx, y), "A clean run — no affixes.",
 				HORIZONTAL_ALIGNMENT_LEFT, 220, 13, DIM)
