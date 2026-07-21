@@ -214,6 +214,9 @@ PCK has SHA-256
 `f3ea722c0a716db7615d83250e9dacb305ff5fa81759445c8ea7ea9ca6f62509`.
 The next replay should judge the oversized pale treasure-chest presentation and
 remaining creature/prop coherence rather than adding another room system.
+Companion-site version 10 is live owner-only with the exact playable export,
+Forest Rooms evidence, fingerprint, and next-replay priority; its pushed source
+is `466671dc6dea6a960226d560a61e52819b3cdfa3`.
 
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)

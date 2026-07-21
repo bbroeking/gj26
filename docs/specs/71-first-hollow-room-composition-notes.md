@@ -35,3 +35,8 @@
   `f3ea722c0a716db7615d83250e9dacb305ff5fa81759445c8ea7ea9ca6f62509`.
 - Render evidence:
   `docs/playtests/first-hollow-room-composition/`.
+- Companion Field Journal version 10 was generated from the exact verified
+  export, passed its rendered HTML and packaged-build tests, and deployed
+  owner-only from pushed source
+  `466671dc6dea6a960226d560a61e52819b3cdfa3` at
+  `https://wayfinder-field-journal.iamactuallyinthearen.chatgpt.site`.

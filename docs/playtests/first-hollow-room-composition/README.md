@@ -20,3 +20,8 @@ loading the changed seam green; 112/112 audited release resources; clean
 title/town/world/complete browser history with no warning/error diagnostics.
 Exact PCK: 105,924,736 bytes, SHA-256
 `f3ea722c0a716db7615d83250e9dacb305ff5fa81759445c8ea7ea9ca6f62509`.
+
+Companion receipt: owner-only Field Journal version 10, pushed source
+`466671dc6dea6a960226d560a61e52819b3cdfa3`, deployed successfully at
+`https://wayfinder-field-journal.iamactuallyinthearen.chatgpt.site` and
+visually verified from its production capture.
