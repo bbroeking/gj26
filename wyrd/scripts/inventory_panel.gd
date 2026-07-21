@@ -585,16 +585,28 @@ func _draw_tabs(win: Rect2) -> void:
 	for i in TABS.size():
 		var r := _tab_rect(i)
 		var active := i == _tab
-		# Spec 40 — text-only plates; active = brighter + terracotta underline.
+		# Spec 40 — icon + text plates; active = brighter + terracotta underline.
 		draw_rect(r, Color(0.95, 0.91, 0.80) if active else Color(0.85, 0.78, 0.64))
 		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 1.5)
 		if active:
 			draw_line(r.position + Vector2(2, r.size.y - 2),
 				r.position + Vector2(r.size.x - 2, r.size.y - 2),
 				WyrdUi.TERRACOTTA, 3.0)
-		draw_string(font, r.position + Vector2(0, 22), String(TABS[i]),
-			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16,
-			WyrdUi.INK if active else WyrdUi.INK_MID)
+		var icon_tex: Texture2D = _cached_tex(String(TAB_ICONS[i]))
+		if icon_tex != null:
+			var icon_r := Rect2(r.position + Vector2(8.0, 8.0), Vector2(16.0, 16.0))
+			if active:
+				draw_rect(icon_r.grow(2.0), Color(WyrdUi.SAGE, 0.18))
+			var icon_mod := Color(1.0, 1.0, 1.0, 0.92) if active \
+				else Color(0.75, 0.68, 0.55, 0.60)
+			draw_texture_rect(icon_tex, icon_r, false, icon_mod)
+			draw_string(font, r.position + Vector2(30.0, 22.0), String(TABS[i]),
+				HORIZONTAL_ALIGNMENT_CENTER, r.size.x - 30.0, 15,
+				WyrdUi.INK if active else WyrdUi.INK_MID)
+		else:
+			draw_string(font, r.position + Vector2(0, 22), String(TABS[i]),
+				HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16,
+				WyrdUi.INK if active else WyrdUi.INK_MID)
 
 # ---- Spec 45 followup: drawn-page scrolling (Satchel / Charts / Trades) ----
 # The pack window is a fixed 644×604 panel but the list pages grew past it
