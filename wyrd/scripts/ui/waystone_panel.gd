@@ -12,7 +12,7 @@ var _game: Node
 var _selected := -1
 var _panel: Panel
 var _list_box: VBoxContainer
-var _detail: Label
+var _detail: RichTextLabel
 var _go_btn: Button
 
 func _ready() -> void:
@@ -66,9 +66,13 @@ func _ready() -> void:
 	_list_box.add_theme_constant_override("separation", 6)
 	scroll.add_child(_list_box)
 
-	_detail = Label.new()
-	WyrdUi.style_body(_detail, 13)
-	_detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# RichTextLabel so affix lines render in SAGE (good) / TERRACOTTA (bad)
+	# polarity colours — a plain Label can only show one ink colour.
+	_detail = RichTextLabel.new()
+	_detail.bbcode_enabled = true
+	_detail.scroll_active = false
+	_detail.add_theme_font_size_override("normal_font_size", 14)
+	_detail.add_theme_color_override("default_color", WyrdUi.INK)
 	_detail.anchor_right = 1.0
 	_detail.anchor_top = 1.0
 	_detail.anchor_bottom = 1.0
@@ -136,11 +140,18 @@ func _render() -> void:
 			if aff.is_empty():
 				continue
 			if bool(a.get("good", false)):
-				lines.append("✓ %s — %s" % [String(aff.name), String(aff.good_desc)])
+				# SAGE for good affixes — the twin that favours the player.
+				lines.append("[color=#%s]✓ %s[/color] — %s" % [
+					WyrdUi.SAGE.darkened(0.15).to_html(false),
+					String(aff.name), String(aff.good_desc)])
 			else:
-				lines.append("✗ %s — %s" % [String(aff.bad_name), String(aff.bad_desc)])
+				# TERRACOTTA for bad affixes — the twin that works against.
+				lines.append("[color=#%s]✗ %s[/color] — %s" % [
+					WyrdUi.TERRACOTTA.to_html(false),
+					String(aff.bad_name), String(aff.bad_desc)])
 		if lines.is_empty():
-			lines.append("A clean chart. Nothing inked in but the way there and back.")
+			lines.append("[color=#%s]A clean chart. Nothing inked in but the way there and back.[/color]" \
+				% WyrdUi.INK_MID.to_html(false))
 		_detail.text = "\n".join(lines)
 		_go_btn.disabled = false
 	else:
