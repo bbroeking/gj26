@@ -171,6 +171,19 @@ class _SpeakerBanner extends Control:
 		# Flourishes tucked into each end — the speaker is announced.
 		WyrdUi.draw_flourish(self, Vector2(28.0, r.size.y * 0.5), 32.0)
 		WyrdUi.draw_flourish(self, Vector2(r.size.x - 28.0, r.size.y * 0.5), 32.0)
+		# Small sage ivy bud pair at the outer tip of each flourish line — the
+		# botanical ornament the design language puts on every carved surface.
+		# draw_flourish (width=32) extends its ink lines ±16 px from the ◆ centre,
+		# so the outer tips sit at x≈12 and x≈(size.x−12), just inside the border.
+		var cy2 := r.size.y * 0.5
+		for xi in [12.0, r.size.x - 12.0]:
+			var sign := 1.0 if xi < r.size.x * 0.5 else -1.0
+			for ys in [-1.0, 1.0]:
+				draw_colored_polygon(PackedVector2Array([
+					Vector2(xi + sign * 1.5, cy2 + ys * 1.5),
+					Vector2(xi + sign * 4.5, cy2 + ys * 6.5),
+					Vector2(xi + sign * 7.0, cy2 + ys * 2.0)
+				]), Color(WyrdUi.SAGE, 0.60))
 
 
 # Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
