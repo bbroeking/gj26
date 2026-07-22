@@ -397,6 +397,8 @@ class GlobeGauge extends Control:
 
 	const RING_WOOD := Color(0.85, 0.74, 0.52)   # pale carved honey
 	const RING_EDGE := Color(0.26, 0.19, 0.13)
+	const LEAF_IVY  := Color(0.36, 0.52, 0.22, 0.90)   # sage ivy green
+	const BERRY_NUB := Color(0.62, 0.20, 0.15, 0.90)   # rosehip red
 	var _t := 0.0                                # animation clock (low-warn pulse)
 
 	func update_to(p_frac: float, p_label: String, p_status: String) -> void:
@@ -422,6 +424,32 @@ class GlobeGauge extends Control:
 			var a := PI * 0.25 + float(i) * PI * 0.5
 			var np := c + Vector2(cos(a), sin(a)) * (R + 8.0)
 			WyrdUi.draw_round_well(self, np, 8.0, Color(0.93, 0.88, 0.74))
+		# Ivy leaf-pair knots at the 4 cardinal positions (between the wells):
+		# paired triangle leaves pointing radially out + a rosehip berry bead.
+		# Delivers the "leaf + berry knots" the spec comment promises
+		# (reference: docs/ui-refs/mj_hud_bramble.png).
+		for i in 4:
+			var a    := float(i) * PI * 0.5
+			var dir  := Vector2(cos(a), sin(a))
+			var perp := Vector2(-dir.y, dir.x)
+			var root := c + dir * (R + 9.0)
+			var tip  := c + dir * (R + 17.5)
+			# Left leaf
+			draw_colored_polygon(PackedVector2Array([
+				root + perp * 4.5, tip + perp * 1.2, root - perp * 0.5
+			]), LEAF_IVY)
+			# Right leaf
+			draw_colored_polygon(PackedVector2Array([
+				root - perp * 4.5, tip - perp * 1.2, root + perp * 0.5
+			]), LEAF_IVY)
+			# Faint ink midrib on each leaf
+			draw_line(root + perp * 2.0, tip + perp * 0.6,
+				Color(RING_EDGE, 0.22), 0.8)
+			draw_line(root - perp * 2.0, tip - perp * 0.6,
+				Color(RING_EDGE, 0.22), 0.8)
+			# Berry bead at the tip
+			draw_circle(tip, 2.8, BERRY_NUB)
+			draw_arc(tip, 2.8, 0, TAU, 10, Color(RING_EDGE, 0.55), 1.0, true)
 		# --- glass orb ---
 		draw_circle(c, R, Color(0.12, 0.10, 0.09))
 		if frac > 0.003:
