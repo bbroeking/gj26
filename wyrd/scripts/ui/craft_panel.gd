@@ -118,17 +118,14 @@ func _render() -> void:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 10)
 
-		# Spec 44 — a painted icon chip in front of every recipe row.
-		var chip := Label.new()
-		chip.text = _recipe_glyph(rec)
+		# Spec 44+ — carved icon chip: tinted face with top-bevel light, bottom
+		# shade, ink border and inner pinstripe so it reads as a storybook
+		# material card rather than a flat label box.
+		var chip := RecipeIconChip.new()
+		chip.glyph = _recipe_glyph(rec)
+		chip.tint = _recipe_tint(rec, locked)
+		chip.dim = locked
 		chip.custom_minimum_size = Vector2(36, 36)
-		chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		chip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		chip.add_theme_font_size_override("font_size", 17)
-		chip.add_theme_color_override("font_color",
-			WyrdUi.INK if not locked else WyrdUi.INK_MID)
-		chip.add_theme_stylebox_override("normal",
-			WyrdUi.chip_stylebox(_recipe_tint(rec, locked)))
 		row.add_child(chip)
 
 		var info := VBoxContainer.new()
@@ -212,3 +209,31 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# A code-drawn recipe icon chip. Tinted carved face (group/rarity colour),
+# top-bevel light, bottom-shade, ink border and inner pinstripe — matches the
+# bench tray-row and draw_carved_button aesthetics without a flat StyleBox.
+class RecipeIconChip extends Control:
+	var glyph := ""
+	var tint := Color(0.93, 0.88, 0.74)   # KIT_PLATE default
+	var dim := false
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		# Tinted carved face.
+		draw_rect(r, tint)
+		# Top light bevel — card catches the warm overhead light.
+		draw_rect(Rect2(r.position + Vector2(2.0, 2.0),
+			Vector2(r.size.x - 4.0, 2.0)), Color(1.0, 1.0, 0.93, 0.55))
+		# Bottom shade — sits on parchment rather than floating.
+		draw_rect(Rect2(r.position + Vector2(2.0, r.size.y - 4.0),
+			Vector2(r.size.x - 4.0, 2.0)), Color(WyrdUi.KIT_EDGE, 0.35))
+		# Ink border + inner pinstripe (the "burnished" read).
+		draw_rect(r, WyrdUi.KIT_EDGE, false, 2.0)
+		draw_rect(r.grow(-3.0), Color(WyrdUi.KIT_EDGE, 0.30), false, 1.0)
+		# Glyph centred on the chip face.
+		var f := get_theme_default_font()
+		draw_string(f, Vector2(0.0, size.y * 0.68), glyph,
+			HORIZONTAL_ALIGNMENT_CENTER, size.x, 17,
+			WyrdUi.INK if not dim else WyrdUi.INK_MID)
