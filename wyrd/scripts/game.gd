@@ -12,6 +12,7 @@ extends Node
 
 const ChartsData = preload("res://data/charts.gd")
 const GatherDefs = preload("res://data/gather.gd")
+const _RunCompletePanel = preload("res://scripts/ui/run_complete_panel.gd")
 
 const TOWN_SCENE := "res://scenes/Town.tscn"
 const DUNGEON_SCENE := "res://scenes/World.tscn"
@@ -708,18 +709,22 @@ func net_enter(chart: Dictionary) -> void:
 # return stone carries you home but the chart pays nothing torn.
 func return_to_town(player: Node, abandoned: bool = false) -> void:
 	_defer_toasts = true       # the town HUD will drain these in _ready
+	var chart_snap := {}
+	var chart_xp := 0
+	var chart_summit := false
 	if abandoned:
 		notify("You tear the chart and step home. The hollow keeps its prize.")
 	elif not active_chart.is_empty():
-		var xp := ChartsData.completion_xp(active_chart)
-		award_xp("carto", xp)
-		notify("Chart complete — %d Wayfinder XP." % xp)
+		chart_xp = ChartsData.completion_xp(active_chart)
+		award_xp("carto", chart_xp)
 		# The end the whole chain builds toward.
-		if String(active_chart.get("template_id", "")) == "summit" \
-				and not summit_cleared:
+		chart_summit = String(active_chart.get("template_id", "")) == "summit" \
+				and not summit_cleared
+		if chart_summit:
 			summit_cleared = true
 			notify("★ The Summit is charted. The Queen's nest stands empty.")
 			notify("Mara will want to hear of this.")
+		chart_snap = active_chart.duplicate()
 	active_chart = {}
 	in_dungeon = false
 	_snapshot_player(player)
@@ -729,6 +734,15 @@ func return_to_town(player: Node, abandoned: bool = false) -> void:
 	if cp != null and cp.has_method("clear"):
 		cp.clear()
 	save_now()
+	# Show the chart-complete scroll for successful runs; it fires the
+	# scene transition on dismiss so the player reads the summary first.
+	if not chart_snap.is_empty() and get_tree().current_scene != null:
+		var rp := _RunCompletePanel.new()
+		rp.setup(chart_snap, chart_xp, chart_summit)
+		rp.finished.connect(func():
+			get_tree().change_scene_to_file.call_deferred(TOWN_SCENE))
+		get_tree().current_scene.add_child(rp)
+		return
 	# Deferred — the exit waystone calls this from physics processing.
 	get_tree().change_scene_to_file.call_deferred(TOWN_SCENE)
 
