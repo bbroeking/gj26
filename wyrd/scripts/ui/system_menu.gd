@@ -87,6 +87,37 @@ func _ready() -> void:
 		_ip_edit.placeholder_text = "friend's address (IP or IP:port)"
 		_ip_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_ip_edit.custom_minimum_size = Vector2(0, 40)
+		# Parchment-trough treatment — mirrors draw_well() so the field reads
+		# as carved into the panel instead of floating as a default OS widget.
+		# Normal: KIT_WELL fill + ink border. Focus: brighter plate + gold ring.
+		var trough_sb := StyleBoxFlat.new()
+		trough_sb.bg_color = WyrdUi.KIT_WELL
+		trough_sb.border_color = WyrdUi.KIT_EDGE
+		trough_sb.set_border_width_all(2)
+		trough_sb.set_corner_radius_all(5)
+		trough_sb.content_margin_left = 10.0
+		trough_sb.content_margin_right = 10.0
+		trough_sb.content_margin_top = 5.0
+		trough_sb.content_margin_bottom = 5.0
+		var focused_sb := StyleBoxFlat.new()
+		focused_sb.bg_color = WyrdUi.KIT_PLATE
+		focused_sb.border_color = WyrdUi.GOLD
+		focused_sb.set_border_width_all(2)
+		focused_sb.set_corner_radius_all(5)
+		focused_sb.content_margin_left = 10.0
+		focused_sb.content_margin_right = 10.0
+		focused_sb.content_margin_top = 5.0
+		focused_sb.content_margin_bottom = 5.0
+		_ip_edit.add_theme_stylebox_override("normal", trough_sb)
+		_ip_edit.add_theme_stylebox_override("focus", focused_sb)
+		var body_font := WyrdUi.font_body()
+		if body_font != null:
+			_ip_edit.add_theme_font_override("font", body_font)
+		_ip_edit.add_theme_font_size_override("font_size", 15)
+		_ip_edit.add_theme_color_override("font_color", WyrdUi.INK)
+		_ip_edit.add_theme_color_override("font_placeholder_color", WyrdUi.INK_MID)
+		_ip_edit.add_theme_color_override("selection_color", Color(WyrdUi.GOLD, 0.25))
+		_ip_edit.add_theme_color_override("caret_color", WyrdUi.TERRACOTTA)
 		row.add_child(_ip_edit)
 		var join := Button.new()
 		WyrdUi.style_kit_button(join)
