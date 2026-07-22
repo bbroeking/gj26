@@ -93,6 +93,22 @@ func _ready() -> void:
 	_go_btn.pressed.connect(_on_go)
 	_panel.add_child(_go_btn)
 
+	# Compass-rose medallion in the left title margin — signals "magical crossing"
+	# at a glance without touching the text layout.
+	var glyph := WaystoneGlyph.new()
+	glyph.position = Vector2(5, 14)
+	glyph.custom_minimum_size = Vector2(46, 46)
+	glyph.size = Vector2(46, 46)
+	_panel.add_child(glyph)
+	# Flourish rule in the gap between subtitle and chart list.
+	var rule := WaystoneFlourishBar.new()
+	rule.anchor_right = 1.0
+	rule.offset_left = 52
+	rule.offset_right = -52
+	rule.offset_top = 82
+	rule.offset_bottom = 91
+	_panel.add_child(rule)
+
 	get_node("/root/Game").modal_opened()
 	_render()
 
@@ -154,3 +170,36 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# Carved compass-rose medallion: stone disc, two concentric portal rings,
+# cardinal ivy-leaf nubs at N/S/E/W, gold centre. Sits in the left margin
+# of the title so the panel reads as a named waypoint, not a generic list.
+class WaystoneGlyph extends Control:
+	func _draw() -> void:
+		var c := size * 0.5
+		var r := minf(c.x, c.y) - 2.0
+		# Stone disc face
+		draw_circle(c, r, Color(0.79, 0.72, 0.58))
+		# Concentric portal rings suggesting depth / passage
+		draw_arc(c, r * 0.78, 0, TAU, 40, Color(WyrdUi.KIT_EDGE, 0.35), 1.5, true)
+		draw_arc(c, r * 0.52, 0, TAU, 32, Color(WyrdUi.KIT_EDGE, 0.25), 1.2, true)
+		# Ivy-leaf nubs at cardinal points — organic, not mechanical
+		for i in 4:
+			var angle := i * TAU * 0.25 - TAU * 0.25
+			var tip := c + Vector2(cos(angle), sin(angle)) * (r + 4.0)
+			var base_pt := c + Vector2(cos(angle), sin(angle)) * (r - 5.0)
+			var perp := Vector2(-sin(angle), cos(angle)) * 3.5
+			draw_colored_polygon(PackedVector2Array([base_pt - perp, tip, base_pt + perp]),
+				WyrdUi.SAGE.darkened(0.1))
+		# Outer ink ring
+		draw_arc(c, r, 0, TAU, 48, WyrdUi.KIT_EDGE, 2.0, true)
+		# Gold centre: the eye of the waystone
+		draw_circle(c, r * 0.20, WyrdUi.GOLD)
+		draw_circle(c, r * 0.09, Color(1.0, 0.95, 0.72, 0.60))
+
+
+# Thin flourish rule separating the header from the chart list.
+class WaystoneFlourishBar extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, size * 0.5, size.x * 0.80)
