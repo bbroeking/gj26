@@ -383,3 +383,31 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# Small ivy sprig: two oval sage leaves fanning from a short vine stem, for
+# header/frame ornament. origin is the stem base; flip_x=true mirrors to face
+# left. Place at either end of a panel header zone (never on body text).
+static func draw_ivy_sprig(c: CanvasItem, origin: Vector2, flip_x := false) -> void:
+	var dx := -1.0 if flip_x else 1.0
+	var sage_f := Color(SAGE, 0.55)
+	var sage_v := Color(SAGE.darkened(0.28), 0.75)
+	c.draw_line(origin, origin + Vector2(dx * 14.0, 0.0), sage_v, 1.3)
+	c.draw_colored_polygon(
+		_oval_pts(origin + Vector2(dx * 8.0, -5.0), 7.5, 2.8,
+			deg_to_rad(-38.0 * dx)), sage_f)
+	c.draw_colored_polygon(
+		_oval_pts(origin + Vector2(dx * 8.0, 5.0), 7.5, 2.8,
+			deg_to_rad(38.0 * dx)), sage_f)
+	c.draw_circle(origin + Vector2(dx * 14.0, 0.0), 2.0, Color(TERRACOTTA, 0.45))
+
+# Oval polygon (10 pts, semi-axes rx × ry, rotated by a) — leaf/petal helper.
+static func _oval_pts(center: Vector2, rx: float, ry: float, a: float) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	var sa := sin(a)
+	var ca := cos(a)
+	for i in 10:
+		var t := float(i) / 10.0 * TAU
+		var x := rx * cos(t)
+		var y := ry * sin(t)
+		pts.append(center + Vector2(x * ca - y * sa, x * sa + y * ca))
+	return pts
