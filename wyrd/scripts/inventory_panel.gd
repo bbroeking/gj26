@@ -530,7 +530,8 @@ func _draw_tooltip() -> void:
 	var line_h := 18
 	var ipad := 8
 	var w := 280.0
-	var h: float = ipad * 2 + lines.size() * line_h
+	# +12px: 10 for the flourish gap after the name, 2 extra bottom room.
+	var h: float = ipad * 2 + lines.size() * line_h + 12.0
 	var pos := _cursor_screen + Vector2(16, 16)
 	var screen := get_viewport_rect().size
 	if pos.x + w > screen.x:
@@ -541,15 +542,40 @@ func _draw_tooltip() -> void:
 		pos.x = 0
 	if pos.y < 0:
 		pos.y = 0
-	draw_rect(Rect2(pos, Vector2(w, h)), Color(0.93, 0.88, 0.76, 0.97))
-	draw_rect(Rect2(pos, Vector2(w, h)),
-		Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+	var r := Rect2(pos, Vector2(w, h))
+	# Soft drop shadow — the card rises off the world below it.
+	draw_rect(Rect2(r.position + Vector2(3, 4), r.size), Color(0, 0, 0, 0.20))
+	# Parchment face.
+	draw_rect(r, Color(0.93, 0.88, 0.76, 0.97))
+	# Warm parchment grain (stable seed so it never flickers between frames).
+	WyrdUi.draw_parchment_grain(self, r, 59)
+	# Top light bevel — the card catches the page's warm light.
+	draw_rect(Rect2(r.position + Vector2(3, 2), Vector2(r.size.x - 6, 2)),
+		Color(1.0, 0.97, 0.86, 0.5))
+	# Rarity-tinted wash over the item-name band (top ~28px).
+	var rc: Color = RARITY_COLOR.get(String(item.rarity), WyrdUi.INK_MID)
+	draw_rect(Rect2(r.position + Vector2(1, 1),
+		Vector2(r.size.x - 2, ipad + line_h + 4.0)), Color(rc, 0.14))
+	# Left rarity accent stripe — mirrors the list-row convention so items read
+	# their quality at a glance without needing to parse the rarity text.
+	draw_rect(Rect2(r.position + Vector2(1, 1), Vector2(4, r.size.y - 2)), rc)
+	# Ink border.
+	draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+	# Flourish rule under the name — the ── ◆ ── motif that separates the
+	# item's identity from its stat block.
+	WyrdUi.draw_flourish(self,
+		Vector2(r.position.x + r.size.x * 0.5, r.position.y + ipad + line_h + 8.0),
+		r.size.x * 0.65)
 	var font := get_theme_default_font()
 	var y := pos.y + ipad + 14
-	for line in lines:
-		draw_string(font, Vector2(pos.x + ipad, y), String(line.text),
-			HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2, int(line.size), line.color)
+	for li in lines.size():
+		var line: Dictionary = lines[li]
+		# Shift text right by 6px to breathe past the 4px accent stripe.
+		draw_string(font, Vector2(pos.x + ipad + 6, y), String(line.text),
+			HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2 - 6, int(line.size), line.color)
 		y += line_h
+		if li == 0:
+			y += 10  # gap for the flourish between the name and the stat block
 
 func _draw_held() -> void:
 	var fp: Vector2i = Inventory.footprint(_held_item, _held_rotated)
