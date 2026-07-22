@@ -513,6 +513,10 @@ class BenchView extends Control:
 		draw_string(hdr, Vector2(54, 56), "The Inscribing Table",
 			HORIZONTAL_ALIGNMENT_LEFT, 400, 24, WyrdUi.TERRACOTTA)
 		WyrdUi.draw_flourish(self, Vector2(146, 66), 180.0)
+		# Ivy sprigs at the ends of the header zone — storybook ornament on
+		# the header (design language: ivy/leaf only on frames/headers).
+		WyrdUi.draw_ivy_sprig(self, Vector2(52.0, 66.0))
+		WyrdUi.draw_ivy_sprig(self, Vector2(size.x - 46.0, 66.0), true)
 		draw_string(font, Vector2(size.x - 180, 56), "Esc — close",
 			HORIZONTAL_ALIGNMENT_RIGHT, 130, 12, DIM)
 		_odds_rows.clear()
