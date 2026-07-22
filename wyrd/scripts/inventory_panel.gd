@@ -850,12 +850,13 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 			if lv >= int(p.lv):
 				earned += 1
 		var sy := y + 72.0
-		if _span_visible(sy - 18.0, sy + 4.0, scroll, view):
+		if _span_visible(sy - 18.0, sy + 14.0, scroll, view):
 			draw_string(hdr, Vector2(cx, sy), "Masteries",
 				HORIZONTAL_ALIGNMENT_LEFT, w - 78.0, 18, WyrdUi.TERRACOTTA)
 			draw_string(font, Vector2(cx, sy),
 				"%d / %d earned" % [earned, perks.size()],
 				HORIZONTAL_ALIGNMENT_RIGHT, w - 78.0, 13, Color(0.40, 0.34, 0.27))
+			WyrdUi.draw_flourish(self, Vector2(x + w * 0.5, sy + 10.0), 240.0)
 		# cards march down a spine in the left gutter; the disc lights when earned
 		var lx := x + 18.0
 		var card_x := x + 42.0
@@ -870,12 +871,15 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 					Vector2(lx, cardy + CARD_H + CARD_GAP),
 					Color(0.55, 0.62, 0.40, 0.65), 3.0)
 				var cr := Rect2(Vector2(card_x, cardy), Vector2(card_w, CARD_H))
+				# Spec C carved card — bevel + border + accent stripe (earned: sage, locked: dim).
+				WyrdUi.draw_list_row(self, cr, WyrdUi.SAGE.darkened(0.15) if ok else WyrdUi.INK_MID)
 				if ok:
-					draw_rect(cr, Color(0.93, 0.88, 0.74))
-					draw_rect(cr, WyrdUi.SAGE.darkened(0.12), false, 2.0)
+					# Warm sage wash + parchment grain on earned masteries.
+					draw_rect(cr, Color(WyrdUi.SAGE, 0.08))
+					WyrdUi.draw_parchment_grain(self, cr.grow(-6.0), pl * 13 + 5)
 				else:
-					draw_rect(cr, Color(0.78, 0.72, 0.60, 0.85))
-					draw_rect(cr, Color(0.50, 0.42, 0.32, 0.7), false, 1.5)
+					# Locked: carved-back darker face so unearned cards quietly recede.
+					draw_rect(cr, Color(0.0, 0.0, 0.0, 0.10))
 				# node disc on the spine
 				var dc := Vector2(lx, cardy + CARD_H * 0.5)
 				draw_circle(dc, 12.0, WyrdUi.SAGE.darkened(0.05) if ok \
