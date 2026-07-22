@@ -4,19 +4,28 @@ extends Label3D
 # scale-punch, scatters out on an arc, fades fast. Colour + size by crit tier.
 
 const TIER_COLOR := {
-	"normal": Color(1.00, 0.96, 0.82),   # cream
-	"crit":   Color(1.00, 0.80, 0.20),   # gold
-	"super":  Color(0.80, 0.46, 1.00),   # purple
+	"normal": Color(1.00, 0.96, 0.82),   # warm parchment cream
+	"crit":   Color(1.00, 0.80, 0.20),   # burnished gold
+	"super":  Color(0.98, 0.48, 0.28),   # terracotta ember (was off-palette purple)
 }
 const TIER_SCALE := {"normal": 1.0, "crit": 1.45, "super": 1.9}
+# Storybook glyph prefix — crits wear the kit diamond; supers wear a bright star.
+const TIER_GLYPH := {
+	"crit":  "◆ ",
+	"super": "✦ ",
+}
 const LIFETIME := 0.62
 
 var _age := 0.0
 var _vel := Vector3.ZERO
 var _base := 1.0
 
+func _ready() -> void:
+	# Warm the near-black scene default to sepia ink — matches WyrdUi.KIT_EDGE.
+	outline_modulate = Color(0.26, 0.19, 0.13, 1.0)
+
 func setup(amount: int, tier: String = "normal") -> void:
-	text = str(amount)
+	text = String(TIER_GLYPH.get(tier, "")) + str(amount)
 	modulate = TIER_COLOR.get(tier, TIER_COLOR["normal"])
 	_base = TIER_SCALE.get(tier, 1.0)
 	# Scatter — up hard, with a random sideways/forward kick.
