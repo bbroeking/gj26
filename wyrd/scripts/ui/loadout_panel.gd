@@ -81,6 +81,13 @@ func _ready() -> void:
 	WyrdUi.style_title(title)
 	title.position = Vector2(54, 36)
 	_panel.add_child(title)
+	var flourish_bar := _TitleFlourishBar.new()
+	flourish_bar.anchor_right = 1.0
+	flourish_bar.offset_left = 56
+	flourish_bar.offset_right = -56
+	flourish_bar.offset_top = 70
+	flourish_bar.custom_minimum_size = Vector2(0, 14)
+	_panel.add_child(flourish_bar)
 	var hint := Label.new()
 	hint.text = "Esc — close"
 	WyrdUi.style_dim(hint)
@@ -136,6 +143,7 @@ func _close() -> void:
 func _render() -> void:
 	for c in _rows.get_children():
 		c.queue_free()
+	_rows.add_child(_BowCard.new())
 	var pool: Array = _game.SKILL_POOL if _game != null else DESCS.keys()
 	for sk in pool:
 		var skill := String(sk)
@@ -262,3 +270,69 @@ class _SkillCard extends Control:
 		# --- short desc (up to two lines) ---
 		draw_multiline_string(font, Vector2(tx, 40.0), _desc,
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 16.0, 12, 2, dim)
+
+
+# ── ◆ ── flourish rule that sits just below the "Loadout" title header.
+class _TitleFlourishBar extends Control:
+	func _draw() -> void:
+		if size.x < 40:
+			return
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5), size.x * 0.55)
+
+
+# Slot 1 is always The Bow — show it as a golden carved card so the fixed
+# nature reads at a glance rather than relying on the subtitle text alone.
+# Non-interactive (mouse_filter PASS); drawn with a GOLD accent stripe,
+# a code-drawn bow-and-arrow glyph, and an "always equipped" chip.
+class _BowCard extends Control:
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 62.0)
+		mouse_filter = Control.MOUSE_FILTER_PASS
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		WyrdUi.draw_list_row(self, r, WyrdUi.GOLD)
+		# Warm gold wash — this slot is precious, not just another pick.
+		draw_rect(r.grow(-1.5), Color(WyrdUi.GOLD, 0.07))
+		var hf := WyrdUi.font_header()
+		var font := hf if hf != null else get_theme_default_font()
+		const ICON_W := 44.0
+		var ir := Rect2(Vector2(9.0, (size.y - ICON_W) * 0.5), Vector2(ICON_W, ICON_W))
+		WyrdUi.draw_well(self, ir, Color(0.95, 0.89, 0.72))
+		# Bow glyph: an arc body that curves to the right + a bowstring +
+		# a nocked arrow. The arc center is shifted left so the string sits
+		# at the well's mid-left and the curve fills the well gracefully.
+		var bc := ir.get_center()
+		var arc_cx := bc + Vector2(-9.0, 0.0)
+		var bow_r := 13.0
+		# Bow body — arc from -PI/2 (top) to PI/2 (bottom) curving rightward.
+		draw_arc(arc_cx, bow_r, -PI * 0.5, PI * 0.5, 18,
+			Color(WyrdUi.INK.darkened(0.05), 0.9), 2.5, true)
+		# Bowstring — light vertical line between the two arc tips.
+		var tip_top := arc_cx + Vector2(0.0, -bow_r)
+		var tip_bot := arc_cx + Vector2(0.0, bow_r)
+		draw_line(tip_top, tip_bot, Color(WyrdUi.INK_MID, 0.85), 1.0)
+		# Nocked arrow: horizontal shaft + arrowhead V.
+		var shaft_l := arc_cx + Vector2(0.0, 0.0)
+		var shaft_r := bc + Vector2(13.0, 0.0)
+		draw_line(shaft_l, shaft_r, WyrdUi.INK, 1.5)
+		draw_line(shaft_r, shaft_r + Vector2(-4.0, -3.5), WyrdUi.INK, 1.5)
+		draw_line(shaft_r, shaft_r + Vector2(-4.0, 3.5), WyrdUi.INK, 1.5)
+		# Gold ring around the icon well — echoes the sage ring on picked skills
+		# but GOLD = fixed / essential, not chosen.
+		draw_rect(ir, Color(WyrdUi.GOLD, 0.85), false, 2.5)
+		# Name in header font.
+		var tx := ir.end.x + 12.0
+		draw_string(font, Vector2(tx, 22.0), "Slot 1  ·  The Bow",
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 120.0, 16, WyrdUi.INK)
+		# "always equipped" chip — a small gold-tinted chip in the top-right.
+		var chip := Rect2(Vector2(size.x - 116.0, 8.0), Vector2(104.0, 18.0))
+		draw_rect(chip, Color(WyrdUi.GOLD, 0.14))
+		draw_rect(chip, Color(WyrdUi.GOLD, 0.65), false, 1.0)
+		draw_string(font, Vector2(chip.position.x, chip.position.y + 13.0),
+			"always equipped", HORIZONTAL_ALIGNMENT_CENTER, chip.size.x,
+			11, WyrdUi.GOLD.darkened(0.30))
+		# Short desc in body style.
+		var df := get_theme_default_font()
+		draw_string(df, Vector2(tx, 40.0), "Your bow hand — always in slot 1.",
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 16.0, 12, WyrdUi.INK_MID)
