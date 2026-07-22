@@ -31,6 +31,9 @@ func _ready() -> void:
 	_panel.offset_right = 260
 	_panel.offset_bottom = 220
 	add_child(_panel)
+	var header := LanternHeader.new()
+	header.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_panel.add_child(header)
 	var title := Label.new()
 	title.text = "The Lantern"
 	WyrdUi.style_title(title)
@@ -190,3 +193,43 @@ func _close() -> void:
 	if _game != null:
 		_game.modal_closed()
 	queue_free()
+
+
+# Code-drawn header ornament for "The Lantern" — a small lantern-flame
+# medallion left of the title, and a flourish rule beneath it, so the
+# social-hub panel reads as a crafted object rather than a bare wood frame.
+class LanternHeader extends Control:
+	func _draw() -> void:
+		var cx := 30.0
+		var cy := 54.0
+		var rad := 20.0
+		# Recessed medallion well (same pattern as waystone compass, craft badge).
+		WyrdUi.draw_round_well(self, Vector2(cx, cy), rad, WyrdUi.KIT_WELL)
+		# Burnished gold inner ring.
+		draw_arc(Vector2(cx, cy), rad - 4.5, 0, TAU, 40,
+			Color(WyrdUi.GOLD, 0.45), 1.0, true)
+		# Lantern glass body — warm amber rectangle.
+		var body := Rect2(cx - 5.5, cy - 8.5, 11.0, 13.0)
+		draw_rect(body, Color(0.96, 0.80, 0.38, 0.55))
+		draw_rect(body, WyrdUi.KIT_EDGE, false, 1.2)
+		# Top handle: horizontal bar + short vertical stem.
+		draw_line(Vector2(cx - 3.5, cy - 8.5), Vector2(cx + 3.5, cy - 8.5),
+			WyrdUi.KIT_EDGE, 1.4)
+		draw_line(Vector2(cx, cy - 8.5), Vector2(cx, cy - 13.0),
+			WyrdUi.KIT_EDGE, 1.4)
+		# Base plate.
+		draw_rect(Rect2(cx - 6.5, cy + 4.5, 13.0, 2.5),
+			Color(WyrdUi.KIT_EDGE, 0.70))
+		# Flame inside the glass — gold teardrop.
+		var fp := PackedVector2Array([
+			Vector2(cx, cy - 5.5),
+			Vector2(cx + 3.0, cy - 0.5),
+			Vector2(cx + 2.0, cy + 3.5),
+			Vector2(cx - 2.0, cy + 3.5),
+			Vector2(cx - 3.0, cy - 0.5),
+		])
+		draw_colored_polygon(fp, Color(WyrdUi.GOLD, 0.90))
+		# Inner glow: warm cream dot at flame core.
+		draw_circle(Vector2(cx, cy + 1.5), 2.8, Color(1.0, 0.96, 0.74, 0.78))
+		# Flourish rule beneath the title row.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 82.0), size.x * 0.52)
