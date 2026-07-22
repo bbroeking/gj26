@@ -127,23 +127,18 @@ func bind_to_player(p: Node) -> void:
 			if nm != null:
 				nm.visible = false   # the icon IS the name now
 		elif SKILL_GLYPH.has(skill.name):
-			# No painted icon yet — the inked glyph reads as the icon, with
-			# the short label tucked beneath it.
-			var gl := Label.new()
-			gl.name = "Glyph"
-			gl.text = String(SKILL_GLYPH[skill.name])
-			var ghdr := WyrdUi.font_header()
-			if ghdr != null:
-				gl.add_theme_font_override("font", ghdr)
-			gl.add_theme_font_size_override("font_size", 30)
-			gl.add_theme_color_override("font_color", WyrdUi.INK)
-			gl.anchor_right = 1.0
-			gl.offset_top = 4
-			gl.offset_bottom = 44
-			gl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			gl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			slot.add_child(gl)
-			slot.move_child(gl, 0)   # under the keybind/cost labels
+			# Carved sigil plate: a round-well disc with a runic dot ring + the
+			# skill glyph drawn as a seal (parchment ghost + ink fill) — more
+			# storybook than a plain floating Label.
+			var plate2 := _SigilPlate.new()
+			plate2.name = "SigilPlate"
+			plate2.anchor_right = 1.0
+			plate2.offset_top = 4
+			plate2.offset_bottom = 44
+			plate2.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			plate2.setup(String(SKILL_GLYPH[skill.name]), WyrdUi.font_header())
+			slot.add_child(plate2)
+			slot.move_child(plate2, 0)   # under keybind/cost labels
 			var nm := slot.get_node_or_null("SkillName")
 			if nm != null:
 				nm.add_theme_font_size_override("font_size", 13)
@@ -231,3 +226,34 @@ func _make_slot(i: int, total_w: int, label: String, cost: int) -> Control:
 		c.offset_bottom = -2
 		s.add_child(c)
 	return s
+
+
+# Drawn sigil disc that replaces the plain glyph Label for skills without a
+# painted icon. Draws: a round-well parchment disc, 8 runic accent dots in a
+# ring near the edge, then the unicode glyph with a parchment ghost outline
+# behind the ink fill — so it reads as an inked seal, not a floating character.
+class _SigilPlate extends Control:
+	var _glyph := ""
+	var _hdr_font: Font = null
+
+	func setup(glyph: String, hdr: Font) -> void:
+		_glyph = glyph
+		_hdr_font = hdr
+		queue_redraw()
+
+	func _draw() -> void:
+		var c := size * 0.5
+		var r := minf(c.x, c.y) - 4.0
+		WyrdUi.draw_round_well(self, c, r, Color(0.88, 0.82, 0.68))
+		# 8 sepia dots in a ring just inside the seal edge.
+		for i in 8:
+			var a := float(i) * TAU / 8.0
+			draw_circle(c + Vector2(cos(a), sin(a)) * (r - 5.5),
+				1.4, Color(0.28, 0.20, 0.14, 0.45))
+		# Parchment ghost outline behind ink fill.
+		var font := _hdr_font if _hdr_font != null else get_theme_default_font()
+		draw_string_outline(font, Vector2(0.0, c.y + 9.0), _glyph,
+			HORIZONTAL_ALIGNMENT_CENTER, size.x, 26,
+			4, Color(0.88, 0.82, 0.67, 0.45))
+		draw_string(font, Vector2(0.0, c.y + 9.0), _glyph,
+			HORIZONTAL_ALIGNMENT_CENTER, size.x, 26, WyrdUi.INK)
