@@ -38,6 +38,15 @@ func _ready() -> void:
 	_panel.offset_right = 330
 	_panel.offset_bottom = 300
 	add_child(_panel)
+	# Station header art — parchment grain + flourish rule + station emblem.
+	# Follows the PortraitWell / QuestScrollArt inner-class pattern: a Control
+	# overlay added before the label children so it sits behind the text.
+	var header_art := StationHeaderArt.new()
+	header_art.station = station_id
+	header_art.anchor_right = 1.0
+	header_art.offset_bottom = 82.0
+	header_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(header_art)
 
 	var title := Label.new()
 	title.text = String(st.get("title", "Crafting"))
@@ -212,3 +221,133 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# ---- drawn header ornament (spec C — station-specific emblem + grain + flourish) ----
+# Renders behind the title/close-hint labels as an overlay anchored to the
+# top of the panel. Pure-vector (_draw only, no texture loads — white-rect safe).
+# Trade-color flourish: SAGE for wilds stations (hearth, still), TERRACOTTA for earth.
+class StationHeaderArt extends Control:
+	var station := "cookfire"
+
+	func _ready() -> void:
+		resized.connect(queue_redraw)
+
+	func _draw() -> void:
+		if size.x < 4.0 or size.y < 4.0:
+			return
+		# Parchment grain across the header band (behind the labels).
+		WyrdUi.draw_parchment_grain(self,
+			Rect2(Vector2(18.0, 12.0), Vector2(size.x - 36.0, 64.0)), 37)
+		# Flourish centred under the title bar. Trade-tinted: wilds = SAGE, earth = TERRACOTTA.
+		var accent := WyrdUi.SAGE if station != "forge" else WyrdUi.TERRACOTTA
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 68.0), size.x - 96.0)
+		# A subtle accent wash along the top of the flourish line.
+		draw_rect(Rect2(Vector2(18.0, 66.5), Vector2(size.x - 36.0, 1.5)),
+			Color(accent, 0.28))
+		# Station emblem tucked into the top-left, left of the title (title starts at x=54).
+		_draw_badge(Vector2(30.0, 43.0), 21.0, accent)
+
+	func _draw_badge(c: Vector2, r: float, accent: Color) -> void:
+		match station:
+			"forge":
+				_draw_anvil(c, r, accent)
+			"still":
+				_draw_flask(c, r, accent)
+			_:
+				_draw_cauldron(c, r)
+
+	# A small copper cauldron with side handles and steam wisps.
+	func _draw_cauldron(c: Vector2, r: float) -> void:
+		var copper := Color(0.66, 0.40, 0.24)
+		var copper_lit := Color(0.85, 0.56, 0.34)
+		draw_circle(c, r, copper)
+		draw_arc(c, r - 2.5, PI * 0.85, PI * 1.85, 18, copper_lit, 3.5, true)
+		draw_circle(c, r * 0.55, Color(0.20, 0.14, 0.10))
+		draw_arc(c, r * 0.55, 0, TAU, 22, Color(0.10, 0.07, 0.05), 1.2, true)
+		for hside in [-1.0, 1.0]:
+			draw_arc(c + Vector2(hside * (r + 3.5), 0.0), 4.0,
+				PI * (0.5 - 0.5 * hside) - PI * 0.5,
+				PI * (0.5 - 0.5 * hside) + PI * 0.5,
+				8, WyrdUi.KIT_EDGE, 2.0, true)
+		draw_arc(c, r, 0, TAU, 36, WyrdUi.KIT_EDGE, 1.5, true)
+		# Two light steam wisps rising above the brew.
+		for wx in [-5.0, 5.0]:
+			draw_arc(Vector2(c.x + wx, c.y - r - 7.0), 4.0,
+				PI * 0.2, PI * 1.0, 8, Color(0.93, 0.91, 0.85, 0.38), 1.5, true)
+
+	# A round-bottomed alchemist flask — slender neck, fat belly, sage-tinted glass.
+	func _draw_flask(c: Vector2, r: float, tint: Color) -> void:
+		var glass := Color(tint.r * 0.70 + 0.22, tint.g * 0.55 + 0.34,
+			tint.b * 0.40 + 0.48, 0.65)
+		var neck_half := r * 0.24
+		var neck_top := c.y - r * 1.10
+		var belly_c := c + Vector2(0.0, r * 0.18)
+		var belly_r := r * 0.80
+		# Glass belly.
+		draw_circle(belly_c, belly_r, glass)
+		# Brew fill (lower half of belly — a darker pool).
+		var brew := Color(tint.r * 0.50 + 0.05, tint.g * 0.60 + 0.18,
+			tint.b * 0.45 + 0.20, 0.85)
+		var brew_pts := PackedVector2Array()
+		for i in 22:
+			var t := lerpf(0.0, PI, float(i) / 21.0)
+			brew_pts.append(belly_c + Vector2(cos(t), sin(t)) * belly_r)
+		brew_pts.append(belly_c + Vector2(0, -belly_r * 0.1))
+		draw_colored_polygon(brew_pts, brew)
+		# Glass highlight arc (top-left specular).
+		draw_arc(belly_c + Vector2(-belly_r * 0.35, -belly_r * 0.30),
+			belly_r * 0.25, PI * 0.7, PI * 1.45, 10, Color(1, 1, 1, 0.48), 2.0, true)
+		# Belly ink border.
+		draw_arc(belly_c, belly_r, 0, TAU, 36, WyrdUi.KIT_EDGE, 1.5, true)
+		# Neck (narrow rectangle above belly).
+		var neck := Rect2(c + Vector2(-neck_half, neck_top - (c.y - belly_c.y + belly_r * 0.6)),
+			Vector2(neck_half * 2.0, belly_r * 0.85))
+		draw_rect(neck, glass)
+		draw_rect(neck, WyrdUi.KIT_EDGE, false, 1.2)
+		# Cork stopper.
+		var cork := Rect2(neck.position - Vector2(neck_half * 0.4, r * 0.22),
+			Vector2(neck.size.x + neck_half * 0.8, r * 0.22))
+		draw_rect(cork, Color(0.62, 0.46, 0.30))
+		draw_rect(cork, WyrdUi.KIT_EDGE, false, 1.0)
+
+	# Stylized side-view anvil: flat top face, tapered body, horn right, gold sparks.
+	func _draw_anvil(c: Vector2, r: float, _accent: Color) -> void:
+		var iron := Color(0.38, 0.34, 0.30)
+		var iron_lit := Color(0.54, 0.49, 0.43)
+		# Anvil body (trapezoid below the top face).
+		var body := PackedVector2Array([
+			c + Vector2(-r * 0.72, r * 0.12),
+			c + Vector2(r * 0.78, r * 0.12),
+			c + Vector2(r * 0.62, r * 0.62),
+			c + Vector2(-r * 0.62, r * 0.62),
+		])
+		draw_colored_polygon(body, iron)
+		# Top working face (lighter).
+		var top_face := PackedVector2Array([
+			c + Vector2(-r * 0.60, -r * 0.36),
+			c + Vector2(r * 0.68, -r * 0.36),
+			c + Vector2(r * 0.78, r * 0.12),
+			c + Vector2(-r * 0.72, r * 0.12),
+		])
+		draw_colored_polygon(top_face, iron_lit)
+		# Bick / horn (right taper — the pointy end).
+		var horn := PackedVector2Array([
+			c + Vector2(r * 0.78, -r * 0.08),
+			c + Vector2(r * 1.22, -r * 0.28),
+			c + Vector2(r * 1.24, r * 0.04),
+			c + Vector2(r * 0.78, r * 0.12),
+		])
+		draw_colored_polygon(horn, iron_lit)
+		# Ink borders.
+		draw_polyline(body + PackedVector2Array([body[0]]), WyrdUi.KIT_EDGE, 1.5, true)
+		draw_polyline(horn + PackedVector2Array([horn[0]]),
+			Color(WyrdUi.KIT_EDGE, 0.55), 1.0, true)
+		# Three gold sparks scattered above the top face (deterministic seed).
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 29
+		for _i in 3:
+			var sp := c + Vector2(rng.randf_range(-r * 0.35, r * 0.55),
+				rng.randf_range(-r * 0.85, -r * 0.45))
+			var dl := rng.randf_range(3.5, 6.0)
+			draw_line(sp, sp + Vector2(dl, -dl), Color(WyrdUi.GOLD, 0.82), 1.5)
