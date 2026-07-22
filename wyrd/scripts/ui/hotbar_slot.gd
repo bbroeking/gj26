@@ -55,5 +55,19 @@ func _draw() -> void:
 			var d := h / maxf(absf(dx), absf(dy))
 			pts.append(c + Vector2(dx, dy) * d)
 		draw_colored_polygon(pts, Color(0.10, 0.08, 0.07, 0.52))
+	# Gold diamond corner studs — gilded rivets echoing the ◆ motif (cursor pip,
+	# flourish diamonds, interactable markers). Drawn after the cooldown wedge so
+	# the frame reads as permanent carved structure.
+	var pr := 3.5
+	var corners := [Vector2(pr + 2.5, pr + 2.5),
+		Vector2(size.x - pr - 2.5, pr + 2.5),
+		Vector2(pr + 2.5, size.y - pr - 2.5),
+		Vector2(size.x - pr - 2.5, size.y - pr - 2.5)]
+	for bp in corners:
+		draw_colored_polygon(PackedVector2Array([
+			bp + Vector2(0, -pr), bp + Vector2(pr, 0),
+			bp + Vector2(0, pr), bp + Vector2(-pr, 0)]),
+			Color(WyrdUi.GOLD, 0.55 if castable else 0.25))
+		draw_arc(bp, pr + 0.5, 0, TAU, 6, Color(WyrdUi.KIT_EDGE, 0.35), 1.0, true)
 	if _flash > 0.0:
 		draw_rect(r.grow(-1.5), Color(WyrdUi.GOLD, _flash * 0.85), false, 3.0)
