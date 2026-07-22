@@ -383,3 +383,38 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# Gateway arch sigil — Waystone header ornament.
+# Stone arch band (PI→TAU = top half: left→crown→right), two flanking pillars,
+# a gold keystone rune at the crown, and a sage leaf bud at each pillar foot.
+static func draw_waystone_arch(c: CanvasItem, center: Vector2, sz: float) -> void:
+	var stone := Color(0.72, 0.65, 0.54)
+	var ink := Color(KIT_EDGE, 0.85)
+	var vine := Color(SAGE, 0.60)
+	var r    := sz * 0.38
+	var band := sz * 0.12
+	var pw   := band * 1.8
+	var ph   := sz * 0.46
+	var lp   := Rect2(center + Vector2(-r - pw * 0.5, 0.0), Vector2(pw, ph))
+	var rp   := Rect2(center + Vector2(r  - pw * 0.5, 0.0), Vector2(pw, ph))
+	# stone arch band (thick arc stroke centered on radius r)
+	c.draw_arc(center, r, PI, TAU, 36, stone, band, false)
+	c.draw_arc(center, r + band * 0.5, PI, TAU, 36, ink,   1.5,  false)
+	c.draw_arc(center, r - band * 0.5, PI, TAU, 36, ink,   1.0,  false)
+	# left pillar
+	c.draw_rect(lp, stone)
+	c.draw_rect(lp, ink, false, 1.5)
+	# right pillar
+	c.draw_rect(rp, stone)
+	c.draw_rect(rp, ink, false, 1.5)
+	# gold keystone rune at arch crown (topmost point of the arc)
+	var ks := center + Vector2(0.0, -r)
+	c.draw_circle(ks, sz * 0.085, GOLD)
+	c.draw_circle(ks, sz * 0.055, CREAM)
+	c.draw_arc(ks, sz * 0.085, 0.0, TAU, 20, Color(KIT_EDGE, 0.9), 1.5, true)
+	# sage leaf buds at pillar feet — small semicircular crown shapes
+	var bud_r := sz * 0.06
+	c.draw_arc(lp.position + Vector2(pw * 0.5, ph + bud_r * 0.5),
+		bud_r, PI, TAU, 10, vine, 1.5, false)
+	c.draw_arc(rp.position + Vector2(pw * 0.5, ph + bud_r * 0.5),
+		bud_r, PI, TAU, 10, vine, 1.5, false)
