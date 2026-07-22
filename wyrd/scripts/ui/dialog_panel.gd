@@ -44,17 +44,15 @@ func _ready() -> void:
 	well.position = Vector2(48, 104)
 	well.size = Vector2(120, 120)
 	_panel.add_child(well)
-	_name_lbl = Label.new()
-	var hf := WyrdUi.font_header()
-	if hf != null:
-		_name_lbl.add_theme_font_override("font", hf)
-	_name_lbl.add_theme_font_size_override("font_size", 24)
-	_name_lbl.add_theme_color_override("font_color", WyrdUi.TERRACOTTA)
-	_name_lbl.anchor_right = 1.0
-	_name_lbl.offset_left = 56
-	_name_lbl.offset_right = -56
-	_name_lbl.offset_top = 38
-	_panel.add_child(_name_lbl)
+	var banner := _SpeakerBanner.new()
+	banner.anchor_right = 1.0
+	banner.offset_left = WyrdUi.PANEL_MARGIN_L
+	banner.offset_right = -WyrdUi.PANEL_MARGIN_R
+	banner.offset_top = 34.0
+	banner.offset_bottom = 78.0
+	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(banner)
+	_name_lbl = banner._build_label()
 	_body = Label.new()
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.anchor_right = 1.0
@@ -130,6 +128,62 @@ func _finish() -> void:
 	get_node("/root/Game").modal_closed()
 	finished.emit()
 	queue_free()
+
+
+# Spec 47 — the carved speaker nameplate: a terracotta-tinted wooden plank
+# spanning the panel's interior width, with a gold inset line, flourishes at
+# each end, and the NPC's name centered in cream IM Fell — so the first thing
+# the player reads announces who's speaking, not just where the text starts.
+class _SpeakerBanner extends Control:
+	func _build_label() -> Label:
+		var hf := WyrdUi.font_header()
+		var lbl := Label.new()
+		if hf != null:
+			lbl.add_theme_font_override("font", hf)
+		lbl.add_theme_font_size_override("font_size", 22)
+		lbl.add_theme_color_override("font_color",
+			WyrdUi.CREAM.lerp(WyrdUi.KIT_PLATE, 0.12))
+		lbl.anchor_right = 1.0
+		lbl.anchor_bottom = 1.0
+		lbl.offset_left = 44.0
+		lbl.offset_right = -44.0
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		add_child(lbl)
+		return lbl
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		if size.x < 4.0 or size.y < 4.0:
+			return
+		# Terracotta-tinted carved plank — warm, inviting, storybook.
+		draw_rect(r, WyrdUi.KIT_PLATE.lerp(WyrdUi.TERRACOTTA, 0.18).darkened(0.04))
+		# Top honey bevel + bottom ink shadow (the carved-plank read).
+		draw_rect(Rect2(r.position + Vector2(3.0, 2.0),
+			Vector2(r.size.x - 6.0, 2.5)), Color(1.0, 0.97, 0.86, 0.45))
+		draw_rect(Rect2(r.position + Vector2(3.0, r.size.y - 3.5),
+			Vector2(r.size.x - 6.0, 2.5)), Color(WyrdUi.KIT_EDGE, 0.35))
+		# Faint parchment grain over the plank face.
+		WyrdUi.draw_parchment_grain(self, r, 13)
+		# Ink border + burnished gold inner inset.
+		draw_rect(r, WyrdUi.KIT_EDGE, false, 2.0)
+		draw_rect(r.grow(-4.0), Color(WyrdUi.GOLD, 0.55), false, 1.0)
+		# Flourishes tucked into each end — the speaker is announced.
+		WyrdUi.draw_flourish(self, Vector2(28.0, r.size.y * 0.5), 32.0)
+		WyrdUi.draw_flourish(self, Vector2(r.size.x - 28.0, r.size.y * 0.5), 32.0)
+		# Small sage ivy bud pair at the outer tip of each flourish line — the
+		# botanical ornament the design language puts on every carved surface.
+		# draw_flourish (width=32) extends its ink lines ±16 px from the ◆ centre,
+		# so the outer tips sit at x≈12 and x≈(size.x−12), just inside the border.
+		var cy2 := r.size.y * 0.5
+		for xi in [12.0, r.size.x - 12.0]:
+			var sign := 1.0 if xi < r.size.x * 0.5 else -1.0
+			for ys in [-1.0, 1.0]:
+				draw_colored_polygon(PackedVector2Array([
+					Vector2(xi + sign * 1.5, cy2 + ys * 1.5),
+					Vector2(xi + sign * 4.5, cy2 + ys * 6.5),
+					Vector2(xi + sign * 7.0, cy2 + ys * 2.0)
+				]), Color(WyrdUi.SAGE, 0.60))
 
 
 # Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
