@@ -3,6 +3,11 @@ extends CanvasLayer
 # Wyrd — the Waystone socket modal. Lists the chart case; picking one and
 # pressing "Step through" consumes it and crosses into the dungeon it
 # describes. Esc closes.
+#
+# Art pass: chart list rows are now drawn _ChartCard controls —
+# scroll icon + name + affix-pip diamonds (SAGE good / TERRACOTTA bad).
+# A gateway arch sigil sits in the top-right header area and a flourish
+# rule runs under the subtitle.
 
 const ChartsData = preload("res://data/charts.gd")
 
@@ -37,6 +42,14 @@ func _ready() -> void:
 	_panel.offset_bottom = 230
 	add_child(_panel)
 
+	# gateway arch sigil — top-right header area
+	var arch := _WaystoneArch.new()
+	arch.position = Vector2(432, 8)
+	arch.custom_minimum_size = Vector2(88, 88)
+	arch.size = Vector2(88, 88)
+	arch.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(arch)
+
 	var title := Label.new()
 	title.text = "The Waystone"
 	WyrdUi.style_title(title)
@@ -48,20 +61,22 @@ func _ready() -> void:
 	WyrdUi.style_dim(sub, 13)
 	sub.position = Vector2(54, 66)
 	_panel.add_child(sub)
-	var rule := _FlourishRule.new()
-	rule.position = Vector2(54, 84)
-	rule.size = Vector2(492, 8)
-	_panel.add_child(rule)
 
-	# A full chart case outgrows the panel — the list scrolls now,
-	# bounded above the detail block.
+	# flourish rule under the subtitle
+	var flr := _Flourish.new()
+	flr.position = Vector2(52, 86)
+	flr.custom_minimum_size = Vector2(420, 12)
+	flr.size = Vector2(420, 12)
+	flr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(flr)
+
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.anchor_right = 1.0
 	scroll.anchor_bottom = 1.0
 	scroll.offset_left = 52
-	scroll.offset_top = 92
+	scroll.offset_top = 102
 	scroll.offset_right = -52
 	scroll.offset_bottom = -160
 	_panel.add_child(scroll)
@@ -120,8 +135,8 @@ func _render() -> void:
 	for i in n:
 		var chart: Dictionary = _game.charts[i]
 		var card := _ChartCard.new()
-		card.setup(chart, _affix_summary(chart), i == _selected)
 		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		card.setup(chart, ChartsData.chart_label(chart), i == _selected)
 		var idx := i
 		card.pressed.connect(func():
 			_selected = idx
@@ -147,18 +162,6 @@ func _render() -> void:
 		_detail.text = ""
 		_go_btn.disabled = true
 
-func _affix_summary(chart: Dictionary) -> String:
-	var parts: Array = []
-	for a in chart.get("affixes", []):
-		var aff: Dictionary = ChartsData.AFFIXES.get(String(a.get("id", "")), {})
-		if aff.is_empty():
-			continue
-		if bool(a.get("good", false)):
-			parts.append("✓ %s" % String(aff.name))
-		else:
-			parts.append("✗ %s" % String(aff.bad_name))
-	return "  ".join(parts) if not parts.is_empty() else "Clean run"
-
 func _on_go() -> void:
 	if _game == null or _selected < 0 or _selected >= (_game.charts as Array).size():
 		return
@@ -168,30 +171,37 @@ func _on_go() -> void:
 	queue_free()
 
 
-# ---- drawn chart scroll card (one row in the case list) ----
-# draw_list_row plate (gold accent when selected), scroll-in-a-well on the
-# left (sealed when affixes are inked), chart name in IM Fell SC, tier chip
-# top-right, and sage/terracotta pip dots on the right for an instant risk
-# read. Fully self-contained — callers hand it everything it draws.
+# ---- drawn chart card (one list row) ----
+# draw_list_row plate with a painted scroll on the left and affix-pip
+# diamonds below the name (SAGE = good twin, TERRACOTTA = bad twin).
+# Selected = gold accent stripe + gold outline ring.
 class _ChartCard extends Control:
-	const WELL_W := 34.0
-	const WELL_H := 44.0
+	const SCROLL_W := 42.0
 
 	var _chart: Dictionary = {}
-	var _selected := false
-	var _hover := false
-	var _summary := ""
+	var _label: String = ""
+	var _picked: bool = false
+	var _good_n: int = 0
+	var _bad_n: int = 0
+	var _hover: bool = false
 
 	signal pressed
 
 	func _init() -> void:
-		custom_minimum_size = Vector2(0, 64.0)
+		custom_minimum_size = Vector2(0, 58.0)
 		mouse_filter = Control.MOUSE_FILTER_STOP
 
-	func setup(chart: Dictionary, summary: String, selected: bool) -> void:
+	func setup(chart: Dictionary, label: String, picked: bool) -> void:
 		_chart = chart
-		_summary = summary
-		_selected = selected
+		_label = label
+		_picked = picked
+		_good_n = 0
+		_bad_n = 0
+		for a in chart.get("affixes", []):
+			if bool(a.get("good", false)):
+				_good_n += 1
+			else:
+				_bad_n += 1
 		queue_redraw()
 
 	func _gui_input(event: InputEvent) -> void:
@@ -210,82 +220,56 @@ class _ChartCard extends Control:
 
 	func _draw() -> void:
 		var r := Rect2(Vector2.ZERO, size)
-		# Count affixes first so the accent stripe and pips share the same values.
-		var affixes: Array = _chart.get("affixes", [])
-		var good_count := 0
-		var bad_count := 0
-		for a in affixes:
-			if bool(a.get("good", false)):
-				good_count += 1
-			else:
-				bad_count += 1
-		# Accent stripe reads the chart's disposition at a glance:
-		# gold=chosen, sage=boon-heavy, terracotta=curse-heavy, mid=clean run.
-		var accent: Color
-		if _selected:
-			accent = WyrdUi.GOLD
-		elif good_count > 0 and bad_count == 0:
-			accent = WyrdUi.SAGE
-		elif bad_count > good_count:
-			accent = WyrdUi.TERRACOTTA
-		else:
-			accent = WyrdUi.INK_MID
+		var accent: Color = WyrdUi.GOLD if _picked else WyrdUi.INK_MID
 		WyrdUi.draw_list_row(self, r, accent)
-		if _hover and not _selected:
+		if _hover and not _picked:
 			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.10))
+		if _picked:
+			draw_rect(r.grow(-2.5), Color(WyrdUi.GOLD, 0.45), false, 1.5)
+		# painted scroll icon on the left
+		var ir := Rect2(Vector2(9.0, (size.y - SCROLL_W) * 0.5),
+			Vector2(SCROLL_W, SCROLL_W))
+		WyrdUi.draw_scroll(self, ir, true)
+		# chart name
+		var font := get_theme_default_font()
+		var tx := ir.end.x + 12.0
+		draw_string(font, Vector2(tx, 24.0), _label,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 8.0, 15, WyrdUi.INK)
+		# affix pip diamonds below the name
+		var total := _good_n + _bad_n
+		if total > 0:
+			var px := tx
+			var py := 42.0
+			for _i in _good_n:
+				_draw_pip(Vector2(px + 4.5, py), WyrdUi.SAGE)
+				px += 12.0
+			for _i in _bad_n:
+				_draw_pip(Vector2(px + 4.5, py), WyrdUi.TERRACOTTA)
+				px += 12.0
+		else:
+			draw_string(font, Vector2(tx, 43.0), "clean chart",
+				HORIZONTAL_ALIGNMENT_LEFT, 90.0, 11,
+				Color(WyrdUi.INK_MID, 0.65))
 
-		# --- scroll icon well on the left ---
-		var wy := (size.y - WELL_H) * 0.5
-		var ir := Rect2(Vector2(9.0, wy), Vector2(WELL_W, WELL_H))
-		WyrdUi.draw_well(self, ir, Color(0.95, 0.91, 0.80))
-		# sealed = chart has affixes (the wax seal reads "something inked in")
-		var has_affixes := not affixes.is_empty()
-		WyrdUi.draw_scroll(self, ir.grow(-3.0), has_affixes)
-		# gold ring when this chart is chosen
-		if _selected:
-			draw_rect(ir, WyrdUi.GOLD, false, 2.0)
-
-		# --- chart name in IM Fell SC (storybook header language) ---
-		var font: Font = WyrdUi.font_header()
-		if font == null:
-			font = get_theme_default_font()
-		var tx := ir.end.x + 11.0
-		var name_col: Color = WyrdUi.TERRACOTTA if _selected else WyrdUi.INK
-		draw_string(font, Vector2(tx, 26.0), String(_chart.get("name", "Chart")),
-			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 44.0, 16, name_col)
-		# Affix name summary — readable at a glance, sage tint when selected.
-		var body_font := get_theme_default_font()
-		var summary_col := Color(WyrdUi.SAGE, 0.9) if _selected else WyrdUi.INK_MID
-		draw_string(body_font, Vector2(tx, 44.0), _summary,
-			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 44.0, 12, summary_col)
-
-		# --- tier chip (top-right corner) ---
-		var chip := Rect2(Vector2(size.x - 36.0, 9.0), Vector2(28.0, 16.0))
-		draw_rect(chip, WyrdUi.KIT_WELL)
-		draw_rect(chip, Color(WyrdUi.KIT_EDGE, 0.55), false, 1.0)
-		draw_string(font, Vector2(chip.position.x, chip.position.y + 12.0),
-			"T%d" % int(_chart.get("tier", 1)),
-			HORIZONTAL_ALIGNMENT_CENTER, chip.size.x, 11, WyrdUi.INK_MID)
-
-		# --- affix pips: sage circles = good affixes, terracotta = bad ---
-		# Two rows on the right; gives an instant risk read without text.
-		_draw_pips(WyrdUi.SAGE, good_count, size.y * 0.32)
-		_draw_pips(WyrdUi.TERRACOTTA, bad_count, size.y * 0.68)
-
-	func _draw_pips(col: Color, count: int, py: float) -> void:
-		if count == 0:
-			return
-		var pip_r := 4.5
-		var gap := 11.0
-		var total_w := float(count - 1) * gap + pip_r * 2.0
-		var px_start := size.x - 14.0 - total_w + pip_r
-		for i in count:
-			var cx := px_start + float(i) * gap
-			draw_circle(Vector2(cx, py), pip_r, col)
-			draw_arc(Vector2(cx, py), pip_r, 0.0, TAU, 16, WyrdUi.KIT_EDGE, 1.0, true)
+	func _draw_pip(center: Vector2, col: Color) -> void:
+		var pts := PackedVector2Array([
+			center + Vector2(0.0, -4.5), center + Vector2(4.5, 0.0),
+			center + Vector2(0.0,  4.5), center + Vector2(-4.5, 0.0)])
+		draw_colored_polygon(pts, Color(col, 0.80))
+		draw_line(pts[0], pts[1], col.darkened(0.3), 1.0)
+		draw_line(pts[1], pts[2], col.darkened(0.3), 1.0)
+		draw_line(pts[2], pts[3], col.darkened(0.3), 1.0)
+		draw_line(pts[3], pts[0], col.darkened(0.3), 1.0)
 
 
-# ---- header flourish rule drawn under the Waystone subtitle ----
-class _FlourishRule extends Control:
+# ---- gateway arch sigil (header ornament) ----
+class _WaystoneArch extends Control:
 	func _draw() -> void:
-		WyrdUi.draw_flourish(self, size * 0.5, size.x * 0.72)
+		WyrdUi.draw_waystone_arch(self, size * 0.5, minf(size.x, size.y))
+
+
+# ---- section flourish (rule under subtitle) ----
+class _Flourish extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5),
+			size.x * 0.92)
