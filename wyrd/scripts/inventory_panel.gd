@@ -745,9 +745,18 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 	var w := win.size.x - 148.0
 	var y := win.position.y + 134.0
 	if (game.charts as Array).is_empty():
-		draw_string(font, Vector2(x, y),
+		# Ghost scroll placeholder — a dimmed unsealed scroll centred in the
+		# content well signals that the socket is empty, paralleling the
+		# bench-ghost-scroll treatment on the Inscribing Table.
+		var cx := x + w * 0.5
+		var sy := y + 20.0
+		var sr := Rect2(Vector2(cx - 44.0, sy), Vector2(88.0, 72.0))
+		WyrdUi.draw_scroll(self, sr, false)
+		draw_rect(sr.grow(4.0), Color(WyrdUi.KIT_PLATE, 0.62))
+		WyrdUi.draw_flourish(self, Vector2(cx, sy + sr.size.y + 14.0), w * 0.48)
+		draw_string(font, Vector2(x, sy + sr.size.y + 28.0),
 			"No charts inscribed. The Inscribing Table awaits.",
-			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
+			HORIZONTAL_ALIGNMENT_CENTER, w, 14, WyrdUi.INK_MID)
 		_tab_content_h[2] = 0.0
 		return
 	# Slice C — each chart rides a list-row plate led with a drawn scroll
