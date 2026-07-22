@@ -247,6 +247,20 @@ func _refresh_objective() -> void:
 # Bottom-right action bar — Pack (I) and Satchel (M) as clickable parchment
 # buttons, so the systems are discoverable without reading the guide.
 func _build_action_bar() -> void:
+	# A carved wooden plank sits behind the pack-open buttons so both HUD
+	# clusters (skill hotbar + action bar) read as crafted objects on the
+	# same workbench. Added first so it renders under the buttons.
+	var tray := _ActionTray.new()
+	tray.anchor_left = 1.0
+	tray.anchor_right = 1.0
+	tray.anchor_top = 1.0
+	tray.anchor_bottom = 1.0
+	tray.offset_left = -368
+	tray.offset_top = -104
+	tray.offset_right = -8
+	tray.offset_bottom = -48
+	tray.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(tray)
 	var bar := HBoxContainer.new()
 	bar.anchor_left = 1.0
 	bar.anchor_right = 1.0
@@ -498,3 +512,28 @@ class QuestScrollArt extends Control:
 		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
 		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
 		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+
+# Carved wooden plank behind the Gear / Satchel / Trades action bar — the same
+# visual language as the skill hotbar's HotbarTray so both HUD clusters read as
+# one crafted piece on the same workbench. Pure vector, no textures.
+class _ActionTray extends Control:
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		# Soft drop shadow so the tray sits ON the world.
+		draw_rect(Rect2(r.position + Vector2(0, 4), r.size), Color(0, 0, 0, 0.18))
+		# Plank face.
+		draw_rect(r, WyrdUi.KIT_PLATE.darkened(0.06))
+		# Top honey bevel + bottom ink shadow — the "lit plank" read.
+		draw_rect(Rect2(r.position + Vector2(3, 3), Vector2(r.size.x - 6, 3)),
+			Color(1.0, 0.97, 0.86, 0.5))
+		draw_rect(Rect2(r.position + Vector2(3, r.size.y - 5), Vector2(r.size.x - 6, 3)),
+			Color(WyrdUi.KIT_EDGE, 0.35))
+		WyrdUi.draw_parchment_grain(self, r, 42)
+		# Ink border + burnished gold inset line.
+		draw_rect(r, WyrdUi.KIT_EDGE, false, 2.0)
+		draw_rect(r.grow(-4.0), Color(WyrdUi.GOLD, 0.5), false, 1.0)
+		# A flourish tucked into each end.
+		var cy := r.size.y * 0.5
+		WyrdUi.draw_flourish(self, Vector2(20, cy), 24)
+		WyrdUi.draw_flourish(self, Vector2(r.size.x - 20, cy), 24)
