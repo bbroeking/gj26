@@ -705,17 +705,37 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
 		_tab_content_h[1] = 0.0
 		return
+	# Group accent colours — each material family gets a reading tint on its
+	# accent stripe and glyph disc so the satchel reads like a herbalist's
+	# journal: a glance tells verdant from earthen from echo.
+	var GROUP_ACCENT := {
+		"verdant": WyrdUi.SAGE,
+		"earthen": Color(0.66, 0.50, 0.32),
+		"lumen":   WyrdUi.GOLD,
+		"gristle": Color(0.55, 0.42, 0.32),
+		"echo":    WyrdUi.TERRACOTTA,
+	}
+	var GROUP_DISC := {
+		"verdant": Color(0.79, 0.87, 0.66),
+		"earthen": Color(0.88, 0.80, 0.66),
+		"lumen":   Color(0.93, 0.88, 0.66),
+		"gristle": Color(0.84, 0.78, 0.68),
+		"echo":    Color(0.90, 0.78, 0.72),
+	}
 	# Slice C — each material rides a list-row plate: an ink-disc holding its
 	# glyph on the left, name + count on the card, the lore line beneath.
 	for id in game.materials:
 		var def: Dictionary = GatherDefs.MATERIALS.get(String(id), {})
+		var grp := String(def.get("group", ""))
+		var accent: Color = GROUP_ACCENT.get(grp, WyrdUi.INK_MID)
+		var disc_fill: Color = GROUP_DISC.get(grp, Color(0.88, 0.81, 0.66))
 		var row_top := y - 18.0
 		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 30.0))
 		if _span_visible(row_top, row.end.y, scroll, view):
-			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
-			# glyph disc on the left
+			WyrdUi.draw_list_row(self, row, accent)
+			# glyph disc on the left, tinted by material group
 			var dc := Vector2(row.position.x + 19.0, row.position.y + 15.0)
-			WyrdUi.draw_round_well(self, dc, 11.0, Color(0.88, 0.81, 0.66))
+			WyrdUi.draw_round_well(self, dc, 11.0, disc_fill)
 			draw_string(font, Vector2(dc.x - 11.0, dc.y + 6.0),
 				String(def.get("icon", "·")), HORIZONTAL_ALIGNMENT_CENTER,
 				22.0, 14, WyrdUi.INK)
