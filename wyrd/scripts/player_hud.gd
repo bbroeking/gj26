@@ -490,6 +490,9 @@ class QuestScrollArt extends Control:
 		# Faint parchment grain across the inner face (inset off the wood frame).
 		var inner := Rect2(Vector2(18, 16), size - Vector2(36, 32))
 		WyrdUi.draw_parchment_grain(self, inner, 23)
+		# Burnished gold pinstripe at the frame/parchment boundary — the same
+		# finish language as the hotbar tray's inset line.
+		draw_rect(inner, Color(WyrdUi.GOLD, 0.20), false, 1.0)
 		# Flourish centred under the QUEST header (header sits ~y 11–28).
 		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 30.0), 120.0)
 		# A small wax seal up top-left, clear of the wood frame — the scroll's
@@ -498,3 +501,13 @@ class QuestScrollArt extends Control:
 		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
 		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
 		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+		# Manuscript corner-fold at bottom-right — a parchment leaf folded back,
+		# reinforcing the sealed proclamation read.
+		var fold := 10.0
+		var fx := size.x - 16.0
+		var fy := size.y - 13.0
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(fx - fold, fy), Vector2(fx, fy - fold), Vector2(fx, fy)
+		]), Color(WyrdUi.CREAM, 0.40))
+		draw_line(Vector2(fx - fold, fy), Vector2(fx, fy - fold),
+			Color(WyrdUi.KIT_EDGE, 0.45), 1.0)
