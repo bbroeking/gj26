@@ -14,6 +14,7 @@ var _panel: Panel
 var _list_box: VBoxContainer
 var _detail: Label
 var _go_btn: Button
+var _arch  # _GatewayArch sits above the CTA
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -93,6 +94,22 @@ func _ready() -> void:
 	_go_btn.pressed.connect(_on_go)
 	_panel.add_child(_go_btn)
 
+	# Drawn stone gateway arch — two pillar stubs + semicircle + gold rune.
+	# Sits between the detail block and the CTA to frame dungeon entry as a
+	# ritual crossing rather than just a button press.
+	var arch := _GatewayArch.new()
+	arch.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	arch.anchor_left = 0.5
+	arch.anchor_top = 1.0
+	arch.anchor_right = 0.5
+	arch.anchor_bottom = 1.0
+	arch.offset_left = -120
+	arch.offset_top = -144
+	arch.offset_right = 120
+	arch.offset_bottom = -58
+	_panel.add_child(arch)
+	_arch = arch
+
 	get_node("/root/Game").modal_opened()
 	_render()
 
@@ -146,6 +163,10 @@ func _render() -> void:
 	else:
 		_detail.text = ""
 		_go_btn.disabled = true
+	# Sync the arch rune: gold when a chart is slotted, stone-dim otherwise.
+	if _arch != null:
+		_arch.enabled = not _go_btn.disabled
+		_arch.queue_redraw()
 
 func _on_go() -> void:
 	if _game == null or _selected < 0 or _selected >= (_game.charts as Array).size():
@@ -154,3 +175,60 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# ---- drawn gateway arch (pure vector, no textures — white-rect-safe) ----
+# Two carved pillar stubs bracket a semicircular arch. A gold waypoint rune
+# sits at the keystone: dim stone when the socket is empty, burnished gold
+# once a chart is chosen. The arch is a visual threshold; the CTA lives
+# directly below it.
+class _GatewayArch extends Control:
+	var enabled := false  # rune glows gold when a chart is slotted
+
+	func _draw() -> void:
+		var w := size.x
+		var h := size.y
+		var cx := w * 0.5
+		var feet_y := h - 6.0       # spring line: where arch meets pillar tops
+		var arch_r := feet_y - 6.0  # semicircle radius → crown 6 px from top
+		var pw := 18.0               # pillar stub width
+		var ph := 9.0                # pillar stub height below spring line
+
+		# Carved stone pillar stubs — one each side of the arch opening
+		for i in 2:
+			var side := 1.0 if i == 1 else -1.0
+			var ix := cx + side * arch_r   # inner face of this pillar
+			var lx := ix - side * pw        # outer edge
+			var pr := Rect2(Vector2(minf(ix, lx), feet_y),
+				Vector2(pw, ph + 2.0))
+			draw_rect(pr, WyrdUi.KIT_PLATE.darkened(0.10))
+			# Top bevel catch-light (stone catches the warm page light)
+			draw_rect(Rect2(pr.position + Vector2(1.5, 1.5),
+				Vector2(pw - 3.0, 2.0)), Color(1.0, 1.0, 0.93, 0.42))
+			draw_rect(pr, WyrdUi.KIT_EDGE, false, 1.5)
+
+		# Outer arch ring (ink edge) — PI → TAU traces left foot → crown → right foot
+		draw_arc(Vector2(cx, feet_y), arch_r, PI, TAU, 40,
+			Color(WyrdUi.KIT_EDGE, 0.62), 2.5, true)
+		# Under-face of the arch (warm lit stone, slightly inset)
+		draw_arc(Vector2(cx, feet_y), arch_r - 5.0, PI + 0.08, TAU - 0.08, 36,
+			Color(WyrdUi.CREAM, 0.38), 3.0, true)
+
+		# Waypoint rune at the keystone (crown of the arch)
+		var kc := Vector2(cx, 6.0)
+		var ks := 7.0
+		# Warm gold halo when a chart is slotted — the portal is open
+		if enabled:
+			draw_circle(kc, ks * 2.8, Color(WyrdUi.GOLD, 0.14))
+		var rune_col := Color(WyrdUi.GOLD, 0.84) if enabled \
+			else Color(WyrdUi.KIT_EDGE, 0.42)
+		var pts := PackedVector2Array([
+			kc + Vector2(0.0, -ks), kc + Vector2(ks, 0.0),
+			kc + Vector2(0.0, ks),  kc + Vector2(-ks, 0.0)])
+		draw_colored_polygon(pts, rune_col)
+		draw_polyline(pts + PackedVector2Array([pts[0]]),
+			Color(WyrdUi.KIT_EDGE, 0.55), 1.0, true)
+		# Specular catch-light on the rune (same gem-pip language as cursor)
+		if enabled:
+			draw_circle(kc + Vector2(-ks * 0.28, -ks * 0.32),
+				ks * 0.22, Color(1.0, 1.0, 1.0, 0.50))
