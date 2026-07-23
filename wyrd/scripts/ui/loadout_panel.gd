@@ -81,6 +81,15 @@ func _ready() -> void:
 	WyrdUi.style_title(title)
 	title.position = Vector2(54, 36)
 	_panel.add_child(title)
+	# Flourish rule sits between title and content — the header gets its
+	# storybook read from this single drawn ornament.
+	var fr := _TitleFlourish.new()
+	fr.anchor_right = 1.0
+	fr.offset_left = 54
+	fr.offset_right = -54
+	fr.offset_top = 70
+	fr.offset_bottom = 82
+	_panel.add_child(fr)
 	var hint := Label.new()
 	hint.text = "Esc — close"
 	WyrdUi.style_dim(hint)
@@ -252,13 +261,34 @@ class _SkillCard extends Control:
 				"⚿ Huntcraft %d" % _req, HORIZONTAL_ALIGNMENT_RIGHT,
 				146.0, 13, WyrdUi.TERRACOTTA)
 		elif _focus > 0:
-			# focus-cost chip in the top-right corner
-			var chip := Rect2(Vector2(size.x - 78.0, 8.0), Vector2(66.0, 18.0))
-			draw_rect(chip, Color(0.86, 0.79, 0.66))
-			draw_rect(chip, Color(WyrdUi.KIT_EDGE, 0.6), false, 1.0)
-			draw_string(font, Vector2(chip.position.x, chip.position.y + 14.0),
+			# Sage-tinted carved focus chip — jade hue encodes "skill resource"
+			# so the cost reads at a glance without breaking the parchment tone.
+			var chip := Rect2(Vector2(size.x - 82.0, 7.0), Vector2(70.0, 20.0))
+			var face := Color(
+				WyrdUi.KIT_PLATE.r * 0.84 + WyrdUi.SAGE.r * 0.16,
+				WyrdUi.KIT_PLATE.g * 0.84 + WyrdUi.SAGE.g * 0.16,
+				WyrdUi.KIT_PLATE.b * 0.84 + WyrdUi.SAGE.b * 0.16)
+			draw_rect(chip, face)
+			# Top bevel — the chip catches the page's warm light.
+			draw_rect(Rect2(chip.position + Vector2(2.0, 1.5),
+				Vector2(chip.size.x - 4.0, 1.5)), Color(1.0, 1.0, 0.95, 0.50))
+			# Bottom shadow — the chip sits in the card, not on top of it.
+			draw_rect(Rect2(chip.position + Vector2(2.0, chip.size.y - 3.0),
+				Vector2(chip.size.x - 4.0, 1.5)), Color(WyrdUi.KIT_EDGE, 0.25))
+			draw_rect(chip, WyrdUi.KIT_EDGE, false, 1.0)
+			# Inner sage ring — a hairline so the tint reads as intentional.
+			draw_rect(chip.grow(-2.5), Color(WyrdUi.SAGE, 0.22), false, 0.75)
+			draw_string(font, Vector2(chip.position.x, chip.position.y + 15.0),
 				"%d focus" % _focus, HORIZONTAL_ALIGNMENT_CENTER, chip.size.x,
-				12, WyrdUi.INK_MID)
+				12, WyrdUi.SAGE.darkened(0.35))
 		# --- short desc (up to two lines) ---
 		draw_multiline_string(font, Vector2(tx, 40.0), _desc,
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 16.0, 12, 2, dim)
+
+
+# Centred flourish rule drawn just below the panel title.
+# Delegates to WyrdUi.draw_flourish so it inherits the kit's bead / leaf
+# enhancements automatically.
+class _TitleFlourish extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5), size.x * 0.55)
