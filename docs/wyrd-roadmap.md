@@ -393,7 +393,7 @@ diagnostic ledger. Owner-only Field Journal version 18 is live from source
 `6a7cba0717e055cf4cf56e715fa344164e22502f` with the playable export,
 fingerprint, evidence, and fresh-onboarding priority.
 
-## Clear First Step checkpoint — accepted locally 2026-07-23
+## Clear First Step checkpoint — shipped 2026-07-23
 
 [Spec 79](specs/79-clear-first-step-checkpoint.md) closes the first actionable
 onboarding gap exposed by replaying the exact hosted Working Edge build as a
@@ -411,7 +411,13 @@ local enhanced browser route passed title → town → chart table → Creature
 Codex → world → return with an empty diagnostic ledger. The 96,120,912-byte PCK
 has SHA-256
 `57fa0f9601b4c6e13f82e47cf5fff0819fe9e316d134cbc76541f856e6808fa7`.
-Publication and exact hosted replay remain before this checkpoint is shipped.
+Source is pushed at `d2602c379be66f0f7796da28366ce7c76df16413`. GitHub
+Pages deployment `3e9f703196465c652cedd7fd4c8a85d2c3da0015` routes stable
+`/play/` to versioned `v0.1.19`; the exact hosted fresh frame and complete
+enhanced journey passed. Owner-only Field Journal version 19 is live from
+source `af22f7ed81d504b099af2eda373b5425470e8239` with the identical chunked
+playable export, rendered evidence, fingerprint, and cold-human onboarding
+priority.
 
 The existing Spec 55 cold-human gate remains open. Automated rendered play
 proves delivery and timing but cannot establish unaided comprehension; three

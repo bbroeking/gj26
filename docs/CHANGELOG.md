@@ -14,6 +14,9 @@
   matched native and real-browser first-controllable frames.
 - Kept the cold-human comprehension gate explicit: rendered automation proves
   delivery and timing, not that first-time players understand unaided.
+- Published the exact versioned build behind stable `/play/`, verified the
+  hosted opening and complete journey, and updated the owner-only Field Journal
+  to version 19.
 
 ## 0.1.18-working-edge — 2026-07-23
 

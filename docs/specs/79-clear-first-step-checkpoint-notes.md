@@ -51,3 +51,12 @@
 - Web release-resource audit: 118/118 resources from a 96,120,912-byte PCK
   with SHA-256
   `57fa0f9601b4c6e13f82e47cf5fff0819fe9e316d134cbc76541f856e6808fa7`.
+- Source checkpoint: `d2602c379be66f0f7796da28366ce7c76df16413`.
+- GitHub Pages deployment:
+  `3e9f703196465c652cedd7fd4c8a85d2c3da0015`, routing stable `/play/`
+  to versioned `v0.1.19`. The exact hosted fresh frame and enhanced journey
+  passed.
+- Owner-only Field Journal version 19 deployed successfully from source
+  `af22f7ed81d504b099af2eda373b5425470e8239`, carrying the identical chunked
+  playable export, Clear First Step frame, fingerprint, and cold-human
+  onboarding priority.

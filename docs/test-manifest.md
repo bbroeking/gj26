@@ -157,6 +157,8 @@ compass. The 20-second landmark nudge must remain compass-free, and only the
 instruction, interaction, content, or progression authority changes. The exact
 96,120,912-byte PCK has SHA-256
 `57fa0f9601b4c6e13f82e47cf5fff0819fe9e316d134cbc76541f856e6808fa7`.
+The public `v0.1.19` first-controllable frame and enhanced title → town → chart
+table → Codex → world → return route passed from the exact hosted package.
 
 The persistence-disabled retained corpus currently contains 128 direct
 entrypoints. A strict 30-second-per-entrypoint serial audit passed 120; the

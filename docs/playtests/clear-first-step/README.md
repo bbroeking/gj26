@@ -30,8 +30,10 @@ objective and no compass.
 - Web package: 96,120,912 bytes; SHA-256
   `57fa0f9601b4c6e13f82e47cf5fff0819fe9e316d134cbc76541f856e6808fa7`.
 - Release-resource audit: 118/118.
-- Real local browser enhanced journey: title → town → chart table → codex →
-  chart table closed → world → complete, with an empty diagnostic ledger.
+- Real local and exact hosted browser enhanced journeys: title → town → chart
+  table → codex → chart table closed → world → complete, with empty diagnostic
+  ledgers. The public versioned route is
+  `https://bbroeking.github.io/gj26/play/v0.1.19/`.
 
 This rendered and automated evidence verifies delivery, timing, and regression
 safety. It does not replace the cold-human gate in Spec 55: three native
