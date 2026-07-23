@@ -50,6 +50,18 @@
   the quiet window. Bench socket pulses are withheld until the first stage;
   the always-processing bench advances that clock while its offline modal has
   the rest of the scene paused.
+- Every early Town handoff now starts with one compact action line naming the
+  next visible landmark and verb. The timed stages still escalate to stronger
+  landmark copy and the gold needle; they no longer rescue an initially blank
+  objective plate.
+- Dialogue presents a visible Continue button with page progress while keeping
+  click-anywhere, keyboard, and controller advancement. Choice pages still
+  hand focus directly to their authored buttons.
+- Mara, Hod, and Quill run living sidecar poses through paused dialogue and
+  storybook vignettes. Nearby cast members turn toward the local player, while
+  Mara keeps the new arrival in view throughout onboarding. The player uses
+  the authored locomotion sidecar instead of the Meshy body's bind-pose
+  “Idle” clip.
 - Cold-session reports are evaluated with a dependency-free analyzer that
   applies all seven timing gates, requires four reports, calculates medians,
   and totals recovery activations. Comprehension answers remain in the human

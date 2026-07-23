@@ -9443,15 +9443,19 @@ func objective_hint() -> String:
 			if _onboarding_hint_stage == 1: return "Mara waits beside the teal worktable"
 			if _onboarding_hint_stage >= 2: return "WASD move · follow the gold needle · E talk"
 		1:
+			if _onboarding_hint_stage == 0: return "Find a shimmering herb patch · E forage"
 			if _onboarding_hint_stage == 1: return "Look for the shimmering herb patches"
 			if _onboarding_hint_stage >= 2: return "E forage · the nearest fresh patch is marked"
 		2:
+			if _onboarding_hint_stage == 0: return "Walk to Mara's glowing table · E use"
 			if _onboarding_hint_stage == 1: return "Mara's table has begun to glow"
 			if _onboarding_hint_stage >= 2: return "Follow the gold needle · E use the table"
 		3:
+			if _onboarding_hint_stage == 0: return "At Mara's table, set the Snug base"
 			if _onboarding_hint_stage == 1: return "The Snug base is the only road you need"
 			if _onboarding_hint_stage >= 2: return "Set the Snug base · take the finished Chart"
 		4:
+			if _onboarding_hint_stage == 0: return "Walk to the glowing Waystone · E use"
 			if _onboarding_hint_stage == 1: return "The Waystone answered your finished Chart"
 			if _onboarding_hint_stage >= 2: return "Follow the gold needle · E socket the Chart"
 		6:

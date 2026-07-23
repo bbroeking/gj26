@@ -22,6 +22,7 @@ var _base_rotation := Vector3.ZERO
 func setup(player: AnimationPlayer, clip: String, visual_root: Node3D,
 		center_fraction := 0.5, window_fraction := 0.055,
 		cycle_seconds := 3.8, phase_fraction := 0.0) -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_player = player
 	_clip = clip
 	_cycle_seconds = maxf(1.0, cycle_seconds)

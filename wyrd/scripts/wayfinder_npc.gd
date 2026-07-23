@@ -9,6 +9,7 @@ extends Interactable
 const WANDERER_GLB := preload("res://models/npc_mara_linnet_v1_rigged.glb")
 const WANDERER_WALK_GLB := preload("res://models/npc_mara_linnet_v1_walk_anim.glb")
 const AnimDriverScript := preload("res://scripts/anim_driver.gd")
+const NpcAttentionScript := preload("res://scripts/npc_attention.gd")
 const DialogPanelScript = preload("res://scripts/ui/dialog_panel.gd")
 const MARA_PORTRAIT := preload("res://assets/ui/portraits/mara_linnet_v2.webp")
 
@@ -32,6 +33,10 @@ func _ready_interactable() -> void:
 	GlbFit.unmetal(mesh)
 	GlbFit.add_ink_outline(mesh)
 	AnimDriverScript.play_sidecar_pose(mesh, WANDERER_WALK_GLB, "walk", 0.5, 0.0)
+	var attention := NpcAttentionScript.new()
+	attention.name = "NpcAttention"
+	add_child(attention)
+	attention.setup(self, 11.0, true)
 
 func interact(player: Node) -> void:
 	var game := get_tree().root.get_node_or_null("Game")
@@ -44,10 +49,9 @@ func interact(player: Node) -> void:
 	var closes_first_chapter := false
 	# Face the person speaking; the dialog portrait carries expression, while the
 	# world model only needs the clear social read that Mara noticed them.
-	if player is Node3D:
-		var target := (player as Node3D).global_position
-		target.y = global_position.y
-		look_at(target, Vector3.UP, true)
+	var attention := get_node_or_null("NpcAttention")
+	if attention != null and attention.has_method("face_now"):
+		attention.face_now(player)
 	if game != null and game.has_method("first_road_active") \
 			and bool(game.first_road_active()) \
 			and String(game.seen_hints.get("first_road_profile", "")) == "":

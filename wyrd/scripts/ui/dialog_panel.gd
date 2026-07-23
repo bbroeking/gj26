@@ -26,6 +26,7 @@ var _well: PortraitWell
 var _name_lbl: Label
 var _body: Label
 var _hint: Label
+var _continue_button: Button
 var _choice_shell: PanelContainer
 var _choice_box: VBoxContainer
 
@@ -72,6 +73,7 @@ func _ready() -> void:
 	columns.add_child(prose_shell)
 
 	var prose := VBoxContainer.new()
+	prose.name = "VBoxContainer"
 	prose.add_theme_constant_override("separation", Tokens.SPACE_2)
 	prose_shell.add_child(prose)
 
@@ -96,9 +98,17 @@ func _ready() -> void:
 	_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	prose_scroll.add_child(_body)
 
+	_continue_button = Button.new()
+	_continue_button.name = "ContinueButton"
+	_continue_button.theme_type_variation = &"PrimaryButton"
+	_continue_button.custom_minimum_size = Vector2(188.0, Tokens.HIT_TARGET)
+	_continue_button.size_flags_horizontal = Control.SIZE_SHRINK_END
+	_continue_button.pressed.connect(_advance)
+	prose.add_child(_continue_button)
+
 	_hint = Label.new()
 	_hint.name = "AdvanceHint"
-	_hint.text = "E / Space — continue    Esc — close"
+	_hint.text = "Click Continue · E / Space    Esc — close"
 	_hint.theme_type_variation = &"Caption"
 	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	prose.add_child(_hint)
@@ -169,6 +179,10 @@ func _render() -> void:
 	var show_choices := not _choices.is_empty() and on_last
 	_choice_shell.visible = show_choices
 	_hint.visible = not show_choices
+	_continue_button.visible = not show_choices
+	if not show_choices:
+		_continue_button.text = ("Finish  ·  %d of %d" if on_last \
+			else "Continue  ·  %d of %d  →") % [_idx + 1, _pages.size()]
 	if show_choices and _choice_box.get_child_count() != _choices.size():
 		_build_choices()
 

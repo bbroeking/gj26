@@ -458,7 +458,8 @@ func _setup_clips() -> void:
 	_clip_dash = _find_clip_name(_ap, "runfast")
 	if _is_chibi:
 		# The Meshy rig ships walking/running as sidecar GLBs on the same
-		# skeleton; the idle export is the body. Merge what's missing.
+		# skeleton. The body export's nominal Idle is its rig bind/T-pose, so
+		# merge the authored walk before choosing the stationary fallback.
 		if _clip_walk == "" and ResourceLoader.exists(CHIBI_WALK_PATH):
 			_merge_clip_by_key(lib, "walk", load(CHIBI_WALK_PATH), "walk")
 			_clip_walk = "walk" if lib.has_animation("walk") else ""
@@ -468,6 +469,11 @@ func _setup_clips() -> void:
 		if _clip_dash == "" and ResourceLoader.exists(CHIBI_DASH_PATH):
 			_merge_clip_by_key(lib, "dash", load(CHIBI_DASH_PATH), "runfast")
 			_clip_dash = "dash" if lib.has_animation("dash") else ""
+		# A living walk cycle is preferable to exposing the bind skeleton on the
+		# first frame or during the paused arrival vignette. A dedicated idle
+		# sidecar can replace this alias later without changing the state seam.
+		if _clip_walk != "":
+			_clip_idle = _clip_walk
 	else:
 		if _clip_walk == "" and ResourceLoader.exists(RANGER_WALK_PATH):
 			_merge_clip_by_key(lib, "walk", load(RANGER_WALK_PATH), "walk")

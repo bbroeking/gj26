@@ -10,6 +10,7 @@ extends Interactable
 const QUILL_GLB := preload("res://models/npc_quill_v3_rigged.glb")
 const QUILL_WALK_GLB := preload("res://models/npc_quill_v3_walk_anim.glb")
 const AnimDriverScript := preload("res://scripts/anim_driver.gd")
+const NpcAttentionScript := preload("res://scripts/npc_attention.gd")
 const QuillPanelScript = preload("res://scripts/ui/quill_panel.gd")
 
 func get_prompt_text() -> String:
@@ -29,8 +30,15 @@ func _ready_interactable() -> void:
 	GlbFit.unmetal(mesh)
 	GlbFit.add_ink_outline(mesh)
 	AnimDriverScript.play_sidecar_pose(mesh, QUILL_WALK_GLB, "walk", 0.5, 0.68)
+	var attention := NpcAttentionScript.new()
+	attention.name = "NpcAttention"
+	add_child(attention)
+	attention.setup(self)
 
-func interact(_player: Node) -> void:
+func interact(player: Node) -> void:
+	var attention := get_node_or_null("NpcAttention")
+	if attention != null and attention.has_method("face_now"):
+		attention.face_now(player)
 	# D15 — first visit, Quill greets you (and reacts if you've quaffed a tonic
 	# already) before opening her still; after that it's straight to the shelf.
 	var game := get_tree().root.get_node_or_null("Game")

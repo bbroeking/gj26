@@ -157,6 +157,9 @@ func _run() -> void:
 			and String(player.get("_clip_dash")) == "dash",
 			"walk=%s run=%s dash=%s" % [player.get("_clip_walk"),
 				player.get("_clip_run"), player.get("_clip_dash")])
+		_check("fresh player idle uses the authored sidecar instead of the bind pose",
+			String(player.get("_clip_idle")) == "walk",
+			"idle=%s" % String(player.get("_clip_idle")))
 
 	# C2 — the real Atlas replaces the decorative quad from the first boot, but
 	# the later rain note does not exist before a completed Hollow unlocks it.
@@ -219,6 +222,17 @@ func _run() -> void:
 		elif c is PortalWaystone: portal = c
 		elif c is GatherNode: patches.append(c)
 	_check("stations placed", mara != null and table != null and portal != null)
+	var social_npcs := get_nodes_in_group("player_facing_npc")
+	_check("town cast tracks the player instead of holding authored rotations",
+		social_npcs.size() == 3,
+		"player-facing NPCs=%d" % social_npcs.size())
+	var animated_social_npcs := social_npcs.filter(func(n: Node) -> bool:
+		var drivers := n.find_children("AmbientPoseDriver", "", true, false)
+		return drivers.size() == 1 \
+			and (drivers[0] as Node).process_mode == Node.PROCESS_MODE_ALWAYS)
+	_check("town cast stays animated through onboarding pauses",
+		animated_social_npcs.size() == 3,
+		"always-animated NPCs=%d" % animated_social_npcs.size())
 	var opening_pages: Array = mara.call("_pages_for", 0) if mara != null else []
 	_check("Mara opening is two focused pages", opening_pages.size() == 2,
 		str(opening_pages))
@@ -296,6 +310,12 @@ func _run() -> void:
 	_check("dialog opened + paused", dlg != null and paused)
 	_check("Mara dialog carries her painted portrait",
 		dlg != null and dlg.get("_portrait_texture") != null)
+	var continue_button := dlg.get_node_or_null(
+		"DialogueShell/DialogueColumns/ProsePaper/VBoxContainer/ContinueButton") \
+		if dlg != null else null
+	_check("dialog visibly teaches click-through continuation",
+		continue_button is Button and (continue_button as Button).visible
+		and "Continue" in (continue_button as Button).text)
 	for _i in 8:
 		if is_instance_valid(dlg) and dlg.has_method("_advance"):
 			dlg._advance()
@@ -303,8 +323,10 @@ func _run() -> void:
 	_check("tutorial 0→1 after talk", int(game.tutorial_step) == 1,
 		str(game.tutorial_step))
 	_check("unpaused after dialog", not paused)
-	_check("new town beat begins without a redundant control line",
-		game.objective_hint() == "" and not game.onboarding_compass_available(),
+	_check("new town beat immediately names the next verb without the needle",
+		"herb patch" in game.objective_hint()
+		and "E forage" in game.objective_hint()
+		and not game.onboarding_compass_available(),
 		game.objective_hint())
 	game._onboarding_progress_msec = Time.get_ticks_msec() - 21000
 	game._onboarding_recovery_poll_msec = 0
@@ -357,6 +379,9 @@ func _run() -> void:
 	var chart: Dictionary = ChartsData.inscribe("snug", [], game.trade_lv("wayfinding"))
 	game.add_chart(chart)
 	_check("tutorial 3→4", int(game.tutorial_step) == 4)
+	_check("new Chart immediately explains the next world interaction",
+		"Waystone" in game.objective_hint() and "E" in game.objective_hint(),
+		game.objective_hint())
 
 	# Beat 5 — socket + step through (real scene change).
 	game.enter_dungeon(chart, player)
@@ -452,7 +477,7 @@ func _run() -> void:
 	var prep_buttons: Array = []
 	if debrief != null:
 		for n in _walk(debrief):
-			if n is Button:
+			if n is Button and (n as Button).visible:
 				prep_buttons.append(n)
 	_check("first return offers two preparations", prep_buttons.size() == 2,
 		str(prep_buttons.size()))
