@@ -424,7 +424,7 @@ proves delivery and timing but cannot establish unaided comprehension; three
 native first-time participants and one Web first-time participant must still
 complete the observed First Road session.
 
-## Readable Objective checkpoint — accepted locally 2026-07-23
+## Readable Objective checkpoint — shipped 2026-07-23
 
 [Spec 80](specs/80-readable-objective-checkpoint.md) answers the player's
 direct readability feedback without changing the Storybook Corners direction.
@@ -442,7 +442,13 @@ cleanly. Real Web immediate, 20-second, and 35-second guidance states are
 unclipped with an empty warning/error ledger. The 96,120,928-byte PCK has
 SHA-256
 `619b5db4494e1abd2bac1db740da7f0c6cb0072b8e52ccbd7f6ba8c0bd77c555`.
-Publication and exact hosted replay remain before this checkpoint is shipped.
+Source is pushed at `79a5f7eeb58c87f41a7d14ebe5893d6320dedb65`.
+GitHub Pages deployment `dab300cf228d3038124979fb04bf10abb4dee969`
+routes stable `/play/` to versioned `v0.1.20`; the exact hosted immediate HUD
+and enhanced journey passed with an empty diagnostic ledger. Owner-only Field
+Journal version 20 is live from source
+`c1db68734767f7b93e85e7f60cb559d87da03b9b` with the identical chunked
+playable export, before/after evidence, fingerprint, and cold-human priority.
 
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)

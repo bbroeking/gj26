@@ -46,3 +46,11 @@
 - Web release audit: 118/118 resources from a 96,120,928-byte PCK with SHA-256
   `619b5db4494e1abd2bac1db740da7f0c6cb0072b8e52ccbd7f6ba8c0bd77c555`.
 - Real Web immediate and timed recovery states produced no warning or error.
+- Source checkpoint: `79a5f7eeb58c87f41a7d14ebe5893d6320dedb65`.
+- GitHub Pages deployment:
+  `dab300cf228d3038124979fb04bf10abb4dee969`, routing stable `/play/` to
+  versioned `v0.1.20`. The exact hosted immediate HUD and enhanced journey
+  passed.
+- Owner-only Field Journal version 20 deployed successfully from source
+  `c1db68734767f7b93e85e7f60cb559d87da03b9b`, carrying the identical chunked
+  game, readable-objective frame, fingerprint, and cold-human priority.

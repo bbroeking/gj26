@@ -13,6 +13,9 @@
 - Promoted the 36-check HUD/Pack contract into the canonical gate and verified
   1,055 assertions, save roundtrip 120/120, all 118 release resources, and
   native plus real-browser 1280×720 frames.
+- Published the exact versioned build behind stable `/play/`, verified the
+  hosted HUD and complete journey, and updated the owner-only Field Journal to
+  version 20.
 
 ## 0.1.19-clear-first-step — 2026-07-23
 

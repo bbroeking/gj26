@@ -168,6 +168,8 @@ and the immediate, 20-second, and 35-second Web states must remain
 content-hugging with the compass attached. Other HUD surfaces and gameplay
 authorities remain unchanged. The exact 96,120,928-byte PCK has SHA-256
 `619b5db4494e1abd2bac1db740da7f0c6cb0072b8e52ccbd7f6ba8c0bd77c555`.
+The public `v0.1.20` immediate frame and enhanced title → town → chart table →
+Codex → world → return route passed from the exact hosted package.
 
 The persistence-disabled retained corpus currently contains 128 direct
 entrypoints. A strict 30-second-per-entrypoint serial audit passed 120; the

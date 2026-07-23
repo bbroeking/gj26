@@ -22,7 +22,8 @@ lines in the real Web build.
 - `after-web-direct.png` — the 35-second direct guidance and compass.
 
 All three browser states remain content-hugging and readable at 1280×720. The
-browser warning/error ledger is empty.
+local and exact hosted browser warning/error ledgers are empty. The public
+versioned route is `https://bbroeking.github.io/gj26/play/v0.1.20/`.
 
 ## Validation
 
@@ -32,3 +33,5 @@ browser warning/error ledger is empty.
 - Web release-resource audit: 118/118.
 - Web package: 96,120,928 bytes; SHA-256
   `619b5db4494e1abd2bac1db740da7f0c6cb0072b8e52ccbd7f6ba8c0bd77c555`.
+- Exact hosted enhanced journey: title → town → chart table → Codex → chart
+  table closed → world → complete.
