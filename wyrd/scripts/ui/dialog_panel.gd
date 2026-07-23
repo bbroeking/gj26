@@ -14,6 +14,7 @@ var _panel: Panel
 var _body: Label
 var _name_lbl: Label
 var _hint: Label
+var _page_lbl: Label   # hand-written page counter (· N / M ·) for multi-page talks
 var _lockout := 0.0
 
 func _ready() -> void:
@@ -77,6 +78,26 @@ func _ready() -> void:
 	_hint.offset_left = -310
 	_hint.offset_top = -48
 	_panel.add_child(_hint)
+	# Storybook page counter — "· N / M ·" in Caveat (the hand-jotted notes
+	# font) centered at the bottom of the text column. Shows only for multi-page
+	# conversations; single pages stay uncluttered. The centred dots read as
+	# manuscript notation rather than a UI chrome widget.
+	_page_lbl = Label.new()
+	var hand_f := WyrdUi.font_hand()
+	if hand_f != null:
+		_page_lbl.add_theme_font_override("font", hand_f)
+	_page_lbl.add_theme_font_size_override("font_size", 14)
+	_page_lbl.add_theme_color_override("font_color", WyrdUi.INK_MID)
+	_page_lbl.anchor_left = 0.5
+	_page_lbl.anchor_right = 0.5
+	_page_lbl.anchor_top = 1.0
+	_page_lbl.anchor_bottom = 1.0
+	_page_lbl.offset_left = -72
+	_page_lbl.offset_right = 72
+	_page_lbl.offset_top = -96
+	_page_lbl.offset_bottom = -72
+	_page_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_panel.add_child(_page_lbl)
 	get_node("/root/Game").modal_opened()
 	_render()
 
@@ -89,6 +110,8 @@ func _render() -> void:
 	_name_lbl.text = _speaker
 	if _idx < _pages.size():
 		_body.text = String(_pages[_idx])
+	_page_lbl.text = "· %d / %d ·" % [_idx + 1, _pages.size()] \
+		if _pages.size() > 1 else ""
 
 func _process(delta: float) -> void:
 	_lockout += delta
