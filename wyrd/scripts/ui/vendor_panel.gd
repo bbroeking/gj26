@@ -94,6 +94,16 @@ func _ready() -> void:
 	close_hint.offset_top = -28
 	_panel.add_child(close_hint)
 
+	# Drawn flourish rule with gold coin end-caps — separates the header zone
+	# from the counter columns, evoking trade / commerce in the design language.
+	var rule := _TradeRule.new()
+	rule.anchor_right = 1.0
+	rule.offset_left = 46.0
+	rule.offset_right = -46.0
+	rule.offset_top = 82.0
+	rule.offset_bottom = 94.0
+	_panel.add_child(rule)
+
 	var columns := HBoxContainer.new()
 	columns.anchor_right = 1.0
 	columns.anchor_bottom = 1.0
@@ -286,3 +296,18 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# Drawn flourish divider with gold coin end-caps for the vendor header zone.
+# The ● ─── ◆ ─── ● motif echoes trade scales — coins on the ends of a
+# balance beam, diamond as the pivot.
+class _TradeRule extends Control:
+	func _draw() -> void:
+		var cx := size.x * 0.5
+		var cy := size.y * 0.5
+		var w := size.x - 20.0
+		WyrdUi.draw_flourish(self, Vector2(cx, cy), w)
+		for sx in [-1.0, 1.0]:
+			var ec := Vector2(cx + sx * w * 0.5, cy)
+			draw_circle(ec, 4.5, Color(WyrdUi.GOLD, 0.48))
+			draw_arc(ec, 4.5, 0.0, TAU, 16, WyrdUi.KIT_EDGE, 1.0, true)
