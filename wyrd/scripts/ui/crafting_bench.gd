@@ -630,6 +630,22 @@ class BenchView extends Control:
 			_base_rect.size * bs), bench.base_id != "")
 		_highlight(_base_rect, target == "base")
 		if bench.base_id == "":
+			# Ghost scroll: dimmed parchment body + rolled-cap lines hint at what belongs here.
+			var gs := _base_rect.grow(-14.0)
+			var ga := 0.22
+			draw_rect(gs, Color(PLATE, ga))
+			draw_rect(Rect2(gs.position, Vector2(gs.size.x, 4.0)),
+				Color(0.97, 0.94, 0.84, ga * 0.7))
+			draw_rect(Rect2(gs.position + Vector2(0.0, gs.size.y - 4.0),
+				Vector2(gs.size.x, 4.0)), Color(EDGE, ga * 0.45))
+			draw_line(gs.position + Vector2(3.0, 4.0),
+				Vector2(gs.end.x - 3.0, gs.position.y + 4.0), Color(EDGE, ga * 1.5), 1.0)
+			draw_line(gs.position + Vector2(3.0, gs.size.y - 4.0),
+				gs.end - Vector2(3.0, 4.0), Color(EDGE, ga * 1.5), 1.0)
+			for li in 3:
+				var ly := gs.position.y + 16.0 + float(li) * 12.0
+				draw_line(Vector2(gs.position.x + 10.0, ly),
+					Vector2(gs.end.x - 10.0, ly), Color(EDGE, ga * 0.7), 0.8)
 			draw_string(font, _base_rect.position + Vector2(0, 52),
 				"chart base", HORIZONTAL_ALIGNMENT_CENTER,
 				_base_rect.size.x, 13, DIM)
@@ -790,6 +806,22 @@ class BenchView extends Control:
 				Color(WyrdUi.GOLD, _stamp_t * 2.0), false, 3.0)
 		var y := 250.0
 		if bench.base_id == "":
+			# Ghost scroll on the result well — mirrors the base socket ghost.
+			var gs := _result_rect.grow(-14.0)
+			var ga := 0.22
+			draw_rect(gs, Color(PLATE, ga))
+			draw_rect(Rect2(gs.position, Vector2(gs.size.x, 4.0)),
+				Color(0.97, 0.94, 0.84, ga * 0.7))
+			draw_rect(Rect2(gs.position + Vector2(0.0, gs.size.y - 4.0),
+				Vector2(gs.size.x, 4.0)), Color(EDGE, ga * 0.45))
+			draw_line(gs.position + Vector2(3.0, 4.0),
+				Vector2(gs.end.x - 3.0, gs.position.y + 4.0), Color(EDGE, ga * 1.5), 1.0)
+			draw_line(gs.position + Vector2(3.0, gs.size.y - 4.0),
+				gs.end - Vector2(3.0, 4.0), Color(EDGE, ga * 1.5), 1.0)
+			for li in 3:
+				var ly := gs.position.y + 16.0 + float(li) * 14.0
+				draw_line(Vector2(gs.position.x + 10.0, ly),
+					Vector2(gs.end.x - 10.0, ly), Color(EDGE, ga * 0.7), 0.8)
 			draw_string(font, _result_rect.position + Vector2(0, 60),
 				"place a base", HORIZONTAL_ALIGNMENT_CENTER,
 				_result_rect.size.x, 13, DIM)
