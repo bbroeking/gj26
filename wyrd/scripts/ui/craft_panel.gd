@@ -89,12 +89,12 @@ func _ready() -> void:
 			var lp: CanvasLayer = load("res://scripts/ui/loadout_panel.gd").new()
 			get_tree().current_scene.add_child(lp))
 		col.add_child(lb)
-	var s2 := Label.new()
-	s2.text = "Satchel"
-	WyrdUi.style_section(s2)
-	col.add_child(s2)
+	var satchel_rule := _SatchelRule.new()
+	satchel_rule.custom_minimum_size = Vector2(0, 28)
+	satchel_rule.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.add_child(satchel_rule)
 	_satchel_lbl = Label.new()
-	WyrdUi.style_body(_satchel_lbl, 13)
+	WyrdUi.style_chip(_satchel_lbl, 14)
 	_satchel_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(_satchel_lbl)
 
@@ -212,3 +212,31 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# Drawn section rule for the Satchel header — centred "Satchel" in IM Fell
+# terracotta, flanked by ink lines and small gold-pip diamonds. Same
+# hand-lettered language as the dialog panel's speaker divider.
+class _SatchelRule extends Control:
+	func _draw() -> void:
+		if size.x < 4.0:
+			return
+		var cy := size.y * 0.5 + 1.0
+		var font := WyrdUi.font_header()
+		if font == null:
+			font = get_theme_default_font()
+		var text := "Satchel"
+		var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
+		var cx := size.x * 0.5
+		var gap := tw * 0.5 + 14.0
+		# Ink rule lines either side of the label
+		draw_line(Vector2(4.0, cy), Vector2(cx - gap, cy),
+			Color(WyrdUi.KIT_EDGE, 0.45), 1.0)
+		draw_line(Vector2(cx + gap, cy), Vector2(size.x - 4.0, cy),
+			Color(WyrdUi.KIT_EDGE, 0.45), 1.0)
+		# Centred section label
+		draw_string(font, Vector2(cx - tw * 0.5, cy + 6.0), text,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 16, WyrdUi.TERRACOTTA)
+		# Small gold-pip diamonds at the rule/label junctions
+		draw_circle(Vector2(cx - gap + 3.0, cy), 2.5, Color(WyrdUi.GOLD, 0.65))
+		draw_circle(Vector2(cx + gap - 3.0, cy), 2.5, Color(WyrdUi.GOLD, 0.65))
