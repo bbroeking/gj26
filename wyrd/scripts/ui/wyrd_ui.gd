@@ -327,15 +327,36 @@ static func draw_parchment_grain(c: CanvasItem, r: Rect2, seed_v: int = 7) -> vo
 		c.draw_line(p, p + Vector2(ln, rng.randf_range(-1.2, 1.2)),
 			Color(0.62, 0.52, 0.38, 0.05 + rng.randf() * 0.05), 1.0)
 
-# Section flourish: ── ◆ ── centred under a header.
+# Section flourish: ── ◆ ── centred under a header. Terminal gold beads on
+# the rule tips; at wider sizes (> 50 px) small sage leaf-buds sit mid-rule
+# as the ivy-bead accent called for by the design language.
 static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 	var col := Color(KIT_EDGE, 0.45)
 	c.draw_line(center - Vector2(width * 0.5, 0), center - Vector2(7, 0), col, 1.0)
 	c.draw_line(center + Vector2(7, 0), center + Vector2(width * 0.5, 0), col, 1.0)
+	# Central gold diamond.
 	var pts := PackedVector2Array([center + Vector2(0, -3.5),
 		center + Vector2(3.5, 0), center + Vector2(0, 3.5),
 		center + Vector2(-3.5, 0)])
 	c.draw_colored_polygon(pts, Color(GOLD, 0.8))
+	# Terminal gold beads at the rule tips — calligraphic filigree end-caps.
+	c.draw_circle(center - Vector2(width * 0.5, 0), 1.8, Color(GOLD, 0.60))
+	c.draw_circle(center + Vector2(width * 0.5, 0), 1.8, Color(GOLD, 0.60))
+	# Sage leaf-buds at the mid-point of each rule arm (only when there is room
+	# — skipped at hotbar-end width ≤ 50 px so they don't crowd the tiny plank
+	# flourishes). The bud is a small pointed diamond aligned with the rule,
+	# its tip facing outward like a leaf node on a vine.
+	if width > 50.0:
+		var arm_mid := width * 0.25     # midpoint of the rule arm (between ±7 and ±half)
+		for side in [-1.0, 1.0]:
+			var bx := center.x + side * arm_mid
+			var bud := PackedVector2Array([
+				Vector2(bx, center.y - 2.5),           # top
+				Vector2(bx + side * 3.0, center.y),    # outer tip (toward rule end)
+				Vector2(bx, center.y + 2.5),           # bottom
+				Vector2(bx - side * 3.0, center.y),    # inner base (toward diamond)
+			])
+			c.draw_colored_polygon(bud, Color(SAGE, 0.38))
 
 # A little hand-blown ink bottle — glass body, ink fill, neck, cork, and a
 # glass highlight. Replaces the bare text glyphs in sockets and trays.
