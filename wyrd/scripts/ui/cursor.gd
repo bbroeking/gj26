@@ -57,6 +57,8 @@ class CursorMark extends Control:
 		draw_polyline(PackedVector2Array([
 			m + Vector2(0, -s), m + Vector2(s, 0), m + Vector2(0, s),
 			m + Vector2(-s, 0), m + Vector2(0, -s)]), WyrdUi.INK, 1.0)
+		# Catch-light — a specular highlight so the pip reads as a polished gem.
+		draw_circle(m + Vector2(-s * 0.35, -s * 0.45), s * 0.22, Color(1.0, 1.0, 1.0, 0.55))
 
 	func _find_player() -> Node:
 		if _player != null and is_instance_valid(_player):
