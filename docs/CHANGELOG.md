@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.20-readable-objective — 2026-07-23
+
+- Increased the top-left objective card from 320 to 372 pixels and raised its
+  objective and guidance type to 18 and 16 pixels.
+- Darkened supporting green copy and strengthened the existing wood edge and
+  shadow so the card reads immediately against the bright Town world.
+- Retuned content-hug height and compass placement for the larger component;
+  immediate, 20-second, and 35-second guidance states remain unclipped.
+- Preserved the Storybook Corners layout, parchment language, objective copy,
+  controls, recovery timing, all other HUD surfaces, and gameplay.
+- Promoted the 36-check HUD/Pack contract into the canonical gate and verified
+  1,055 assertions, save roundtrip 120/120, all 118 release resources, and
+  native plus real-browser 1280×720 frames.
+
 ## 0.1.19-clear-first-step — 2026-07-23
 
 - Put the two controls needed for the opening objective—`WASD` movement and

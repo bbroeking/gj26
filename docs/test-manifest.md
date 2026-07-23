@@ -1,6 +1,6 @@
 # Wayfinder test manifest
 
-Updated 2026-07-23 for `0.1.19-clear-first-step`.
+Updated 2026-07-23 for `0.1.20-readable-objective`.
 
 ## Canonical checkpoint gate
 
@@ -30,7 +30,8 @@ Run every entry with `WYRD_NO_SAVE=1 godot --headless --path wyrd --script res:/
 | `test_town_tonal_separation.gd` | 10 | Town-only cloned environment grade, native/Web values, and absence of a Canvas overlay |
 | `test_town_arrival_framing.gd` | 8 | Town-only camera profile, bounded framing values, and the real 1280×720 player/Mara/landmark projection |
 | `test_town_working_edge.gd` | 12 | Three-landmark band, attached support ownership, protected approaches, and lower-facade projection |
-| **Total** | **1,019** | **Required before a checkpoint is accepted** |
+| `test_ui_hud_and_pack_contract.gd` | 36 | Objective readability floor, semantic HUD actions, Pack layout, focus, and quick actions |
+| **Total** | **1,055** | **Required before a checkpoint is accepted** |
 
 ## Exported-browser gate
 
@@ -159,6 +160,14 @@ instruction, interaction, content, or progression authority changes. The exact
 `57fa0f9601b4c6e13f82e47cf5fff0819fe9e316d134cbc76541f856e6808fa7`.
 The public `v0.1.19` first-controllable frame and enhanced title → town → chart
 table → Codex → world → return route passed from the exact hosted package.
+
+The `0.1.20-readable-objective` proof requires the top-left Storybook Corners
+objective to remain 360–400 pixels wide with at least 18-pixel objective text
+and 16-pixel guidance. The first Mara objective must not orphan `Wayfinder`,
+and the immediate, 20-second, and 35-second Web states must remain
+content-hugging with the compass attached. Other HUD surfaces and gameplay
+authorities remain unchanged. The exact 96,120,928-byte PCK has SHA-256
+`619b5db4494e1abd2bac1db740da7f0c6cb0072b8e52ccbd7f6ba8c0bd77c555`.
 
 The persistence-disabled retained corpus currently contains 128 direct
 entrypoints. A strict 30-second-per-entrypoint serial audit passed 120; the

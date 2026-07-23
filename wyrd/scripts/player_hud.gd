@@ -180,30 +180,30 @@ func _build_wyrd_overlay() -> void:
 	var maple := WyrdUi.has_maple()
 	var q_hdr_col: Color = WyrdUi.MAPLE_WOOD_D if maple else WyrdUi.GOLD
 	var q_body_col: Color = WyrdUi.MAPLE_INK_DARK if maple else WyrdUi.TEXT_ON_DARK
-	var q_prog_col: Color = Color(0.28, 0.48, 0.20) if maple else WyrdUi.SAGE
+	var q_prog_col: Color = Color(0.18, 0.36, 0.12) if maple else WyrdUi.SAGE
 	var sb := StyleBoxFlat.new()
 	sb.set_corner_radius_all(18)
 	sb.corner_detail = 10
 	sb.anti_aliasing = true
 	if maple:
 		sb.bg_color = WyrdUi.MAPLE_CREAM
-		sb.set_border_width_all(5)
+		sb.set_border_width_all(6)
 		sb.border_color = WyrdUi.MAPLE_WOOD
 	else:
 		sb.bg_color = Color(WyrdUi.KIT_PLATE, 0.90)
 		sb.set_border_width_all(2)
 		sb.border_color = Color(WyrdUi.GOLD, 0.55)
 	sb.shadow_color = Color(0, 0, 0, 0.28)
-	sb.shadow_size = 6
-	sb.shadow_offset = Vector2(0, 3)
+	sb.shadow_size = 8
+	sb.shadow_offset = Vector2(0, 4)
 	_quest_plate.add_theme_stylebox_override("panel", sb)
 	# Spec 52 (Direction A) — a compact objective chip pinned top-LEFT, not a
 	# 520px banner centred over the world. One line + an affix sub-line.
 	_quest_plate.anchor_left = 0.0
 	_quest_plate.anchor_right = 0.0
-	_quest_plate.offset_left = 12
-	_quest_plate.offset_right = 332
-	_quest_plate.offset_top = 10
+	_quest_plate.offset_left = 14
+	_quest_plate.offset_right = 386
+	_quest_plate.offset_top = 12
 	_quest_plate.offset_bottom = 82
 	add_child(_quest_plate)
 	# Drawn scroll dressing — added first so it sits behind the text. Fills the
@@ -220,16 +220,16 @@ func _build_wyrd_overlay() -> void:
 	var hf := WyrdUi.font_header()
 	if hf != null:
 		qhdr.add_theme_font_override("font", hf)
-	qhdr.add_theme_font_size_override("font_size", 14)
+	qhdr.add_theme_font_size_override("font_size", 15)
 	qhdr.add_theme_color_override("font_color", q_hdr_col)
-	qhdr.offset_left = 14
+	qhdr.offset_left = 16
 	qhdr.anchor_right = 1.0
 	qhdr.offset_top = 7
 	qhdr.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_quest_plate.add_child(qhdr)
 	# Progress counter rides the top-right corner of the chip, beside the eyebrow.
 	_quest_progress = Label.new()
-	_quest_progress.add_theme_font_size_override("font_size", 14)
+	_quest_progress.add_theme_font_size_override("font_size", 15)
 	_quest_progress.add_theme_color_override("font_color", q_prog_col)
 	_quest_progress.anchor_right = 1.0
 	_quest_progress.offset_left = -110
@@ -239,25 +239,26 @@ func _build_wyrd_overlay() -> void:
 	_quest_plate.add_child(_quest_progress)
 	_objective = Label.new()
 	_objective.name = "Objective"
-	_objective.add_theme_font_size_override("font_size", 16)
+	_objective.add_theme_font_size_override("font_size", 18)
 	_objective.add_theme_color_override("font_color", q_body_col)
 	_objective.anchor_right = 1.0
-	_objective.offset_top = 26
-	_objective.offset_left = 14
-	_objective.offset_right = -12
+	_objective.offset_top = 29
+	_objective.offset_left = 16
+	_objective.offset_right = -14
 	_objective.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_quest_plate.add_child(_objective)
 	_objective_hint = Label.new()
-	_objective_hint.add_theme_font_size_override("font_size", 14)
+	_objective_hint.name = "ObjectiveHint"
+	_objective_hint.add_theme_font_size_override("font_size", 16)
 	_objective_hint.add_theme_color_override("font_color", q_prog_col)
 	_objective_hint.anchor_right = 1.0
 	_objective_hint.anchor_top = 1.0
 	_objective_hint.anchor_bottom = 1.0
-	_objective_hint.offset_left = 14
-	_objective_hint.offset_right = -12
-	_objective_hint.offset_top = -22
-	_objective_hint.offset_bottom = -6
+	_objective_hint.offset_left = 16
+	_objective_hint.offset_right = -14
+	_objective_hint.offset_top = -25
+	_objective_hint.offset_bottom = -7
 	_objective_hint.clip_text = true
 	_quest_plate.add_child(_objective_hint)
 	# D13 — sub-objective: names the chart / affixes you're delving. Bottom-
@@ -281,10 +282,10 @@ func _build_wyrd_overlay() -> void:
 	_compass = CompassArrow.new()
 	_compass.anchor_left = 0.0
 	_compass.anchor_top = 0.0
-	_compass.offset_left = 298
-	_compass.offset_top = 12
-	_compass.offset_right = 338
-	_compass.offset_bottom = 52
+	_compass.offset_left = 352
+	_compass.offset_top = 14
+	_compass.offset_right = 392
+	_compass.offset_bottom = 54
 	_compass.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_compass)
 	_build_action_bar()
@@ -410,8 +411,8 @@ func _refresh_objective() -> void:
 		_quest_sub.text = ("◆ " + short) if short != "" else ""
 		_quest_sub.visible = short != ""
 		if _objective_hint != null:
-			_objective_hint.offset_top = -40 if _quest_sub.visible else -22
-			_objective_hint.offset_bottom = -24 if _quest_sub.visible else -6
+			_objective_hint.offset_top = -45 if _quest_sub.visible else -25
+			_objective_hint.offset_bottom = -27 if _quest_sub.visible else -7
 	# Spec 53 — content-hug: size the chip to the wrapped objective + sub instead
 	# of a fixed 96px box (kills the dead-teal pool under a single-line objective).
 	_fit_quest_plate()
@@ -423,12 +424,12 @@ func _fit_quest_plate() -> void:
 	if _quest_plate == null or not is_instance_valid(_quest_plate):
 		return
 	var lines: int = maxi(1, _objective.get_line_count())
-	var h: float = 28.0 + float(lines) * 21.0
+	var h: float = 31.0 + float(lines) * 24.0
 	if _objective_hint != null and _objective_hint.visible:
-		h += 20.0
+		h += 23.0
 	if _quest_sub.visible:
 		h += 20.0
-	h += 8.0
+	h += 10.0
 	_quest_plate.offset_bottom = _quest_plate.offset_top + h
 
 # Bottom-right action bar — Pack (I) and Satchel (M) as clickable parchment

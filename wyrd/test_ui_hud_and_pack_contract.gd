@@ -46,8 +46,16 @@ func _run() -> void:
 	var objective := hud.find_child("Objective", true, false) as Label
 	_check(objective != null, "HUD exposes the quest objective as a semantic Label")
 	if objective != null:
-		_check(objective.get_theme_font_size("font_size") >= Tokens.TYPE_BODY,
-			"HUD objective preserves the 16px body-text floor")
+		_check(objective.get_theme_font_size("font_size") >= 18,
+			"HUD objective preserves the 18px readable-play floor")
+	var objective_hint := hud.find_child("ObjectiveHint", true, false) as Label
+	_check(objective_hint != null
+			and objective_hint.get_theme_font_size("font_size") >= Tokens.TYPE_BODY,
+		"HUD guidance preserves the 16px readable-play floor")
+	var quest_note := hud.find_child("QuestNote", true, false) as Panel
+	_check(quest_note != null and quest_note.size.x >= 360.0
+			and quest_note.size.x <= 400.0,
+		"HUD objective plate uses the bounded wider reading measure")
 	var action_bar := hud.find_child("ActionBar", true, false) as HBoxContainer
 	_check(action_bar != null and action_bar.get_child_count() >= 3,
 		"HUD exposes persistent Pack actions as real Controls")

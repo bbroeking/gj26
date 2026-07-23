@@ -1,5 +1,25 @@
 # Wayfinder devlog
 
+## 2026-07-23 — The next mark became readable
+
+Clear First Step put the right instruction on screen, but the player's own
+capture showed that technically present was not the same as comfortably
+visible. The narrow objective card wrapped a short title into an orphaned word,
+while its supporting line receded into the bright yard. The hierarchy was
+correct; its reading distance was not.
+
+Readable Objective moves the established Storybook Corners card up one measured
+step. It is fifteen percent wider, its objective and guidance type each rise
+one size, its green grows darker against cream, and its existing wood edge and
+shadow separate more clearly from the world. No new component, animation,
+marker, copy, control, or global UI scale entered the game.
+
+The immediate Web state, landmark recovery, and direct gold-needle state all
+remain content-hugging at 1280×720. The objective is obvious without becoming a
+banner, and the unchanged Town still owns almost all of the frame. The focused
+HUD contract is now part of the checkpoint gate so this reading floor cannot
+quietly regress.
+
 ## 2026-07-23 — The first step became clear
 
 Working Edge made home feel gathered, then a normal fresh run exposed a much

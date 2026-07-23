@@ -424,6 +424,26 @@ proves delivery and timing but cannot establish unaided comprehension; three
 native first-time participants and one Web first-time participant must still
 complete the observed First Road session.
 
+## Readable Objective checkpoint — accepted locally 2026-07-23
+
+[Spec 80](specs/80-readable-objective-checkpoint.md) answers the player's
+direct readability feedback without changing the Storybook Corners direction.
+The top-left objective card is now 372 pixels wide, with 18-pixel objective
+copy, 16-pixel guidance, darker green support text, and a slightly stronger
+version of its existing wood edge and shadow. Content-hug height and compass
+placement were retuned for that scale; objective wording, recovery timing,
+controls, every other HUD surface, and gameplay remain unchanged.
+
+Player-supplied before evidence and native/Web after frames live in
+`playtests/readable-objective/`. The canonical gate now includes the focused
+36-check HUD/Pack contract and is green at 1,055 assertions across 23 suites;
+guarded save roundtrip passes 120/120 and all 118 release resources audit
+cleanly. Real Web immediate, 20-second, and 35-second guidance states are
+unclipped with an empty warning/error ledger. The 96,120,928-byte PCK has
+SHA-256
+`619b5db4494e1abd2bac1db740da7f0c6cb0072b8e52ccbd7f6ba8c0bd77c555`.
+Publication and exact hosted replay remain before this checkpoint is shipped.
+
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)
 
