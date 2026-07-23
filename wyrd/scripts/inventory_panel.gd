@@ -435,23 +435,25 @@ func _draw_slots() -> void:
 		hdr2 = font
 	draw_string(hdr2, _slot_top("pickaxe") + Vector2(0, -10), "Trade Tools",
 		HORIZONTAL_ALIGNMENT_LEFT, 160.0, 14, WyrdUi.INK)
+	# Faint parchment grain across the doll column ties the six wells into
+	# one aged page — the same texture the panel carries overall.
+	WyrdUi.draw_parchment_grain(self,
+		Rect2(doll_origin - Vector2(6, 4), Vector2(174, 356)), 43)
 	for name in SLOT_OFFSET:
 		var top := _slot_top(String(name))
 		var r := Rect2(top, Vector2(SLOT_SIZE, SLOT_SIZE))
-		# Recessed slot well.
-		draw_rect(r, Color(0.80, 0.72, 0.58))
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(SLOT_SIZE - 1, 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_line(r.position + Vector2(1, 1), r.position + Vector2(1, SLOT_SIZE - 1),
-			Color(0.45, 0.37, 0.27, 0.8), 2.0)
-		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+		# Shared carved-well: 3-step inner shadow + warm bottom lip + KIT_EDGE
+		# border — the same recessed vocabulary as ingredient sockets and round
+		# wells everywhere else in the kit.
+		WyrdUi.draw_well(self, r)
 		var it = equipment.get_slot(String(name))
 		if it != null:
 			_draw_item_rect_scaled(it, top + Vector2(6, 6),
 				Vector2(SLOT_SIZE - 12, SLOT_SIZE - 12), false)
 		else:
-			# Empty slot — name ghosted in the well, Diablo-style.
-			draw_string(font, top + Vector2(0, SLOT_SIZE * 0.5 + 5),
+			# Empty slot: IM Fell header font so the ghost label reads as
+			# carved lettering pressed into the well, not a flat engine string.
+			draw_string(hdr2, top + Vector2(0, SLOT_SIZE * 0.5 + 5),
 				String(name).capitalize(), HORIZONTAL_ALIGNMENT_CENTER,
 				SLOT_SIZE, 12, Color(0.50, 0.42, 0.32, 0.85))
 
