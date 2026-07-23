@@ -365,7 +365,7 @@ Field Journal version 17 is live with the chunked playable export, Gathered
 Arrival evidence, fingerprint, and north-landmark priority; its pushed source
 is `f13148e22aa4ab1379ead73e7fb0e1418dabb8a8`.
 
-## Working Edge checkpoint — accepted locally 2026-07-21
+## Working Edge checkpoint — shipped 2026-07-23
 
 [Spec 78](specs/78-working-edge-checkpoint.md) closes the landmark-composition
 gap exposed by replaying Gathered Arrival against the approved Arrival concept.
@@ -385,9 +385,13 @@ table → world → complete. The 96,122,864-byte PCK has SHA-256
 `434e77f85b76b5ae900766188055ae95971cbb38d5648eca19b01919956ef521`.
 An initially unguarded save-suite invocation overwrote the disposable developer
 profile and backup; the generated state remains preserved under dated recovery
-filenames, and the suite now fails closed without its persistence guard.
-Publication resumed by owner direction on 2026-07-23. No deployment or
-companion-site receipt is claimed until those external gates pass.
+filenames, and the suite now fails closed without its persistence guard. Source
+is pushed at `56099c5638c151691c62073065d6408fe5e53ad5`. GitHub Pages deployment
+`c058819a6e0ecad9770b5ef050b9ebafc2815245` routes stable `/play/` to
+versioned `v0.1.18`; the exact hosted enhanced journey passed with an empty
+diagnostic ledger. Owner-only Field Journal version 18 is live from source
+`6a7cba0717e055cf4cf56e715fa344164e22502f` with the playable export,
+fingerprint, evidence, and fresh-onboarding priority.
 
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)

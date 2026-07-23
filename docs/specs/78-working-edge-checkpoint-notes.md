@@ -71,4 +71,10 @@
   `passed`, with the accepted first-arrival frame visually inspected.
 - Export audit: 118/118 release resources from a 96,122,864-byte PCK; SHA-256
   `434e77f85b76b5ae900766188055ae95971cbb38d5648eca19b01919956ef521`.
-- Publication and companion-site verification are the remaining gates.
+- Source shipped at `56099c5638c151691c62073065d6408fe5e53ad5`.
+- GitHub Pages deployment `c058819a6e0ecad9770b5ef050b9ebafc2815245`
+  routes stable `/play/` to versioned `v0.1.18`; its exact hosted enhanced
+  journey passed with an empty diagnostic ledger.
+- Owner-only Field Journal version 18 is live from source
+  `6a7cba0717e055cf4cf56e715fa344164e22502f` with the exact chunked game,
+  Working Edge evidence, release fingerprint, and onboarding priority.

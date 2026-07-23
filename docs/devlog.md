@@ -23,6 +23,13 @@ fixture state. The files remain preserved under dated recovery names, and the
 suite now fails closed before touching a profile. Publication resumed only
 after owner direction on 2026-07-23.
 
+The cache-safe public build then passed the complete hosted journey from its
+versioned path, and owner-only Field Journal version 18 now serves the same
+playable bytes, Working Edge frame, fingerprint, and next director priority.
+That priority comes from the shipped replay rather than a backlog: walk the
+fresh journey through Mara and the first fight, then remove the one instruction
+or interaction that asks a new player to interpret too much.
+
 ## 2026-07-21 — Home gathered around the road
 
 Shaded Home made the yard readable enough to expose its next problem. The

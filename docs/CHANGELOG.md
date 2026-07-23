@@ -14,6 +14,8 @@
   preventing an accidental test run from touching a live profile.
 - Verified 1,016 canonical assertions, save roundtrip 120/120, all 118 release
   resources, and matched native and real-browser first-arrival play.
+- Published the exact versioned build behind stable `/play/`, verified the
+  hosted route, and updated the owner-only Field Journal to version 18.
 
 ## 0.1.17-gathered-arrival — 2026-07-21
 
