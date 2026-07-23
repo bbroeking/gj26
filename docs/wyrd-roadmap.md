@@ -393,6 +393,31 @@ diagnostic ledger. Owner-only Field Journal version 18 is live from source
 `6a7cba0717e055cf4cf56e715fa344164e22502f` with the playable export,
 fingerprint, evidence, and fresh-onboarding priority.
 
+## Clear First Step checkpoint — accepted locally 2026-07-23
+
+[Spec 79](specs/79-clear-first-step-checkpoint.md) closes the first actionable
+onboarding gap exposed by replaying the exact hosted Working Edge build as a
+normal fresh journey. The first controllable Town frame now places
+`WASD move · E talk` beneath the unchanged Mara objective. The existing
+twenty-second teal-worktable nudge and thirty-five-second gold-needle recovery
+remain intact, and no modal, marker, tutorial mode, content, control, Mara
+dialog, Kind/Bold choice, Chart, combat lesson, or return flow changed.
+
+Matched native and real Chromium evidence lives in
+`playtests/clear-first-step/`. The twenty-two-suite canonical gate is green at
+1,019 assertions after serial confirmation of the two timing suites, guarded
+save roundtrip passes 120/120, and all 118 release resources audit cleanly. The
+local enhanced browser route passed title → town → chart table → Creature
+Codex → world → return with an empty diagnostic ledger. The 96,120,912-byte PCK
+has SHA-256
+`57fa0f9601b4c6e13f82e47cf5fff0819fe9e316d134cbc76541f856e6808fa7`.
+Publication and exact hosted replay remain before this checkpoint is shipped.
+
+The existing Spec 55 cold-human gate remains open. Automated rendered play
+proves delivery and timing but cannot establish unaided comprehension; three
+native first-time participants and one Web first-time participant must still
+complete the observed First Road session.
+
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)
 

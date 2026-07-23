@@ -31,6 +31,23 @@ func run() -> void:
 	game.start_first_road()
 	check("fresh journey waits on one authored choice", game.first_road_active()
 		and game.tutorial_step == 0 and game.charts.is_empty())
+	check("fresh control names movement and talk without revealing the needle",
+		game.objective_hint() == "WASD move · E talk"
+		and not game.onboarding_compass_available(), game.objective_hint())
+	game._onboarding_progress_msec = Time.get_ticks_msec() - 21000
+	game._onboarding_recovery_poll_msec = 0
+	game._tick_onboarding_recovery()
+	check("20-second recovery names Mara's landmark without the needle",
+		game.onboarding_hint_stage() == 1
+		and "teal worktable" in game.objective_hint()
+		and not game.onboarding_compass_available(), game.objective_hint())
+	game._onboarding_progress_msec = Time.get_ticks_msec() - 36000
+	game._onboarding_recovery_poll_msec = 0
+	game._tick_onboarding_recovery()
+	check("35-second recovery adds the direct destination needle",
+		game.onboarding_hint_stage() == 2
+		and "gold needle" in game.objective_hint()
+		and game.onboarding_compass_available(), game.objective_hint())
 	check("invalid choice cannot mutate the case", not game.choose_first_road(9)
 		and game.charts.is_empty())
 	check("Kind Road materializes through the production transaction",

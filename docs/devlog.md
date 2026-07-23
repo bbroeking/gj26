@@ -1,5 +1,32 @@
 # Wayfinder devlog
 
+## 2026-07-23 — The first step became clear
+
+Working Edge made home feel gathered, then a normal fresh run exposed a much
+smaller but more consequential gap. The first objective asked the ranger to
+speak with Mara without saying how to move or talk. The game eventually helped,
+but only after making a new player wait: first a landmark at twenty seconds,
+then the actual controls and a gold needle after thirty-five.
+
+Clear First Step changes one line in the existing objective plate. From the
+first controllable frame it says `WASD move · E talk`. That is all the opening
+needs: two controls for one immediate intention. The teal-worktable nudge and
+gold-needle recovery remain timed, so the yard still invites orientation before
+it draws the destination.
+
+The rest of the First Road is already leaner than the old tutorial plan: Mara
+offers one meaningful Kind/Bold choice, the Waystone opens the road, a safe
+fight teaches bow and roll, and the return grants Power Shot. This checkpoint
+does not add another teaching system or explain later mechanics early. Native
+and real browser frames agree on the result; 1,019 canonical assertions, the
+120-check guarded save suite, all 118 release resources, and the complete local
+browser journey are green.
+
+That evidence proves the line appears at the right time without breaking the
+road. It cannot prove comprehension. The next honest onboarding evidence is the
+existing cold-human gate: three native newcomers and one Web newcomer reaching
+Mara, choosing a road, crossing, fighting, and returning without coaching.
+
 ## 2026-07-21 — Home found its working edge
 
 Gathered Arrival finally put the northern buildings in view, which made their

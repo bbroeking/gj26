@@ -1,6 +1,6 @@
 # Wayfinder test manifest
 
-Updated 2026-07-21 for `0.1.18-working-edge`.
+Updated 2026-07-23 for `0.1.19-clear-first-step`.
 
 ## Canonical checkpoint gate
 
@@ -13,7 +13,7 @@ Run every entry with `WYRD_NO_SAVE=1 godot --headless --path wyrd --script res:/
 | `test_wyrd_transitions.gd` | 125 | Town/World transitions and return ownership |
 | `test_skills.gd` | 75 | Hotbar dispatch and Skill behavior |
 | `test_boot_smoke.gd` | 148 | Script compilation and Town/World boot paths |
-| `test_first_road_slice.gd` | 14 | Fresh 5–10 minute First Road promise |
+| `test_first_road_slice.gd` | 17 | Fresh 5–10 minute First Road promise and three-stage first-control guidance |
 | `test_movement_feel.gd` | 14 | Production keyboard movement, roll feel, named-neighbor motion, and creature opening-to-pursuit behavior |
 | `test_hollow_readability.gd` | 9 | Boundary-only living walls, complete-profile cutaway restoration, and budget |
 | `test_first_hollow_room_grammar.gd` | 8 | Archetype determinism, variation, boundary truth, and combat apertures |
@@ -30,7 +30,7 @@ Run every entry with `WYRD_NO_SAVE=1 godot --headless --path wyrd --script res:/
 | `test_town_tonal_separation.gd` | 10 | Town-only cloned environment grade, native/Web values, and absence of a Canvas overlay |
 | `test_town_arrival_framing.gd` | 8 | Town-only camera profile, bounded framing values, and the real 1280×720 player/Mara/landmark projection |
 | `test_town_working_edge.gd` | 12 | Three-landmark band, attached support ownership, protected approaches, and lower-facade projection |
-| **Total** | **1,016** | **Required before a checkpoint is accepted** |
+| **Total** | **1,019** | **Required before a checkpoint is accepted** |
 
 ## Exported-browser gate
 
@@ -149,6 +149,14 @@ north-landmark lower facades in frame, deterministic attached support clusters,
 and explicit clearance for Mara's route, Chart table, Waystone, practice space,
 and central plaza. Camera, grade, content count, and gameplay authorities remain
 unchanged.
+
+The `0.1.19-clear-first-step` proof requires the existing Mara objective to show
+`WASD move · E talk` on the first controllable native and Web frames with no
+compass. The 20-second landmark nudge must remain compass-free, and only the
+35-second direct recovery may reveal the gold needle. No other First Road
+instruction, interaction, content, or progression authority changes. The exact
+96,120,912-byte PCK has SHA-256
+`57fa0f9601b4c6e13f82e47cf5fff0819fe9e316d134cbc76541f856e6808fa7`.
 
 The persistence-disabled retained corpus currently contains 128 direct
 entrypoints. A strict 30-second-per-entrypoint serial audit passed 120; the

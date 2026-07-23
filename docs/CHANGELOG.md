@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.19-clear-first-step — 2026-07-23
+
+- Put the two controls needed for the opening objective—`WASD` movement and
+  `E` talk—directly beneath Mara's objective on the first controllable frame.
+- Preserved the existing gentle recovery ladder: Mara's teal worktable at 20
+  seconds, then the direct gold-needle destination only after 35 seconds.
+- Added no tutorial modal, marker, mode, instruction sequence, content, or
+  control change; Mara, the Kind/Bold choice, First Road, combat lesson, and
+  return remain unchanged.
+- Expanded the First Road acceptance gate to 17 assertions and verified 1,019
+  canonical assertions, save roundtrip 120/120, all 118 release resources, and
+  matched native and real-browser first-controllable frames.
+- Kept the cold-human comprehension gate explicit: rendered automation proves
+  delivery and timing, not that first-time players understand unaided.
+
 ## 0.1.18-working-edge — 2026-07-23
 
 - Gathered the existing cottage, Chartmaker's tower, and smithy into one

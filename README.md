@@ -66,8 +66,8 @@ I pack · M satchel · K trades · Space roll · F10 sound (off by default)
 
 ## Tests
 
-Twenty-two headless suites gate every checkpoint (1,016 assertions at
-`0.1.18-working-edge`; the authoritative list lives in
+Twenty-two headless suites gate every checkpoint (1,019 assertions at
+`0.1.19-clear-first-step`; the authoritative list lives in
 `docs/test-manifest.md`):
 
 ```bash

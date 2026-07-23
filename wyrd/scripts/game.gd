@@ -9439,6 +9439,7 @@ func objective_hint() -> String:
 	# after a longer stall does it spell out the control and reveal the needle.
 	match tutorial_step:
 		0:
+			if _onboarding_hint_stage == 0: return "WASD move · E talk"
 			if _onboarding_hint_stage == 1: return "Mara waits beside the teal worktable"
 			if _onboarding_hint_stage >= 2: return "WASD move · follow the gold needle · E talk"
 		1:
