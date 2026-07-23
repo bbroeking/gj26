@@ -44,6 +44,10 @@ func _check(name: String, ok: bool, detail: String = "") -> void:
 		print("  ✗ %s %s" % [name, detail])
 
 func _init() -> void:
+	if OS.get_environment("WYRD_NO_SAVE") == "":
+		push_error("test_save_roundtrip.gd requires WYRD_NO_SAVE=1; refusing to touch the live profile")
+		quit(2)
+		return
 	print("--- save roundtrip check ---")
 	_real_save_existed = FileAccess.file_exists(SaveGame.SAVE_PATH)
 	if _real_save_existed:

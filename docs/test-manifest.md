@@ -1,6 +1,6 @@
 # Wayfinder test manifest
 
-Updated 2026-07-21 for `0.1.17-gathered-arrival`.
+Updated 2026-07-21 for `0.1.18-working-edge`.
 
 ## Canonical checkpoint gate
 
@@ -29,7 +29,8 @@ Run every entry with `WYRD_NO_SAVE=1 godot --headless --path wyrd --script res:/
 | `test_creature_codex.gd` | 71 | Exact creature roster, distinct combat tells, named signatures, Wayfinder chest, and nested Codex interaction |
 | `test_town_tonal_separation.gd` | 10 | Town-only cloned environment grade, native/Web values, and absence of a Canvas overlay |
 | `test_town_arrival_framing.gd` | 8 | Town-only camera profile, bounded framing values, and the real 1280×720 player/Mara/landmark projection |
-| **Total** | **1,004** | **Required before a checkpoint is accepted** |
+| `test_town_working_edge.gd` | 12 | Three-landmark band, attached support ownership, protected approaches, and lower-facade projection |
+| **Total** | **1,016** | **Required before a checkpoint is accepted** |
 
 ## Exported-browser gate
 
@@ -141,6 +142,13 @@ controllable-frame captures beside the approved Arrival concept, the ranger in
 the lower half, Mara clear of the top edge, and visible north-landmark bases.
 The Town-only profile must keep the shared FATE rig and player orbit/zoom while
 leaving First Road defaults and all world/gameplay authority unchanged.
+
+The `0.1.18-working-edge` proof requires matched native/Web first-arrival
+captures beside Gathered Arrival and the approved concept, all three existing
+north-landmark lower facades in frame, deterministic attached support clusters,
+and explicit clearance for Mara's route, Chart table, Waystone, practice space,
+and central plaza. Camera, grade, content count, and gameplay authorities remain
+unchanged.
 
 The persistence-disabled retained corpus currently contains 128 direct
 entrypoints. A strict 30-second-per-entrypoint serial audit passed 120; the

@@ -365,6 +365,30 @@ Field Journal version 17 is live with the chunked playable export, Gathered
 Arrival evidence, fingerprint, and north-landmark priority; its pushed source
 is `f13148e22aa4ab1379ead73e7fb0e1418dabb8a8`.
 
+## Working Edge checkpoint — accepted locally 2026-07-21
+
+[Spec 78](specs/78-working-edge-checkpoint.md) closes the landmark-composition
+gap exposed by replaying Gathered Arrival against the approved Arrival concept.
+The existing cottage, Chartmaker's tower, and smithy now form one north-yard
+working edge, and their existing Atlas board, work props, logs, and ore remain
+attached to their owning landmarks. Camera, grade, central plaza, paths,
+neighbors, stations, interactions, controls, progression, and content count are
+unchanged. All three lower facades remain in the first 1280×720 frame with
+explicit clearance around the Chart table, Waystone, practice space, and Mara's
+route.
+
+Matched native and Web evidence lives in `playtests/working-edge/`. The
+twenty-two-suite canonical gate is green at 1,016 assertions, save roundtrip
+passes 120/120 under its enforced persistence guard, all 118 release resources
+audit cleanly, and the local enhanced browser route passed title → town → chart
+table → world → complete. The 96,122,864-byte PCK has SHA-256
+`434e77f85b76b5ae900766188055ae95971cbb38d5648eca19b01919956ef521`.
+An initially unguarded save-suite invocation overwrote the disposable developer
+profile and backup; the generated state remains preserved under dated recovery
+filenames, and the suite now fails closed without its persistence guard.
+Publication resumed by owner direction on 2026-07-23. No deployment or
+companion-site receipt is claimed until those external gates pass.
+
 ## Shipped (all gates green — 333 headless checks across 4 suites; test_skills
 ## joined the gate after the frozen-hotbar regression)
 
@@ -658,7 +682,10 @@ Specs 38–41 + notes.
   strike pulses, quaff tip-back, bench socket pops + pot mix bloom. Still owed:
   craft scroll-and-seal, waystone chart-socketing, P2/P3 sets.
 
-- Save-file safety: `_test_save_roundtrip` writes/deletes the REAL save.
+- Save-file safety: `test_save_roundtrip.gd` now refuses to start unless
+  `WYRD_NO_SAVE=1` is present, and both invocation paths prove the live-profile
+  hash stays fixed. The 2026-07-21 pre-guard test overwrite remains preserved
+  under dated recovery filenames as development provenance.
 - Boss-fight feel playtests still owed (Boar charge, Wolf lunge):
   `WYRD_DEV_CHART=tier_1 WYRD_DEV_BOSS=burrow_boar_den|wolf_alpha_den`.
 - Vendor list-row buttons slightly washed (cream-on-cream).

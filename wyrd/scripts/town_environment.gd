@@ -40,6 +40,7 @@ var _plaza := Vector3(20.0, 0.0, 21.0)
 var _stations: Array = []          # Vector3s grass must keep clear of
 var _spokes: Array = []            # path destinations (subset of stations)
 var _treeline_breaks: Array = []   # restored roads may visibly pierce the ring
+var _landmarks: Dictionary = {}    # north-yard owners for attached dressing
 var _path_points: Array = []       # sampled path centers (Vector3)
 var _rng := RandomNumberGenerator.new()
 
@@ -64,12 +65,13 @@ static func apply_tonal_grade(env: Environment, web_feature: bool,
 	return true
 
 func setup(yard: float, plaza: Vector3, stations: Array, spokes: Array,
-		treeline_breaks: Array = []) -> void:
+		treeline_breaks: Array = [], landmarks: Dictionary = {}) -> void:
 	_yard = yard
 	_plaza = plaza
 	_stations = stations
 	_spokes = spokes
 	_treeline_breaks = treeline_breaks
+	_landmarks = landmarks.duplicate()
 	_rng.seed = 26                 # the yard looks the same every visit
 
 func _ready() -> void:
@@ -252,8 +254,10 @@ func _build_scatter() -> void:
 			+ Vector3(cos(ang), 0.0, sin(ang)) * (half - 2.2)
 		_drop(BRAMBLE_GLB, pos, _rng.randf_range(0.9, 1.4))
 	# Homestead touches: drying rack by the cottage, dummy by the forge.
-	_drop(RACK_GLB, Vector3(11.5, 0.0, 9.5), 1.6)
-	_drop(DUMMY_GLB, Vector3(30.0, 0.0, 14.5), 1.5)
+	var cottage: Vector3 = _landmarks.get("cottage", Vector3(9.5, 0.0, 8.0))
+	var forge: Vector3 = _landmarks.get("forge", Vector3(30.5, 0.0, 8.0))
+	_drop(RACK_GLB, cottage + Vector3(2.0, 0.0, 1.5), 1.6)
+	_drop(DUMMY_GLB, forge + Vector3(-0.5, 0.0, 4.5), 1.5)
 	# Wildflower clumps wherever the grass allows.
 	var planted := 0
 	var tries := 0

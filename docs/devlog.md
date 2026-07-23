@@ -1,5 +1,28 @@
 # Wayfinder devlog
 
+## 2026-07-21 — Home found its working edge
+
+Gathered Arrival finally put the northern buildings in view, which made their
+remaining weakness honest: cottage, tower, and smithy read as three clipped
+border objects rather than the inhabited edge of one small home. The approved
+Arrival concept does not need more systems to solve that hierarchy. It gathers
+architecture and work around the social road.
+
+Working Edge keeps the accepted camera and color grade fixed. It moves the
+three existing exteriors into one shallow northern band and carries each
+existing support cluster with its owner: cottage rack and logs, tower Atlas,
+smithy dummy and ore. Their doors and lower facades now share the opening frame
+without claiming the central crossing or narrowing the routes to Mara, the
+Chart table, Waystone, and practice space.
+
+Native and browser play agree on the result, and the full 1,016-assertion gate,
+120-check guarded save suite, 118-resource export audit, and local browser route
+are green. An initial save-test invocation was run without its persistence
+guard and replaced the disposable local developer profile and backup with
+fixture state. The files remain preserved under dated recovery names, and the
+suite now fails closed before touching a profile. Publication resumed only
+after owner direction on 2026-07-23.
+
 ## 2026-07-21 — Home gathered around the road
 
 Shaded Home made the yard readable enough to expose its next problem. The

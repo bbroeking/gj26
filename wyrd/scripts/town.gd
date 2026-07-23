@@ -57,10 +57,18 @@ const PRACTICE_POS := Vector3(20.0, 0.0, 12.0)
 const FIRST_ROAD_LAMP_POS := Vector3(23.3, 0.0, 18.8)
 const WELL_POS := Vector3(13.0, 0.0, 22.0)
 const SIGNPOST_POS := Vector3(23.5, 0.0, 24.0)
-# Buildings line the north edge so the yard stays open for play.
-const COTTAGE_POS := Vector3(9.5, 0.0, 8.0)
-const FORGE_POS := Vector3(30.5, 0.0, 8.0)
-const TOWER_POS := Vector3(20.5, 0.0, 7.0)   # the Chartmaker's tower — the landmark
+# Spec 78 — the three existing exteriors form one north-yard working edge. The
+# modest southward staging brings their lower facades into the accepted camera
+# without taking the central crossing or adding another landmark.
+const COTTAGE_POS := Vector3(10.5, 0.0, 10.0)
+const FORGE_POS := Vector3(31.5, 0.0, 10.0)
+const TOWER_POS := Vector3(20.5, 0.0, 8.5)   # the Chartmaker's tower — the landmark
+const COTTAGE_RADIUS := 3.2
+const FORGE_RADIUS := 3.3
+const TOWER_RADIUS := 2.4
+const COTTAGE_HEIGHT := 5.0
+const FORGE_HEIGHT := 5.0
+const TOWER_HEIGHT := 8.5
 # A8-full — the herbalist's corner, by the south-west herb beds.
 const QUILL_POS := Vector3(11.0, 0.0, 29.5)
 const STILL_POS := Vector3(13.0, 0.0, 30.5)
@@ -96,10 +104,14 @@ const HERB_PATCHES := [
 # Town skill stations (2026-06-10) — every gather verb is practicable in
 # the yard: Hod's spoil heap gives mining, the woodpile gives chopping.
 const ORE_ROCKS := [
-	Vector3(35.5, 0.0, 13.0), Vector3(36.5, 0.0, 15.0), Vector3(34.5, 0.0, 16.5),
+	FORGE_POS + Vector3(5.0, 0.0, 5.0),
+	FORGE_POS + Vector3(6.0, 0.0, 7.0),
+	FORGE_POS + Vector3(4.0, 0.0, 8.5),
 ]
 const LOG_PILES := [
-	Vector3(11.0, 0.0, 6.5), Vector3(13.0, 0.0, 7.5), Vector3(5.5, 0.0, 12.0),
+	COTTAGE_POS + Vector3(1.5, 0.0, -1.5),
+	COTTAGE_POS + Vector3(3.5, 0.0, -0.5),
+	Vector3(5.5, 0.0, 12.0),
 ]
 const OAKS := [
 	Vector3(5.0, 0.0, 6.0), Vector3(34.0, 0.0, 5.5), Vector3(36.0, 0.0, 30.0),
@@ -387,6 +399,37 @@ static func town_camera_profile() -> Dictionary:
 		"framing_forward": TOWN_CAMERA_FORWARD_FRAME,
 	}
 
+static func north_landmark_layout() -> Dictionary:
+	return {
+		"cottage": {
+			"position": COTTAGE_POS,
+			"radius": COTTAGE_RADIUS,
+			"height": COTTAGE_HEIGHT,
+			"supports": [
+				COTTAGE_POS + Vector3(2.8, 0.0, 2.6),
+				COTTAGE_POS + Vector3(2.0, 0.0, 1.5),
+				LOG_PILES[0], LOG_PILES[1],
+			],
+		},
+		"tower": {
+			"position": TOWER_POS,
+			"radius": TOWER_RADIUS,
+			"height": TOWER_HEIGHT,
+			"supports": [TOWER_POS + Vector3(0.0, 1.6, 1.0)],
+		},
+		"forge": {
+			"position": FORGE_POS,
+			"radius": FORGE_RADIUS,
+			"height": FORGE_HEIGHT,
+			"supports": [
+				FORGE_POS + Vector3(-1.5, 0.0, 3.0),
+				FORGE_POS + Vector3(1.6, 0.0, 3.2),
+				FORGE_POS + Vector3(-0.5, 0.0, 4.5),
+				ORE_ROCKS[0], ORE_ROCKS[1], ORE_ROCKS[2],
+			],
+		},
+	}
+
 func _apply_town_camera_profile() -> void:
 	var rig := get_node_or_null("CameraRig")
 	if rig == null:
@@ -577,13 +620,13 @@ func _place_dressing() -> void:
 	# One strong exterior per town function. The old market stall duplicated and
 	# obscured the smithy's open forge; the new buildings carry their own readable
 	# door, sign, hearth, and shopfront details.
-	_place_glb(COTTAGE_GLB, COTTAGE_POS, 5.0, 3.2)
-	_place_glb(FORGE_GLB, FORGE_POS, 5.0, 3.3)
-	_place_glb(TOWER_GLB, TOWER_POS, 8.5, 2.4)
+	_place_glb(COTTAGE_GLB, COTTAGE_POS, COTTAGE_HEIGHT, COTTAGE_RADIUS)
+	_place_glb(FORGE_GLB, FORGE_POS, FORGE_HEIGHT, FORGE_RADIUS)
+	_place_glb(TOWER_GLB, TOWER_POS, TOWER_HEIGHT, TOWER_RADIUS)
 	# B7/C2 — same tower-wall parchment, now a real rereadable Interactable.
 	var board: Node3D = LivingAtlasPanelScript.new()
 	board.name = "AtlasDeepRumourSource"
-	board.position = Vector3(20.5, 1.6, 8.0)
+	board.position = TOWER_POS + Vector3(0.0, 1.6, 1.0)
 	add_child(board)
 
 
@@ -1117,7 +1160,10 @@ func _build_environment() -> void:
 		if bool(landmark[2]):
 			treeline_breaks.append(pos)
 	env.setup(YARD, Vector3(20.0, 0.0, 21.0), station_clear, spokes,
-		treeline_breaks)
+		treeline_breaks, {
+			"cottage": COTTAGE_POS,
+			"forge": FORGE_POS,
+		})
 	add_child(env)
 
 func _place_herb_patches() -> void:

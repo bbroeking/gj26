@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.18-working-edge — 2026-07-23
+
+- Gathered the existing cottage, Chartmaker's tower, and smithy into one
+  readable north-yard working edge without adding a landmark or changing the
+  accepted Town camera and grade.
+- Kept the Atlas, work props, logs, and ore attached to their owning buildings
+  while preserving the central crossing and explicit approaches to Mara, the
+  Chart table, Waystone, and practice space.
+- Added a 12-assertion production-layout contract covering landmark order,
+  support ownership, physical clearance, and 1280×720 lower-facade projection.
+- Made the save-roundtrip suite fail closed unless `WYRD_NO_SAVE=1` is present,
+  preventing an accidental test run from touching a live profile.
+- Verified 1,016 canonical assertions, save roundtrip 120/120, all 118 release
+  resources, and matched native and real-browser first-arrival play.
+
 ## 0.1.17-gathered-arrival — 2026-07-21
 
 - Gave Town one authored profile on the established FATE camera, pulling the
