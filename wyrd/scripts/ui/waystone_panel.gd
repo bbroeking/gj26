@@ -49,6 +49,13 @@ func _ready() -> void:
 	sub.position = Vector2(54, 66)
 	_panel.add_child(sub)
 
+	# Ivy-leaf header crest — the design language's vine ornament on the
+	# header rule separating the title zone from the chart list.
+	var crest := _WaystoneCrest.new()
+	crest.position = Vector2(52, 80)
+	crest.custom_minimum_size = Vector2(496, 16)
+	_panel.add_child(crest)
+
 	# A full chart case outgrows the panel — the list scrolls now,
 	# bounded above the detail block.
 	var scroll := ScrollContainer.new()
@@ -57,7 +64,7 @@ func _ready() -> void:
 	scroll.anchor_right = 1.0
 	scroll.anchor_bottom = 1.0
 	scroll.offset_left = 52
-	scroll.offset_top = 92
+	scroll.offset_top = 102
 	scroll.offset_right = -52
 	scroll.offset_bottom = -160
 	_panel.add_child(scroll)
@@ -154,3 +161,39 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# Drawn ivy-leaf crest for the Waystone header rule.  Two sage leaf pairs
+# grow outward from the centre, flanking the kit's ── ◆ ── flourish.
+# Ornament lives on the header zone only (design-language rule).
+class _WaystoneCrest extends Control:
+	func _draw() -> void:
+		var w := size.x
+		var cy := size.y * 0.5
+		WyrdUi.draw_flourish(self, Vector2(w * 0.5, cy), w * 0.50)
+		_leaf_pair(Vector2(w * 0.19, cy), true)
+		_leaf_pair(Vector2(w * 0.81, cy), false)
+
+	# Two offset leaves growing from a vine node.  left_side → tips point
+	# toward the left margin; false → toward right.
+	func _leaf_pair(origin: Vector2, left_side: bool) -> void:
+		var base_angle := PI if left_side else 0.0
+		_leaf(origin, 7.5, 2.8, base_angle - 0.22)
+		_leaf(origin + Vector2(0.0, 2.5), 5.5, 2.2, base_angle + 0.50)
+		draw_circle(origin, 1.6, Color(WyrdUi.SAGE.darkened(0.35), 0.72))
+
+	# Pointed almond leaf.  angle = 0 → tip right, PI → tip left.
+	func _leaf(base: Vector2, length: float, width: float, angle: float) -> void:
+		var fwd := Vector2(cos(angle), sin(angle))
+		var side := Vector2(-sin(angle), cos(angle))
+		var tip := base + fwd * length
+		var belly_r := base + fwd * length * 0.5 + side * width
+		var belly_l := base + fwd * length * 0.5 - side * width
+		draw_colored_polygon(
+			PackedVector2Array([tip, belly_r, base, belly_l]),
+			Color(WyrdUi.SAGE, 0.52))
+		draw_polyline(
+			PackedVector2Array([base, belly_r, tip, belly_l, base]),
+			Color(WyrdUi.SAGE.darkened(0.30), 0.65), 0.7, true)
+		draw_line(base, base + fwd * length * 0.82,
+			Color(WyrdUi.SAGE.darkened(0.45), 0.42), 0.8)
