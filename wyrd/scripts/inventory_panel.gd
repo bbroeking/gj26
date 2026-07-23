@@ -582,18 +582,42 @@ func _draw_tabs(win: Rect2) -> void:
 	var font: Font = WyrdUi.font_header()
 	if font == null:
 		font = get_theme_default_font()
+	var icon_sz := 18.0
 	for i in TABS.size():
 		var r := _tab_rect(i)
 		var active := i == _tab
-		# Spec 40 — text-only plates; active = brighter + terracotta underline.
-		draw_rect(r, Color(0.95, 0.91, 0.80) if active else Color(0.85, 0.78, 0.64))
-		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 1.5)
+		# Carved wooden tab face: parchment plate + top honey bevel + bottom ink
+		# shadow so each tab reads as a carved object, not a flat chip.
+		var bg := Color(0.95, 0.91, 0.80) if active else Color(0.85, 0.78, 0.64)
+		draw_rect(r, bg)
+		draw_rect(Rect2(r.position + Vector2(2.0, 2.0),
+			Vector2(r.size.x - 4.0, 2.0)),
+			Color(1.0, 1.0, 0.93, 0.50 if active else 0.28))
+		draw_rect(Rect2(r.position + Vector2(2.0, r.size.y - 3.0),
+			Vector2(r.size.x - 4.0, 2.0)),
+			Color(WyrdUi.KIT_EDGE, 0.30))
+		draw_rect(r, WyrdUi.KIT_EDGE, false, 1.5)
 		if active:
-			draw_line(r.position + Vector2(2, r.size.y - 2),
-				r.position + Vector2(r.size.x - 2, r.size.y - 2),
+			# Parchment grain + gold inner pinstripe mark the selected tab.
+			WyrdUi.draw_parchment_grain(self, r.grow(-2.0), 41 + i * 7)
+			draw_rect(r.grow(-3.5), Color(WyrdUi.GOLD, 0.30), false, 1.0)
+			draw_line(r.position + Vector2(3, r.size.y - 2),
+				r.position + Vector2(r.size.x - 3, r.size.y - 2),
 				WyrdUi.TERRACOTTA, 3.0)
-		draw_string(font, r.position + Vector2(0, 22), String(TABS[i]),
-			HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16,
+		# Painted tab icon (preloaded in _ready — safe to draw here).
+		var icon_tex: Texture2D = _cached_tex(String(TAB_ICONS[i]))
+		var icon_x := r.position.x + 7.0
+		var icon_y := r.position.y + (r.size.y - icon_sz) * 0.5
+		if icon_tex != null:
+			draw_texture_rect(icon_tex,
+				Rect2(Vector2(icon_x, icon_y), Vector2(icon_sz, icon_sz)), false,
+				Color(1.0, 1.0, 1.0, 1.0 if active else 0.55))
+		var has_icon := icon_tex != null
+		var label_x := icon_x + icon_sz + 4.0 if has_icon else r.position.x
+		var label_w := r.end.x - label_x - 4.0 if has_icon else r.size.x
+		draw_string(font, Vector2(label_x, r.position.y + 22.0), String(TABS[i]),
+			HORIZONTAL_ALIGNMENT_LEFT if has_icon else HORIZONTAL_ALIGNMENT_CENTER,
+			label_w, 16,
 			WyrdUi.INK if active else WyrdUi.INK_MID)
 
 # ---- Spec 45 followup: drawn-page scrolling (Satchel / Charts / Trades) ----
