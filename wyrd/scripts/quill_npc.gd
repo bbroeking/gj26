@@ -11,6 +11,7 @@ const QUILL_GLB := preload("res://models/npc_quill_v3_rigged.glb")
 const QUILL_WALK_GLB := preload("res://models/npc_quill_v3_walk_anim.glb")
 const AnimDriverScript := preload("res://scripts/anim_driver.gd")
 const NpcAttentionScript := preload("res://scripts/npc_attention.gd")
+const NpcWanderScript := preload("res://scripts/npc_wander.gd")
 const QuillPanelScript = preload("res://scripts/ui/quill_panel.gd")
 
 func get_prompt_text() -> String:
@@ -21,6 +22,9 @@ func get_prompt_color() -> Color:
 
 func get_prompt_position() -> Vector3:
 	return Vector3(0.0, 2.0, 0.0)
+
+func get_solid_radius() -> float:
+	return 0.0
 
 func _ready_interactable() -> void:
 	var mesh := QUILL_GLB.instantiate()
@@ -34,11 +38,20 @@ func _ready_interactable() -> void:
 	attention.name = "NpcAttention"
 	add_child(attention)
 	attention.setup(self)
+	var wander := NpcWanderScript.new()
+	wander.name = "NpcWander"
+	add_child(wander)
+	wander.setup(self, mesh, QUILL_WALK_GLB, [
+		Vector3(1.2, 0.0, -0.8), Vector3(-1.0, 0.0, 0.7),
+	], 0.66)
 
 func interact(player: Node) -> void:
 	var attention := get_node_or_null("NpcAttention")
 	if attention != null and attention.has_method("face_now"):
 		attention.face_now(player)
+	var wander := get_node_or_null("NpcWander")
+	if wander != null and wander.has_method("pause_for_attention"):
+		wander.pause_for_attention()
 	# D15 — first visit, Quill greets you (and reacts if you've quaffed a tonic
 	# already) before opening her still; after that it's straight to the shelf.
 	var game := get_tree().root.get_node_or_null("Game")

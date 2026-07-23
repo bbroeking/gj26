@@ -17,6 +17,7 @@ var _elapsed := 0.0
 var _visual_root: Node3D = null
 var _base_position := Vector3.ZERO
 var _base_rotation := Vector3.ZERO
+var _motion_active := true
 
 
 func setup(player: AnimationPlayer, clip: String, visual_root: Node3D,
@@ -43,8 +44,22 @@ func setup(player: AnimationPlayer, clip: String, visual_root: Node3D,
 	_window = animation.length * clampf(window_fraction, 0.0, 0.08)
 	_player.play(_clip)
 	_player.seek(_center, true)
-	_player.pause()
 	set_process(true)
+
+
+func set_motion_active(active: bool) -> void:
+	if _motion_active == active:
+		return
+	_motion_active = active
+	if _player == null or not is_instance_valid(_player) \
+			or _clip == "" or not _player.has_animation(_clip):
+		return
+	if active:
+		_player.play(_clip)
+		_player.seek(_center, true)
+	elif _visual_root != null and is_instance_valid(_visual_root):
+		_visual_root.position = _base_position
+		_visual_root.rotation = _base_rotation
 
 
 func _process(delta: float) -> void:
@@ -52,6 +67,10 @@ func _process(delta: float) -> void:
 			or _clip == "" or not _player.has_animation(_clip):
 		queue_free()
 		return
+	if not _motion_active:
+		return
+	if _player.current_animation != _clip:
+		_player.play(_clip)
 	_elapsed += delta
 	var phase := sin((_elapsed / _cycle_seconds) * TAU)
 	_player.seek(_center + phase * _window, true)

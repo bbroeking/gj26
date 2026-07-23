@@ -157,8 +157,9 @@ func _run() -> void:
 			and String(player.get("_clip_dash")) == "dash",
 			"walk=%s run=%s dash=%s" % [player.get("_clip_walk"),
 				player.get("_clip_run"), player.get("_clip_dash")])
-		_check("fresh player idle uses the authored sidecar instead of the bind pose",
-			String(player.get("_clip_idle")) == "walk",
+		_check("fresh player has a planted idle distinct from locomotion",
+			String(player.get("_clip_idle")) == "player_idle_pose"
+			and String(player.get("_clip_idle")) != String(player.get("_clip_walk")),
 			"idle=%s" % String(player.get("_clip_idle")))
 
 	# C2 — the real Atlas replaces the decorative quad from the first boot, but
@@ -233,6 +234,19 @@ func _run() -> void:
 	_check("town cast stays animated through onboarding pauses",
 		animated_social_npcs.size() == 3,
 		"always-animated NPCs=%d" % animated_social_npcs.size())
+	var walking_npcs := get_nodes_in_group("wandering_npc")
+	var npc_starts: Array[Vector3] = []
+	for npc in walking_npcs:
+		npc_starts.append((npc as Node3D).global_position)
+	for frame in range(20):
+		await physics_frame
+	var moved_npcs := 0
+	for i in range(walking_npcs.size()):
+		if npc_starts[i].distance_to((walking_npcs[i] as Node3D).global_position) > 0.04:
+			moved_npcs += 1
+	_check("all three town NPCs physically walk their local rounds",
+		walking_npcs.size() == 3 and moved_npcs == 3,
+		"walkers=%d moved=%d" % [walking_npcs.size(), moved_npcs])
 	var opening_pages: Array = mara.call("_pages_for", 0) if mara != null else []
 	_check("Mara opening is two focused pages", opening_pages.size() == 2,
 		str(opening_pages))

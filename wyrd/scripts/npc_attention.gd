@@ -38,6 +38,8 @@ func _process(delta: float) -> void:
 	if _actor == null or not is_instance_valid(_actor):
 		queue_free()
 		return
+	if bool(_actor.get_meta("npc_walking", false)):
+		return
 	var game := get_node_or_null("/root/Game")
 	var player: Node = game.local_player() if game != null \
 		and game.has_method("local_player") else null

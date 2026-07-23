@@ -20,6 +20,12 @@ var _source_mode := "supplies"
 var _codex_selected_id := ""
 var _feedback := ""
 var _feedback_error := false
+var _first_chart_step := -1
+var _walkthrough_panel: Panel
+var _walkthrough_title: Label
+var _walkthrough_body: Label
+var _walkthrough_hint: Label
+var _walkthrough_blocker: Control
 
 var draft: Dictionary = {}
 var _preview: Dictionary = {}
@@ -55,6 +61,9 @@ func _ready() -> void:
 	_view.name = "ChartTableView"
 	_view.table = self
 	_panel.add_child(_view)
+	if _game != null and _game.has_method("first_chart_walkthrough_active") \
+			and bool(_game.first_chart_walkthrough_active()):
+		_start_first_chart_walkthrough()
 
 	if _game != null:
 		_game.modal_opened()
@@ -68,6 +77,13 @@ func _process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _first_chart_step >= 0 and event is InputEventKey \
+			and event.pressed and not event.echo \
+			and (event.keycode == KEY_SPACE \
+				or event.physical_keycode == KEY_SPACE):
+		advance_first_chart_walkthrough()
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("ui_cancel"):
 		close()
 		get_viewport().set_input_as_handled()
@@ -99,6 +115,107 @@ func _unhandled_input(event: InputEvent) -> void:
 			JOY_BUTTON_RIGHT_SHOULDER:
 				_view.focus_region(1)
 				get_viewport().set_input_as_handled()
+
+
+func first_chart_walkthrough_screen() -> int:
+	return _first_chart_step
+
+
+func advance_first_chart_walkthrough() -> bool:
+	if _first_chart_step < 0:
+		return false
+	match _first_chart_step:
+		0:
+			if not place_component("c", "practice_leaf"):
+				return false
+		1:
+			if not place_component("n", "hedge_sprig"):
+				return false
+		2:
+			if not place_ink("hedge_ink"):
+				return false
+		3:
+			pass # The preview screen is a deliberate reading beat.
+		4:
+			if not inscribe_chart():
+				return false
+		5:
+			close()
+			return true
+	_first_chart_step += 1
+	_refresh_first_chart_walkthrough()
+	return true
+
+
+func _start_first_chart_walkthrough() -> void:
+	_first_chart_step = 0
+	_walkthrough_blocker = Control.new()
+	_walkthrough_blocker.name = "FirstChartInputBlocker"
+	_walkthrough_blocker.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_walkthrough_blocker.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_walkthrough_blocker)
+
+	_walkthrough_panel = Panel.new()
+	_walkthrough_panel.name = "FirstChartWalkthrough"
+	_walkthrough_panel.anchor_left = 0.5
+	_walkthrough_panel.anchor_top = 1.0
+	_walkthrough_panel.anchor_right = 0.5
+	_walkthrough_panel.anchor_bottom = 1.0
+	_walkthrough_panel.offset_left = -390
+	_walkthrough_panel.offset_top = -222
+	_walkthrough_panel.offset_right = 390
+	_walkthrough_panel.offset_bottom = -24
+	WyrdUi.style_panel(_walkthrough_panel)
+	add_child(_walkthrough_panel)
+
+	var margin := MarginContainer.new()
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", 28)
+	margin.add_theme_constant_override("margin_top", 20)
+	margin.add_theme_constant_override("margin_right", 28)
+	margin.add_theme_constant_override("margin_bottom", 18)
+	_walkthrough_panel.add_child(margin)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 8)
+	margin.add_child(column)
+	_walkthrough_title = Label.new()
+	_walkthrough_title.add_theme_font_size_override("font_size", Tokens.TYPE_SECTION)
+	_walkthrough_title.add_theme_color_override("font_color", Tokens.TEXT_ON_PAPER)
+	column.add_child(_walkthrough_title)
+	_walkthrough_body = Label.new()
+	_walkthrough_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_walkthrough_body.add_theme_font_size_override("font_size", Tokens.TYPE_BODY)
+	_walkthrough_body.add_theme_color_override("font_color", Tokens.TEXT_ON_PAPER_DIM)
+	column.add_child(_walkthrough_body)
+	_walkthrough_hint = Label.new()
+	_walkthrough_hint.add_theme_font_size_override("font_size", Tokens.TYPE_BODY)
+	_walkthrough_hint.add_theme_color_override("font_color", Tokens.MOSS)
+	column.add_child(_walkthrough_hint)
+	_refresh_first_chart_walkthrough()
+
+
+func _refresh_first_chart_walkthrough() -> void:
+	if _walkthrough_panel == null:
+		return
+	var screens := [
+		["1 of 6 · Lay the Chart Base",
+			"A Practice Leaf is the surface that holds the road. Space will set it in the center."],
+		["2 of 6 · Place the Waymark",
+			"A Hedge Sprig tells this small road where it belongs. Space will lay it above the base."],
+		["3 of 6 · Add the Ink",
+			"Ink gives the arrangement its character. Space will pour Mara's Hedge Ink into the rail."],
+		["4 of 6 · Read the Preview",
+			"The table now shows the supplies it will spend and the road it can make. Take a breath and read it."],
+		["5 of 6 · Inscribe the Chart",
+			"Everything is in place. Space presses Mara's seal and performs the real inscription."],
+		["6 of 6 · Your First Chart",
+			"The seal has settled. Your First Road Chart is in the Case, ready for the Waystone."],
+	]
+	var screen: Array = screens[clampi(_first_chart_step, 0, screens.size() - 1)]
+	_walkthrough_title.text = String(screen[0])
+	_walkthrough_body.text = String(screen[1])
+	_walkthrough_hint.text = "SPACE  ·  %s" % (
+		"Continue to the Waystone" if _first_chart_step == 5 else "Next")
 
 
 func close() -> void:

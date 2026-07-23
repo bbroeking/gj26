@@ -39,31 +39,33 @@ func run() -> void:
 	var player := game.local_player() as CharacterBody3D
 	check("target viewport is 1280×720", root.size == Vector2i(1280, 720), root.size)
 
-	# The three named neighbors are the social spine of the yard. Exercise their
-	# production scene instances rather than the helper in isolation: each must
-	# have a live Meshy rig sample and visible, deliberately out-of-phase motion.
-	var ambient_drivers := get_nodes_in_group("ambient_character_motion")
-	check("Mara, Hod, and Quill all have ambient rig motion",
-		ambient_drivers.size() == 3, ambient_drivers.size())
-	var animation_before: Dictionary = {}
-	var transform_before: Dictionary = {}
-	for driver in ambient_drivers:
-		var ap := driver.get("_player") as AnimationPlayer
-		var visual := driver.get("_visual_root") as Node3D
-		animation_before[driver] = ap.current_animation_position if ap != null else -1.0
-		transform_before[driver] = visual.transform if visual != null else Transform3D.IDENTITY
+	# The named neighbors must travel through the yard with a real gait—not just
+	# sway at their authored spawn—and the player must remain planted at rest.
+	var walkers := get_nodes_in_group("wandering_npc")
+	check("Mara, Hod, and Quill all own a town round",
+		walkers.size() == 3, walkers.size())
+	var npc_before: Dictionary = {}
+	for npc in walkers:
+		npc_before[npc] = (npc as Node3D).global_position
+	var player_before := player.global_position
+	var player_ap := player.get("_ap") as AnimationPlayer
+	var idle_before := player_ap.current_animation_position
 	await create_timer(0.72).timeout
-	var rigs_advanced := true
-	var bodies_shifted := true
-	for driver in ambient_drivers:
-		var ap := driver.get("_player") as AnimationPlayer
-		var visual := driver.get("_visual_root") as Node3D
-		rigs_advanced = rigs_advanced and ap != null \
-			and absf(ap.current_animation_position - float(animation_before[driver])) > 0.01
-		bodies_shifted = bodies_shifted and visual != null \
-			and not visual.transform.is_equal_approx(transform_before[driver])
-	check("all town rigs advance through an authored pose window", rigs_advanced)
-	check("town motion remains visible at the model root", bodies_shifted)
+	var patrols_advanced := true
+	for npc in walkers:
+		var wander := npc.get_node_or_null("NpcWander")
+		var ap := wander.get("_player") as AnimationPlayer if wander != null else null
+		patrols_advanced = patrols_advanced \
+			and (npc as Node3D).global_position.distance_to(npc_before[npc]) > 0.2 \
+			and ap != null and ap.current_animation == "town_walk" \
+			and ap.current_animation_position > 0.01
+	check("all three NPCs travel with their authored walk clip", patrols_advanced)
+	check("stationary player stays planted in the bounded idle pose",
+		player.global_position.distance_to(player_before) < 0.01 \
+		and player_ap.current_animation == "player_idle_pose" \
+		and absf(player_ap.current_animation_position - idle_before) < 0.2,
+		{"travel": player.global_position.distance_to(player_before),
+			"clip": player_ap.current_animation})
 
 	var start := player.global_position
 	var frames_to_ninety := -1

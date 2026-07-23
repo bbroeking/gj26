@@ -10,6 +10,7 @@ const WANDERER_GLB := preload("res://models/npc_mara_linnet_v1_rigged.glb")
 const WANDERER_WALK_GLB := preload("res://models/npc_mara_linnet_v1_walk_anim.glb")
 const AnimDriverScript := preload("res://scripts/anim_driver.gd")
 const NpcAttentionScript := preload("res://scripts/npc_attention.gd")
+const NpcWanderScript := preload("res://scripts/npc_wander.gd")
 const DialogPanelScript = preload("res://scripts/ui/dialog_panel.gd")
 const MARA_PORTRAIT := preload("res://assets/ui/portraits/mara_linnet_v2.webp")
 
@@ -21,6 +22,9 @@ func get_prompt_color() -> Color:
 
 func get_prompt_position() -> Vector3:
 	return Vector3(0.0, 2.1, 0.0)
+
+func get_solid_radius() -> float:
+	return 0.0
 
 func _ready_interactable() -> void:
 	add_to_group("tutorial_mara")
@@ -37,6 +41,12 @@ func _ready_interactable() -> void:
 	attention.name = "NpcAttention"
 	add_child(attention)
 	attention.setup(self, 11.0, true)
+	var wander := NpcWanderScript.new()
+	wander.name = "NpcWander"
+	add_child(wander)
+	wander.setup(self, mesh, WANDERER_WALK_GLB, [
+		Vector3(1.5, 0.0, 0.7), Vector3(-1.2, 0.0, 1.1),
+	], 0.68)
 
 func interact(player: Node) -> void:
 	var game := get_tree().root.get_node_or_null("Game")
@@ -52,6 +62,9 @@ func interact(player: Node) -> void:
 	var attention := get_node_or_null("NpcAttention")
 	if attention != null and attention.has_method("face_now"):
 		attention.face_now(player)
+	var wander := get_node_or_null("NpcWander")
+	if wander != null and wander.has_method("pause_for_attention"):
+		wander.pause_for_attention()
 	if game != null and game.has_method("first_road_active") \
 			and bool(game.first_road_active()) \
 			and String(game.seen_hints.get("first_road_profile", "")) == "":

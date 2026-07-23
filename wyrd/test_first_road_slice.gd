@@ -5,6 +5,7 @@ extends SceneTree
 
 const FirstRoadData = preload("res://data/first_road.gd")
 const ChartsData = preload("res://data/charts.gd")
+const CraftingBenchScript = preload("res://scripts/ui/crafting_bench.gd")
 
 var passed := 0
 var failed := 0
@@ -50,15 +51,34 @@ func run() -> void:
 		and game.onboarding_compass_available(), game.objective_hint())
 	check("invalid choice cannot mutate the case", not game.choose_first_road(9)
 		and game.charts.is_empty())
-	check("Kind Road materializes through the production transaction",
-		game.choose_first_road(0) and game.tutorial_step == 4
-		and game.charts.size() == 1)
-	var chosen: Dictionary = game.charts[0]
-	check("chosen Chart carries exactly three stable Affixes",
-		(chosen.affixes as Array).size() == 3
-		and String(chosen.first_road_profile) == "kind", chosen)
+	check("Kind Road choice opens the hands-on Chart lesson",
+		game.choose_first_road(0) and game.tutorial_step == 3
+		and game.charts.is_empty()
+		and game.first_chart_walkthrough_active())
+	check("choice alone cannot silently create a Chart",
+		game.charts.is_empty(), game.charts)
 	check("choice is one-shot", not game.choose_first_road(1)
+		and game.charts.is_empty())
+	var table := CraftingBenchScript.new()
+	root.add_child(table)
+	await process_frame
+	check("first Chart lesson opens on its first Space screen",
+		table.first_chart_walkthrough_screen() == 0)
+	for expected_screen in range(1, 5):
+		check("Space advances first Chart screen %d" % expected_screen,
+			table.advance_first_chart_walkthrough()
+			and table.first_chart_walkthrough_screen() == expected_screen)
+	check("fifth Space performs the real inscription",
+		table.advance_first_chart_walkthrough()
+		and table.first_chart_walkthrough_screen() == 5
 		and game.charts.size() == 1)
+	var chosen: Dictionary = game.charts[0] if not game.charts.is_empty() else {}
+	check("chosen Chart carries exactly three stable Affixes",
+		(chosen.get("affixes", []) as Array).size() == 3
+		and String(chosen.get("first_road_profile", "")) == "kind", chosen)
+	check("completion screen also advances with Space",
+		table.advance_first_chart_walkthrough())
+	await process_frame
 
 	var template: Dictionary = ChartsData.TEMPLATES.first_road
 	check("layout stays inside the short 4–5 room budget",

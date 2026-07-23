@@ -41,6 +41,7 @@ const WayweaverThreadRules := preload("res://scripts/wayweaver_thread_rules.gd")
 const WayweaverEchoAuthority := preload("res://scripts/wayweaver_echo_authority.gd")
 const RoomPresenceScript := preload("res://scripts/room_presence.gd")
 const SkillEffectScript := preload("res://scripts/skills/skill_effect.gd")
+const AmbientPoseDriverScript := preload("res://scripts/ambient_pose_driver.gd")
 
 # ---- locomotion (always-run; Shift walks) ----
 # Cozy belongs in the world, not in input latency. The First Road playtest
@@ -143,6 +144,7 @@ var _clip_idle := ""
 var _clip_walk := ""
 var _clip_run := ""
 var _clip_dash := ""
+var _idle_pose_driver: Node = null
 
 var _move: Move = Move.NORMAL
 var _burst_dir := Vector3.FORWARD
@@ -469,11 +471,16 @@ func _setup_clips() -> void:
 		if _clip_dash == "" and ResourceLoader.exists(CHIBI_DASH_PATH):
 			_merge_clip_by_key(lib, "dash", load(CHIBI_DASH_PATH), "runfast")
 			_clip_dash = "dash" if lib.has_animation("dash") else ""
-		# A living walk cycle is preferable to exposing the bind skeleton on the
-		# first frame or during the paused arrival vignette. A dedicated idle
-		# sidecar can replace this alias later without changing the state seam.
+		# Derive a planted pose clip from the authored walk. It is deliberately
+		# a separate Animation resource: aliasing idle to "walk" made a stopped
+		# player run in place and also left AnimationPlayer paused on locomotion.
 		if _clip_walk != "":
-			_clip_idle = _clip_walk
+			const PLAYER_IDLE_POSE := "player_idle_pose"
+			if lib.has_animation(PLAYER_IDLE_POSE):
+				lib.remove_animation(PLAYER_IDLE_POSE)
+			lib.add_animation(PLAYER_IDLE_POSE,
+				lib.get_animation(_clip_walk).duplicate())
+			_clip_idle = PLAYER_IDLE_POSE
 	else:
 		if _clip_walk == "" and ResourceLoader.exists(RANGER_WALK_PATH):
 			_merge_clip_by_key(lib, "walk", load(RANGER_WALK_PATH), "walk")
@@ -502,6 +509,11 @@ func _setup_clips() -> void:
 	_ap.speed_scale = 0.85          # calmer clip pace, matches the slower move
 	if _clip_idle != "":
 		_ap.play(_clip_idle)
+	if _is_chibi and _clip_idle != "":
+		_idle_pose_driver = AmbientPoseDriverScript.new()
+		_idle_pose_driver.name = "PlayerIdlePoseDriver"
+		_mesh.add_child(_idle_pose_driver)
+		_idle_pose_driver.setup(_ap, _clip_idle, null, 0.5, 0.025, 4.4, 0.0)
 
 static func _strip_scale_tracks(a: Animation) -> void:
 	for t in range(a.get_track_count() - 1, -1, -1):
@@ -892,6 +904,12 @@ func _spawn_roll_dust() -> void:
 # Play the clip for the movement state (crossfaded).
 func _play_anim(state: String) -> void:
 	if _ap == null:
+		return
+	var planted := state in ["idle", "roll"]
+	if _idle_pose_driver != null \
+			and _idle_pose_driver.has_method("set_motion_active"):
+		_idle_pose_driver.set_motion_active(planted)
+	if planted and _idle_pose_driver != null:
 		return
 	var clip := _clip_idle
 	if state == "walk":

@@ -9121,20 +9121,27 @@ func first_road_active() -> bool:
 	return bool(seen_hints.get("first_road_slice", false))
 
 
+func first_chart_walkthrough_active() -> bool:
+	return first_road_active() \
+		and String(seen_hints.get("first_road_profile", "")) != "" \
+		and not bool(seen_hints.get("first_chart_walkthrough_complete", false)) \
+		and charts.is_empty() and not in_dungeon
+
+
 func choose_first_road(choice: int) -> bool:
 	if not first_road_active() or String(seen_hints.get("first_road_profile", "")) != "":
 		return false
 	var profile_id := FirstRoadData.profile_id_for_choice(choice)
-	var chart := FirstRoadData.make_chart(profile_id)
-	if chart.is_empty():
+	if profile_id == "":
 		return false
 	seen_hints["first_road_profile"] = profile_id
-	tutorial_step = 4
-	charts.append(chart)
-	charts_changed.emit()
+	tutorial_step = 3
+	ensure_chart_starter_supplies()
+	if material_count("hedge_ink") < 1:
+		materials["hedge_ink"] = 1
+		materials_changed.emit()
 	tutorial_changed.emit(tutorial_step)
-	seen_hints["affix_reading"] = true
-	notify("Mara set %s in your chart case." % String(chart.name))
+	notify("Mara sets out a Practice Leaf, Hedge Sprig, and Hedge Ink.")
 	mark_onboarding_progress()
 	save_now()
 	return true
@@ -11917,6 +11924,16 @@ func _try_inscribe_chart_locked(draft: Dictionary, expected_fingerprint: String,
 	var chart := ChartsData.materialize_chart(preview, actual_seed)
 	if chart.is_empty():
 		return _chart_commit_failure("The road would not take the ink.", preview)
+	# The fresh journey still pays and resolves the canonical Snug recipe at the
+	# real table. Its one authored Kind/Bold choice then tempers that materialized
+	# result into the bounded First Road chart rather than granting it for free.
+	var first_road_inscription := first_chart_walkthrough_active() \
+		and String(preview.get("recipe_id", "")) == "snug"
+	if first_road_inscription:
+		chart = FirstRoadData.make_chart(
+			String(seen_hints.get("first_road_profile", "")), actual_seed)
+		if chart.is_empty():
+			return _chart_commit_failure("Mara's first line would not settle.", preview)
 	# A campaign Boss Chart enters escrow while it is still in the Case. Build
 	# that next state before spending so a rejected/open duplicate attempt cannot
 	# burn a unique Seal.
@@ -11949,7 +11966,10 @@ func _try_inscribe_chart_locked(draft: Dictionary, expected_fingerprint: String,
 		# The table preview has already taught the reading; retain the durable
 		# first-contact marker without introducing a second save mid-transaction.
 		seen_hints["affix_reading"] = true
-	if tutorial_step == 3 and String(chart.get("template_id", "")) == "snug":
+	if first_road_inscription:
+		seen_hints["first_chart_walkthrough_complete"] = true
+		advance_tutorial()
+	elif tutorial_step == 3 and String(chart.get("template_id", "")) == "snug":
 		advance_tutorial()
 	elif tutorial_step == 6 and String(chart.get("template_id", "")) != "snug":
 		advance_tutorial()
@@ -12541,6 +12561,8 @@ func objective_text() -> String:
 			return "Speak with Mara and choose the temper of your first road"
 		if in_dungeon:
 			return "Find the far Waystone and bring the Chart home"
+		if charts.is_empty():
+			return "Use Mara's Chart Table — press Space through each lesson"
 		return "Socket your First Road Chart at the Waystone"
 	if tutorial_step < 0 or tutorial_step >= TUTORIAL_OBJECTIVES.size():
 		return ""
@@ -12585,7 +12607,7 @@ func _tutorial_check_materials() -> void:
 func _tutorial_check_satisfied() -> void:
 	if tutorial_step == 1 and material_count("wild_herb") >= 3:
 		advance_tutorial()
-	elif tutorial_step == 3 and _has_chart("snug"):
+	elif tutorial_step == 3 and (_has_chart("snug") or _has_chart("first_road")):
 		advance_tutorial()
 
 func _has_chart(template_id: String) -> bool:
