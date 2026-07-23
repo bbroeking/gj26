@@ -132,14 +132,37 @@ func _finish() -> void:
 	queue_free()
 
 
-# Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
-# silhouette placeholder until painted portraits exist.
+# Spec 41 — the round portrait well: a carved wooden medallion ring (echoing
+# the GlobeGauge ring aesthetic) surrounding a parchment portrait disc with a
+# ghosted silhouette placeholder until painted portraits exist.
 class PortraitWell extends Control:
 	func _draw() -> void:
 		var c := size * 0.5
 		var r := minf(c.x, c.y)
-		draw_circle(c, r, Color(0.88, 0.82, 0.67))
-		draw_circle(c + Vector2(0, r * 0.28), r * 0.34, Color(0.55, 0.47, 0.36, 0.55))
-		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
-		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
-		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+		# Carved wooden ring — same honey-plank + ink-border language as GlobeGauge.
+		# Ring center at r-6; 12px wide band covers r-12 (inner) to r (outer edge).
+		draw_arc(c, r - 6.0, 0, TAU, 64, Color(0.85, 0.74, 0.52), 12.0, true)
+		# Outer ink border.
+		draw_arc(c, r - 0.8, 0, TAU, 48, Color(0.26, 0.19, 0.13), 1.8, true)
+		# Inner ink border (gap between ring and portrait disc).
+		draw_arc(c, r - 12.0, 0, TAU, 48, Color(0.26, 0.19, 0.13), 1.8, true)
+		# Upper-left bevel: warm light catch gives the ring carved convexity.
+		draw_arc(c, r - 6.0, PI * 0.85, PI * 1.95, 24,
+				Color(1.0, 0.97, 0.86, 0.30), 5.0)
+		# Four parchment knot-wells at N / E / S / W — the "bolt" motif on the ring.
+		for i in 4:
+			var a := float(i) * PI * 0.5
+			WyrdUi.draw_round_well(self, c + Vector2(cos(a), sin(a)) * (r - 6.0),
+					4.0, WyrdUi.KIT_PLATE)
+		# Portrait disc face (inset inside the ring, radius r-14).
+		var disc_r := r - 14.0
+		draw_circle(c, disc_r, Color(0.88, 0.82, 0.67))
+		# Ghosted silhouette scaled to the disc radius.
+		draw_circle(c + Vector2(0, disc_r * 0.28), disc_r * 0.34,
+				Color(0.55, 0.47, 0.36, 0.55))
+		draw_circle(c - Vector2(0, disc_r * 0.18), disc_r * 0.22,
+				Color(0.55, 0.47, 0.36, 0.55))
+		# Disc ink ring.
+		draw_arc(c, disc_r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.0, true)
+		draw_arc(c, disc_r - 3.5, 0, TAU, 48,
+				Color(0.26, 0.19, 0.13, 0.30), 1.2, true)
