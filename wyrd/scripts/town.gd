@@ -1343,6 +1343,8 @@ func _maybe_play_arrival_vignette() -> void:
 		"yaw": 0.0, "pitch": TOWN_CAMERA_PITCH, "zoom": TOWN_CAMERA_ZOOM,
 		"duration": 1.0, "caption": "Go and say hello.",
 	}
+	var player: Node = game.local_player()
+	var actor_track := _arrival_actor_track(player)
 	_play_tutorial_vignette("vignette_arrival", [
 		{"focus": PLAYER_SPAWN + Vector3(0.0, 1.0, 0.0),
 			"yaw": 0.0, "pitch": 32.0, "zoom": 10.5, "duration": 0.8,
@@ -1354,7 +1356,17 @@ func _maybe_play_arrival_vignette() -> void:
 			"yaw": 0.0, "pitch": 36.0, "zoom": 13.5, "duration": 1.6,
 			"caption": "Mara Linnet keeps the Chartmaker's Yard."},
 		home,
-	])
+	], actor_track)
+
+func _arrival_actor_track(player: Node) -> Dictionary:
+	if not player is Node3D:
+		return {}
+	return {
+		"actor": player,
+		"start": PLAYER_SPAWN + Vector3(0.0, 0.0, 5.5),
+		"end": PLAYER_SPAWN,
+		"duration": 4.4,
+	}
 
 func _try_pending_tutorial_vignette() -> void:
 	var game := get_node_or_null("/root/Game")
@@ -1411,7 +1423,8 @@ func _try_pending_tutorial_vignette() -> void:
 		]
 	_play_tutorial_vignette(hint_id, frames)
 
-func _play_tutorial_vignette(hint_id: String, frames: Array) -> void:
+func _play_tutorial_vignette(hint_id: String, frames: Array,
+		actor_track: Dictionary = {}) -> void:
 	var game := get_node_or_null("/root/Game")
 	var rig := get_tree().get_first_node_in_group("camera_rig")
 	if game == null or rig == null or frames.is_empty():
@@ -1433,7 +1446,7 @@ func _play_tutorial_vignette(hint_id: String, frames: Array) -> void:
 		_micro_cutscene = null
 		_try_pending_tutorial_vignette.call_deferred())
 	add_child(_micro_cutscene)
-	_micro_cutscene.play(rig, frames)
+	_micro_cutscene.play(rig, frames, actor_track)
 
 func _vignettes_allowed(game: Node) -> bool:
 	if game == null or DisplayServer.get_name() == "headless":

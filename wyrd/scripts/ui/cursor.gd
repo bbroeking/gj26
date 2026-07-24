@@ -1,15 +1,16 @@
 extends CanvasLayer
 
 # The storybook cursor (autoload "Cursor"). The OS pointer stays hidden so this
-# cursor is captured consistently in native + web builds. It uses the painted
-# ink-arrow assets over both the world and UI; panels add the sage hover pip and
-# pressable controls add a small pulse. This keeps the pointer legible against
-# the cream modal skin, where the old cream/gold ring nearly disappeared.
+# cursor is captured consistently in native + web builds. It uses one painted
+# walnut-and-parchment arrow over both world and UI; semantic pips preserve
+# interaction feedback without swapping the pointer's silhouette.
 
-const CURSOR_DEFAULT: Texture2D = preload("res://assets/ui/cursor_default.png")
-const CURSOR_INTERACT: Texture2D = preload("res://assets/ui/cursor_interact.png")
-const CURSOR_ATTACK: Texture2D = preload("res://assets/ui/cursor_attack.png")
-const HOTSPOT := Vector2(3, 2)
+const CURSOR_WAYFINDER: Texture2D = preload("res://assets/ui/cursor_wayfinder_v2.png")
+const HOTSPOT := Vector2(2, 2)
+
+
+func cursor_click_scale(press_amount: float) -> float:
+	return lerpf(1.0, 0.84, clampf(press_amount, 0.0, 1.0))
 
 
 func cursor_kind_for(hovered: Control) -> String:
@@ -34,9 +35,8 @@ func _ready() -> void:
 	layer = 1000
 	var mark := CursorMark.new()
 	mark.classify_hover = cursor_kind_for
-	mark.default_texture = CURSOR_DEFAULT
-	mark.interact_texture = CURSOR_INTERACT
-	mark.attack_texture = CURSOR_ATTACK
+	mark.click_scale = cursor_click_scale
+	mark.cursor_texture = CURSOR_WAYFINDER
 	mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(mark)
 	mark.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -45,12 +45,21 @@ func _ready() -> void:
 
 class CursorMark extends Control:
 	var classify_hover: Callable
-	var default_texture: Texture2D
-	var interact_texture: Texture2D
-	var attack_texture: Texture2D
+	var click_scale: Callable
+	var cursor_texture: Texture2D
 	var _player: Node = null
+	var _press_amount := 0.0
+	var _click_age := 1.0
+	var _was_pressed := false
 
-	func _process(_delta: float) -> void:
+	func _process(delta: float) -> void:
+		var pressed := Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+		if pressed and not _was_pressed:
+			_click_age = 0.0
+		_was_pressed = pressed
+		_press_amount = move_toward(_press_amount, 1.0 if pressed else 0.0,
+			delta * (16.0 if pressed else 10.0))
+		_click_age += delta
 		queue_redraw()
 
 	func _draw() -> void:
@@ -66,18 +75,17 @@ class CursorMark extends Control:
 			var r = _player.get("_fire_recoil")
 			if r != null:
 				recoil = clampf(absf(float(r)) / 0.2, 0.0, 1.0)
-		var texture := default_texture
-		if recoil > 0.12:
-			texture = attack_texture
-		elif kind != "world":
-			texture = interact_texture
+		if _click_age < 0.30:
+			var ring_t := clampf(_click_age / 0.30, 0.0, 1.0)
+			draw_arc(m, lerpf(7.0, 25.0, ring_t), 0.0, TAU, 28,
+				Color(WyrdUi.MAPLE_GREEN, (1.0 - ring_t) * 0.72), 2.2, true)
 		if kind in ["interactive", "component", "inspect_result", "codex",
 				"codex_page", "action"]:
-			var pip := m + Vector2(21, 4)
+			var pip := m + Vector2(31, 7)
 			draw_circle(pip, 6.0, Color(WyrdUi.SAGE, 0.24))
 			draw_arc(pip, 6.0, 0.0, TAU, 20, WyrdUi.MAPLE_WOOD_D, 1.2, true)
 		elif kind in ["place_valid", "ghost_stage"]:
-			var ok := m + Vector2(21, 4)
+			var ok := m + Vector2(31, 7)
 			draw_circle(ok, 6.0, Color(WyrdUi.MAPLE_GREEN, 0.80))
 			draw_arc(ok, 6.0, 0.0, TAU, 20, WyrdUi.MAPLE_WOOD_D, 1.2, true)
 			draw_line(ok + Vector2(-3, 0), ok + Vector2(-1, 3),
@@ -85,7 +93,7 @@ class CursorMark extends Control:
 			draw_line(ok + Vector2(-1, 3), ok + Vector2(4, -3),
 				Color.WHITE, 1.5, true)
 		elif kind in ["place_invalid", "ghost_unavailable"]:
-			var no := m + Vector2(21, 4)
+			var no := m + Vector2(31, 7)
 			draw_circle(no, 6.0, Color(WyrdUi.TERRACOTTA, 0.82))
 			draw_arc(no, 6.0, 0.0, TAU, 20, WyrdUi.MAPLE_WOOD_D, 1.2, true)
 			draw_line(no + Vector2(-3, -3), no + Vector2(3, 3),
@@ -95,8 +103,16 @@ class CursorMark extends Control:
 		if recoil > 0.12:
 			draw_circle(m + Vector2(12, 12), 18.0,
 				Color(WyrdUi.TERRACOTTA, 0.12 + recoil * 0.12))
-		if texture != null:
-			draw_texture(texture, m - HOTSPOT)
+		if cursor_texture != null:
+			var scale_amount := 1.0
+			if click_scale.is_valid():
+				scale_amount = float(click_scale.call(_press_amount))
+			draw_set_transform(m, -0.04 * _press_amount,
+				Vector2(scale_amount, scale_amount))
+			draw_texture(cursor_texture, -HOTSPOT,
+				Color(WyrdUi.TERRACOTTA).lerp(Color.WHITE, 0.72)
+					if recoil > 0.12 else Color.WHITE)
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	func _find_player() -> Node:
 		if _player != null and is_instance_valid(_player):

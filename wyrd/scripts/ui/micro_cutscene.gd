@@ -5,7 +5,7 @@ extends CanvasLayer
 # a handful of authored frames. No video asset or second scene load is needed.
 #
 # Public API:
-#   play(camera_rig, frames)
+#   play(camera_rig, frames, actor_track)
 # Each target frame accepts:
 #   focus: Vector3, yaw: radians, pitch: degrees, zoom: float,
 #   duration: seconds, caption: String.
@@ -25,6 +25,8 @@ var _elapsed := 0.0
 var _age := 0.0
 var _running := false
 var _owns_modal := false
+var _actor_track: Dictionary = {}
+var _cinematic_wanderers: Array[Node] = []
 
 var _root: Control = null
 var _caption: Label = null
@@ -36,9 +38,10 @@ func _ready() -> void:
 	if _running:
 		_begin()
 
-func play(camera_rig: Node, target_frames: Array) -> void:
+func play(camera_rig: Node, target_frames: Array, actor_track: Dictionary = {}) -> void:
 	_rig = camera_rig
 	_frames = target_frames.duplicate(true)
+	_actor_track = actor_track.duplicate()
 	_running = _rig != null and not _frames.is_empty()
 	if is_node_ready() and _running:
 		_begin()
@@ -60,6 +63,17 @@ func _begin() -> void:
 	_age = 0.0
 	_rig.begin_cinematic()
 	_rig.apply_cinematic_frame(_from)
+	_begin_actor_track()
+	for wanderer in get_tree().get_nodes_in_group("wandering_npc"):
+		var controller := wanderer.get_node_or_null("NpcWander")
+		if controller == null:
+			for child in wanderer.get_children():
+				if child.has_method("set_cinematic_motion"):
+					controller = child
+					break
+		if controller != null and controller.has_method("set_cinematic_motion"):
+			controller.set_cinematic_motion(true)
+			_cinematic_wanderers.append(controller)
 	var game := get_node_or_null("/root/Game")
 	if game != null and game.has_method("modal_opened"):
 		game.modal_opened()
@@ -70,6 +84,7 @@ func _process(delta: float) -> void:
 	if not _running or _rig == null:
 		return
 	_age += delta
+	_update_actor_track()
 	_elapsed += delta
 	if _root != null:
 		_root.modulate.a = clampf(_age / 0.22, 0.0, 1.0)
@@ -103,6 +118,40 @@ func _blend_frame(a: Dictionary, b: Dictionary, t: float) -> Dictionary:
 			float(b.get("zoom", 16.5)), t),
 	}
 
+func _begin_actor_track() -> void:
+	var actor: Node3D = _actor_track.get("actor") as Node3D
+	if actor == null or not is_instance_valid(actor):
+		_actor_track.clear()
+		return
+	var start: Vector3 = _actor_track.get("start", actor.global_position)
+	var finish: Vector3 = _actor_track.get("end", actor.global_position)
+	actor.global_position = start
+	if actor.has_method("begin_cinematic_walk"):
+		actor.begin_cinematic_walk(finish - start)
+
+func _update_actor_track() -> void:
+	var actor: Node3D = _actor_track.get("actor") as Node3D
+	if actor == null or not is_instance_valid(actor):
+		return
+	var duration := maxf(0.05, float(_actor_track.get("duration", 1.0)))
+	var t := clampf(_age / duration, 0.0, 1.0)
+	t = t * t * (3.0 - 2.0 * t)
+	var start: Vector3 = _actor_track.get("start", actor.global_position)
+	var finish: Vector3 = _actor_track.get("end", actor.global_position)
+	actor.global_position = start.lerp(finish, t)
+
+func _finish_actor_track() -> void:
+	var actor: Node3D = _actor_track.get("actor") as Node3D
+	if actor != null and is_instance_valid(actor):
+		actor.global_position = _actor_track.get("end", actor.global_position)
+		if actor.has_method("end_cinematic_walk"):
+			actor.end_cinematic_walk()
+	_actor_track.clear()
+	for controller in _cinematic_wanderers:
+		if is_instance_valid(controller) and controller.has_method("set_cinematic_motion"):
+			controller.set_cinematic_motion(false)
+	_cinematic_wanderers.clear()
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not _running or _age < MIN_SKIP_DELAY:
 		return
@@ -122,6 +171,7 @@ func _finish(skipped: bool) -> void:
 		queue_free()
 		return
 	_running = false
+	_finish_actor_track()
 	if _rig != null and is_instance_valid(_rig):
 		# Land on the final authored frame even when skipped so returning to the
 		# follow camera never jumps through an intermediate composition.
@@ -141,6 +191,7 @@ func _exit_tree() -> void:
 	# shared modal counter or camera rig captured.
 	if _rig != null and is_instance_valid(_rig) and _rig.has_method("end_cinematic"):
 		_rig.end_cinematic()
+	_finish_actor_track()
 	var game := get_node_or_null("/root/Game")
 	if _owns_modal and game != null and game.has_method("modal_closed"):
 		_owns_modal = false

@@ -18,6 +18,7 @@ var _pause_left := 0.0
 var _attention_pause := 0.0
 var _walking := false
 var _walk_clip := ""
+var _cinematic_motion := false
 
 
 func setup(actor: Node3D, visual: Node, walk_sidecar: PackedScene,
@@ -43,22 +44,30 @@ func setup(actor: Node3D, visual: Node, walk_sidecar: PackedScene,
 
 
 func pause_for_attention(seconds := 4.0) -> void:
+	if _cinematic_motion:
+		return
 	_attention_pause = maxf(_attention_pause, seconds)
 	_set_walking(false)
 
+func set_cinematic_motion(active: bool) -> void:
+	_cinematic_motion = active
+	if active:
+		_attention_pause = 0.0
+		_pause_left = 0.0
+		_set_walking(_points.size() > 1 and _walk_clip != "")
 
 func _process(delta: float) -> void:
 	if _actor == null or not is_instance_valid(_actor):
 		queue_free()
 		return
-	if _attention_pause > 0.0:
+	if not _cinematic_motion and _attention_pause > 0.0:
 		_attention_pause = maxf(0.0, _attention_pause - delta)
 		_set_walking(false)
 		return
 	if _points.size() < 2 or _walk_clip == "":
 		_set_walking(false)
 		return
-	if _pause_left > 0.0:
+	if not _cinematic_motion and _pause_left > 0.0:
 		_pause_left = maxf(0.0, _pause_left - delta)
 		_set_walking(false)
 		return
@@ -67,8 +76,8 @@ func _process(delta: float) -> void:
 	delta_position.y = 0.0
 	if delta_position.length() <= 0.12:
 		_point_index = (_point_index + 1) % _points.size()
-		_pause_left = 1.15
-		_set_walking(false)
+		_pause_left = 0.0 if _cinematic_motion else 1.15
+		_set_walking(_cinematic_motion)
 		return
 	var direction := delta_position.normalized()
 	_actor.global_position = _actor.global_position.move_toward(

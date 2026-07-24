@@ -145,6 +145,8 @@ var _clip_walk := ""
 var _clip_run := ""
 var _clip_dash := ""
 var _idle_pose_driver: Node = null
+var _cinematic_walk_active := false
+var _cinematic_ap_process_mode := Node.PROCESS_MODE_INHERIT
 
 var _move: Move = Move.NORMAL
 var _burst_dir := Vector3.FORWARD
@@ -553,6 +555,34 @@ func _merge_clip(lib: AnimationLibrary, into: String, glb: PackedScene, clip: St
 
 func set_spawn(pos: Vector3) -> void:
 	_spawn_pos = pos
+
+func begin_cinematic_walk(direction: Vector3) -> void:
+	if _ap == null or _mesh == null:
+		return
+	_cinematic_walk_active = true
+	_cinematic_ap_process_mode = _ap.process_mode
+	_ap.process_mode = Node.PROCESS_MODE_ALWAYS
+	if _idle_pose_driver != null and _idle_pose_driver.has_method("set_motion_active"):
+		_idle_pose_driver.set_motion_active(false)
+	var flat_direction := Vector3(direction.x, 0.0, direction.z)
+	if flat_direction.length_squared() > 0.001:
+		_mesh.rotation.y = atan2(flat_direction.x, flat_direction.z)
+	if _clip_walk != "":
+		_ap.play(_clip_walk, 0.08)
+		_ap.speed_scale = 0.90
+		# Apply a real gait pose before the first cinematic frame is drawn.
+		# AnimationPlayer otherwise exposes the imported bind pose for one frame
+		# while the arrival cover fades away.
+		_ap.advance(0.20)
+
+func end_cinematic_walk() -> void:
+	if not _cinematic_walk_active:
+		return
+	_cinematic_walk_active = false
+	if _ap != null:
+		_ap.speed_scale = 1.0
+		_ap.process_mode = _cinematic_ap_process_mode
+	_play_anim("idle")
 
 func _physics_process(delta: float) -> void:
 	# The host advances every peer's authoritative Threadstep ledger, including

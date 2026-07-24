@@ -9498,9 +9498,9 @@ func _ready() -> void:
 	mastery_choice_ready.connect(_on_mastery_choice_ready)   # ADR 0012 mastery modal
 	# Spec 41 — the kit cursor takes over in-game (interact/attack swaps
 	# are a followup; the controller can call set_cursor as states land).
-	if ResourceLoader.exists("res://assets/ui/cursor_default.png"):
-		Input.set_custom_mouse_cursor(load("res://assets/ui/cursor_default.png"),
-			Input.CURSOR_ARROW, Vector2(3, 2))
+	if ResourceLoader.exists("res://assets/ui/cursor_wayfinder_v2.png"):
+		Input.set_custom_mouse_cursor(load("res://assets/ui/cursor_wayfinder_v2.png"),
+			Input.CURSOR_ARROW, Vector2(2, 2))
 	# Dev: WYRD_DEV_LEVEL=<n> sets Wayfinding on boot — for eyeballing
 	# chart gates and ADR-0013 difficulty bands at any level.
 	var dev_level := OS.get_environment("WYRD_DEV_LEVEL")

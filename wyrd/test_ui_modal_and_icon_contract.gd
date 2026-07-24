@@ -113,6 +113,9 @@ func _run() -> void:
 	panel.add_child(button)
 	_check(cursor_probe.has_method("cursor_kind_for"),
 		"cursor exposes a shared UI-hover classifier")
+	_check(cursor_probe.has_method("cursor_click_scale")
+		and float(cursor_probe.call("cursor_click_scale", 1.0)) < 0.9,
+		"cursor visibly compresses on click")
 	if cursor_probe.has_method("cursor_kind_for"):
 		_check(String(cursor_probe.call("cursor_kind_for", null)) == "world",
 			"empty hover uses the world cursor")
@@ -126,14 +129,13 @@ func _run() -> void:
 		button.set_meta("cursor_role", "place_invalid")
 		_check(String(cursor_probe.call("cursor_kind_for", button)) == "place_invalid",
 			"semantic invalid-cell cursor is explicit")
-	for cursor_name in ["cursor_default", "cursor_interact"]:
-		var cursor_path := "res://assets/ui/%s.png" % cursor_name
-		_check(ResourceLoader.exists(cursor_path), "%s texture exists" % cursor_name)
-		if ResourceLoader.exists(cursor_path):
-			var cursor_tex := load(cursor_path) as Texture2D
-			_check(cursor_tex != null and cursor_tex.get_width() == 32 \
-				and cursor_tex.get_height() == 32,
-				"%s stays at the 32px UI cursor scale" % cursor_name)
+	var cursor_path := "res://assets/ui/cursor_wayfinder_v2.png"
+	_check(ResourceLoader.exists(cursor_path), "painted Wayfinder cursor texture exists")
+	if ResourceLoader.exists(cursor_path):
+		var cursor_tex := load(cursor_path) as Texture2D
+		_check(cursor_tex != null and cursor_tex.get_width() == 48 \
+			and cursor_tex.get_height() == 48,
+			"painted cursor uses a crisp 48px game scale")
 	panel.free()
 	cursor_probe.free()
 

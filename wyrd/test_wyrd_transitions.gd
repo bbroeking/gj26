@@ -299,17 +299,53 @@ func _run() -> void:
 	micro.finished.connect(func(_skipped: bool) -> void: micro_state.finished = true)
 	town.add_child(micro)
 	var home: Dictionary = rig.cinematic_frame()
-	home["duration"] = 0.05
+	home["duration"] = 0.16
 	home["caption"] = "The road remembers."
-	micro.play(rig, [home])
+	var has_arrival_track := town.has_method("_arrival_actor_track")
+	var actor_track: Dictionary = town.call("_arrival_actor_track", player) \
+		if has_arrival_track else {}
+	if has_arrival_track:
+		actor_track["duration"] = 0.16
+	var actor_start: Vector3 = actor_track.get("start", player.global_position)
+	var actor_end: Vector3 = actor_track.get("end", player.global_position)
+	var cutscene_npc_starts: Dictionary = {}
+	for npc in walking_npcs:
+		cutscene_npc_starts[npc] = (npc as Node3D).global_position
+	if has_arrival_track:
+		micro.call("play", rig, [home], actor_track)
+	else:
+		micro.play(rig, [home])
 	_check("micro-cutscene captures camera + pauses play",
 		paused and game.modal_count == 1 and bool(rig.get("_cinematic_active")),
 		"paused=%s modal=%d active=%s" % [paused, game.modal_count,
 			bool(rig.get("_cinematic_active"))])
+	await create_timer(0.08, true).timeout
+	var player_ap := player.get("_ap") as AnimationPlayer
+	var player_skeleton := _find_skeleton(player)
+	_check("opening vignette walks the player through the live scene",
+		has_arrival_track and actor_start.distance_to(actor_end) >= 3.0 \
+		and player.global_position.distance_to(actor_start) > 0.1 \
+		and player_ap != null and player_ap.current_animation \
+			== String(player.get("_clip_walk")) \
+		and _skeleton_pose_energy(player_skeleton) > 0.25 \
+		and _arm_down_score(player_skeleton) > 0.5,
+		str({"track": actor_track, "position": player.global_position,
+			"animation": player_ap.current_animation if player_ap != null else "",
+			"pose_energy": _skeleton_pose_energy(player_skeleton),
+			"arms": _arm_down_score(player_skeleton)}))
+	var cutscene_npcs_walking := true
+	for npc in walking_npcs:
+		cutscene_npcs_walking = cutscene_npcs_walking \
+			and (npc as Node3D).global_position.distance_to(
+				cutscene_npc_starts[npc]) > 0.02 \
+			and bool(npc.get_meta("npc_walking", false))
+	_check("town NPCs keep walking during the opening vignette",
+		cutscene_npcs_walking)
 	await create_timer(0.12, true).timeout
 	_check("micro-cutscene restores camera + play",
 		bool(micro_state.finished) and not paused and game.modal_count == 0
-		and not bool(rig.get("_cinematic_active")),
+		and not bool(rig.get("_cinematic_active"))
+		and player.global_position.distance_to(actor_end) < 0.05,
 		"finished=%s paused=%s modal=%d active=%s" % [micro_state.finished, paused,
 			game.modal_count, bool(rig.get("_cinematic_active"))])
 	# Keep `patches` = herb patches only (the tutorial beat forages herbs).
@@ -901,3 +937,37 @@ func _walk(node: Node) -> Array:
 	for c in node.get_children():
 		out.append_array(_walk(c))
 	return out
+
+func _find_skeleton(root_node: Node) -> Skeleton3D:
+	if root_node is Skeleton3D:
+		return root_node as Skeleton3D
+	for child in root_node.get_children():
+		var found := _find_skeleton(child)
+		if found != null:
+			return found
+	return null
+
+func _skeleton_pose_energy(skeleton: Skeleton3D) -> float:
+	if skeleton == null:
+		return 0.0
+	var energy := 0.0
+	for bone_idx in range(skeleton.get_bone_count()):
+		energy += skeleton.get_bone_pose_rotation(bone_idx).angle_to(Quaternion.IDENTITY)
+		energy += skeleton.get_bone_pose_position(bone_idx).length()
+	return energy
+
+func _arm_down_score(skeleton: Skeleton3D) -> float:
+	if skeleton == null:
+		return -1.0
+	var total := 0.0
+	var count := 0
+	for side in ["Left", "Right"]:
+		var upper := skeleton.find_bone("%sArm" % side)
+		var lower := skeleton.find_bone("%sForeArm" % side)
+		if upper >= 0 and lower >= 0:
+			var direction := skeleton.get_bone_global_pose(lower).origin \
+				- skeleton.get_bone_global_pose(upper).origin
+			if direction.length_squared() > 0.0001:
+				total += direction.normalized().dot(Vector3.DOWN)
+				count += 1
+	return total / float(count) if count > 0 else -1.0

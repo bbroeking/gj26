@@ -39,6 +39,8 @@ func _run() -> void:
 	var deadline := Time.get_ticks_msec() + 1500
 	while is_instance_valid(cover) and Time.get_ticks_msec() < deadline:
 		await process_frame
+	# Capture the walk itself rather than only the first post-cover frame.
+	await create_timer(0.65).timeout
 	await RenderingServer.frame_post_draw
 	var vignette: Variant = town.get("_micro_cutscene") if town != null else null
 	var image2 := root.get_texture().get_image()
