@@ -33,7 +33,7 @@ func _ready_interactable() -> void:
 	mesh.scale = Vector3.ONE
 	GlbFit.unmetal(mesh)
 	GlbFit.add_ink_outline(mesh)
-	AnimDriverScript.play_sidecar_pose(mesh, QUILL_WALK_GLB, "walk", 0.5, 0.68)
+	AnimDriverScript.play_sidecar_pose(mesh, QUILL_WALK_GLB, "walk", 0.75, 0.68)
 	var attention := NpcAttentionScript.new()
 	attention.name = "NpcAttention"
 	add_child(attention)

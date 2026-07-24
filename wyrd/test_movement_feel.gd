@@ -52,20 +52,43 @@ func run() -> void:
 	var idle_before := player_ap.current_animation_position
 	await create_timer(0.72).timeout
 	var patrols_advanced := true
+	var walking_rigs_deformed := true
 	for npc in walkers:
 		var wander := npc.get_node_or_null("NpcWander")
 		var ap := wander.get("_player") as AnimationPlayer if wander != null else null
+		var skeleton := find_skeleton(npc)
 		patrols_advanced = patrols_advanced \
 			and (npc as Node3D).global_position.distance_to(npc_before[npc]) > 0.2 \
 			and ap != null and ap.current_animation == "town_walk" \
 			and ap.current_animation_position > 0.01
+		walking_rigs_deformed = walking_rigs_deformed \
+			and skeleton_pose_energy(skeleton) > 0.25
 	check("all three NPCs travel with their authored walk clip", patrols_advanced)
+	check("walking NPC skeletons are visibly outside the T-pose",
+		walking_rigs_deformed)
+	var paused_rigs_deformed := true
+	for npc in walkers:
+		var wander := npc.get_node_or_null("NpcWander")
+		wander.pause_for_attention(1.0)
+	await create_timer(0.12).timeout
+	for npc in walkers:
+		var skeleton := find_skeleton(npc)
+		paused_rigs_deformed = paused_rigs_deformed \
+			and skeleton_pose_energy(skeleton) > 0.25 \
+			and arm_down_score(skeleton) > 0.5 \
+			and knee_angle(skeleton) > 2.1
+	check("paused NPCs hold an arms-down standing pose, never a seated T-pose",
+		paused_rigs_deformed)
 	check("stationary player stays planted in the bounded idle pose",
 		player.global_position.distance_to(player_before) < 0.01 \
 		and player_ap.current_animation == "player_idle_pose" \
-		and absf(player_ap.current_animation_position - idle_before) < 0.2,
+		and absf(player_ap.current_animation_position - idle_before) < 0.2 \
+		and arm_down_score(find_skeleton(player)) > 0.5 \
+		and knee_angle(find_skeleton(player)) > 2.55,
 		{"travel": player.global_position.distance_to(player_before),
-			"clip": player_ap.current_animation})
+			"clip": player_ap.current_animation,
+			"arms": arm_down_score(find_skeleton(player)),
+			"knee": knee_angle(find_skeleton(player))})
 
 	var start := player.global_position
 	var frames_to_ninety := -1
@@ -211,3 +234,54 @@ func run() -> void:
 
 	print("--- movement feel: %d PASS, %d FAIL ---" % [passed, failed])
 	quit(1 if failed > 0 else 0)
+
+
+func find_skeleton(root_node: Node) -> Skeleton3D:
+	if root_node is Skeleton3D:
+		return root_node as Skeleton3D
+	for child in root_node.get_children():
+		var found := find_skeleton(child)
+		if found != null:
+			return found
+	return null
+
+
+func skeleton_pose_energy(skeleton: Skeleton3D) -> float:
+	if skeleton == null:
+		return 0.0
+	var energy := 0.0
+	for bone_idx in range(skeleton.get_bone_count()):
+		energy += skeleton.get_bone_pose_rotation(bone_idx).angle_to(Quaternion.IDENTITY)
+		energy += skeleton.get_bone_pose_position(bone_idx).length()
+	return energy
+
+
+func arm_down_score(skeleton: Skeleton3D) -> float:
+	if skeleton == null:
+		return -1.0
+	var total := 0.0
+	var count := 0
+	for side in ["Left", "Right"]:
+		var upper := skeleton.find_bone("%sArm" % side)
+		var lower := skeleton.find_bone("%sForeArm" % side)
+		if upper >= 0 and lower >= 0:
+			var direction := skeleton.get_bone_global_pose(lower).origin \
+				- skeleton.get_bone_global_pose(upper).origin
+			if direction.length_squared() > 0.0001:
+				total += direction.normalized().dot(Vector3.DOWN)
+				count += 1
+	return total / float(count) if count > 0 else -1.0
+
+
+func knee_angle(skeleton: Skeleton3D) -> float:
+	if skeleton == null:
+		return -1.0
+	var hip := skeleton.find_bone("LeftUpLeg")
+	var knee := skeleton.find_bone("LeftLeg")
+	var ankle := skeleton.find_bone("LeftFoot")
+	if hip < 0 or knee < 0 or ankle < 0:
+		return -1.0
+	var knee_pos := skeleton.get_bone_global_pose(knee).origin
+	var to_hip := skeleton.get_bone_global_pose(hip).origin - knee_pos
+	var to_ankle := skeleton.get_bone_global_pose(ankle).origin - knee_pos
+	return to_hip.angle_to(to_ankle)

@@ -47,7 +47,8 @@ static func play_idle(root: Node) -> void:
 # rig output is a T-pose clip; a paused mid-stride frame gives stationary town
 # NPCs a relaxed, readable stance without making them march in place.
 static func play_sidecar_pose(root: Node, sidecar: PackedScene,
-		key: String, pose_fraction := 0.5, phase_fraction := 0.0) -> void:
+		key: String, pose_fraction := 0.75, phase_fraction := 0.0,
+		window_fraction := 0.02) -> void:
 	var ap := find_anim_player(root)
 	if ap == null or sidecar == null:
 		play_idle(root)
@@ -78,7 +79,7 @@ static func play_sidecar_pose(root: Node, sidecar: PackedScene,
 	var driver := AmbientPoseDriverScript.new()
 	driver.name = "AmbientPoseDriver"
 	root.add_child(driver)
-	driver.setup(ap, POSE_CLIP, root as Node3D, pose_fraction, 0.055, 3.8,
+	driver.setup(ap, POSE_CLIP, root as Node3D, pose_fraction, window_fraction, 3.8,
 		phase_fraction)
 
 

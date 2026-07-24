@@ -513,7 +513,7 @@ func _setup_clips() -> void:
 		_idle_pose_driver = AmbientPoseDriverScript.new()
 		_idle_pose_driver.name = "PlayerIdlePoseDriver"
 		_mesh.add_child(_idle_pose_driver)
-		_idle_pose_driver.setup(_ap, _clip_idle, null, 0.5, 0.025, 4.4, 0.0)
+		_idle_pose_driver.setup(_ap, _clip_idle, null, 0.75, 0.02, 4.4, 0.0)
 
 static func _strip_scale_tracks(a: Animation) -> void:
 	for t in range(a.get_track_count() - 1, -1, -1):
