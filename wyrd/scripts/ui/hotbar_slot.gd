@@ -37,6 +37,14 @@ func _draw() -> void:
 	WyrdUi.draw_carved_button(self, r, castable)
 	WyrdUi.draw_well(self, r.grow(-7.0), WyrdUi.KIT_PLATE.lightened(0.05))
 	WyrdUi.draw_parchment_grain(self, r, _seed)
+	# Gold inner inset ring — the "burnished plate" read. Bright when the skill
+	# is ready (castable, off cooldown), dim while it cools or is blocked.
+	# Sits between the ink pinstripe (grow -3) and the well border (grow -7).
+	var gold_a := 0.48 if (castable and cd_ratio <= 0.001) else 0.14
+	draw_rect(r.grow(-5.0), Color(WyrdUi.GOLD, gold_a), false, 1.0)
+	# Corner bolt-head ornaments — four sunken pips that read as carved fixings
+	# on a wooden slot face. The matching motif to the tray's end flourishes.
+	WyrdUi.draw_corner_bolts(self, r)
 	# Radial cooldown wedge — a square-clamped pie from 12 o'clock clockwise,
 	# shrinking as the skill cools. Vertices ride the slot's own edge so it
 	# reads as the slot face darkening, with no overshoot into the gaps.
