@@ -55,6 +55,15 @@ func _ready() -> void:
 	_name_lbl.offset_right = -56
 	_name_lbl.offset_top = 38
 	_panel.add_child(_name_lbl)
+	# A ── ◆ ── flourish rule below the speaker name. Every storybook
+	# chapter heading gets a divider; the dialog header should too.
+	var flourish_line := _FlourishLine.new()
+	flourish_line.anchor_right = 1.0
+	flourish_line.offset_left = 56
+	flourish_line.offset_right = -56
+	flourish_line.offset_top = 66
+	flourish_line.custom_minimum_size = Vector2(0, 10)
+	_panel.add_child(flourish_line)
 	_body = Label.new()
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.anchor_right = 1.0
@@ -142,4 +151,14 @@ class PortraitWell extends Control:
 		draw_circle(c + Vector2(0, r * 0.28), r * 0.34, Color(0.55, 0.47, 0.36, 0.55))
 		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
 		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
+		# Burnished gold ring between the two ink arcs — the portrait reads as
+		# a gilded medallion rather than a plain ink disc.
+		draw_arc(c, r - 3.0, 0, TAU, 48, Color(WyrdUi.GOLD, 0.55), 1.5, true)
 		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+
+
+# The ── ◆ ── ink-and-gold divider that sits below the speaker name,
+# matching the flourish language used on section headers throughout the kit.
+class _FlourishLine extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5), size.x * 0.9)
