@@ -39,6 +39,14 @@ func _ready() -> void:
 	_panel.offset_bottom = 300
 	add_child(_panel)
 
+	# Spec 47 — ivy header accent: parchment grain + title-rule flourish +
+	# small leaf sprigs at the inner frame edges. Added as the first child so
+	# it renders below text and buttons. Mouse-transparent (IGNORE).
+	var ivy := _IvyHeader.new()
+	ivy.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	ivy.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(ivy)
+
 	var title := Label.new()
 	title.text = String(st.get("title", "Crafting"))
 	WyrdUi.style_title(title)
@@ -212,3 +220,41 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# Spec 47 — drawn ivy header accent for craft-station panels.
+# Renders: parchment grain over the panel face; a ── ◆ ── flourish below
+# the station title; two small leaf-and-gold-bead sprigs at the inner left
+# and right frame edges, flanking the title. Moves the cookfire / forge
+# panels toward the design-language "leafy ivy/vine + gold filigree on
+# frames/headers" standard. Pure vector — no textures in _draw.
+class _IvyHeader extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_parchment_grain(self, Rect2(Vector2.ZERO, size), 17)
+		# Title rule: the ── ◆ ── sits just below the title text (y≈68), centred
+		# on the panel with 54px of breathing room on each side (inside the frame).
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 68.0), size.x - 108.0)
+		# Leaf sprigs at the inner frame edges — left (rightward curl) and right
+		# (leftward curl), both in the title-height zone.
+		_draw_ivy_sprig(Vector2(38.0, 51.0), false)
+		_draw_ivy_sprig(Vector2(size.x - 38.0, 51.0), true)
+
+	# A short diagonal stem + two almond leaf lobes + a gold bead at the tip.
+	# `flip=true` mirrors the sprig leftward (right-edge placement).
+	func _draw_ivy_sprig(base: Vector2, flip: bool) -> void:
+		var sx := -1.0 if flip else 1.0
+		var tip := base + Vector2(sx * 11.0, -9.0)
+		draw_line(base, tip, Color(WyrdUi.SAGE, 0.42), 1.2)
+		for i in 2:
+			var lo := base + Vector2(sx * float(i) * 5.5, float(-i) * 4.5)
+			var pts := PackedVector2Array([
+				lo,
+				lo + Vector2(sx * 8.0, -6.0),
+				lo + Vector2(sx * 11.0, 0.0),
+				lo + Vector2(sx * 5.0,  5.0),
+			])
+			draw_colored_polygon(pts, Color(WyrdUi.SAGE, 0.30 - float(i) * 0.06))
+			draw_polyline(pts + PackedVector2Array([pts[0]]),
+				Color(WyrdUi.SAGE.darkened(0.3), 0.46), 0.8, true)
+		# Gold bead at the stem tip — the filigree accent.
+		draw_circle(tip, 2.2, Color(WyrdUi.GOLD, 0.58))
