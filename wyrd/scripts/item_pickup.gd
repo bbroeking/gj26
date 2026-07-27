@@ -62,6 +62,24 @@ func _setup(item: Dictionary) -> void:
 
 func _build_beacon() -> void:
 	var col: Color = RARITY_COLOR.get(String(_item.rarity), Color.WHITE)
+	# Warm ground pool — a parchment-cream disc on the floor so the item reads
+	# as placed treasure rather than a floating engine widget. Magic+ items blend
+	# in their rarity tint so the pool echoes the beacon's glow without drowning it.
+	var pool := MeshInstance3D.new()
+	pool.name = "Pool"
+	var disc := PlaneMesh.new()
+	disc.size = Vector2(0.52, 0.52)
+	pool.mesh = disc
+	var disc_col := Color(0.91, 0.84, 0.64, 0.50)
+	if String(_item.rarity) != "normal":
+		disc_col = disc_col.lerp(Color(col.r, col.g, col.b, 0.65), 0.40)
+	var disc_mat := StandardMaterial3D.new()
+	disc_mat.albedo_color = disc_col
+	disc_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	disc_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	pool.material_override = disc_mat
+	pool.position = Vector3(0, 0.01, 0)
+	add_child(pool)
 	var mi := MeshInstance3D.new()
 	mi.name = "Beacon"
 	var cap := CapsuleMesh.new()
@@ -91,6 +109,9 @@ func _build_label() -> void:
 	lbl.outline_size = 16
 	lbl.outline_modulate = Color(0.08, 0.05, 0.06, 1)
 	lbl.position = Vector3(0, 1.15, 0)
+	var hf := WyrdUi.font_header()
+	if hf != null:
+		lbl.font = hf
 	add_child(lbl)
 
 # Spec 32a — full take transaction. Returns true on success, false if the
