@@ -6,6 +6,11 @@ extends CanvasLayer
 # Slice C — the rows are no longer text pills. Each is a drawn item card
 # (WyrdUi.draw_list_row plate + painted icon plate + name + price + rarity
 # ring) so the counter reads as a carved shelf, not a spreadsheet.
+#
+# Art pass — header block gains a drawn _SmithMark medallion (anvil +
+# gold sparks inside a KIT_PLATE disc with a gold ring) to the left of the
+# title, and a ── ◆ –– flourish rule below the subtitle. Moves toward the
+# shop_list_4 reference: an identifiable artisan-guild mark on the panel.
 
 const GatherDefs = preload("res://data/gather.gd")
 
@@ -62,17 +67,35 @@ func _ready() -> void:
 	_panel.offset_bottom = 260
 	add_child(_panel)
 
+	# Blacksmith-mark medallion — the artisan's guild disc, left of the title.
+	var smith := _SmithMark.new()
+	smith.position = Vector2(8, 22)
+	smith.size = Vector2(44, 44)
+	smith.custom_minimum_size = Vector2(44, 44)
+	smith.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(smith)
+
 	var title := Label.new()
 	title.text = "Hod's Counter"
 	WyrdUi.style_title(title)
-	title.position = Vector2(54, 34)
+	title.position = Vector2(62, 34)
 	_panel.add_child(title)
 
 	var sub := Label.new()
 	sub.text = "\"Sparks like to find sleeves. Mind the anvil, state your business.\""
 	WyrdUi.style_dim(sub, 13)
-	sub.position = Vector2(54, 66)
+	sub.position = Vector2(62, 66)
 	_panel.add_child(sub)
+
+	# Thin ── ◆ –– flourish rule between the header and the item columns.
+	var fl := _Flourish.new()
+	fl.anchor_right = 1.0
+	fl.offset_left = 56
+	fl.offset_right = -56
+	fl.offset_top = 84
+	fl.offset_bottom = 92
+	fl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(fl)
 
 	_gold_lbl = Label.new()
 	WyrdUi.style_chip(_gold_lbl, 15)
@@ -98,7 +121,7 @@ func _ready() -> void:
 	columns.anchor_right = 1.0
 	columns.anchor_bottom = 1.0
 	columns.offset_left = 52
-	columns.offset_top = 94
+	columns.offset_top = 100
 	columns.offset_right = -52
 	columns.offset_bottom = -56
 	columns.add_theme_constant_override("separation", 26)
@@ -286,3 +309,42 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# ---- thin decorative flourish rule ----
+# Draws the ── ◆ –– separator between the header block and the item columns.
+class _Flourish extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, size * 0.5, size.x)
+
+
+# ---- blacksmith-mark medallion ----
+# A round KIT_PLATE disc with a gold ring, housing a simple anvil silhouette
+# in INK with gold spark lines above — the guild mark for Hod's Counter.
+# Pure vector; no textures. Mirrors the PortraitWell in dialog_panel.gd.
+class _SmithMark extends Control:
+	func _draw() -> void:
+		var c := size * 0.5
+		var r := minf(c.x, c.y) - 1.5
+		# parchment medallion disc
+		draw_circle(c, r, WyrdUi.KIT_PLATE)
+		draw_arc(c, r, 0, TAU, 48, WyrdUi.GOLD, 2.0, true)
+		draw_arc(c, r - 3.5, 0, TAU, 44, Color(WyrdUi.KIT_EDGE, 0.28), 1.0, true)
+		# anvil — wide top face
+		var top := Rect2(c + Vector2(-r * 0.42, -r * 0.36),
+			Vector2(r * 0.84, r * 0.30))
+		draw_rect(top, WyrdUi.INK)
+		# narrow waist
+		var waist := Rect2(c + Vector2(-r * 0.20, -r * 0.07),
+			Vector2(r * 0.40, r * 0.18))
+		draw_rect(waist, WyrdUi.INK)
+		# wide foot
+		var foot := Rect2(c + Vector2(-r * 0.50, r * 0.11),
+			Vector2(r * 1.0, r * 0.26))
+		draw_rect(foot, WyrdUi.INK)
+		# gold sparks radiating from the anvil face — the freshly worked metal
+		var sp := c + Vector2(r * 0.08, -r * 0.36)
+		draw_line(sp, sp + Vector2(-4.0, -6.0), WyrdUi.GOLD, 1.5)
+		draw_line(sp, sp + Vector2(1.0, -7.0), WyrdUi.GOLD, 1.5)
+		draw_line(sp, sp + Vector2(6.0, -5.0), WyrdUi.GOLD, 1.5)
+		draw_circle(sp + Vector2(1.0, -7.0), 1.2, WyrdUi.GOLD)
