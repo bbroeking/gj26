@@ -4,19 +4,6 @@ extends CanvasLayer
 # fire, join a friend's by IP, see who's in the yard, leave. Offline it
 # pauses like every modal; in a session the world keeps breathing.
 
-# -- header ornament --
-
-# Small lantern crest rendered left of the title using the kit draw helper.
-class _LanternCrest extends Control:
-	func _draw() -> void:
-		WyrdUi.draw_lantern_crest(self, size)
-
-# A single-row flourish rule (── ◆ ──) under the title, the same gold diamond
-# separator every other panel header uses now.
-class _FlourRule extends Control:
-	func _draw() -> void:
-		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, size.y * 0.5), size.x * 0.82)
-
 var _game: Node
 var _panel: Panel
 var _status: Label
@@ -47,23 +34,8 @@ func _ready() -> void:
 	var title := Label.new()
 	title.text = "The Lantern"
 	WyrdUi.style_title(title)
-	title.position = Vector2(54, 34)
+	title.position = Vector2(54, 36)
 	_panel.add_child(title)
-	# Lantern crest — sits in the left margin beside the title.
-	var crest := _LanternCrest.new()
-	crest.custom_minimum_size = Vector2(38, 52)
-	crest.size = Vector2(38, 52)
-	crest.position = Vector2(8, 12)
-	_panel.add_child(crest)
-	# Flourish rule below the title — the kit's gold-diamond separator.
-	var rule := _FlourRule.new()
-	rule.anchor_right = 1.0
-	rule.offset_left = 48
-	rule.offset_right = -48
-	rule.offset_top = 70
-	rule.offset_bottom = 82
-	rule.custom_minimum_size = Vector2(0, 12)
-	_panel.add_child(rule)
 	var hint := Label.new()
 	hint.text = "Esc — close"
 	WyrdUi.style_dim(hint)
@@ -72,11 +44,20 @@ func _ready() -> void:
 	hint.offset_left = -130
 	hint.offset_top = 38
 	_panel.add_child(hint)
+	# Header crest — a drawn lantern icon centred on an ivy-leaf rule,
+	# giving the Lantern panel the same ornament-on-headers treatment as
+	# the other modals. Positioned in the gap between the title row and
+	# the first content element.
+	var crest := _LanternHeaderCrest.new()
+	crest.anchor_right = 1.0
+	crest.offset_top = 66
+	crest.custom_minimum_size = Vector2(0, 30)
+	_panel.add_child(crest)
 	var col := VBoxContainer.new()
 	col.anchor_right = 1.0
 	col.anchor_bottom = 1.0
 	col.offset_left = 56
-	col.offset_top = 98
+	col.offset_top = 104
 	col.offset_right = -56
 	col.offset_bottom = -48
 	col.add_theme_constant_override("separation", 10)
@@ -218,3 +199,94 @@ func _close() -> void:
 	if _game != null:
 		_game.modal_closed()
 	queue_free()
+
+
+# _LanternHeaderCrest — a drawn lantern icon centred on an ivy-leaf ink rule.
+# Drawn entirely in code (no textures — white-rect gotcha impossible).
+# The lantern motif echoes the panel's name and the fireside-gathering theme.
+class _LanternHeaderCrest extends Control:
+	func _draw() -> void:
+		var cx := size.x * 0.5
+		var cy := size.y * 0.5
+		var rule_col := Color(WyrdUi.KIT_EDGE, 0.38)
+
+		# Horizontal ink rule spanning the panel width (gap for the lantern).
+		draw_line(Vector2(14, cy), Vector2(cx - 20, cy), rule_col, 1.0)
+		draw_line(Vector2(cx + 20, cy), Vector2(size.x - 14, cy), rule_col, 1.0)
+
+		# Ivy-leaf clusters (two leaves each side, flanking the lantern).
+		for side in [-1.0, 1.0]:
+			var ox: float = side * 48.0
+			var sage := Color(WyrdUi.SAGE.darkened(0.10), 0.78)
+			# inner leaf — small diamond pointing outward
+			var lp1 := Vector2(cx + ox, cy)
+			var l1 := PackedVector2Array([
+				lp1 + Vector2(0, -5), lp1 + Vector2(side * 8, 0),
+				lp1 + Vector2(0, 5),  lp1 + Vector2(-side * 2, 0)
+			])
+			draw_colored_polygon(l1, sage)
+			# outer leaf — slightly larger, offset up and out
+			var lp2 := lp1 + Vector2(side * 14, -3)
+			var l2 := PackedVector2Array([
+				lp2 + Vector2(0, -4), lp2 + Vector2(side * 7, 2),
+				lp2 + Vector2(0, 6),  lp2 + Vector2(-side * 3, 1)
+			])
+			draw_colored_polygon(l2, sage.darkened(0.10))
+			# thin vine stem connecting the two leaves
+			draw_line(lp1 + Vector2(-side * 2, 0), lp2 + Vector2(side * 7, 2),
+				Color(WyrdUi.KIT_EDGE, 0.25), 1.0)
+
+		# Centre lantern icon — hook, amber-glass body, warm flame, base plate.
+		_draw_lantern(Vector2(cx, cy))
+
+	func _draw_lantern(c: Vector2) -> void:
+		var h := 22.0
+		var w := h * 0.60
+
+		# Hanging hook (a short vertical shaft above the body).
+		draw_rect(Rect2(c.x - 1.0, c.y - h * 0.90, 2.0, h * 0.30), WyrdUi.KIT_EDGE)
+
+		# Amber glass body.
+		var body := Rect2(c.x - w, c.y - h * 0.50, w * 2.0, h * 0.80)
+		draw_rect(body, Color(0.97, 0.85, 0.45, 0.72))
+
+		# Glass highlight strip (catches the warm page light).
+		draw_rect(Rect2(body.position + Vector2(2.0, 2.5),
+			Vector2(3.5, body.size.y - 6.0)),
+			Color(1.0, 1.0, 0.88, 0.32))
+
+		# Warm flame (five-point teardrop, orange core).
+		var fp := PackedVector2Array([
+			c + Vector2(0, -h * 0.38),
+			c + Vector2(w * 0.45, -h * 0.05),
+			c + Vector2(w * 0.22, h * 0.22),
+			c + Vector2(-w * 0.22, h * 0.22),
+			c + Vector2(-w * 0.45, -h * 0.05),
+		])
+		draw_colored_polygon(fp, Color(0.94, 0.56, 0.14, 0.90))
+		# Brighter inner core.
+		var fc := PackedVector2Array([
+			c + Vector2(0, -h * 0.22),
+			c + Vector2(w * 0.22, h * 0.06),
+			c + Vector2(-w * 0.22, h * 0.06),
+		])
+		draw_colored_polygon(fc, Color(1.0, 0.90, 0.52, 0.72))
+
+		# Ink frame over the glass.
+		draw_rect(body, WyrdUi.KIT_EDGE, false, 1.5)
+		# Centre cross-bar (glass panel divider, faint).
+		draw_line(Vector2(c.x, body.position.y), Vector2(c.x, body.end.y),
+			Color(WyrdUi.KIT_EDGE, 0.28), 1.0)
+
+		# Base plate (a short thick bar below the body, gold accent).
+		var base_y := body.end.y - 1.0
+		draw_rect(Rect2(c.x - w - 3.0, base_y, (w + 3.0) * 2.0, 4.0), WyrdUi.KIT_EDGE)
+		draw_rect(Rect2(c.x - w - 3.0, base_y, (w + 3.0) * 2.0, 4.0),
+			Color(WyrdUi.GOLD, 0.40), false, 1.0)
+
+		# Gold corner dots at the four body corners.
+		var gold := Color(WyrdUi.GOLD, 0.72)
+		draw_circle(body.position + Vector2(1.5, 1.5), 1.8, gold)
+		draw_circle(Vector2(body.end.x - 1.5, body.position.y + 1.5), 1.8, gold)
+		draw_circle(Vector2(body.position.x + 1.5, body.end.y - 1.5), 1.8, gold)
+		draw_circle(body.end - Vector2(1.5, 1.5), 1.8, gold)
