@@ -739,6 +739,7 @@ class BenchView extends Control:
 		var cy := 462.0
 		draw_string(hdr, Vector2(bx, cy), "Codex", HORIZONTAL_ALIGNMENT_LEFT,
 			200, 13, WyrdUi.INK)
+		WyrdUi.draw_flourish(self, Vector2(bx + 130.0, cy - 4.0), 204.0)
 		cy += 16.0
 		_codex_rects.clear()
 		for rid in GatherDefs.INK_RECIPE_ORDER:
@@ -764,6 +765,8 @@ class BenchView extends Control:
 			elif riddle_open:
 				line = "◌ ??? — %s" % String(rec.get("riddle", ""))
 			if known:
+				WyrdUi.draw_list_row(self,
+					Rect2(Vector2(bx, cy + 1.0), Vector2(330.0, 13.0)), WyrdUi.SAGE)
 				# Spec 44 — a tiny bottle in the ink's color marks the find.
 				WyrdUi.draw_ink_bottle(self, Vector2(bx + 6.0, cy + 7.0), 13.0,
 					INK_TINT.get(String(rid), Color(0.4, 0.4, 0.4)))
