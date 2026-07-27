@@ -816,10 +816,23 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 			if i > 0:
 				draw_line(Vector2(x, y - 12.0), Vector2(x + w, y - 12.0),
 					Color(0.52, 0.42, 0.30, 0.45), 1.5)
-			# --- emblem (60px disc, double ink ring — spec 40) ---
+			# --- emblem (60px disc, gold filigree points, inner sphere depth) ---
 			var ec := Vector2(x + 26.0, y + 30.0)
 			draw_circle(ec, 26.0, (row.color as Color))
+			# inner sphere depth — upper-left shadow + lower-right highlight
+			draw_arc(ec, 19.0, PI * 0.60, PI * 1.52, 14,
+				Color(0, 0, 0, 0.16), 4.5, true)
+			draw_arc(ec, 17.0, PI * 1.60, PI * 2.45, 12,
+				Color(1.0, 1.0, 0.9, 0.20), 3.5, true)
 			draw_arc(ec, 26.0, 0, TAU, 48, Color(0.25, 0.18, 0.12), 2.5, true)
+			# gold cardinal ornament tips at N/S/E/W (filigree language)
+			for t in 4:
+				var ang := TAU * float(t) / 4.0 - PI * 0.5
+				var cv := Vector2(cos(ang), sin(ang))
+				var pv := Vector2(-cv.y, cv.x)
+				draw_colored_polygon(PackedVector2Array([
+					ec + cv * 31.0, ec + cv * 27.0 + pv * 2.5, ec + cv * 27.0 - pv * 2.5,
+				]), Color(WyrdUi.GOLD, 0.85))
 			draw_arc(ec, 21.0, 0, TAU, 48, Color(0.97, 0.93, 0.82, 0.55), 1.2, true)
 			draw_string(hdr, Vector2(ec.x - 26.0, ec.y + 8.0), String(row.glyph),
 				HORIZONTAL_ALIGNMENT_CENTER, 52.0, 22, Color(0.98, 0.95, 0.86))
@@ -834,11 +847,24 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 			var hi: int = game.xp_for_level(lv + 1)
 			var frac := clampf(float(xp - lo) / float(max(1, hi - lo)), 0.0, 1.0)
 			var bar := Rect2(Vector2(cx, y + 26.0), Vector2(w * 0.56, 12.0))
-			draw_rect(bar, Color(0.80, 0.72, 0.58))
-			draw_rect(Rect2(bar.position + Vector2(1, 1),
-				Vector2((bar.size.x - 2.0) * frac, bar.size.y - 2.0)),
-				(row.color as Color).lightened(0.12))
-			draw_rect(bar, Color(0.42, 0.34, 0.25, 0.9), false, 1.5)
+			# carved trough — inner-shadow top/left, light bottom lip
+			draw_rect(bar, WyrdUi.KIT_WELL)
+			draw_rect(Rect2(bar.position + Vector2(1.0, 1.0),
+				Vector2(bar.size.x - 2.0, 2.0)), Color(0, 0, 0, 0.13))
+			draw_rect(Rect2(bar.position + Vector2(1.0, 1.0),
+				Vector2(1.5, bar.size.y - 2.0)), Color(0, 0, 0, 0.09))
+			draw_rect(Rect2(bar.position + Vector2(1.0, bar.size.y - 2.5),
+				Vector2(bar.size.x - 2.0, 1.5)), Color(1.0, 1.0, 0.9, 0.25))
+			draw_rect(bar, WyrdUi.KIT_EDGE, false, 1.5)
+			# watercolor fill — trade colour with top-bevel shine and bottom shadow
+			if frac > 0.005:
+				var fill_r := Rect2(bar.position + Vector2(2.0, 2.0),
+					Vector2((bar.size.x - 4.0) * frac, bar.size.y - 4.0))
+				draw_rect(fill_r, (row.color as Color).lightened(0.08))
+				draw_rect(Rect2(fill_r.position, Vector2(fill_r.size.x, 2.0)),
+					Color(1.0, 1.0, 0.90, 0.42))
+				draw_rect(Rect2(fill_r.position + Vector2(0, fill_r.size.y - 1.5),
+					Vector2(fill_r.size.x, 1.5)), Color(0, 0, 0, 0.10))
 			draw_string(font, Vector2(bar.end.x + 10.0, y + 37.0),
 				"%d / %d xp" % [xp, hi],
 				HORIZONTAL_ALIGNMENT_LEFT, 120.0, 13, Color(0.30, 0.24, 0.19))
