@@ -530,7 +530,8 @@ func _draw_tooltip() -> void:
 	var line_h := 18
 	var ipad := 8
 	var w := 280.0
-	var h: float = ipad * 2 + lines.size() * line_h
+	# +10: breathing room for the drawn flourish rule drawn after the item name.
+	var h: float = ipad * 2 + lines.size() * line_h + 10
 	var pos := _cursor_screen + Vector2(16, 16)
 	var screen := get_viewport_rect().size
 	if pos.x + w > screen.x:
@@ -541,15 +542,41 @@ func _draw_tooltip() -> void:
 		pos.x = 0
 	if pos.y < 0:
 		pos.y = 0
-	draw_rect(Rect2(pos, Vector2(w, h)), Color(0.93, 0.88, 0.76, 0.97))
-	draw_rect(Rect2(pos, Vector2(w, h)),
-		Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+	var r := Rect2(pos, Vector2(w, h))
+	# Parchment face — kit card read: warm cream, bevel, grain, inner pinstripe.
+	draw_rect(r, Color(0.93, 0.88, 0.76, 0.97))
+	draw_rect(Rect2(r.position + Vector2(2, 2), Vector2(r.size.x - 4, 2)),
+		Color(1.0, 1.0, 0.93, 0.45))
+	draw_rect(Rect2(r.position + Vector2(2, r.size.y - 3), Vector2(r.size.x - 4, 2)),
+		Color(WyrdUi.KIT_EDGE, 0.22))
+	WyrdUi.draw_parchment_grain(self, r, 37)
+	draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 2.0)
+	draw_rect(r.grow(-3.0), Color(WyrdUi.KIT_EDGE, 0.18), false, 1.0)
+	# Left-edge rarity stripe — the item's colour identity at a glance.
+	var rc: Color = RARITY_COLOR.get(String(item.rarity), WyrdUi.INK_MID)
+	draw_rect(Rect2(r.position + Vector2(1.5, 1.5),
+		Vector2(3.0, r.size.y - 3.0)), rc)
 	var font := get_theme_default_font()
+	var hdr_font := WyrdUi.font_header()
+	if hdr_font == null:
+		hdr_font = font
 	var y := pos.y + ipad + 14
-	for line in lines:
-		draw_string(font, Vector2(pos.x + ipad, y), String(line.text),
-			HORIZONTAL_ALIGNMENT_LEFT, w - ipad * 2, int(line.size), line.color)
-		y += line_h
+	for i in lines.size():
+		var line: Dictionary = lines[i]
+		if i == 0:
+			# Item name in IM Fell SC — storybook gravitas for the first line.
+			draw_string(hdr_font, Vector2(pos.x + ipad + 5, y),
+				String(line.text), HORIZONTAL_ALIGNMENT_LEFT,
+				w - ipad * 2 - 5, int(line.size) + 2, line.color)
+			y += line_h
+			# Flourish rule separating name from type / stats.
+			WyrdUi.draw_flourish(self, Vector2(pos.x + w * 0.5, y + 1.0), w * 0.55)
+			y += 10
+		else:
+			draw_string(font, Vector2(pos.x + ipad + 5, y),
+				String(line.text), HORIZONTAL_ALIGNMENT_LEFT,
+				w - ipad * 2 - 5, int(line.size), line.color)
+			y += line_h
 
 func _draw_held() -> void:
 	var fp: Vector2i = Inventory.footprint(_held_item, _held_rotated)
