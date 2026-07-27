@@ -31,6 +31,11 @@ func _ready() -> void:
 	_panel.offset_right = 260
 	_panel.offset_bottom = 220
 	add_child(_panel)
+	# Drawn lantern glyph + cream band + flourish in the header zone.
+	var hdr := _LanternHeader.new()
+	hdr.anchor_right = 1.0
+	hdr.offset_bottom = 82.0
+	_panel.add_child(hdr)
 	var title := Label.new()
 	title.text = "The Lantern"
 	WyrdUi.style_title(title)
@@ -190,3 +195,57 @@ func _close() -> void:
 	if _game != null:
 		_game.modal_closed()
 	queue_free()
+
+
+# Drawn header for The Lantern: cream wash band, hanging lantern glyph,
+# and a flourish rule — matches the medallion/crest language used on the
+# Waystone and Inscribing Bench headers. Pure vector, no texture loads.
+class _LanternHeader extends Control:
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		var w := size.x
+		# Soft cream wash across the header zone (subtle, like a page header).
+		draw_rect(Rect2(Vector2(34.0, 4.0), Vector2(w - 68.0, 76.0)),
+			Color(0.97, 0.93, 0.84, 0.20))
+		# Faint hairline at the bottom of the band.
+		draw_line(Vector2(36.0, 80.0), Vector2(w - 36.0, 80.0),
+			Color(WyrdUi.KIT_EDGE, 0.18), 1.0)
+		# Flourish rule centred below the title + subtitle area.
+		WyrdUi.draw_flourish(self, Vector2(w * 0.5, 76.0), w * 0.55)
+		# The hanging lantern glyph to the left of the title text.
+		_draw_lantern(Vector2(28.0, 50.0))
+
+	func _draw_lantern(center: Vector2) -> void:
+		var cx := center.x
+		var cy := center.y
+		# Distant warm halo — the lantern's light spilling onto the parchment.
+		draw_circle(Vector2(cx, cy + 4.0), 17.0,
+			Color(0.98, 0.80, 0.32, 0.06))
+		# Hanging hook above the body.
+		draw_arc(Vector2(cx, cy - 22.0), 5.0, PI * 0.12, PI * 0.88, 8,
+			WyrdUi.KIT_EDGE, 1.5, true)
+		# Top cap — flat dark band.
+		var top_cap := Rect2(Vector2(cx - 8.0, cy - 17.0), Vector2(16.0, 6.0))
+		draw_rect(top_cap, Color(0.40, 0.30, 0.20))
+		draw_rect(top_cap, WyrdUi.KIT_EDGE, false, 1.0)
+		# Glass body — a warm amber-tinted pane.
+		var body := Rect2(Vector2(cx - 9.0, cy - 11.0), Vector2(18.0, 22.0))
+		draw_rect(body, Color(0.91, 0.88, 0.72, 0.65))
+		# Cross-pane divider lines (the leaded-glass look).
+		draw_line(Vector2(cx, cy - 11.0), Vector2(cx, cy + 11.0),
+			Color(WyrdUi.KIT_EDGE, 0.28), 1.0)
+		draw_line(Vector2(cx - 9.0, cy + 0.0), Vector2(cx + 9.0, cy + 0.0),
+			Color(WyrdUi.KIT_EDGE, 0.28), 1.0)
+		# Flame — warm outer glow then bright core.
+		draw_circle(Vector2(cx, cy + 5.0), 6.5,
+			Color(0.95, 0.65, 0.16, 0.82))
+		draw_circle(Vector2(cx, cy + 3.5), 3.5,
+			Color(1.0, 0.92, 0.58, 0.95))
+		# Ink border on the body.
+		draw_rect(body, WyrdUi.KIT_EDGE, false, 1.5)
+		# Bottom cap — matches the top.
+		var bot_cap := Rect2(Vector2(cx - 7.0, cy + 11.0), Vector2(14.0, 6.0))
+		draw_rect(bot_cap, Color(0.40, 0.30, 0.20))
+		draw_rect(bot_cap, WyrdUi.KIT_EDGE, false, 1.0)
