@@ -212,22 +212,42 @@ func _make_slot(i: int, total_w: int, label: String, cost: int) -> Control:
 	nm.offset_bottom = SLOT_SIZE / 2.0 + 8
 	nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	s.add_child(nm)
-	# Focus cost (bottom-right, only if non-zero).
+	# Focus cost — a hand-annotated parchment pip in the bottom-right corner
+	# (Caveat font, the kit's "margin scribbles" face; pale blue-cream chip so
+	# the cost reads as a written note, not a floating number).
 	if cost > 0:
 		var c := Label.new()
 		c.name = "Cost"
 		c.text = "%d" % cost
+		var hand := WyrdUi.font_hand()
+		if hand != null:
+			c.add_theme_font_override("font", hand)
 		c.add_theme_font_size_override("font_size", 13)
-		c.add_theme_color_override("font_color", Color(0.32, 0.44, 0.50))
-		c.add_theme_color_override("font_outline_color", Color(0.97, 0.93, 0.82))
-		c.add_theme_constant_override("outline_size", 4)
+		c.add_theme_color_override("font_color", Color(0.24, 0.38, 0.54))
+		c.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		c.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		# Tiny chip: a pale ink-wash square with a soft shadow so it sits ON the
+		# slot face rather than floating flat against it.
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0.85, 0.88, 0.93, 0.88)
+		sb.border_color = Color(WyrdUi.KIT_EDGE, 0.55)
+		sb.set_border_width_all(1)
+		sb.set_corner_radius_all(3)
+		sb.content_margin_left = 3.0
+		sb.content_margin_right = 3.0
+		sb.content_margin_top = 1.0
+		sb.content_margin_bottom = 1.0
+		sb.shadow_color = Color(0, 0, 0, 0.18)
+		sb.shadow_size = 2
+		sb.shadow_offset = Vector2(0, 1)
+		c.add_theme_stylebox_override("normal", sb)
 		c.anchor_left = 1.0
 		c.anchor_right = 1.0
 		c.anchor_top = 1.0
 		c.anchor_bottom = 1.0
-		c.offset_left = -22
-		c.offset_top = -18
-		c.offset_right = -2
-		c.offset_bottom = -2
+		c.offset_left = -28
+		c.offset_top = -22
+		c.offset_right = -3
+		c.offset_bottom = -4
 		s.add_child(c)
 	return s
