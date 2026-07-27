@@ -76,6 +76,10 @@ func _ready() -> void:
 	_panel.offset_right = 330
 	_panel.offset_bottom = 300
 	add_child(_panel)
+	# Header art — cream wash + bow-and-arrow medallion + flourish rule.
+	# Drawn first so it sits behind the title and close-hint labels.
+	var header_art := _LoadoutHeader.new()
+	_panel.add_child(header_art)
 	var title := Label.new()
 	title.text = "Loadout"
 	WyrdUi.style_title(title)
@@ -262,3 +266,57 @@ class _SkillCard extends Control:
 		# --- short desc (up to two lines) ---
 		draw_multiline_string(font, Vector2(tx, 40.0), _desc,
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 16.0, 12, 2, dim)
+
+
+# ---- header ornament: cream wash + bow-arrow medallion + flourish rule ----
+# Pure vector _draw() — no load() calls, zero new assets.
+# The bow-and-arrow motif marks this as the skill-kit panel at a glance.
+class _LoadoutHeader extends Control:
+	func _ready() -> void:
+		set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		# Cream parchment wash behind the header band.
+		var band := Rect2(Vector2.ZERO, Vector2(size.x, 82.0))
+		draw_rect(band, Color(WyrdUi.CREAM, 0.12))
+		# Ink hairline separating header from the skill list.
+		draw_line(Vector2(0.0, 82.0), Vector2(size.x, 82.0),
+			Color(WyrdUi.KIT_EDGE, 0.22), 1.0)
+		# Flourish rule — the same ornament language used on other panel headers.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 78.0), 180.0)
+		# Bow-arrow medallion in the top-right corner of the header.
+		_draw_arrow_medallion(Vector2(size.x - 56.0, 41.0), 16.0)
+
+	# Stone-ring medallion with a diagonal arrow (lower-left → upper-right).
+	# The shaft runs through the centre; a sage diamond arrowhead caps the tip.
+	func _draw_arrow_medallion(c: Vector2, r: float) -> void:
+		# Stone disc — the carved marker language shared with other panel headers.
+		draw_circle(c, r, Color(WyrdUi.KIT_WELL, 0.85))
+		draw_arc(c, r, 0, TAU, 36, WyrdUi.KIT_EDGE, 1.8, true)
+		draw_arc(c, r - 4.0, 0, TAU, 28, Color(WyrdUi.KIT_EDGE, 0.25), 1.0, true)
+		# Arrow shaft — diagonal from lower-left to upper-right.
+		var tail := c + Vector2(-r * 0.46,  r * 0.46)
+		var tip  := c + Vector2( r * 0.46, -r * 0.46)
+		draw_line(tail, tip, Color(WyrdUi.INK_MID, 0.90), 2.0, true)
+		# Fletching nocks — two short cross-lines at the tail.
+		var shaft_dir := (tip - tail).normalized()
+		var perp := shaft_dir.rotated(PI * 0.5)
+		for off in [0.0, r * 0.20]:
+			var base := tail + shaft_dir * off
+			draw_line(base - perp * r * 0.22, base + perp * r * 0.22,
+				Color(WyrdUi.INK_MID, 0.55), 1.0, true)
+		# Diamond arrowhead at the tip — sage green so the "ready to shoot" read
+		# echoes the sage pick-state colour used on the skill cards below.
+		var hd := r * 0.28
+		var head_pts := PackedVector2Array([
+			tip,
+			tip - shaft_dir * hd * 1.4 + perp * hd * 0.7,
+			tip - shaft_dir * hd * 0.7,
+			tip - shaft_dir * hd * 1.4 - perp * hd * 0.7,
+		])
+		draw_colored_polygon(head_pts, Color(WyrdUi.SAGE, 0.88))
+		draw_polyline(head_pts + PackedVector2Array([head_pts[0]]),
+			Color(WyrdUi.KIT_EDGE, 0.65), 1.0)
+		# Outer ring redraw on top to keep the medallion edge crisp.
+		draw_arc(c, r, 0, TAU, 36, WyrdUi.KIT_EDGE, 2.0, true)
