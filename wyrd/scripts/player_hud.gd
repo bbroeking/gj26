@@ -296,20 +296,25 @@ func _refresh_trades() -> void:
 		int(game.gold), game.trade_lv("wayfinding")]
 
 func show_toast(msg: String) -> void:
-	var l := Label.new()
-	l.text = msg
-	# Spec 41 — toasts are kit parchment chips.
-	WyrdUi.style_chip(l, 15)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_toast_box.add_child(l)
+	var card := _ToastCard.new(msg, _accent_for_toast(msg))
+	_toast_box.add_child(card)
 	var t := create_tween()
 	# Pause-immune — most toasts (mix, inscribe, level-up) fire while a modal
 	# has the tree paused; a pause-bound tween would freeze them into a stack.
 	t.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	t.tween_interval(2.4)
-	t.tween_property(l, "modulate:a", 0.0, 0.6)
-	t.tween_callback(l.queue_free)
+	t.tween_property(card, "modulate:a", 0.0, 0.6)
+	t.tween_callback(card.queue_free)
+
+func _accent_for_toast(msg: String) -> Color:
+	var m := msg.to_lower()
+	if "level" in m or "inscribed" in m or "★" in msg or "g." in m:
+		return WyrdUi.GOLD
+	if "found" in m or "gather" in m or "craft" in m or "mixed" in m or "recipe" in m:
+		return WyrdUi.SAGE
+	if "fail" in m or "can't" in m or "cannot" in m or "empty" in m:
+		return WyrdUi.TERRACOTTA
+	return WyrdUi.INK_MID
 
 func set_hp(cur: int, mx: int, status_suffix: String = "") -> void:
 	var f := clampf(float(cur) / float(max(1, mx)), 0.0, 1.0)
@@ -498,3 +503,38 @@ class QuestScrollArt extends Control:
 		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
 		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
 		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+
+# ---- drawn toast card ----
+# One notification rising from the bottom of the HUD. Replaces the plain
+# style_chip Label: a parchment list-row face + grain texture + a left
+# accent stripe keyed to message content (gold for XP/sales, sage for
+# gather/craft, terracotta for warnings). Same visual language as chart
+# rows and vendor cards.
+class _ToastCard extends Control:
+	var _msg := ""
+	var _accent: Color = WyrdUi.INK_MID
+
+	func _init(msg: String, accent: Color) -> void:
+		_msg = msg
+		_accent = accent
+		custom_minimum_size = Vector2(0.0, 38.0)
+		size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _get_minimum_size() -> Vector2:
+		var font := get_theme_default_font()
+		if font == null:
+			return Vector2(200.0, 38.0)
+		var tw := font.get_string_size(_msg, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
+		return Vector2(clampf(tw + 48.0, 160.0, 420.0), 38.0)
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		WyrdUi.draw_list_row(self, r, _accent)
+		WyrdUi.draw_parchment_grain(self, r, 31)
+		var font := get_theme_default_font()
+		draw_string_outline(font, Vector2(0.0, size.y * 0.5 + 6.0), _msg,
+			HORIZONTAL_ALIGNMENT_CENTER, size.x, 15, 4, Color(0.96, 0.92, 0.82, 0.55))
+		draw_string(font, Vector2(0.0, size.y * 0.5 + 6.0), _msg,
+			HORIZONTAL_ALIGNMENT_CENTER, size.x, 15, WyrdUi.INK)
