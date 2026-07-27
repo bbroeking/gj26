@@ -267,6 +267,9 @@ static func style_dim(l: Label, size: int = 12) -> void:
 # GOLD = selected, INK_MID = neutral. Template: crafting_bench _tray_row.
 static func draw_list_row(c: CanvasItem, r: Rect2, accent: Color) -> void:
 	c.draw_rect(r, KIT_PLATE)
+	# Faint aged-fibre grain so the card reads as hand-pressed parchment,
+	# not a flat engine rect. Seed 3 is distinct from the general-area seed.
+	draw_parchment_grain(c, r, 3)
 	# top light bevel — the card catches the page's warm light
 	c.draw_rect(Rect2(r.position + Vector2(1.0, 1.0),
 		Vector2(r.size.x - 2.0, 1.5)), Color(1.0, 1.0, 0.93, 0.40))
