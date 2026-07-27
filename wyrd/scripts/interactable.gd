@@ -36,6 +36,26 @@ func _ready() -> void:
 	# on a scrap of parchment, not floating text. Built first so it draws
 	# behind the label; sized to the text in _size_prompt_plate, toggled with
 	# the prompt in show_prompt. Billboarded + no-depth like the label.
+	# Art pass — add the kit's gold inset ring (same accent as hotbar tray +
+	# boss banner): a gold-coloured backing quad 4px larger on each side, 1mm
+	# behind the plate in world-z so it renders first (below) and shows only
+	# at the edges as a warm border.
+	var ring := MeshInstance3D.new()
+	ring.name = "PromptRing"
+	var rmesh := QuadMesh.new()
+	rmesh.size = Vector2(1.04, 0.38)    # provisional — _size_prompt_plate keeps it 4px wider/taller
+	ring.mesh = rmesh
+	var rmat := StandardMaterial3D.new()
+	rmat.albedo_color = Color(WyrdUi.GOLD, 0.55)
+	rmat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	rmat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	rmat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	rmat.no_depth_test = true
+	rmat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	ring.material_override = rmat
+	ring.position = get_prompt_position() - Vector3(0.0, 0.0, 0.001)
+	ring.visible = false
+	add_child(ring)
 	var plate := MeshInstance3D.new()
 	plate.name = "PromptPlate"
 	var pmesh := QuadMesh.new()
@@ -100,10 +120,12 @@ func show_prompt(on: bool) -> void:
 	var lbl := get_node_or_null("PromptLabel") as Label3D
 	if lbl != null:
 		lbl.visible = shown
-	# The parchment plate tracks the label.
 	var plate := get_node_or_null("PromptPlate") as MeshInstance3D
 	if plate != null:
 		plate.visible = shown
+	var ring := get_node_or_null("PromptRing") as MeshInstance3D
+	if ring != null:
+		ring.visible = shown
 	# The marker hands off to the prompt up close, and dies with one-shots.
 	var mark := get_node_or_null("Marker") as Label3D
 	if mark != null:
@@ -126,7 +148,11 @@ func _size_prompt_plate(lbl: Label3D, plate: MeshInstance3D) -> void:
 	var h: float = maxf(aabb.size.y, char_h)
 	var pad_x := 0.16
 	var pad_y := 0.10
-	(plate.mesh as QuadMesh).size = Vector2(w + pad_x * 2.0, h + pad_y * 2.0)
+	var plate_sz := Vector2(w + pad_x * 2.0, h + pad_y * 2.0)
+	(plate.mesh as QuadMesh).size = plate_sz
+	var ring := get_node_or_null("PromptRing") as MeshInstance3D
+	if ring != null and ring.mesh is QuadMesh:
+		(ring.mesh as QuadMesh).size = plate_sz + Vector2(0.04, 0.04)
 
 # ---- Virtual hooks (override in subclasses) ----
 
