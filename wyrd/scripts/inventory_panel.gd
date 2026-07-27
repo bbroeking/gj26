@@ -378,9 +378,21 @@ func _draw() -> void:
 		if scroll > max_s:
 			_tab_scroll[_tab] = max_s
 			queue_redraw()
+	# Pack header band — cream parchment wash + light top bevel + ink hairline
+	# separator at the tab edge, so the title zone reads as a carved header
+	# rather than bare parchment. Drawn after page masks so it sits on top.
+	var hdr_band := Rect2(win.position + Vector2(36.0, 36.0),
+		Vector2(win.size.x - 72.0, 36.0))
+	draw_rect(hdr_band, Color(0.97, 0.93, 0.82, 0.55))
+	draw_rect(Rect2(hdr_band.position + Vector2(0.0, 1.0),
+		Vector2(hdr_band.size.x, 2.0)), Color(1.0, 0.97, 0.90, 0.35))
+	draw_line(Vector2(hdr_band.position.x, hdr_band.end.y - 1.0),
+		Vector2(hdr_band.end.x, hdr_band.end.y - 1.0),
+		Color(WyrdUi.KIT_EDGE, 0.40), 1.0)
 	draw_string(hdr_font, win.position + Vector2(52, 58),
 		"Adventurer's Pack", HORIZONTAL_ALIGNMENT_LEFT, win.size.x - 104, 24,
 		WyrdUi.TERRACOTTA)
+	WyrdUi.draw_flourish(self, win.position + Vector2(win.size.x * 0.5, 67.0), 100.0)
 	_draw_tabs(win)
 	if _tab == 0:
 		# Gold readout lives with the paper-doll — Gear tab only, else it
