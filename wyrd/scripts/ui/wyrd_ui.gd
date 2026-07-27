@@ -358,6 +358,31 @@ static func draw_ink_bottle(c: CanvasItem, center: Vector2, h: float,
 		body.position + Vector2(2.5, body.size.y - 3.0),
 		Color(1, 1, 1, 0.45), 1.5)
 
+# Four small carved bolt-head ornaments pressed into the corners of a rect —
+# the "wooden slot" read. Each is a sunken disc: parchment face, inner-shadow
+# arc, ink ring. Radius 4.5 fits a 64px hotbar slot; callers can tune it.
+# Reusable: hotbar slots, bench socket wells, any carved frame.
+static func draw_corner_bolts(c: CanvasItem, r: Rect2,
+		radius: float = 4.5) -> void:
+	var inset := radius + 4.0
+	var corners := [
+		r.position + Vector2(inset, inset),
+		r.position + Vector2(r.size.x - inset, inset),
+		r.position + Vector2(inset, r.size.y - inset),
+		r.position + Vector2(r.size.x - inset, r.size.y - inset),
+	]
+	for cn in corners:
+		# Sunken face — slightly darker than KIT_PLATE so it reads as pressed in.
+		c.draw_circle(cn, radius, KIT_PLATE.darkened(0.12))
+		# Inner-shadow arc top-left (the socket catches shadow from above-left).
+		c.draw_arc(cn, radius - 1.2, PI * 0.75, PI * 1.9, 12,
+			Color(0, 0, 0, 0.20), 1.8, true)
+		# Catch-light arc bottom-right — a sliver of warm light.
+		c.draw_arc(cn, radius - 1.2, -PI * 0.1, PI * 0.6, 8,
+			Color(1.0, 1.0, 0.88, 0.25), 1.5, true)
+		# Ink ring.
+		c.draw_arc(cn, radius, 0, TAU, 18, KIT_EDGE, 1.5, true)
+
 # A rolled parchment scroll with a wax seal — the chart-in-a-socket read.
 static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 	var face := Rect2(r.position + Vector2(r.size.x * 0.08, r.size.y * 0.12),
