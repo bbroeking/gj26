@@ -398,6 +398,11 @@ class GlobeGauge extends Control:
 	const RING_WOOD := Color(0.85, 0.74, 0.52)   # pale carved honey
 	const RING_EDGE := Color(0.26, 0.19, 0.13)
 	var _t := 0.0                                # animation clock (low-warn pulse)
+	var _hfont: Font = null                      # IM Fell SC; preloaded in _ready
+
+	func _ready() -> void:
+		if ResourceLoader.exists(WyrdUi.FONT_HEADER_PATH):
+			_hfont = load(WyrdUi.FONT_HEADER_PATH)
 
 	func update_to(p_frac: float, p_label: String, p_status: String) -> void:
 		frac = clampf(p_frac, 0.0, 1.0)
@@ -422,6 +427,14 @@ class GlobeGauge extends Control:
 			var a := PI * 0.25 + float(i) * PI * 0.5
 			var np := c + Vector2(cos(a), sin(a)) * (R + 8.0)
 			WyrdUi.draw_round_well(self, np, 8.0, Color(0.93, 0.88, 0.74))
+			# Ivy-leaf diamond at each corner notch — bramble nest motif (spec 38).
+			var od := Vector2(cos(a), sin(a))
+			var lc := np + od * 10.0
+			var lv := Vector2(-od.y, od.x)
+			var leaf := PackedVector2Array([lc + od * 4.5, lc + lv * 3.0,
+				lc - od * 3.0, lc - lv * 3.0])
+			draw_colored_polygon(leaf, WyrdUi.SAGE.darkened(0.18))
+			draw_line(np + od * 2.0, lc, Color(WyrdUi.KIT_EDGE, 0.55), 1.2, true)
 		# --- glass orb ---
 		draw_circle(c, R, Color(0.12, 0.10, 0.09))
 		if frac > 0.003:
@@ -463,7 +476,7 @@ class GlobeGauge extends Control:
 			draw_arc(c, R + 4.0, 0, TAU, 64,
 				Color(liquid.lightened(0.15), pulse), 3.0, true)
 		# --- numbers ---
-		var f := get_theme_default_font()
+		var f := _hfont if _hfont != null else get_theme_default_font()
 		draw_string_outline(f, Vector2(0, c.y + 5), label,
 			HORIZONTAL_ALIGNMENT_CENTER, size.x, 15, 5, Color(0.12, 0.09, 0.06))
 		draw_string(f, Vector2(0, c.y + 5), label,
