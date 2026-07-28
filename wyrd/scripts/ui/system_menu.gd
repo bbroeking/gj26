@@ -31,6 +31,12 @@ func _ready() -> void:
 	_panel.offset_right = 260
 	_panel.offset_bottom = 220
 	add_child(_panel)
+	# Header art: warm parchment wash + lantern pip + flourish rule.
+	# Added as the FIRST child so it renders behind the title label.
+	var hdr := _LanternHeader.new()
+	hdr.anchor_right = 1.0
+	hdr.offset_bottom = 76.0
+	_panel.add_child(hdr)
 	var title := Label.new()
 	title.text = "The Lantern"
 	WyrdUi.style_title(title)
@@ -190,3 +196,20 @@ func _close() -> void:
 	if _game != null:
 		_game.modal_closed()
 	queue_free()
+
+
+# Drawn header ornament for The Lantern panel: a warm cream wash behind the
+# title zone, the lantern pip, and a flourish rule — moves the panel from
+# plain layout into the storybook visual language every other panel uses.
+class _LanternHeader extends Control:
+	func _draw() -> void:
+		# Warm parchment wash fading downward — firelight behind the title.
+		for i in 4:
+			var a := 0.08 - float(i) * 0.018
+			draw_rect(Rect2(Vector2(0.0, float(i) * 7.0),
+				Vector2(size.x, 72.0 - float(i) * 7.0)),
+				Color(0.97, 0.91, 0.72, a))
+		# Lantern pip to the left of the title (title text sits at x=54, y=36).
+		WyrdUi.draw_lantern_pip(self, Vector2(34.0, 44.0), 15.0)
+		# Flourish rule beneath the title/hint row.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 70.0), size.x - 112.0)
