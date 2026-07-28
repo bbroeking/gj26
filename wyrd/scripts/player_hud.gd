@@ -300,13 +300,18 @@ func show_toast(msg: String) -> void:
 	l.text = msg
 	# Spec 41 — toasts are kit parchment chips.
 	WyrdUi.style_chip(l, 15)
+	var hf := WyrdUi.font_header()
+	if hf != null:
+		l.add_theme_font_override("font", hf)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	l.modulate = Color(1.0, 1.0, 1.0, 0.0)
 	_toast_box.add_child(l)
 	var t := create_tween()
 	# Pause-immune — most toasts (mix, inscribe, level-up) fire while a modal
 	# has the tree paused; a pause-bound tween would freeze them into a stack.
 	t.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	t.tween_property(l, "modulate:a", 1.0, 0.15)
 	t.tween_interval(2.4)
 	t.tween_property(l, "modulate:a", 0.0, 0.6)
 	t.tween_callback(l.queue_free)
