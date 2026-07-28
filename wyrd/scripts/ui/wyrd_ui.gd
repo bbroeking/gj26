@@ -293,15 +293,27 @@ static func draw_well(c: CanvasItem, r: Rect2, fill := KIT_WELL) -> void:
 		Vector2(r.size.x - 4.0, 2.0)), Color(1.0, 1.0, 0.92, 0.35))
 	c.draw_rect(r, KIT_EDGE, false, 2.0)
 
-# Round well — ink sockets, pot rims.
+# Round well — ink sockets, pot rims. Stepped inner shadow (two arcs at
+# decreasing radius/opacity, mirroring draw_well's rectangular bevel) plus a
+# gem-socket catch-light at 11 o'clock so the rim reads as polished stone.
 static func draw_round_well(c: CanvasItem, center: Vector2, radius: float,
 		fill := KIT_WELL) -> void:
 	c.draw_circle(center, radius, fill)
-	c.draw_arc(center, radius - 2.5, PI * 0.78, PI * 1.95, 22,
-		Color(0, 0, 0, 0.18), 3.0, true)
+	# Outer shadow band — wide, dark, just inside the ink ring.
+	c.draw_arc(center, radius - 2.0, PI * 0.65, PI * 2.05, 28,
+		Color(0, 0, 0, 0.20), 4.0, true)
+	# Inner shadow band — narrower and softer, steps the bevel inward.
+	c.draw_arc(center, radius - 5.0, PI * 0.80, PI * 1.85, 18,
+		Color(0, 0, 0, 0.10), 2.5, true)
+	# Warm bottom-right lip — ambient light catch on the well's underside.
 	c.draw_arc(center, radius - 2.5, -PI * 0.22, PI * 0.30, 16,
 		Color(1.0, 1.0, 0.92, 0.30), 2.0, true)
+	# Ink ring border.
 	c.draw_arc(center, radius, 0, TAU, 40, KIT_EDGE, 2.0, true)
+	# Catch-light at 11 o'clock — the specular glint that tells the eye
+	# the rim is curved, concave, and polished (gem-socket read).
+	c.draw_arc(center, radius - 1.5, -PI * 0.70, -PI * 0.40, 10,
+		Color(1.0, 1.0, 0.95, 0.50), 1.8, true)
 
 # A carved button face: plate, light top bevel, dark bottom bevel, inner
 # pinstripe. Callers draw their own label on top.
