@@ -520,14 +520,38 @@ class BenchView extends Control:
 		_draw_bench(hdr, font)
 		_draw_result(hdr, font)
 		_draw_tip(font)
-		# Drag ghost (drawn over the tooltip).
+		# Drag ghost (drawn over the tooltip) — a mini list-row card that mirrors
+		# the tray-row visual language: kind-coded left-edge accent, gold inner
+		# pinstripe, and the same icon (bottle / scroll / roundel) used in the
+		# tray so the player always knows what they're dragging at a glance.
 		if not bench._held.is_empty():
 			var r := Rect2(bench._cursor - Vector2(46, 14), Vector2(92, 28))
-			draw_rect(r, Color(PLATE, 0.85))
-			draw_rect(r, EDGE, false, 2.0)
-			draw_string(font, r.position + Vector2(0, 19),
+			var kind := String(bench._held.get("kind", ""))
+			# Kind-coded accent: sage = chart base, gold = trophy, terracotta = ink.
+			var accent: Color = WyrdUi.INK_MID
+			if kind == "base":
+				accent = WyrdUi.SAGE
+			elif kind == "trophy":
+				accent = WyrdUi.GOLD
+			elif kind == "ink":
+				accent = WyrdUi.TERRACOTTA
+			WyrdUi.draw_list_row(self, r, accent)
+			# Gold inner pinstripe — the kit "burnished" read.
+			draw_rect(r.grow(-3.5), Color(WyrdUi.GOLD, 0.20), false, 1.0)
+			# Icon on the left edge, matching the tray-row for this item type.
+			var cc := r.position + Vector2(14.0, 14.0)
+			if kind == "ink":
+				WyrdUi.draw_ink_bottle(self, cc, 16.0,
+					INK_TINT.get(String(bench._held.id), Color(0.45, 0.45, 0.45)))
+			elif kind == "base":
+				WyrdUi.draw_scroll(self,
+					Rect2(cc - Vector2(8.0, 6.0), Vector2(16.0, 12.0)), false)
+			else:
+				draw_circle(cc, 7.0, WELL)
+				draw_arc(cc, 7.0, 0, TAU, 20, Color(EDGE, 0.6), 1.0, true)
+			draw_string(font, r.position + Vector2(26.0, 19.0),
 				_short_name(String(bench._held.id)),
-				HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 12, TXT)
+				HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 30.0, 12, TXT)
 
 	func _short_name(id: String) -> String:
 		if ChartsData.TEMPLATES.has(id):
