@@ -39,18 +39,11 @@ func _ready() -> void:
 	_panel.offset_top = 70
 	_panel.offset_bottom = -70
 	add_child(_panel)
-	# Spec 48 — warm parchment header band behind the speaker's name.
-	# Gives the name a proper storybook nameplate instead of a bare floating
-	# terracotta label. Added before the portrait and name so it renders
-	# beneath both; mouse events pass through (MOUSE_FILTER_IGNORE).
-	var speaker_band := SpeakerBand.new()
-	speaker_band.anchor_right = 1.0
-	speaker_band.offset_left = 32
-	speaker_band.offset_right = -32
-	speaker_band.offset_top = 16
-	speaker_band.offset_bottom = 92
-	speaker_band.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_panel.add_child(speaker_band)
+	# Nameplate ribbon — parchment strip behind the speaker name.
+	var banner := _NameBanner.new()
+	banner.anchor_right = 1.0
+	banner.offset_bottom = 100.0
+	_panel.add_child(banner)
 	# Portrait well (spec 41) — ghosted silhouette until painted portraits.
 	var well := PortraitWell.new()
 	well.position = Vector2(48, 104)
@@ -157,56 +150,40 @@ class PortraitWell extends Control:
 		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
 
 
-# Spec 48 — warm parchment nameplate band behind the speaker's name.
-# A honey-tinted strip (42 % opacity over the panel cream), top bevel, bottom
-# ink rule, sparse parchment grain, a gold ◆ anchor-mark left of the name
-# text, an ivy leaf spray at the right corner, and a gold ◆ flourish divider
-# between the name header and the portrait / body area.
-# Pure vector — no texture loads anywhere in _draw (white-rect-safe).
-class SpeakerBand extends Control:
+# A warm parchment nameplate ribbon across the dialog header, behind the
+# speaker name label. Gives the name a storybook caption read: carved strip
+# with ink frame, inner pinstripe, flourish divider, and sage diamond ornaments
+# at each end. Ornament lives on the header only — body text stays plain.
+class _NameBanner extends Control:
 	func _draw() -> void:
-		# Warm honey parchment strip — the nameplate face.
-		var band := Rect2(Vector2.ZERO, Vector2(size.x, 52.0))
-		draw_rect(band, Color(0.90, 0.82, 0.62, 0.42))
-		# Top bevel — the band catches the panel's warm light.
-		draw_rect(Rect2(band.position, Vector2(band.size.x, 2.0)),
-			Color(1.0, 0.97, 0.88, 0.35))
-		# Bottom ink rule — divides the nameplate from the body zone.
-		draw_rect(Rect2(band.position + Vector2(0.0, band.size.y - 2.0),
-			Vector2(band.size.x, 2.0)), Color(WyrdUi.KIT_EDGE, 0.28))
-		# Aged-paper grain so the band reads as a physical nameplate.
-		WyrdUi.draw_parchment_grain(self, band, 31)
-		# Gold ◆ anchor mark — sits to the left of the name text (x ≈ 24 px).
-		var mid_y := band.size.y * 0.5
-		var d := PackedVector2Array([
-			Vector2(14.0, mid_y - 6.0), Vector2(20.0, mid_y),
-			Vector2(14.0, mid_y + 6.0), Vector2(8.0, mid_y),
-		])
-		draw_colored_polygon(d, Color(WyrdUi.GOLD, 0.68))
-		draw_polyline(d + PackedVector2Array([d[0]]),
-			Color(WyrdUi.GOLD.darkened(0.2), 0.50), 1.0)
-		# Ivy leaf spray at the right corner — botanical ornament on the frame.
-		_draw_leaf_spray(Vector2(size.x - 48.0, mid_y))
-		# Gold ◆ flourish rule below — the visual separator between the name
-		# header and the portrait + body zone below.
-		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, band.size.y + 14.0),
-			size.x * 0.48)
-
-	func _draw_leaf_spray(origin: Vector2) -> void:
-		# Three small ivy leaves fanning upward from a shared stem point.
-		var leaf := Color(WyrdUi.SAGE, 0.52)
-		var vein := Color(0.26, 0.44, 0.17, 0.62)
-		for i in 3:
-			var ang := deg_to_rad(-50.0 + float(i) * 50.0)
-			var tip := origin + Vector2(cos(ang) * 17.0, sin(ang) * 17.0)
-			var mid := origin + Vector2(cos(ang) * 8.5, sin(ang) * 8.5)
-			var px := -sin(ang) * 5.5
-			var py :=  cos(ang) * 5.5
+		var lm := 38.0    # clear of left wood-frame margin
+		var rm := 36.0    # clear of right wood-frame margin
+		var strip := Rect2(Vector2(lm, 34.0), Vector2(size.x - lm - rm, 50.0))
+		# Warm parchment face
+		draw_rect(strip, Color(0.96, 0.91, 0.79, 0.85))
+		# Top bevel — catches the page's warm light
+		draw_rect(Rect2(strip.position + Vector2(2, 1), Vector2(strip.size.x - 4, 2)),
+			Color(1.0, 0.98, 0.91, 0.55))
+		# Bottom shade — grounds the strip on the panel face
+		draw_rect(Rect2(strip.position + Vector2(2, strip.size.y - 3),
+			Vector2(strip.size.x - 4, 2)), Color(WyrdUi.KIT_EDGE, 0.28))
+		# Ink frame
+		draw_rect(strip, WyrdUi.KIT_EDGE, false, 1.5)
+		# Inner pinstripe — the burnished-gold read shared with the tray/hotbar
+		draw_rect(strip.grow(-3.0), Color(WyrdUi.KIT_EDGE, 0.20), false, 1.0)
+		# Section flourish below the strip — ink ◆ divider separating header from body
+		WyrdUi.draw_flourish(self,
+			Vector2(strip.position.x + strip.size.x * 0.5, strip.end.y + 7.0),
+			strip.size.x * 0.55)
+		# Sage diamond ornaments at each end of the ribbon — the design-language
+		# leafy ornament, kept small so the speaker name stays the focal point
+		for side in [-1.0, 1.0]:
+			var cx := strip.position.x + strip.size.x * (0.5 + side * 0.46)
+			var cy := strip.position.y + strip.size.y * 0.5
+			var d := 6.0
 			var pts := PackedVector2Array([
-				origin,
-				Vector2(mid.x + px, mid.y + py),
-				tip,
-				Vector2(mid.x - px, mid.y - py),
-			])
-			draw_colored_polygon(pts, leaf)
-			draw_line(origin, tip, vein, 1.0)
+				Vector2(cx, cy - d), Vector2(cx + d, cy),
+				Vector2(cx, cy + d), Vector2(cx - d, cy)])
+			draw_colored_polygon(pts, Color(WyrdUi.SAGE, 0.65))
+			draw_polyline(pts + PackedVector2Array([pts[0]]),
+				Color(WyrdUi.KIT_EDGE, 0.75), 1.0, true)
