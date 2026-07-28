@@ -177,12 +177,17 @@ class _SkillCard extends Control:
 	var _req := 1
 	var _tex: Texture2D = null
 	var _hover := false
+	# Caveat font for the hand-scribbled focus tally (preloaded in _init so
+	# draw never calls load() — wyrd_ui.gd: "costs" are Caveat territory).
+	var _hand_font: Font = null
 
 	signal pressed
 
 	func _init() -> void:
 		custom_minimum_size = Vector2(0, 62.0)
 		mouse_filter = Control.MOUSE_FILTER_STOP
+		if ResourceLoader.exists(WyrdUi.FONT_HAND_PATH):
+			_hand_font = load(WyrdUi.FONT_HAND_PATH)
 
 	func setup(skill_name: String, desc: String, focus: int, picked: bool,
 			locked: bool, req: int, tex: Texture2D) -> void:
@@ -252,18 +257,22 @@ class _SkillCard extends Control:
 				"⚿ Huntcraft %d" % _req, HORIZONTAL_ALIGNMENT_RIGHT,
 				146.0, 13, WyrdUi.TERRACOTTA)
 		elif _focus > 0:
-			# Focus-cost chip — WyrdUi carved-chip language: KIT_PLATE face,
-			# top honey bevel, bottom ink shadow, soft ink border.
-			var chip := Rect2(Vector2(size.x - 82.0, 7.0), Vector2(70.0, 20.0))
-			draw_rect(chip, WyrdUi.KIT_PLATE)
+			# focus-cost chip — carved parchment plate, sage left-edge pip
+			# (focus = leaf-energy in the kit's colour language), the tally
+			# in Caveat (wyrd_ui: "costs, margin scribbles"), dimmed when locked.
+			var chip := Rect2(Vector2(size.x - 84.0, 6.0), Vector2(72.0, 22.0))
+			WyrdUi.draw_carved_button(self, chip, not _locked)
 			draw_rect(Rect2(chip.position + Vector2(1.5, 1.5),
-				Vector2(chip.size.x - 3.0, 1.5)), Color(1.0, 1.0, 0.92, 0.50))
-			draw_rect(Rect2(chip.position + Vector2(1.5, chip.size.y - 3.0),
-				Vector2(chip.size.x - 3.0, 1.5)), Color(WyrdUi.KIT_EDGE, 0.22))
-			draw_rect(chip, Color(WyrdUi.KIT_EDGE, 0.55), false, 1.0)
-			draw_string(font, Vector2(chip.position.x, chip.position.y + 15.0),
-				"%d focus" % _focus, HORIZONTAL_ALIGNMENT_CENTER, chip.size.x,
-				12, WyrdUi.INK_MID)
+				Vector2(2.5, chip.size.y - 3.0)),
+				Color(WyrdUi.SAGE, 0.75 if not _locked else 0.35))
+			var hand: Font = _hand_font if _hand_font != null else font
+			var cost_col := WyrdUi.SAGE.darkened(0.15) if not _locked \
+				else Color(WyrdUi.SAGE, 0.40)
+			draw_string(hand, Vector2(chip.position.x + 7.0, chip.position.y + 16.0),
+				"%d" % _focus, HORIZONTAL_ALIGNMENT_LEFT, 26.0, 14, cost_col)
+			draw_string(font, Vector2(chip.position.x + 30.0, chip.position.y + 15.0),
+				"focus", HORIZONTAL_ALIGNMENT_LEFT, chip.size.x - 31.0, 11,
+				dim)
 		# --- short desc (up to two lines) ---
 		draw_multiline_string(font, Vector2(tx, 40.0), _desc,
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 16.0, 12, 2, dim)
