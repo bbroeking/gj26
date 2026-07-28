@@ -383,3 +383,68 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# Ink silhouette for an empty equipment slot well — a recognisable shape for
+# each slot kind drawn at low opacity so colour lives on filled items only.
+# Callers should draw the well first; this draws strictly inside it.
+static func draw_slot_ghost(c: CanvasItem, r: Rect2, slot: String) -> void:
+	var col := Color(INK, 0.22)
+	var cx := r.get_center()
+	var s := minf(r.size.x, r.size.y) * 0.5
+	match slot:
+		"helmet":
+			# dome arc + brim + cheek guards
+			c.draw_arc(cx, s * 0.52, -PI, 0.0, 22, col, 3.0, true)
+			c.draw_line(cx + Vector2(-s * 0.56, 0.0),
+				cx + Vector2(s * 0.56, 0.0), col, 3.0)
+			c.draw_line(cx + Vector2(-s * 0.56, 0.0),
+				cx + Vector2(-s * 0.56, s * 0.20), col, 2.5)
+			c.draw_line(cx + Vector2(s * 0.56, 0.0),
+				cx + Vector2(s * 0.56, s * 0.20), col, 2.5)
+		"chest":
+			# rectangular body + shoulder-yoke neckline
+			var hw := s * 0.50
+			c.draw_rect(Rect2(cx + Vector2(-hw, -s * 0.12),
+				Vector2(hw * 2.0, s * 0.90)), col, false, 2.5)
+			c.draw_line(cx + Vector2(-hw, -s * 0.12),
+				cx + Vector2(-hw * 0.44, -s * 0.52), col, 2.5)
+			c.draw_line(cx + Vector2(hw, -s * 0.12),
+				cx + Vector2(hw * 0.44, -s * 0.52), col, 2.5)
+			c.draw_line(cx + Vector2(-hw * 0.44, -s * 0.52),
+				cx + Vector2(hw * 0.44, -s * 0.52), col, 2.5)
+		"boots":
+			# leg shaft + sole + heel/toe lines
+			c.draw_line(cx + Vector2(-s * 0.12, -s * 0.52),
+				cx + Vector2(-s * 0.12, s * 0.22), col, 3.0)
+			c.draw_line(cx + Vector2(-s * 0.12, s * 0.22),
+				cx + Vector2(s * 0.42, s * 0.22), col, 3.0)
+			c.draw_arc(cx + Vector2(s * 0.42, s * 0.10), s * 0.12,
+				0.0, PI * 0.5, 10, col, 3.0, true)
+			c.draw_line(cx + Vector2(-s * 0.30, s * 0.40),
+				cx + Vector2(s * 0.52, s * 0.40), col, 2.0)
+		"weapon":
+			# bow — arc opening rightward + taut string on left
+			c.draw_arc(cx + Vector2(s * 0.10, 0.0), s * 0.52,
+				-PI * 0.55, PI * 0.55, 18, col, 3.0, true)
+			c.draw_line(cx + Vector2(-s * 0.32, -s * 0.46),
+				cx + Vector2(-s * 0.32, s * 0.46), col, 2.0)
+		"ring":
+			# band + inner relief arc
+			c.draw_arc(cx, s * 0.38, 0.0, TAU, 32, col, 3.5, true)
+			c.draw_arc(cx, s * 0.20, 0.0, TAU, 20, Color(INK, 0.10), 2.0, true)
+		"pickaxe":
+			# diagonal haft + curved pick head
+			c.draw_line(cx + Vector2(-s * 0.36, s * 0.38),
+				cx + Vector2(s * 0.28, -s * 0.28), col, 2.5)
+			c.draw_arc(cx + Vector2(s * 0.28, -s * 0.28), s * 0.22,
+				-PI * 0.85, -PI * 0.15, 12, col, 3.0, true)
+		"axe":
+			# diagonal haft + triangular blade
+			c.draw_line(cx + Vector2(-s * 0.30, s * 0.42),
+				cx + Vector2(s * 0.16, -s * 0.18), col, 2.5)
+			c.draw_line(cx + Vector2(s * 0.16, -s * 0.18),
+				cx + Vector2(s * 0.46, -s * 0.48), col, 3.0)
+			c.draw_line(cx + Vector2(s * 0.46, -s * 0.48),
+				cx + Vector2(s * 0.50, s * 0.08), col, 3.0)
+			c.draw_arc(cx + Vector2(s * 0.18, -s * 0.18), s * 0.38,
+				-PI * 0.55, PI * 0.20, 12, col, 2.5, true)
