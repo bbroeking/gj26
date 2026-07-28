@@ -212,21 +212,42 @@ func _make_slot(i: int, total_w: int, label: String, cost: int) -> Control:
 	nm.offset_bottom = SLOT_SIZE / 2.0 + 8
 	nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	s.add_child(nm)
-	# Focus cost (bottom-right, only if non-zero).
+	# Focus cost (bottom-right): rounded badge disc so the number reads as a
+	# proper kit element — IM Fell body font + teal pill backdrop with a thin
+	# matching border.
 	if cost > 0:
 		var c := Label.new()
 		c.name = "Cost"
 		c.text = "%d" % cost
+		var body := WyrdUi.font_body()
+		if body != null:
+			c.add_theme_font_override("font", body)
 		c.add_theme_font_size_override("font_size", 13)
 		c.add_theme_color_override("font_color", Color(0.32, 0.44, 0.50))
 		c.add_theme_color_override("font_outline_color", Color(0.97, 0.93, 0.82))
-		c.add_theme_constant_override("outline_size", 4)
+		c.add_theme_constant_override("outline_size", 3)
+		var disc := StyleBoxFlat.new()
+		disc.bg_color = Color(0.32, 0.44, 0.50, 0.25)
+		disc.border_color = Color(0.32, 0.44, 0.50, 0.60)
+		disc.border_width_left = 1
+		disc.border_width_right = 1
+		disc.border_width_top = 1
+		disc.border_width_bottom = 1
+		disc.corner_radius_top_left = 5
+		disc.corner_radius_top_right = 5
+		disc.corner_radius_bottom_left = 5
+		disc.corner_radius_bottom_right = 5
+		disc.content_margin_left = 3
+		disc.content_margin_right = 3
+		disc.content_margin_top = 1
+		disc.content_margin_bottom = 1
+		c.add_theme_stylebox_override("normal", disc)
 		c.anchor_left = 1.0
 		c.anchor_right = 1.0
 		c.anchor_top = 1.0
 		c.anchor_bottom = 1.0
-		c.offset_left = -22
-		c.offset_top = -18
+		c.offset_left = -26
+		c.offset_top = -20
 		c.offset_right = -2
 		c.offset_bottom = -2
 		s.add_child(c)
