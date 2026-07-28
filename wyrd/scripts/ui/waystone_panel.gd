@@ -37,16 +37,23 @@ func _ready() -> void:
 	_panel.offset_bottom = 230
 	add_child(_panel)
 
+	# Drawn header: compass glyph + cream wash + flourish rule.
+	var header_draw := _HeaderDraw.new()
+	header_draw.anchor_right = 1.0
+	header_draw.custom_minimum_size = Vector2(0, 92.0)
+	header_draw.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.add_child(header_draw)
+
 	var title := Label.new()
 	title.text = "The Waystone"
 	WyrdUi.style_title(title)
-	title.position = Vector2(54, 34)
+	title.position = Vector2(96, 34)
 	_panel.add_child(title)
 
 	var sub := Label.new()
 	sub.text = "Socket a chart. The crossing spends it."
 	WyrdUi.style_dim(sub, 13)
-	sub.position = Vector2(54, 66)
+	sub.position = Vector2(96, 66)
 	_panel.add_child(sub)
 
 	# A full chart case outgrows the panel — the list scrolls now,
@@ -154,3 +161,60 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+# Drawn waystone header — compass glyph left of the title, cream wash,
+# hairline separator, and flourish rule below the subtitle. No textures;
+# pure CanvasItem draws so the load-inside-_draw white-rect trap is impossible.
+class _HeaderDraw extends Control:
+	func _draw() -> void:
+		var lm := WyrdUi.PANEL_MARGIN_L
+		var rm := WyrdUi.PANEL_MARGIN_R
+		# Subtle cream wash in the header zone (inside the wooden frame).
+		draw_rect(Rect2(Vector2(lm, 4.0), Vector2(size.x - lm - rm, 82.0)),
+			Color(0.96, 0.91, 0.78, 0.28))
+		# Hairline rule separating header from the chart list below.
+		draw_line(Vector2(lm + 12.0, 90.0), Vector2(size.x - rm - 12.0, 90.0),
+			Color(WyrdUi.KIT_EDGE, 0.28), 1.0)
+		# ---- Waystone compass glyph ----
+		# A concentric-ring portal mark: stone outer band, cream face,
+		# 4 cardinal diamond nibs (N/S/E/W), gold diagonal compass star.
+		var gc := Vector2(58.0, 46.0)
+		var gr := 24.0
+		# Stone outer band — warm tan fill, inner ring pinstripe, ink border.
+		draw_arc(gc, gr, 0.0, TAU, 48, Color(0.74, 0.65, 0.50, 0.88), 8.0, true)
+		draw_arc(gc, gr, 0.0, TAU, 48, WyrdUi.KIT_EDGE, 1.5, true)
+		draw_arc(gc, gr - 8.0, 0.0, TAU, 40, Color(WyrdUi.KIT_EDGE, 0.45), 1.0, true)
+		# Cream inner face — parchment showing through the carved stone.
+		draw_circle(gc, gr - 9.5, Color(0.96, 0.91, 0.78))
+		# Sparse sepia grain on the face (deterministic seed).
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 42
+		for _i in 6:
+			var fa := rng.randf() * TAU
+			var r0 := rng.randf() * (gr - 11.0)
+			draw_line(gc + Vector2(cos(fa), sin(fa)) * r0,
+				gc + Vector2(cos(fa), sin(fa)) * (r0 + 2.0 + rng.randf() * 4.0),
+				Color(0.62, 0.52, 0.38, 0.07), 1.0)
+		# 4 cardinal diamond nibs (N/S/E/W) — the four crossing directions.
+		for i in 4:
+			var ang := -PI * 0.5 + PI * 0.5 * float(i)
+			var tip := gc + Vector2(cos(ang), sin(ang)) * gr
+			var base_c := gc + Vector2(cos(ang), sin(ang)) * (gr - 8.5)
+			var perp := ang + PI * 0.5
+			var p1 := base_c + Vector2(cos(perp), sin(perp)) * 2.8
+			var p2 := base_c - Vector2(cos(perp), sin(perp)) * 2.8
+			draw_colored_polygon(PackedVector2Array([tip, p1, p2]),
+				Color(WyrdUi.KIT_EDGE, 0.82))
+		# Gold diagonal star (4 diamond petals at 45° offsets from cardinal).
+		for i in 4:
+			var ang := PI * 0.25 + PI * 0.5 * float(i)
+			var tip := gc + Vector2(cos(ang), sin(ang)) * (gr - 10.0)
+			var perp := ang + PI * 0.5
+			var p1 := gc + Vector2(cos(perp), sin(perp)) * 2.5
+			var p2 := gc - Vector2(cos(perp), sin(perp)) * 2.5
+			draw_colored_polygon(PackedVector2Array([tip, p1, gc, p2]),
+				Color(WyrdUi.GOLD, 0.88))
+		# Gold centre pip — the crossing point.
+		draw_circle(gc, 2.8, Color(WyrdUi.GOLD, 0.90))
+		# Flourish rule just below the subtitle (── ◆ ──).
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 90.0), size.x * 0.60)
