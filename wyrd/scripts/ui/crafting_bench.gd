@@ -548,6 +548,15 @@ class BenchView extends Control:
 		draw_rect(Rect2(r.position + Vector2(1.0, 1.0),
 			Vector2(r.size.x - 2.0, 1.5)), Color(1, 1, 0.93, 0.4))
 		draw_rect(r, EDGE if ok else Color(EDGE, 0.4), false, 1.5)
+		# Bottom shade — the lower face of the card sits in shallow relief so
+		# the row reads carved INTO the tray rather than printed flat on it.
+		# Left accent stripe — locked rows glow TERRACOTTA so the eye reads
+		# availability without inspecting the text (draw_list_row language).
+		draw_rect(Rect2(r.position + Vector2(2.0, r.size.y - 2.5),
+			Vector2(r.size.x - 4.0, 1.5)), Color(WyrdUi.KIT_EDGE, 0.18))
+		draw_rect(Rect2(r.position + Vector2(1.5, 1.5),
+			Vector2(3.0, r.size.y - 3.0)),
+			WyrdUi.TERRACOTTA if not ok else WyrdUi.INK_MID)
 		var cc := r.position + Vector2(14.0, 13.0)
 		if kind == "ink":
 			WyrdUi.draw_ink_bottle(self, cc + Vector2(0, 2.0), 18.0,
