@@ -383,3 +383,25 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+# A small hand-painted lantern pip — amber disc with warm flame core, ink ring,
+# and a hanging hook at the top. Decorative header icon for "The Lantern" panel;
+# reusable anywhere a firelight glyph fits (hearth notifications etc.).
+static func draw_lantern_pip(c: CanvasItem, center: Vector2, r: float) -> void:
+	# Gossamer firelight halo — two alpha rings so the glow bleeds softly.
+	c.draw_circle(center, r * 1.60, Color(0.88, 0.64, 0.18, 0.07))
+	c.draw_circle(center, r * 1.25, Color(0.88, 0.64, 0.18, 0.11))
+	# Lantern body — burnished amber disc.
+	c.draw_circle(center, r, Color(0.90, 0.70, 0.24))
+	# Warm inner flame core offset slightly upward (teardrop-in-glass illusion).
+	c.draw_circle(center - Vector2(0, r * 0.12), r * 0.54, Color(0.99, 0.92, 0.58))
+	# Bright tip — the hottest part of the flame.
+	c.draw_circle(center - Vector2(0, r * 0.30), r * 0.20, Color(1.0, 0.98, 0.82))
+	# Glass-highlight arc: a thin light crescent on the upper-left of the body.
+	c.draw_arc(center - Vector2(r * 0.26, r * 0.26), r * 0.32,
+		PI * 0.8, PI * 1.5, 10, Color(1.0, 1.0, 0.90, 0.50), 2.0, true)
+	# Ink ring — outlines the body.
+	c.draw_arc(center, r, 0.0, TAU, 32, Color(0.42, 0.28, 0.12), 2.0, true)
+	# Hanging hook — a small arch above the body (lantern-on-a-pole silhouette).
+	var hook := center - Vector2(0.0, r + r * 0.30)
+	c.draw_arc(hook, r * 0.30, 0.0, PI, 12, Color(0.42, 0.28, 0.12), 2.5, true)
