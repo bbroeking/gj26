@@ -705,17 +705,21 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 			HORIZONTAL_ALIGNMENT_LEFT, w, 15, WyrdUi.INK_MID)
 		_tab_content_h[1] = 0.0
 		return
-	# Slice C — each material rides a list-row plate: an ink-disc holding its
-	# glyph on the left, name + count on the card, the lore line beneath.
+	# Each material rides a list-row plate: an ink-disc holding its glyph on
+	# the left, name + count on the card, the lore line beneath. The accent
+	# stripe and well tint follow the material's group so the satchel reads
+	# like a forager's journal — herbs sage, ores umber, refined/magical gold,
+	# boss trophies terracotta. Count uses gold (valued resource, not danger).
 	for id in game.materials:
 		var def: Dictionary = GatherDefs.MATERIALS.get(String(id), {})
+		var group := String(def.get("group", ""))
 		var row_top := y - 18.0
 		var row := Rect2(Vector2(x - 8.0, row_top), Vector2(w + 16.0, 30.0))
 		if _span_visible(row_top, row.end.y, scroll, view):
-			WyrdUi.draw_list_row(self, row, WyrdUi.INK_MID)
-			# glyph disc on the left
+			WyrdUi.draw_list_row(self, row, _mat_group_accent(group))
+			# glyph disc — tinted to echo the material group
 			var dc := Vector2(row.position.x + 19.0, row.position.y + 15.0)
-			WyrdUi.draw_round_well(self, dc, 11.0, Color(0.88, 0.81, 0.66))
+			WyrdUi.draw_round_well(self, dc, 11.0, _mat_group_well(group))
 			draw_string(font, Vector2(dc.x - 11.0, dc.y + 6.0),
 				String(def.get("icon", "·")), HORIZONTAL_ALIGNMENT_CENTER,
 				22.0, 14, WyrdUi.INK)
@@ -724,7 +728,7 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 				HORIZONTAL_ALIGNMENT_LEFT, w - 110.0, 17, WyrdUi.INK)
 			draw_string(font, Vector2(x + w - 78.0, y + 1.0),
 				"× %d" % int(game.materials[id]),
-				HORIZONTAL_ALIGNMENT_RIGHT, 70.0, 17, WyrdUi.TERRACOTTA)
+				HORIZONTAL_ALIGNMENT_RIGHT, 70.0, 17, WyrdUi.GOLD)
 		y += 34.0
 		var desc := String(def.get("desc", ""))
 		if desc != "":
@@ -899,3 +903,25 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 			cardy += CARD_H + CARD_GAP
 		y = cardy + 12.0
 	_tab_content_h[3] = y - view.position.y
+
+
+# Group-keyed accent stripe color for satchel material rows (left-edge stripe
+# in draw_list_row). Follows the kit convention: SAGE = good/verdant,
+# GOLD = valued/lumen, warm umber = earthen, TERRACOTTA = trophies/rare drops.
+func _mat_group_accent(group: String) -> Color:
+	match group:
+		"verdant":          return WyrdUi.SAGE
+		"earthen":          return Color(0.63, 0.47, 0.30)   # warm umber
+		"lumen":            return WyrdUi.GOLD
+		"gristle", "echo":  return WyrdUi.TERRACOTTA
+	return WyrdUi.INK_MID
+
+# Group-keyed glyph disc well fill. A softened wash of the group hue so the
+# icon reads clearly in ink on top, while the disc names its kind at a glance.
+func _mat_group_well(group: String) -> Color:
+	match group:
+		"verdant":          return Color(0.82, 0.88, 0.68)   # soft sage
+		"earthen":          return Color(0.82, 0.74, 0.60)   # warm tan
+		"lumen":            return Color(0.93, 0.88, 0.72)   # cream-gold
+		"gristle", "echo":  return Color(0.88, 0.76, 0.70)   # dusty rose
+	return Color(0.88, 0.81, 0.66)                            # neutral parchment
