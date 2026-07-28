@@ -115,18 +115,15 @@ func _render() -> void:
 		_list_box.add_child(l)
 	for i in n:
 		var chart: Dictionary = _game.charts[i]
-		var b := Button.new()
-		WyrdUi.style_button(b)
-		WyrdUi.mark_selected(b, i == _selected)
-		b.toggle_mode = true
-		b.button_pressed = i == _selected
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.text = ChartsData.chart_label(chart)
+		var card := _ChartCard.new()
+		card.setup(ChartsData.chart_label(chart),
+			chart.get("affixes", []) as Array,
+			i == _selected)
 		var idx := i
-		b.pressed.connect(func():
+		card.pressed.connect(func():
 			_selected = idx
 			_render())
-		_list_box.add_child(b)
+		_list_box.add_child(card)
 	# Detail + button state.
 	if _selected >= 0 and _selected < n:
 		var chart: Dictionary = _game.charts[_selected]
@@ -154,3 +151,88 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# ---- the drawn chart card (one row in the Waystone list) ----
+# Replaces plain style_button text pills: each chart renders as a rolled
+# parchment scroll (sealed when it has affixes) with polarity pips on the
+# right (sage = good twin, terracotta = bad) and a gold accent when selected.
+class _ChartCard extends Control:
+	var _label := ""
+	var _affixes: Array = []
+	var _selected := false
+	var _hover := false
+
+	signal pressed
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 52.0)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
+	func setup(chart_label: String, affixes: Array, selected: bool) -> void:
+		_label = chart_label
+		_affixes = affixes
+		_selected = selected
+		queue_redraw()
+
+	func _gui_input(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.pressed \
+				and event.button_index == MOUSE_BUTTON_LEFT:
+			pressed.emit()
+			accept_event()
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_MOUSE_ENTER:
+			_hover = true
+			queue_redraw()
+		elif what == NOTIFICATION_MOUSE_EXIT:
+			_hover = false
+			queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		# Accent: gold = selected, sage/terracotta = affix polarity lean, neutral = clean.
+		var good_ct := 0
+		var bad_ct := 0
+		for a in _affixes:
+			if bool(a.get("good", false)):
+				good_ct += 1
+			else:
+				bad_ct += 1
+		var accent: Color
+		if _selected:
+			accent = WyrdUi.GOLD
+		elif good_ct > bad_ct:
+			accent = WyrdUi.SAGE
+		elif bad_ct > good_ct:
+			accent = WyrdUi.TERRACOTTA
+		else:
+			accent = WyrdUi.INK_MID
+		WyrdUi.draw_list_row(self, r, accent)
+		if _selected:
+			draw_rect(r.grow(-1.5), Color(WyrdUi.GOLD, 0.08))
+		elif _hover:
+			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.10))
+		# Rolled scroll icon on the left — wax-sealed when the chart has affixes.
+		var scroll_h := size.y - 12.0
+		var sr := Rect2(Vector2(10.0, 6.0), Vector2(scroll_h * 0.80, scroll_h))
+		WyrdUi.draw_scroll(self, sr, not _affixes.is_empty())
+		# Chart label in ink.
+		var font := get_theme_default_font()
+		var tx := sr.end.x + 10.0
+		var pip_count := mini(_affixes.size(), 4)
+		var pip_area := float(pip_count) * 14.0 + 8.0
+		draw_string(font, Vector2(tx, size.y * 0.5 + 6.0), _label,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - pip_area, 15, WyrdUi.INK)
+		# Polarity pips: coloured dots right-aligned — sage good, terracotta bad.
+		if pip_count > 0:
+			var pip_x := size.x - 12.0 - float(pip_count - 1) * 14.0
+			var pip_y := size.y * 0.5
+			for i in pip_count:
+				var a: Dictionary = _affixes[i]
+				var col: Color = WyrdUi.SAGE if bool(a.get("good", false)) \
+					else WyrdUi.TERRACOTTA
+				draw_circle(Vector2(pip_x, pip_y), 5.0, col)
+				draw_arc(Vector2(pip_x, pip_y), 5.0, 0, TAU, 16,
+					WyrdUi.KIT_EDGE, 1.0, true)
+				pip_x += 14.0
