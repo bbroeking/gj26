@@ -89,11 +89,21 @@ func _ready() -> void:
 	hint.offset_left = -130
 	hint.offset_top = 38
 	_panel.add_child(hint)
+	# Header ornament band: warm wash + ivy sprigs + gold flourish between
+	# the title and the skill list. Ornament on headers only per design language.
+	var rule := _HeaderRule.new()
+	rule.anchor_right = 1.0
+	rule.offset_left = 54
+	rule.offset_right = -54
+	rule.offset_top = 68
+	rule.offset_bottom = 100
+	_panel.add_child(rule)
+
 	var col := VBoxContainer.new()
 	col.anchor_right = 1.0
 	col.anchor_bottom = 1.0
 	col.offset_left = 56
-	col.offset_top = 86
+	col.offset_top = 106
 	col.offset_right = -56
 	col.offset_bottom = -52
 	col.add_theme_constant_override("separation", 8)
@@ -262,3 +272,25 @@ class _SkillCard extends Control:
 		# --- short desc (up to two lines) ---
 		draw_multiline_string(font, Vector2(tx, 40.0), _desc,
 			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 16.0, 12, 2, dim)
+
+
+# ---- header ornament band ----
+# A 32 px tall CanvasItem slotted between the "Loadout" title and the skill
+# list. Draws: a faint warm wash so the band reads as a named header zone,
+# three sage ivy-leaf strokes each side of center (ornament lives on headers
+# only, never on body text — design language), and the gold ◆ flourish rule.
+class _HeaderRule extends Control:
+	func _draw() -> void:
+		var cx := size.x * 0.5
+		var cy := size.y * 0.5
+		# Faint warm wash — signals "this is the header zone".
+		draw_rect(Rect2(0, 0, size.x, size.y), Color(1.0, 0.96, 0.86, 0.13))
+		# Sage ivy-leaf strokes flanking the central flourish.
+		var sg := Color(WyrdUi.SAGE, 0.72)
+		for flip in [-1, 1]:
+			var ox := cx + flip * 38.0
+			draw_line(Vector2(ox, cy), Vector2(ox + flip * 8.0, cy - 5.0), sg, 1.5, true)
+			draw_line(Vector2(ox, cy), Vector2(ox + flip * 6.0, cy + 4.0), sg, 1.5, true)
+			draw_line(Vector2(ox + flip * 5.0, cy - 2.0),
+				Vector2(ox + flip * 13.0, cy - 6.0), sg, 1.2, true)
+		WyrdUi.draw_flourish(self, Vector2(cx, cy), 30.0)
