@@ -68,6 +68,16 @@ func _ready() -> void:
 	title.position = Vector2(54, 34)
 	_panel.add_child(title)
 
+	# Parchment grain wash + flourish rule spanning the title band.
+	var hdr_deco := _HeaderDeco.new()
+	hdr_deco.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hdr_deco.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	hdr_deco.offset_left = 44
+	hdr_deco.offset_top = 22
+	hdr_deco.offset_right = -44
+	hdr_deco.offset_bottom = 86
+	_panel.add_child(hdr_deco)
+
 	var sub := Label.new()
 	sub.text = "\"Sparks like to find sleeves. Mind the anvil, state your business.\""
 	WyrdUi.style_dim(sub, 13)
@@ -112,6 +122,7 @@ func _ready() -> void:
 	sell_hdr.text = "Sell (he melts it down)"
 	WyrdUi.style_section(sell_hdr)
 	col1.add_child(sell_hdr)
+	col1.add_child(_FlourishRule.new())
 	# A full pack outgrows the panel — the sell list scrolls now.
 	var sell_scroll := ScrollContainer.new()
 	sell_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -130,6 +141,7 @@ func _ready() -> void:
 	buy_hdr.text = "Wares"
 	WyrdUi.style_section(buy_hdr)
 	col2.add_child(buy_hdr)
+	col2.add_child(_FlourishRule.new())
 	_buy_box = VBoxContainer.new()
 	_buy_box.add_theme_constant_override("separation", 5)
 	_buy_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -286,3 +298,24 @@ class _VendorCard extends Control:
 		var price_col: Color = WyrdUi.TERRACOTTA if _price_red else WyrdUi.GOLD
 		draw_string(font, Vector2(size.x - 84.0, size.y * 0.5 + 5.0),
 			"%dg" % _price, HORIZONTAL_ALIGNMENT_RIGHT, 74.0, 17, price_col)
+
+
+# Parchment grain wash + ──◆── flourish beneath the panel title.
+# Pure vector, no texture loads in _draw.
+class _HeaderDeco extends Control:
+	func _draw() -> void:
+		WyrdUi.draw_parchment_grain(self, Rect2(Vector2.ZERO, size), 17)
+		WyrdUi.draw_flourish(self,
+			Vector2(size.x * 0.37, size.y - 3.0), size.x * 0.52)
+
+
+# A thin ──◆── rule that sits inside a VBoxContainer beneath a section
+# header label, giving each column the same decorative divider the bench uses.
+class _FlourishRule extends Control:
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 12)
+		size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	func _draw() -> void:
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 7.0), size.x * 0.75)
