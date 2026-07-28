@@ -37,6 +37,7 @@ var _mute_lbl: Label = null
 # full-screen red _flash). A TextureRect fed by a radial GradientTexture2D —
 # no shader, no _draw, so it's safe in this CanvasLayer.
 var _vignette: TextureRect = null
+var _action_icons := {}
 
 func _ready() -> void:
 	# Spec-35: scale up the HP + Focus bars together. Flash and Whiteout
@@ -56,6 +57,10 @@ func _ready() -> void:
 	_build_hurt_vignette()
 	_build_draught_chip()
 	_build_mute_indicator()
+	for _k in ["gear", "satchel", "trades"]:
+		var _p := "res://assets/ui/icons/%s.png" % _k
+		if ResourceLoader.exists(_p):
+			_action_icons[_k] = load(_p)
 	_build_wyrd_overlay()
 
 # A globe flanking the bottom-center skill bar at ±cx.
@@ -244,8 +249,8 @@ func _refresh_objective() -> void:
 	_quest_progress.text = prog
 	_quest_progress.visible = prog != ""
 
-# Bottom-right action bar — Pack (I) and Satchel (M) as clickable parchment
-# buttons, so the systems are discoverable without reading the guide.
+# Bottom-right action bar — Gear (I), Satchel (M), Trades (K) as carved
+# parchment chips so the systems are discoverable without reading the guide.
 func _build_action_bar() -> void:
 	var bar := HBoxContainer.new()
 	bar.anchor_left = 1.0
@@ -258,35 +263,22 @@ func _build_action_bar() -> void:
 	bar.offset_bottom = -56
 	bar.add_theme_constant_override("separation", 8)
 	add_child(bar)
-	for spec in [["Gear", "I", "toggle_inventory", "gear"],
-			["Satchel", "M", "toggle_satchel", "satchel"],
-			["Trades", "K", "toggle_trades", "trades"]]:
-		var b := Button.new()
-		WyrdUi.style_kit_button(b)
-		# Carry the trade-color language: Gear terracotta, Satchel sage, Trades gold.
-		var accent: Color = WyrdUi.TERRACOTTA
-		if spec[3] == "satchel":
-			accent = WyrdUi.SAGE
-		elif spec[3] == "trades":
-			accent = WyrdUi.GOLD
-		b.add_theme_color_override("font_color", accent.darkened(0.12))
-		b.add_theme_color_override("font_hover_color", accent)
-		b.text = "%s (%s)" % [spec[0], spec[1]]
-		var icon_path := "res://assets/ui/icons/%s.png" % spec[3]
-		if ResourceLoader.exists(icon_path):
-			b.icon = load(icon_path)
-			b.add_theme_constant_override("icon_max_width", 22)
-			b.expand_icon = false
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for spec in [
+			["Gear",    "I", "toggle_inventory", "gear",    WyrdUi.TERRACOTTA],
+			["Satchel", "M", "toggle_satchel",   "satchel", WyrdUi.SAGE],
+			["Trades",  "K", "toggle_trades",    "trades",  WyrdUi.GOLD]]:
+		var btn := _ActionBtn.new()
+		btn.setup(spec[0], spec[1], spec[4], _action_icons.get(spec[3], null))
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var method: String = spec[2]
-		b.pressed.connect(func():
+		btn.pressed.connect(func():
 			# Spec 46 — route HUD buttons to the LOCAL player in co-op.
 			var game := get_tree().root.get_node_or_null("Game")
 			var player: Node = game.local_player() if game != null \
 				else get_tree().get_first_node_in_group("player")
 			if player != null and player.has_method(method):
 				player.call(method))
-		bar.add_child(b)
+		bar.add_child(btn)
 
 func _refresh_trades() -> void:
 	var game := get_tree().root.get_node_or_null("Game")
@@ -498,3 +490,76 @@ class QuestScrollArt extends Control:
 		draw_circle(sc, 7.0, Color(0.62, 0.20, 0.16))
 		draw_circle(sc, 4.2, Color(0.72, 0.28, 0.22))
 		draw_arc(sc, 7.0, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+
+
+# ---- HUD action bar chip (Gear · Satchel · Trades) ----
+# A carved parchment chip: honey-bevel button face, a 3px trade-color accent
+# stripe along the top, faint parchment grain, icon in a small recessed well
+# on the left, IM Fell SC label + dim key-hint on the right. Hover warms the
+# face. Click emits pressed. Replaces the plain style_kit_button row so the
+# bottom-right navigation reads as a crafted storybook object.
+class _ActionBtn extends Control:
+	var _label := ""
+	var _key := ""
+	var _accent := WyrdUi.SAGE
+	var _tex: Texture2D = null
+	var _seed := 7
+	var _hover := false
+
+	signal pressed
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 40.0)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
+	func setup(label: String, key: String, accent: Color,
+			tex: Texture2D) -> void:
+		_label = label
+		_key = key
+		_accent = accent
+		_tex = tex
+		_seed = abs(label.hash()) & 0xFFFF
+		queue_redraw()
+
+	func _gui_input(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.pressed \
+				and event.button_index == MOUSE_BUTTON_LEFT:
+			pressed.emit()
+			accept_event()
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_MOUSE_ENTER:
+			_hover = true
+			queue_redraw()
+		elif what == NOTIFICATION_MOUSE_EXIT:
+			_hover = false
+			queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		WyrdUi.draw_carved_button(self, r, true)
+		# Trade-color accent stripe along the top edge (TERRACOTTA/SAGE/GOLD).
+		draw_rect(Rect2(r.position + Vector2(3, 2), Vector2(r.size.x - 6, 3)),
+			Color(_accent, 0.80))
+		WyrdUi.draw_parchment_grain(self, r, _seed)
+		if _hover:
+			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.10))
+		var font := get_theme_default_font()
+		var hdr := WyrdUi.font_header()
+		if hdr == null:
+			hdr = font
+		# Icon in a small recessed well on the left.
+		var tx := 10.0
+		if _tex != null:
+			var ir := Rect2(Vector2(7.0, (size.y - 22.0) * 0.5),
+				Vector2(22.0, 22.0))
+			WyrdUi.draw_well(self, ir, WyrdUi.KIT_WELL)
+			draw_texture_rect(_tex, ir.grow(-3.0), false)
+			tx = ir.end.x + 6.0
+		# Label in IM Fell SC, key hint right-aligned in dim body font.
+		draw_string(hdr, Vector2(tx, size.y * 0.5 + 7.0), _label,
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 30.0, 15,
+			_accent.darkened(0.15))
+		draw_string(font, Vector2(size.x - 26.0, size.y * 0.5 + 5.0),
+			"(%s)" % _key, HORIZONTAL_ALIGNMENT_LEFT, 22.0, 11,
+			WyrdUi.INK_MID)
