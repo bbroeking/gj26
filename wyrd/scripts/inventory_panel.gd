@@ -677,17 +677,34 @@ func _draw_scroll_marker(win: Rect2, view: Rect2, font: Font) -> void:
 	var content_h: float = float(_tab_content_h.get(_tab, 0.0))
 	if content_h <= view.size.y:
 		return
+	# Carved groove track — a narrow well pressed into the parchment margin.
 	var track := Rect2(Vector2(win.end.x - 52.0, view.position.y),
-		Vector2(4.0, view.size.y))
-	draw_rect(track, Color(WyrdUi.KIT_EDGE, 0.18))
+		Vector2(5.0, view.size.y))
+	draw_rect(track, WyrdUi.KIT_WELL)
+	draw_rect(Rect2(track.position + Vector2(0.5, 0.5),
+		Vector2(track.size.x - 1.0, 2.0)), Color(0.0, 0.0, 0.0, 0.12))
+	draw_rect(track, Color(WyrdUi.KIT_EDGE, 0.45), false, 1.0)
+	# Small diamond endcaps hint at the scroll direction.
+	var dm := 3.5
+	for cy: float in [track.position.y + 7.0, track.end.y - 7.0]:
+		var cx: float = track.position.x + track.size.x * 0.5
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(cx, cy - dm), Vector2(cx + dm, cy),
+			Vector2(cx, cy + dm), Vector2(cx - dm, cy)]),
+			Color(WyrdUi.KIT_EDGE, 0.50))
+	# Thumb — carved plate: top warm bevel + bottom ink shadow + sage face.
 	var th: float = maxf(34.0, track.size.y * view.size.y / content_h)
 	var max_s: float = maxf(1.0, content_h - view.size.y)
 	var s: float = float(_tab_scroll.get(_tab, 0.0))
 	var thumb := Rect2(Vector2(track.position.x - 1.5,
 		track.position.y + (track.size.y - th) * (s / max_s)),
-		Vector2(7.0, th))
-	draw_rect(thumb, WyrdUi.SAGE.darkened(0.08))
-	draw_rect(thumb, Color(WyrdUi.KIT_EDGE, 0.7), false, 1.0)
+		Vector2(8.0, th))
+	draw_rect(thumb, WyrdUi.SAGE.darkened(0.06))
+	draw_rect(Rect2(thumb.position + Vector2(1.0, 1.0),
+		Vector2(thumb.size.x - 2.0, 2.0)), Color(1.0, 1.0, 0.90, 0.36))
+	draw_rect(Rect2(thumb.position + Vector2(1.0, thumb.size.y - 3.0),
+		Vector2(thumb.size.x - 2.0, 2.0)), Color(WyrdUi.KIT_EDGE, 0.24))
+	draw_rect(thumb, Color(WyrdUi.KIT_EDGE, 0.70), false, 1.0)
 	draw_string(font, Vector2(view.position.x, view.end.y + 34.0),
 		"scroll to read on · I close", HORIZONTAL_ALIGNMENT_CENTER,
 		view.size.x, 13, WyrdUi.INK_MID)
