@@ -769,8 +769,18 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 				continue
 			if _span_visible(y - 14.0, y + 5.0, scroll, view):
 				var good: bool = bool(a.get("good", false))
-				draw_string(font, Vector2(x + 30, y),
-					("✓ " + String(aff.name)) if good else ("✗ " + String(aff.bad_name)),
+				# Polarity pip: filled disc + ink rim so good/bad reads on
+				# colour alone, not just a unicode tick that can wash out.
+				# Sage for boons, terracotta for banes — the pack's affix
+				# colour language, now also carried as a drawn shape.
+				var pip_col := WyrdUi.SAGE.darkened(0.10) if good \
+					else WyrdUi.TERRACOTTA.darkened(0.05)
+				var pc := Vector2(x + 14.0, y - 5.0)
+				draw_circle(pc, 5.0, pip_col)
+				draw_arc(pc, 5.0, 0.0, TAU, 12,
+					Color(WyrdUi.KIT_EDGE, 0.55), 1.0, true)
+				draw_string(font, Vector2(x + 30.0, y),
+					String(aff.name) if good else String(aff.bad_name),
 					HORIZONTAL_ALIGNMENT_LEFT, w - 30, 13,
 					WyrdUi.SAGE.darkened(0.2) if good else WyrdUi.TERRACOTTA)
 			y += 20.0
