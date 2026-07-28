@@ -39,10 +39,18 @@ func _ready() -> void:
 	_panel.offset_bottom = 300
 	add_child(_panel)
 
+	# Spec 48 — station header: cream wash + station pip + flourish rule so
+	# every craft station reads as its own named place, not a generic list.
+	var station_hdr := _StationHeader.new()
+	station_hdr.station_id = station_id
+	station_hdr.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	station_hdr.offset_bottom = 84
+	_panel.add_child(station_hdr)
+
 	var title := Label.new()
 	title.text = String(st.get("title", "Crafting"))
 	WyrdUi.style_title(title)
-	title.position = Vector2(54, 34)
+	title.position = Vector2(62, 34)
 	_panel.add_child(title)
 
 	var close_hint := Label.new()
@@ -212,3 +220,102 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# Spec 48 — the station header drawn behind the title label. A cream wash
+# fading downward, a station-keyed identity pip left of the title, and a
+# flourish rule closing the header zone — the same header language used by
+# the vendor (smith mark), waystone (compass), and dialog (portrait well).
+class _StationHeader extends Control:
+	var station_id := ""
+
+	func _draw() -> void:
+		# Warm cream wash — firelight / forge-glow pooled behind the title.
+		for i in 4:
+			var a := 0.07 - 0.015 * float(i)
+			draw_rect(Rect2(0.0, float(i) * 18.0, size.x, 22.0),
+				Color(0.97, 0.92, 0.78, a))
+		# Flourish rule — the header / body boundary.
+		WyrdUi.draw_flourish(self, Vector2(size.x * 0.5, 78.0), size.x - 116.0)
+		# Station pip to the left of the title (centre at x=38, y=49).
+		_draw_pip(Vector2(38.0, 49.0), 16.0)
+
+	func _draw_pip(center: Vector2, r: float) -> void:
+		match station_id:
+			"cookfire":
+				_draw_flame(center, r)
+			"still":
+				_draw_alembic(center, r)
+			"forge":
+				_draw_anvil(center, r)
+			_:
+				# Fallback: a small gold disc.
+				draw_circle(center, r * 0.42, Color(WyrdUi.GOLD, 0.65))
+				draw_arc(center, r * 0.42, 0.0, TAU, 14, WyrdUi.KIT_EDGE, 1.2, true)
+
+	# A small amber flame teardrop: warm glow, orange body, bright inner core.
+	func _draw_flame(center: Vector2, r: float) -> void:
+		# Amber halo behind the flame.
+		draw_circle(center + Vector2(0.0, r * 0.18), r * 0.70,
+			Color(0.95, 0.70, 0.22, 0.28))
+		# Flame body — teardrop polygon pointing upward.
+		var pts := PackedVector2Array([
+			center + Vector2( 0.0,       -r * 1.15),
+			center + Vector2( r * 0.50,  -r * 0.28),
+			center + Vector2( r * 0.52,   r * 0.38),
+			center + Vector2( 0.0,        r * 0.55),
+			center + Vector2(-r * 0.52,   r * 0.38),
+			center + Vector2(-r * 0.50,  -r * 0.28),
+		])
+		draw_colored_polygon(pts, Color(0.96, 0.56, 0.16))
+		# Bright inner core.
+		var ipts := PackedVector2Array([
+			center + Vector2( 0.0,       -r * 0.65),
+			center + Vector2( r * 0.24,   r * 0.10),
+			center + Vector2( 0.0,        r * 0.28),
+			center + Vector2(-r * 0.24,   r * 0.10),
+		])
+		draw_colored_polygon(ipts, Color(1.0, 0.92, 0.58, 0.80))
+		# Ink arc at the flame's base — grounds it.
+		draw_arc(center + Vector2(0.0, r * 0.18), r * 0.52, 0.0, TAU, 18,
+			Color(WyrdUi.KIT_EDGE, 0.42), 1.5, true)
+
+	# A small glass alembic with sage brew — the still / brew station pip.
+	func _draw_alembic(center: Vector2, r: float) -> void:
+		# Glass flask body (pale teal).
+		draw_circle(center + Vector2(0.0, r * 0.32), r * 0.62,
+			Color(0.80, 0.90, 0.84, 0.68))
+		# Sage brew liquid in the lower flask.
+		draw_circle(center + Vector2(0.0, r * 0.52), r * 0.38,
+			Color(0.52, 0.76, 0.52, 0.78))
+		# Glass catch-light arc (upper-left).
+		draw_arc(center + Vector2(-r * 0.22, r * 0.08), r * 0.36,
+			PI * 0.85, PI * 1.55, 10, Color(1.0, 1.0, 0.98, 0.48), 2.0, true)
+		# Neck.
+		draw_rect(Rect2(center + Vector2(-r * 0.16, -r * 0.30),
+			Vector2(r * 0.32, r * 0.60)), Color(0.80, 0.88, 0.83, 0.68))
+		# Ink outlines.
+		draw_arc(center + Vector2(0.0, r * 0.32), r * 0.62, 0.0, TAU, 26,
+			WyrdUi.KIT_EDGE, 1.5, true)
+		draw_rect(Rect2(center + Vector2(-r * 0.16, -r * 0.30),
+			Vector2(r * 0.32, r * 0.60)), WyrdUi.KIT_EDGE, false, 1.5)
+		# Sage bubble rising.
+		draw_circle(center + Vector2(r * 0.24, r * 0.20), r * 0.11,
+			Color(0.85, 0.96, 0.88, 0.55))
+
+	# A three-rect ink anvil silhouette with gold sparks — the forge pip.
+	func _draw_anvil(center: Vector2, r: float) -> void:
+		# Top face (wide).
+		draw_rect(Rect2(center + Vector2(-r * 0.72, -r * 0.58),
+			Vector2(r * 1.44, r * 0.38)), WyrdUi.INK)
+		# Waist (narrow).
+		draw_rect(Rect2(center + Vector2(-r * 0.34, -r * 0.20),
+			Vector2(r * 0.68, r * 0.32)), WyrdUi.INK)
+		# Base (wide).
+		draw_rect(Rect2(center + Vector2(-r * 0.56, r * 0.12),
+			Vector2(r * 1.12, r * 0.38)), WyrdUi.INK)
+		# Gold sparks off the working face.
+		var sv := center + Vector2(r * 0.22, -r * 0.58)
+		draw_line(sv, sv + Vector2(r * 0.32, -r * 0.48), Color(WyrdUi.GOLD, 0.80), 1.0)
+		draw_line(sv, sv + Vector2(r * 0.52, -r * 0.18), Color(WyrdUi.GOLD, 0.80), 1.0)
+		draw_circle(sv + Vector2(r * 0.46, -r * 0.38), r * 0.09, Color(WyrdUi.GOLD, 0.88))
