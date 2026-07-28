@@ -327,11 +327,19 @@ static func draw_parchment_grain(c: CanvasItem, r: Rect2, seed_v: int = 7) -> vo
 		c.draw_line(p, p + Vector2(ln, rng.randf_range(-1.2, 1.2)),
 			Color(0.62, 0.52, 0.38, 0.05 + rng.randf() * 0.05), 1.0)
 
-# Section flourish: ── ◆ ── centred under a header.
+# Section flourish: ── ◈ ── centred under a header.
+# Panels wide enough (> 40 px) gain ivy-berry pips on the vine: a sage dot at
+# ±17 and a gold accent dot at ±11, flanking the central diamond.  Narrow
+# calls (hotbar-tray ends, width=24) stay plain so the pips don't overhang.
 static func draw_flourish(c: CanvasItem, center: Vector2, width: float) -> void:
 	var col := Color(KIT_EDGE, 0.45)
 	c.draw_line(center - Vector2(width * 0.5, 0), center - Vector2(7, 0), col, 1.0)
 	c.draw_line(center + Vector2(7, 0), center + Vector2(width * 0.5, 0), col, 1.0)
+	if width > 40.0:
+		c.draw_circle(center - Vector2(17, 0), 2.0, Color(SAGE, 0.65))
+		c.draw_circle(center + Vector2(17, 0), 2.0, Color(SAGE, 0.65))
+		c.draw_circle(center - Vector2(11, 0), 1.5, Color(GOLD, 0.60))
+		c.draw_circle(center + Vector2(11, 0), 1.5, Color(GOLD, 0.60))
 	var pts := PackedVector2Array([center + Vector2(0, -3.5),
 		center + Vector2(3.5, 0), center + Vector2(0, 3.5),
 		center + Vector2(-3.5, 0)])
