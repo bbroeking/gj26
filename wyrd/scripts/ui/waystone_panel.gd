@@ -115,18 +115,13 @@ func _render() -> void:
 		_list_box.add_child(l)
 	for i in n:
 		var chart: Dictionary = _game.charts[i]
-		var b := Button.new()
-		WyrdUi.style_button(b)
-		WyrdUi.mark_selected(b, i == _selected)
-		b.toggle_mode = true
-		b.button_pressed = i == _selected
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.text = ChartsData.chart_label(chart)
+		var card := _ChartCard.new()
+		card.setup(chart, i == _selected)
 		var idx := i
-		b.pressed.connect(func():
+		card.pressed.connect(func():
 			_selected = idx
 			_render())
-		_list_box.add_child(b)
+		_list_box.add_child(card)
 	# Detail + button state.
 	if _selected >= 0 and _selected < n:
 		var chart: Dictionary = _game.charts[_selected]
@@ -154,3 +149,101 @@ func _on_go() -> void:
 	get_node("/root/Game").modal_closed()
 	_game.enter_dungeon(chart, player)
 	queue_free()
+
+
+# ---- drawn chart card (one row in the Waystone chart case) ----
+# Replaces the flat styled Button. Each chart IS an inscribed scroll, so
+# the card shows a miniature drawn scroll on the left, the chart name in
+# IM Fell SC, a tier chip (T1/T2/T3) in the top-right corner, and a row
+# of small polarity pips (sage diamond = good twin, terracotta = bad twin)
+# so the chart's flavour is glanceable before reading the detail panel.
+class _ChartCard extends Control:
+	const SCROLL_W := 46.0
+	const SCROLL_H := 34.0
+	const ICON_AREA_W := 58.0
+
+	var _chart: Dictionary = {}
+	var _selected := false
+	var _hover := false
+
+	signal pressed
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 56.0)
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
+	func setup(chart: Dictionary, selected: bool) -> void:
+		_chart = chart
+		_selected = selected
+		queue_redraw()
+
+	func _gui_input(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.pressed \
+				and event.button_index == MOUSE_BUTTON_LEFT:
+			pressed.emit()
+			accept_event()
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_MOUSE_ENTER:
+			_hover = true
+			queue_redraw()
+		elif what == NOTIFICATION_MOUSE_EXIT:
+			_hover = false
+			queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		var accent: Color = WyrdUi.GOLD if _selected else WyrdUi.INK_MID
+		WyrdUi.draw_list_row(self, r, accent)
+		if _hover and not _selected:
+			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.08))
+		# Miniature scroll — charts ARE inscribed parchment scrolls; showing
+		# one as a tiny drawn scroll reinforces the Wayfinding trade's identity
+		# and is more painterly than a text-only button.
+		var sr := Rect2(Vector2(8.0, (size.y - SCROLL_H) * 0.5),
+			Vector2(SCROLL_W, SCROLL_H))
+		WyrdUi.draw_scroll(self, sr, false)   # unsealed: the player owns it
+		# Gold ring around the scroll icon when this card is selected.
+		if _selected:
+			draw_rect(sr, Color(WyrdUi.GOLD, 0.85), false, 2.0)
+		# Chart name — IM Fell SC header font; gold when selected, ink otherwise.
+		var font := get_theme_default_font()
+		var hdr := WyrdUi.font_header()
+		if hdr == null:
+			hdr = font
+		var tx := ICON_AREA_W
+		var name_col := WyrdUi.GOLD.darkened(0.15) if _selected else WyrdUi.INK
+		draw_string(hdr, Vector2(tx, 24.0), String(_chart.get("name", "Chart")),
+			HORIZONTAL_ALIGNMENT_LEFT, size.x - tx - 60.0, 16, name_col)
+		# Tier chip — a small parchment tag in the top-right corner.
+		var tier := int(_chart.get("tier", 1))
+		var chip_r := Rect2(Vector2(size.x - 52.0, 7.0), Vector2(40.0, 18.0))
+		draw_rect(chip_r, Color(0.86, 0.79, 0.66))
+		draw_rect(chip_r, Color(WyrdUi.KIT_EDGE, 0.55), false, 1.0)
+		draw_string(font, Vector2(chip_r.position.x, chip_r.position.y + 14.0),
+			"T%d" % tier, HORIZONTAL_ALIGNMENT_CENTER, chip_r.size.x, 11,
+			WyrdUi.INK_MID)
+		# Affix polarity pips — tiny coloured diamonds below the name:
+		# sage = good twin (a boon), terracotta = bad twin (a curse).
+		# The detail panel below covers names; pips give the quick read.
+		var affixes: Array = _chart.get("affixes", [])
+		if affixes.is_empty():
+			draw_string(font, Vector2(tx, 43.0), "clean run",
+				HORIZONTAL_ALIGNMENT_LEFT, 80, 11, WyrdUi.INK_MID)
+		else:
+			var px := tx
+			for aff in affixes:
+				var good := bool(aff.get("good", false))
+				var pip_col := WyrdUi.SAGE.darkened(0.08) if good \
+					else WyrdUi.TERRACOTTA.darkened(0.05)
+				var pc := Vector2(px + 4.0, 42.0)
+				draw_colored_polygon(PackedVector2Array([
+					pc + Vector2(0, -4.0), pc + Vector2(4.0, 0),
+					pc + Vector2(0, 4.0), pc + Vector2(-4.0, 0)]),
+					pip_col)
+				draw_polyline(PackedVector2Array([
+					pc + Vector2(0, -4.0), pc + Vector2(4.0, 0),
+					pc + Vector2(0, 4.0), pc + Vector2(-4.0, 0),
+					pc + Vector2(0, -4.0)]),
+					Color(WyrdUi.KIT_EDGE, 0.5), 0.8)
+				px += 12.0
