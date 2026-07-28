@@ -363,14 +363,28 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 	var face := Rect2(r.position + Vector2(r.size.x * 0.08, r.size.y * 0.12),
 		Vector2(r.size.x * 0.84, r.size.y * 0.76))
 	c.draw_rect(face, Color(0.96, 0.91, 0.78))
-	# rolled ends — darker cylinders at left + right
+	# Rolled ends — parchment cylinders at left + right. A catch-light stripe
+	# near the inner face and a shadow on the outer edge give each roll the
+	# volume of paper wrapped around a dowel, visible at icon and bench scales.
 	var roll_w := r.size.x * 0.07
-	c.draw_rect(Rect2(face.position - Vector2(roll_w * 0.6, 2.0),
-		Vector2(roll_w, face.size.y + 4.0)), Color(0.86, 0.78, 0.62))
-	c.draw_rect(Rect2(Vector2(face.end.x - roll_w * 0.4, face.position.y - 2.0),
-		Vector2(roll_w, face.size.y + 4.0)), Color(0.86, 0.78, 0.62))
+	var lr := Rect2(face.position - Vector2(roll_w * 0.6, 2.0),
+		Vector2(roll_w, face.size.y + 4.0))
+	c.draw_rect(lr, Color(0.82, 0.74, 0.60))
+	c.draw_line(Vector2(lr.position.x + lr.size.x * 0.32, lr.position.y + 1.0),
+		Vector2(lr.position.x + lr.size.x * 0.32, lr.end.y - 1.0),
+		Color(1.0, 0.97, 0.88, 0.52), 1.0)
+	c.draw_rect(Rect2(Vector2(lr.end.x - 1.5, lr.position.y),
+		Vector2(1.5, lr.size.y)), Color(0, 0, 0, 0.18))
+	var rr := Rect2(Vector2(face.end.x - roll_w * 0.4, face.position.y - 2.0),
+		Vector2(roll_w, face.size.y + 4.0))
+	c.draw_rect(rr, Color(0.82, 0.74, 0.60))
+	c.draw_line(Vector2(rr.position.x + rr.size.x * 0.32, rr.position.y + 1.0),
+		Vector2(rr.position.x + rr.size.x * 0.32, rr.end.y - 1.0),
+		Color(1.0, 0.97, 0.88, 0.52), 1.0)
+	c.draw_rect(Rect2(Vector2(rr.end.x - 1.5, rr.position.y),
+		Vector2(1.5, rr.size.y)), Color(0, 0, 0, 0.18))
 	c.draw_rect(face, KIT_EDGE, false, 1.5)
-	# faint chart scratches
+	# Faint chart scratches — handwritten-text read on the face.
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 11
 	for _i in 4:
@@ -383,3 +397,11 @@ static func draw_scroll(c: CanvasItem, r: Rect2, sealed := true) -> void:
 		c.draw_circle(sc, 7.5, Color(0.62, 0.20, 0.16))
 		c.draw_circle(sc, 4.5, Color(0.72, 0.28, 0.22))
 		c.draw_arc(sc, 7.5, 0, TAU, 20, Color(0.40, 0.12, 0.10), 1.5, true)
+		# Pressed cross mark — a stamp in the wax confirms it is sealed.
+		c.draw_line(sc + Vector2(-3.5, 0), sc + Vector2(3.5, 0),
+			Color(0.40, 0.12, 0.10), 1.0)
+		c.draw_line(sc + Vector2(0, -3.5), sc + Vector2(0, 3.5),
+			Color(0.40, 0.12, 0.10), 1.0)
+		# Catch-light arc — upper-left specular confirms the wax is raised.
+		c.draw_arc(sc, 4.5, PI * 1.18, PI * 1.52, 8,
+			Color(1.0, 0.55, 0.40, 0.40), 2.0, true)
