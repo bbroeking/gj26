@@ -585,32 +585,41 @@ func _draw_tabs(win: Rect2) -> void:
 	for i in TABS.size():
 		var r := _tab_rect(i)
 		var active := i == _tab
-		# Spec 40 / Artistic — icon + label plates; active = brighter + terracotta underline.
-		draw_rect(r, Color(0.95, 0.91, 0.80) if active else Color(0.85, 0.78, 0.64))
-		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 1.5)
+		# Carved-plate face: KIT_PLATE for active, dimmed for inactive.
+		draw_rect(r, WyrdUi.KIT_PLATE if active else WyrdUi.KIT_PLATE.darkened(0.10))
+		# 2px top honey bevel + 2px bottom ink shadow — depth without borders.
+		draw_line(r.position + Vector2(2, 1),
+			r.position + Vector2(r.size.x - 2, 1),
+			Color(1.0, 0.97, 0.86, 0.55 if active else 0.30), 2.0)
+		draw_line(r.position + Vector2(2, r.size.y - 1),
+			r.position + Vector2(r.size.x - 2, r.size.y - 1),
+			Color(WyrdUi.INK, 0.25 if active else 0.15), 2.0)
+		draw_rect(r, Color(0.26, 0.19, 0.13, 0.90), false, 1.5)
 		if active:
-			draw_line(r.position + Vector2(2, r.size.y - 2),
-				r.position + Vector2(r.size.x - 2, r.size.y - 2),
+			# Gold inner pinstripe — the burnished-plate read.
+			draw_rect(r.grow(-3.0), Color(WyrdUi.GOLD, 0.48), false, 1.0)
+			# Terracotta underline — selection indicator.
+			draw_line(r.position + Vector2(4, r.size.y - 2),
+				r.position + Vector2(r.size.x - 4, r.size.y - 2),
 				WyrdUi.TERRACOTTA, 3.0)
-		# Draw the preloaded hand-painted icon left of the label so each tab
-		# reads as a carved-sign rather than bare text. Icons fade when inactive.
-		var icon_pad := 0.0
+		# 18x18 hand-painted icon; inactive fades to 45% alpha.
 		var icon_tex: Texture2D = _cached_tex(String(TAB_ICONS[i]))
 		if icon_tex != null:
-			var icon_s := 16.0
-			var ix := r.position.x + 6.0
+			var icon_s := 18.0
+			var ix := r.position.x + 8.0
 			var iy := r.position.y + (r.size.y - icon_s) * 0.5
 			draw_texture_rect(icon_tex,
 				Rect2(Vector2(ix, iy), Vector2(icon_s, icon_s)),
-				false, Color(1.0, 1.0, 1.0, 1.0 if active else 0.55))
-			icon_pad = icon_s + 4.0
-		draw_string(font, Vector2(r.position.x + icon_pad, r.position.y + 22.0),
+				false, Color(1.0, 1.0, 1.0, 1.0 if active else 0.45))
+		# Label at 14pt, starting 30px in to pair with the 18px icon.
+		draw_string(font,
+			Vector2(r.position.x + 30.0, r.position.y + 21.0),
 			String(TABS[i]), HORIZONTAL_ALIGNMENT_CENTER,
-			r.size.x - icon_pad, 16,
+			r.size.x - 30.0, 14,
 			WyrdUi.INK if active else WyrdUi.INK_MID)
 
 # ---- Spec 45 followup: drawn-page scrolling (Satchel / Charts / Trades) ----
-# The pack window is a fixed 644×604 panel but the list pages grew past it
+# The pack window is a fixed 644x604 panel but the list pages grew past it
 # (the trades' unlock grids, a mid-game satchel). Each page scrolls: content
 # draws translated by -scroll, spans fully outside the page are skipped, and
 # parchment strips repainted from the ninepatch hide the partial rows that
@@ -736,7 +745,7 @@ func _draw_satchel_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> vo
 				String(def.get("name", id)),
 				HORIZONTAL_ALIGNMENT_LEFT, w - 110.0, 17, WyrdUi.INK)
 			draw_string(font, Vector2(x + w - 78.0, y + 1.0),
-				"× %d" % int(game.materials[id]),
+				"x %d" % int(game.materials[id]),
 				HORIZONTAL_ALIGNMENT_RIGHT, 70.0, 17, WyrdUi.TERRACOTTA)
 		y += 34.0
 		var desc := String(def.get("desc", ""))
@@ -783,7 +792,7 @@ func _draw_charts_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 			if _span_visible(y - 14.0, y + 5.0, scroll, view):
 				var good: bool = bool(a.get("good", false))
 				draw_string(font, Vector2(x + 30, y),
-					("✓ " + String(aff.name)) if good else ("✗ " + String(aff.bad_name)),
+					("v " + String(aff.name)) if good else ("x " + String(aff.bad_name)),
 					HORIZONTAL_ALIGNMENT_LEFT, w - 30, 13,
 					WyrdUi.SAGE.darkened(0.2) if good else WyrdUi.TERRACOTTA)
 			y += 20.0
@@ -797,14 +806,14 @@ func _draw_squiggle(from: Vector2, width: float, color: Color) -> void:
 	draw_line(from, from + Vector2(width, 0.0), color, 1.2)
 
 # Spec 39 — the Trades page: the Wayfinding band (round emblem, name + level,
-# XP bar) followed by the mastery ladder — a level 1→17 skill tree of every
+# XP bar) followed by the mastery ladder — a level 1-17 skill tree of every
 # perk as a card down a spine, lit when earned, dim with its Lv gate when not.
 const TRADE_ROWS := [
 	# ADR 0012 — one skill: Wayfinding.
 	{"key": "wayfinding", "name": "Wayfinding", "glyph": "✦",
 		"color": Color(0.71, 0.53, 0.22)},
 ]
-# Mastery-ladder card dimensions (the skill tree, level 1→17).
+# Mastery-ladder card dimensions (the skill tree, level 1-17).
 const CARD_H := 66.0
 const CARD_GAP := 10.0
 
@@ -855,7 +864,7 @@ func _draw_trades_tab(win: Rect2, font: Font, scroll: float, view: Rect2) -> voi
 			draw_string(font, Vector2(bar.end.x + 10.0, y + 37.0),
 				"%d / %d xp" % [xp, hi],
 				HORIZONTAL_ALIGNMENT_LEFT, 120.0, 13, Color(0.30, 0.24, 0.19))
-		# --- the mastery ladder (level 1→17): every perk, locked or earned ---
+		# --- the mastery ladder (level 1-17): every perk, locked or earned ---
 		var perks: Array = (game.PERKS as Dictionary).get(key, []).duplicate()
 		perks.sort_custom(func(a, b): return int(a.lv) < int(b.lv))
 		var earned := 0
