@@ -351,7 +351,10 @@ func _bar_quad(size: Vector2, color: Color) -> MeshInstance3D:
 
 func _set_bar(frac: float) -> void:
 	if _bar_fill != null:
-		_bar_fill.scale = Vector3(clampf(frac, 0.0, 1.0), 1.0, 1.0)
+		var f := clampf(frac, 0.0, 1.0)
+		_bar_fill.scale.x = f
+		# Pin the left edge: shift center right so left edge stays fixed at -0.33
+		_bar_fill.position.x = -0.33 * (1.0 - f)
 
 func _deplete() -> void:
 	_depleted = true
