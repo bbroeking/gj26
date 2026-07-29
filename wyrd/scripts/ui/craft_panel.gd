@@ -115,58 +115,32 @@ func _render() -> void:
 	for rid in st.get("recipes", []):
 		var rec: Dictionary = CraftingDefs.recipe(String(rid))
 		var locked: bool = lv < int(rec.get("req_lv", 1))
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 10)
-
-		# Spec 44 — a painted icon chip in front of every recipe row.
-		var chip := Label.new()
-		chip.text = _recipe_glyph(rec)
-		chip.custom_minimum_size = Vector2(36, 36)
-		chip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		chip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		chip.add_theme_font_size_override("font_size", 17)
-		chip.add_theme_color_override("font_color",
-			WyrdUi.INK if not locked else WyrdUi.INK_MID)
-		chip.add_theme_stylebox_override("normal",
-			WyrdUi.chip_stylebox(_recipe_tint(rec, locked)))
-		row.add_child(chip)
-
-		var info := VBoxContainer.new()
-		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var name_lbl := Label.new()
-		if locked:
-			name_lbl.text = "%s — %s %d" % [String(rec.name),
-				_game.TRADE_NAMES.get(trade, trade) if _game != null else trade,
-				int(rec.req_lv)]
-			WyrdUi.style_dim(name_lbl, 14)
-		else:
-			name_lbl.text = String(rec.name)
-			WyrdUi.style_body(name_lbl, 14)
-		info.add_child(name_lbl)
+		var craftable: bool = not locked and _game != null \
+			and _game.can_afford(rec.inputs)
 		var cost_parts: Array = []
 		for id in rec.inputs:
 			var have: int = 0 if _game == null else _game.material_count(String(id))
 			cost_parts.append("%d× %s (%d)" % [int(rec.inputs[id]),
 				GatherDefs.material_name(String(id)), have])
-		var detail := Label.new()
-		detail.text = "%s  ·  %d xp  ·  %s" % [" + ".join(cost_parts),
-			int(rec.get("xp", 0)), String(rec.get("desc", ""))]
-		WyrdUi.style_dim(detail, 12)
-		detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		info.add_child(detail)
-		row.add_child(info)
-
-		var b := Button.new()
-		WyrdUi.style_kit_button(b)
-		b.text = String(st.get("verb", "Craft"))
-		b.custom_minimum_size = Vector2(96, 40)
-		b.disabled = locked or _game == null or not _game.can_afford(rec.inputs)
+		var detail_str: String
+		if locked:
+			detail_str = "Requires %s %d" % [
+				_game.TRADE_NAMES.get(trade, trade) if _game != null else trade,
+				int(rec.get("req_lv", 1))]
+		else:
+			detail_str = "%s  ·  %d xp" % [" + ".join(cost_parts),
+				int(rec.get("xp", 0))]
+		var card := _RecipeCard.new()
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var rid_s := String(rid)
-		b.pressed.connect(func():
-			if _game != null and _game.craft(station_id, rid_s):
-				_render())
-		row.add_child(b)
-		_recipe_box.add_child(row)
+		card.setup(String(rec.name), detail_str, _recipe_glyph(rec),
+			_recipe_tint(rec, locked), locked, craftable,
+			String(st.get("verb", "Craft")))
+		if not locked:
+			card.craft_pressed.connect(func():
+				if _game != null and _game.craft(station_id, rid_s):
+					_render())
+		_recipe_box.add_child(card)
 
 	if _game == null:
 		_satchel_lbl.text = ""
@@ -212,3 +186,87 @@ func _render_satchel() -> void:
 		parts.append("%s %s ×%d" % [GatherDefs.material_icon(String(id)),
 			GatherDefs.material_name(String(id)), int(_game.materials[id])])
 	_satchel_lbl.text = "empty" if parts.is_empty() else "  ·  ".join(parts)
+
+
+# ---- drawn recipe card (one row) ----
+# draw_list_row plate: sage stripe when craftable, terracotta when locked,
+# neutral ink when ingredient-starved. Icon well on the left (group-tinted);
+# name + material/gate detail in ink; craft button anchored to the right edge.
+# Matches the vendor (_VendorCard) and loadout (_SkillCard) card language so
+# every code-drawn list reads as the same carved parchment shelf.
+class _RecipeCard extends Control:
+	const ICON_W := 44.0
+
+	var _name := ""
+	var _detail := ""
+	var _glyph := ""
+	var _tint: Color = WyrdUi.KIT_PLATE
+	var _locked := false
+	var _craftable := false
+	var _hover := false
+
+	signal craft_pressed
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(0, 68.0)
+		mouse_filter = Control.MOUSE_FILTER_PASS
+
+	func setup(recipe_name: String, detail: String, glyph: String, tint: Color,
+			locked: bool, craftable: bool, verb: String) -> void:
+		_name = recipe_name
+		_detail = detail
+		_glyph = glyph
+		_tint = tint
+		_locked = locked
+		_craftable = craftable
+		for c in get_children():
+			c.queue_free()
+		if not locked:
+			var btn := Button.new()
+			WyrdUi.style_kit_button(btn)
+			btn.text = verb
+			btn.disabled = not craftable
+			btn.anchor_left = 1.0
+			btn.anchor_right = 1.0
+			btn.anchor_top = 0.5
+			btn.anchor_bottom = 0.5
+			btn.offset_left = -104.0
+			btn.offset_right = -8.0
+			btn.offset_top = -19.0
+			btn.offset_bottom = 19.0
+			btn.pressed.connect(func(): craft_pressed.emit())
+			add_child(btn)
+		queue_redraw()
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_MOUSE_ENTER:
+			_hover = true
+			queue_redraw()
+		elif what == NOTIFICATION_MOUSE_EXIT:
+			_hover = false
+			queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		var accent: Color = WyrdUi.SAGE if _craftable \
+			else (WyrdUi.TERRACOTTA if _locked else WyrdUi.INK_MID)
+		WyrdUi.draw_list_row(self, r, accent)
+		if _hover and not _locked:
+			draw_rect(r.grow(-1.5), Color(1.0, 1.0, 0.90, 0.10))
+		var font := get_theme_default_font()
+		# Icon well — tinted by material group or item rarity, carved into the card.
+		var ir := Rect2(Vector2(9.0, (size.y - ICON_W) * 0.5),
+			Vector2(ICON_W, ICON_W))
+		WyrdUi.draw_well(self, ir, _tint)
+		draw_string(font, ir.position + Vector2(0.0, ICON_W * 0.5 + 8.0),
+			_glyph, HORIZONTAL_ALIGNMENT_CENTER, ICON_W, 20,
+			WyrdUi.INK if not _locked else Color(WyrdUi.INK_MID, 0.6))
+		# Name + detail text — button occupies the rightmost 112px on unlocked rows.
+		var tx := ir.end.x + 12.0
+		var btn_space := 112.0 if not _locked else 0.0
+		var avail_w := size.x - tx - btn_space - 8.0
+		var ink: Color = WyrdUi.INK if not _locked else Color(WyrdUi.INK_MID, 0.75)
+		draw_string(font, Vector2(tx, size.y * 0.5 - 4.0), _name,
+			HORIZONTAL_ALIGNMENT_LEFT, avail_w, 16, ink)
+		draw_string(font, Vector2(tx, size.y * 0.5 + 14.0), _detail,
+			HORIZONTAL_ALIGNMENT_LEFT, avail_w, 12, WyrdUi.INK_MID)
