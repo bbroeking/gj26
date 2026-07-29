@@ -132,14 +132,33 @@ func _finish() -> void:
 	queue_free()
 
 
-# Spec 41 — the round portrait well: parchment disc, ink ring, ghosted
-# silhouette placeholder until painted portraits exist.
+# Spec 41 — the round portrait well: parchment disc, burnished gold medallion
+# border with four cardinal leaf-bud ornaments, ghosted silhouette placeholder.
 class PortraitWell extends Control:
 	func _draw() -> void:
 		var c := size * 0.5
 		var r := minf(c.x, c.y)
+		# Parchment disc face.
 		draw_circle(c, r, Color(0.88, 0.82, 0.67))
+		# Ghost silhouette: body and head blobs.
 		draw_circle(c + Vector2(0, r * 0.28), r * 0.34, Color(0.55, 0.47, 0.36, 0.55))
 		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
+		# Burnished gold inset ring — the medallion's inner border.
+		draw_arc(c, r - 4.0, 0, TAU, 48, Color(WyrdUi.GOLD, 0.55), 2.0, true)
+		# Four cardinal leaf-bud ornaments (N / E / S / W) — the ivy medallion
+		# motif: a pointed petal emerges from the gold ring, tip anchored by the
+		# outer ink frame. Makes the portrait read as a fairy-tale medallion
+		# rather than a plain disc.
+		for i in 4:
+			var ang := float(i) * PI * 0.5 - PI * 0.5
+			var d := Vector2(cos(ang), sin(ang))
+			var perp := Vector2(-d.y, d.x)
+			var tip := c + d * (r - 1.0)
+			var mid := c + d * (r - 5.0)
+			var base := c + d * (r - 11.5)
+			draw_colored_polygon(PackedVector2Array([
+				mid + perp * 3.0, tip, mid - perp * 3.0, base
+			]), Color(WyrdUi.GOLD, 0.62))
+			draw_line(base + d * 0.8, tip, Color(WyrdUi.GOLD, 0.88), 0.9)
+		# Ink outer ring — anchors the whole medallion frame.
 		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
-		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
