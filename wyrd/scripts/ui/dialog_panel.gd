@@ -14,6 +14,7 @@ var _panel: Panel
 var _body: Label
 var _name_lbl: Label
 var _hint: Label
+var _scroll_well: _ScrollWell
 var _lockout := 0.0
 
 func _ready() -> void:
@@ -55,14 +56,25 @@ func _ready() -> void:
 	_name_lbl.offset_right = -56
 	_name_lbl.offset_top = 38
 	_panel.add_child(_name_lbl)
+	# Parchment scroll well drawn BEHIND the body text — makes the speech area
+	# read as a hand-rolled scroll rather than bare panel (must be added before
+	# _body so it renders underneath).
+	_scroll_well = _ScrollWell.new()
+	_scroll_well.anchor_right = 1.0
+	_scroll_well.anchor_bottom = 1.0
+	_scroll_well.offset_left = 192
+	_scroll_well.offset_top = 90
+	_scroll_well.offset_right = -66
+	_scroll_well.offset_bottom = -58
+	_panel.add_child(_scroll_well)
 	_body = Label.new()
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.anchor_right = 1.0
 	_body.anchor_bottom = 1.0
-	_body.offset_left = 200
-	_body.offset_top = 104
-	_body.offset_right = -72
-	_body.offset_bottom = -64
+	_body.offset_left = 202
+	_body.offset_top = 128
+	_body.offset_right = -76
+	_body.offset_bottom = -68
 	_body.add_theme_font_size_override("font_size", 21)
 	_body.add_theme_color_override("font_color", Color(0.20, 0.15, 0.11))
 	_body.add_theme_constant_override("line_spacing", 7)
@@ -87,6 +99,7 @@ func open(speaker: String, pages: Array) -> void:
 
 func _render() -> void:
 	_name_lbl.text = _speaker
+	_scroll_well.set_state(_idx, _pages.size())
 	if _idx < _pages.size():
 		_body.text = String(_pages[_idx])
 
@@ -143,3 +156,64 @@ class PortraitWell extends Control:
 		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
 		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
 		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+
+
+# The parchment scroll well that frames the dialog body text. Sits behind the
+# body Label so text stays sharp and auto-wraps normally; this control adds the
+# storybook frame: cream fill, scroll rolls at top + bottom, an inner flourish
+# rule where speech begins, a page counter, and a gold continue chevron.
+class _ScrollWell extends Control:
+	var _idx := 0
+	var _total := 0
+
+	func set_state(idx: int, total: int) -> void:
+		_idx = idx
+		_total = total
+		queue_redraw()
+
+	func _draw() -> void:
+		var r := Rect2(Vector2.ZERO, size)
+		var font := get_theme_default_font()
+		# Parchment fill — warmer cream than the wood panel, so the speech area
+		# reads as its own island, a page within the frame.
+		draw_rect(r, Color(0.97, 0.93, 0.82, 0.60))
+		# Sparse grain so it reads as aged paper, not flat UI.
+		WyrdUi.draw_parchment_grain(self, r, 37)
+		# Top scroll roll — a narrow parchment cylinder implying the scroll top.
+		var roll_h := 11.0
+		var roll_col := Color(0.87, 0.81, 0.65)
+		draw_rect(Rect2(r.position + Vector2(6, 0),
+			Vector2(r.size.x - 12, roll_h)), roll_col)
+		# Light bevel on the roll top (catches the warm page-light).
+		draw_rect(Rect2(r.position + Vector2(9, 1),
+			Vector2(r.size.x - 18, 3)), Color(1.0, 0.98, 0.88, 0.55))
+		# Bottom scroll roll.
+		draw_rect(Rect2(r.position + Vector2(6, r.size.y - roll_h),
+			Vector2(r.size.x - 12, roll_h)), roll_col)
+		draw_rect(Rect2(r.position + Vector2(9, r.size.y - roll_h + 1),
+			Vector2(r.size.x - 18, 3)), Color(1.0, 0.98, 0.88, 0.45))
+		# Ink shadow lines at the inner edges of the rolls (depth read).
+		draw_line(r.position + Vector2(8, roll_h),
+			r.position + Vector2(r.size.x - 8, roll_h),
+			Color(WyrdUi.KIT_EDGE, 0.28), 1.0)
+		draw_line(r.position + Vector2(8, r.size.y - roll_h),
+			r.position + Vector2(r.size.x - 8, r.size.y - roll_h),
+			Color(WyrdUi.KIT_EDGE, 0.28), 1.0)
+		# Ink border around the whole scroll well.
+		draw_rect(r, WyrdUi.KIT_EDGE, false, 1.5)
+		# Inner flourish rule just below the top roll — "here begins the speech".
+		WyrdUi.draw_flourish(self,
+			Vector2(r.size.x * 0.5, roll_h + 14.0), r.size.x * 0.42)
+		# Page counter in the top-right corner (only for multi-page dialogs).
+		if _total > 1:
+			draw_string(font,
+				Vector2(r.size.x - 48, roll_h + 12),
+				"%d / %d" % [_idx + 1, _total],
+				HORIZONTAL_ALIGNMENT_RIGHT, 42, 11,
+				Color(WyrdUi.INK_MID, 0.60))
+		# Gold continue chevron at the bottom-right when more pages follow.
+		if _total > 0 and _idx < _total - 1:
+			draw_string(font,
+				Vector2(r.size.x - 26, r.size.y - roll_h - 4),
+				"▾", HORIZONTAL_ALIGNMENT_CENTER, 22, 15,
+				Color(WyrdUi.GOLD, 0.80))
