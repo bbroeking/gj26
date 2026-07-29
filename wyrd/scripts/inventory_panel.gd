@@ -585,39 +585,29 @@ func _draw_tabs(win: Rect2) -> void:
 	for i in TABS.size():
 		var r := _tab_rect(i)
 		var active := i == _tab
-		# Carved plate face — active tab sits brighter; inactive sits dimmer.
-		# Mirrors WyrdUi.draw_carved_button so the row reads as a crafted piece.
-		draw_rect(r, WyrdUi.KIT_PLATE if active else Color(0.84, 0.77, 0.64))
-		# Top light bevel — the tab catches the page's warm light.
-		draw_rect(Rect2(r.position + Vector2(2.0, 2.0),
-			Vector2(r.size.x - 4.0, 2.0)),
-			Color(1.0, 1.0, 0.93, 0.52 if active else 0.22))
-		# Bottom ink shadow so the tab feels weighty.
-		draw_rect(Rect2(r.position + Vector2(2.0, r.size.y - 3.0),
-			Vector2(r.size.x - 4.0, 2.0)),
-			Color(WyrdUi.KIT_EDGE, 0.32 if active else 0.14))
-		draw_rect(r, WyrdUi.KIT_EDGE, false, 1.5)
+		# Spec 40 / Artistic — icon + label plates; active = brighter + terracotta underline.
+		draw_rect(r, Color(0.95, 0.91, 0.80) if active else Color(0.85, 0.78, 0.64))
+		draw_rect(r, Color(0.42, 0.34, 0.25, 0.95), false, 1.5)
 		if active:
-			# Gold inner pinstripe: the "burnished" active-tab read.
-			draw_rect(r.grow(-3.0), Color(WyrdUi.GOLD, 0.48), false, 1.0)
-			# Terracotta underline stamps the active identity.
-			draw_line(r.position + Vector2(3.0, r.size.y - 2.0),
-				r.position + Vector2(r.size.x - 3.0, r.size.y - 2.0),
+			draw_line(r.position + Vector2(2, r.size.y - 2),
+				r.position + Vector2(r.size.x - 2, r.size.y - 2),
 				WyrdUi.TERRACOTTA, 3.0)
-		# Tab icon — preloaded in _ready (avoids the white-texture-in-_draw
-		# gotcha). Full colour when active, ghosted when not.
-		var icon: Texture2D = _cached_tex(String(TAB_ICONS[i]))
-		if icon != null:
-			var icon_r := Rect2(r.position + Vector2(7.0, 7.0), Vector2(18.0, 18.0))
-			draw_texture_rect(icon, icon_r, false,
-				Color.WHITE if active else Color(1.0, 1.0, 1.0, 0.45))
-			draw_string(font, r.position + Vector2(30.0, 22.0), String(TABS[i]),
-				HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 36.0, 14,
-				WyrdUi.INK if active else WyrdUi.INK_MID)
-		else:
-			draw_string(font, r.position + Vector2(0.0, 22.0), String(TABS[i]),
-				HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16,
-				WyrdUi.INK if active else WyrdUi.INK_MID)
+		# Draw the preloaded hand-painted icon left of the label so each tab
+		# reads as a carved-sign rather than bare text. Icons fade when inactive.
+		var icon_pad := 0.0
+		var icon_tex: Texture2D = _cached_tex(String(TAB_ICONS[i]))
+		if icon_tex != null:
+			var icon_s := 16.0
+			var ix := r.position.x + 6.0
+			var iy := r.position.y + (r.size.y - icon_s) * 0.5
+			draw_texture_rect(icon_tex,
+				Rect2(Vector2(ix, iy), Vector2(icon_s, icon_s)),
+				false, Color(1.0, 1.0, 1.0, 1.0 if active else 0.55))
+			icon_pad = icon_s + 4.0
+		draw_string(font, Vector2(r.position.x + icon_pad, r.position.y + 22.0),
+			String(TABS[i]), HORIZONTAL_ALIGNMENT_CENTER,
+			r.size.x - icon_pad, 16,
+			WyrdUi.INK if active else WyrdUi.INK_MID)
 
 # ---- Spec 45 followup: drawn-page scrolling (Satchel / Charts / Trades) ----
 # The pack window is a fixed 644×604 panel but the list pages grew past it
