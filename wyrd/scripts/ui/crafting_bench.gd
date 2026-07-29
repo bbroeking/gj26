@@ -865,15 +865,39 @@ class BenchView extends Control:
 		for ln in lines:
 			w = maxf(w, font.get_string_size(ln, HORIZONTAL_ALIGNMENT_LEFT,
 				-1, 13).x)
+		# Extra height when a name + description are separated by a gold rule.
+		var extra_h := 4.0 if lines.size() > 1 else 0.0
 		var box := Rect2(_tip_at + Vector2(16, 12),
-			Vector2(w + 20.0, 12.0 + 19.0 * lines.size()))
+			Vector2(w + 20.0, 12.0 + 19.0 * lines.size() + extra_h))
 		# Keep it on the panel.
 		box.position.x = minf(box.position.x, size.x - box.size.x - 8.0)
 		box.position.y = minf(box.position.y, size.y - box.size.y - 8.0)
+		# Soft drop shadow — the notecard sits above the bench surface.
+		draw_rect(Rect2(box.position + Vector2(3, 3), box.size),
+			Color(0, 0, 0, 0.14))
+		# Parchment card face.
 		draw_rect(box, Color(0.97, 0.93, 0.80, 0.97))
-		draw_rect(box, EDGE, false, 2.0)
+		# Honey top bevel + ink bottom shadow.
+		draw_rect(Rect2(box.position + Vector2(2, 2), Vector2(box.size.x - 4, 2)),
+			Color(1.0, 0.97, 0.86, 0.55))
+		draw_rect(Rect2(box.position + Vector2(2, box.size.y - 3),
+			Vector2(box.size.x - 4, 2)), Color(EDGE, 0.22))
+		# Parchment grain across the face.
+		WyrdUi.draw_parchment_grain(self, box, 17)
+		# Ink border + burnished gold inset line.
+		draw_rect(box, EDGE, false, 1.5)
+		draw_rect(box.grow(-3.0), Color(WyrdUi.GOLD, 0.40), false, 1.0)
 		var ty := box.position.y + 17.0
-		for ln in lines:
-			draw_string(font, Vector2(box.position.x + 10.0, ty), ln,
-				HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 20.0, 13, TXT)
-			ty += 19.0
+		for i in lines.size():
+			var col := WyrdUi.INK if i == 0 else TXT
+			var sz := 14 if i == 0 else 13
+			draw_string(font, Vector2(box.position.x + 10.0, ty), lines[i],
+				HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 20.0, sz, col)
+			if i == 0 and lines.size() > 1:
+				# Gold hairline rule separating the name from the description.
+				draw_line(Vector2(box.position.x + 8, ty + 5),
+					Vector2(box.end.x - 8, ty + 5),
+					Color(WyrdUi.GOLD, 0.45), 1.0)
+				ty += 23.0
+			else:
+				ty += 19.0
