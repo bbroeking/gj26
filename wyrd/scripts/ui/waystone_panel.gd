@@ -12,8 +12,48 @@ var _game: Node
 var _selected := -1
 var _panel: Panel
 var _list_box: VBoxContainer
-var _detail: Label
+var _detail_view: Control   # WaystoneAffixDetail — drawn polarity rows
 var _go_btn: Button
+
+# Drawn polarity-keyed affix rows for the chart detail block.
+# Each row is a WyrdUi.draw_list_row card: SAGE for good affixes,
+# TERRACOTTA for bad, INK_MID for a clean (no-affix) chart.
+class WaystoneAffixDetail extends Control:
+	var _rows: Array = []          # [{good:bool, name:str, desc:str}]
+	var _has_selection: bool = false
+
+	const ROW_H := 22.0
+	const ROW_GAP := 3.0
+
+	func set_data(rows: Array, has_selection: bool) -> void:
+		_rows = rows
+		_has_selection = has_selection
+		queue_redraw()
+
+	func _draw() -> void:
+		if not _has_selection:
+			return
+		var font := get_theme_default_font()
+		var w := size.x
+		if _rows.is_empty():
+			var r := Rect2(Vector2.ZERO, Vector2(w, ROW_H))
+			WyrdUi.draw_list_row(self, r, WyrdUi.INK_MID)
+			draw_string(font, Vector2(12.0, 15.0),
+				"A clean chart — the way there and back, nothing more.",
+				HORIZONTAL_ALIGNMENT_LEFT, w - 20.0, 12, WyrdUi.INK_MID)
+			return
+		var y := 0.0
+		for aff in _rows:
+			var r := Rect2(Vector2(0.0, y), Vector2(w, ROW_H))
+			var accent := WyrdUi.SAGE if bool(aff.get("good", false)) \
+				else WyrdUi.TERRACOTTA
+			WyrdUi.draw_list_row(self, r, accent)
+			var glyph := "✓ " if bool(aff.get("good", false)) else "✗ "
+			draw_string(font,
+				Vector2(12.0, y + 15.0),
+				glyph + String(aff.get("name", "")) + " — " + String(aff.get("desc", "")),
+				HORIZONTAL_ALIGNMENT_LEFT, w - 20.0, 12, WyrdUi.INK)
+			y += ROW_H + ROW_GAP
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -66,17 +106,16 @@ func _ready() -> void:
 	_list_box.add_theme_constant_override("separation", 6)
 	scroll.add_child(_list_box)
 
-	_detail = Label.new()
-	WyrdUi.style_body(_detail, 13)
-	_detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_detail.anchor_right = 1.0
-	_detail.anchor_top = 1.0
-	_detail.anchor_bottom = 1.0
-	_detail.offset_left = 52
-	_detail.offset_right = -52
-	_detail.offset_top = -150
-	_detail.offset_bottom = -64
-	_panel.add_child(_detail)
+	_detail_view = WaystoneAffixDetail.new()
+	_detail_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_detail_view.anchor_right = 1.0
+	_detail_view.anchor_top = 1.0
+	_detail_view.anchor_bottom = 1.0
+	_detail_view.offset_left = 52
+	_detail_view.offset_right = -52
+	_detail_view.offset_top = -150
+	_detail_view.offset_bottom = -64
+	_panel.add_child(_detail_view)
 
 	_go_btn = Button.new()
 	WyrdUi.style_button(_go_btn)
@@ -130,21 +169,21 @@ func _render() -> void:
 	# Detail + button state.
 	if _selected >= 0 and _selected < n:
 		var chart: Dictionary = _game.charts[_selected]
-		var lines: Array = []
+		var aff_rows: Array = []
 		for a in chart.get("affixes", []):
 			var aff: Dictionary = ChartsData.AFFIXES.get(String(a.get("id", "")), {})
 			if aff.is_empty():
 				continue
 			if bool(a.get("good", false)):
-				lines.append("✓ %s — %s" % [String(aff.name), String(aff.good_desc)])
+				aff_rows.append({"good": true,
+					"name": String(aff.name), "desc": String(aff.good_desc)})
 			else:
-				lines.append("✗ %s — %s" % [String(aff.bad_name), String(aff.bad_desc)])
-		if lines.is_empty():
-			lines.append("A clean chart. Nothing inked in but the way there and back.")
-		_detail.text = "\n".join(lines)
+				aff_rows.append({"good": false,
+					"name": String(aff.bad_name), "desc": String(aff.bad_desc)})
+		_detail_view.set_data(aff_rows, true)
 		_go_btn.disabled = false
 	else:
-		_detail.text = ""
+		_detail_view.set_data([], false)
 		_go_btn.disabled = true
 
 func _on_go() -> void:
