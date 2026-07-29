@@ -37,6 +37,22 @@ func _draw() -> void:
 	WyrdUi.draw_carved_button(self, r, castable)
 	WyrdUi.draw_well(self, r.grow(-7.0), WyrdUi.KIT_PLATE.lightened(0.05))
 	WyrdUi.draw_parchment_grain(self, r, _seed)
+	# Carved rune-mount corners: eight tiny L-shaped gold braces (2 per corner)
+	# just inside the slot face. They sit under the cooldown wedge and emerge as
+	# it shrinks — when fully ready all four glow at 55 % gold; the ready-flash
+	# surges them to near-full, giving each slot a jeweled-artifact quality.
+	var brace_a := 0.55 if castable else 0.22
+	if _flash > 0.0:
+		brace_a = lerpf(brace_a, 1.0, _flash)
+	var brace_c := Color(WyrdUi.GOLD, brace_a)
+	var face := r.grow(-2.5)
+	for corner in 4:
+		var px := face.position.x if (corner & 1) == 0 else face.end.x
+		var py := face.position.y if (corner & 2) == 0 else face.end.y
+		var dx := 1.0 if (corner & 1) == 0 else -1.0
+		var dy := 1.0 if (corner & 2) == 0 else -1.0
+		draw_line(Vector2(px, py), Vector2(px + dx * 6.0, py), brace_c, 1.6)
+		draw_line(Vector2(px, py), Vector2(px, py + dy * 6.0), brace_c, 1.6)
 	# Radial cooldown wedge — a square-clamped pie from 12 o'clock clockwise,
 	# shrinking as the skill cools. Vertices ride the slot's own edge so it
 	# reads as the slot face darkening, with no overshoot into the gaps.
