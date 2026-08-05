@@ -39,6 +39,11 @@ func _ready() -> void:
 	_panel.offset_top = 70
 	_panel.offset_bottom = -70
 	add_child(_panel)
+	# Nameplate ribbon — parchment strip behind the speaker name.
+	var banner := _NameBanner.new()
+	banner.anchor_right = 1.0
+	banner.offset_bottom = 100.0
+	_panel.add_child(banner)
 	# Portrait well (spec 41) — ghosted silhouette until painted portraits.
 	var well := PortraitWell.new()
 	well.position = Vector2(48, 104)
@@ -143,3 +148,42 @@ class PortraitWell extends Control:
 		draw_circle(c - Vector2(0, r * 0.18), r * 0.22, Color(0.55, 0.47, 0.36, 0.55))
 		draw_arc(c, r, 0, TAU, 48, Color(0.26, 0.19, 0.13), 2.5, true)
 		draw_arc(c, r - 4.0, 0, TAU, 48, Color(0.26, 0.19, 0.13, 0.35), 1.2, true)
+
+
+# A warm parchment nameplate ribbon across the dialog header, behind the
+# speaker name label. Gives the name a storybook caption read: carved strip
+# with ink frame, inner pinstripe, flourish divider, and sage diamond ornaments
+# at each end. Ornament lives on the header only — body text stays plain.
+class _NameBanner extends Control:
+	func _draw() -> void:
+		var lm := 38.0    # clear of left wood-frame margin
+		var rm := 36.0    # clear of right wood-frame margin
+		var strip := Rect2(Vector2(lm, 34.0), Vector2(size.x - lm - rm, 50.0))
+		# Warm parchment face
+		draw_rect(strip, Color(0.96, 0.91, 0.79, 0.85))
+		# Top bevel — catches the page's warm light
+		draw_rect(Rect2(strip.position + Vector2(2, 1), Vector2(strip.size.x - 4, 2)),
+			Color(1.0, 0.98, 0.91, 0.55))
+		# Bottom shade — grounds the strip on the panel face
+		draw_rect(Rect2(strip.position + Vector2(2, strip.size.y - 3),
+			Vector2(strip.size.x - 4, 2)), Color(WyrdUi.KIT_EDGE, 0.28))
+		# Ink frame
+		draw_rect(strip, WyrdUi.KIT_EDGE, false, 1.5)
+		# Inner pinstripe — the burnished-gold read shared with the tray/hotbar
+		draw_rect(strip.grow(-3.0), Color(WyrdUi.KIT_EDGE, 0.20), false, 1.0)
+		# Section flourish below the strip — ink ◆ divider separating header from body
+		WyrdUi.draw_flourish(self,
+			Vector2(strip.position.x + strip.size.x * 0.5, strip.end.y + 7.0),
+			strip.size.x * 0.55)
+		# Sage diamond ornaments at each end of the ribbon — the design-language
+		# leafy ornament, kept small so the speaker name stays the focal point
+		for side in [-1.0, 1.0]:
+			var cx := strip.position.x + strip.size.x * (0.5 + side * 0.46)
+			var cy := strip.position.y + strip.size.y * 0.5
+			var d := 6.0
+			var pts := PackedVector2Array([
+				Vector2(cx, cy - d), Vector2(cx + d, cy),
+				Vector2(cx, cy + d), Vector2(cx - d, cy)])
+			draw_colored_polygon(pts, Color(WyrdUi.SAGE, 0.65))
+			draw_polyline(pts + PackedVector2Array([pts[0]]),
+				Color(WyrdUi.KIT_EDGE, 0.75), 1.0, true)
