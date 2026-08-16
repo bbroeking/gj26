@@ -739,7 +739,10 @@ class BenchView extends Control:
 		var cy := 462.0
 		draw_string(hdr, Vector2(bx, cy), "Codex", HORIZONTAL_ALIGNMENT_LEFT,
 			200, 13, WyrdUi.INK)
-		cy += 16.0
+		# Flourish under the Codex header — matches the tray/bench/result
+		# section headers so all four columns read as a unified document.
+		WyrdUi.draw_flourish(self, Vector2(bx + 110.0, cy + 4.0), 210.0)
+		cy += 20.0
 		_codex_rects.clear()
 		for rid in GatherDefs.INK_RECIPE_ORDER:
 			var rec: Dictionary = GatherDefs.INK_RECIPES[rid]
@@ -763,19 +766,28 @@ class BenchView extends Control:
 				col = TXT
 			elif riddle_open:
 				line = "◌ ??? — %s" % String(rec.get("riddle", ""))
+			# Each codex entry rides a drawn parchment card — the same carved-
+			# plate language as the tray rows. Sage stripe = discovered recipe;
+			# muted INK_MID stripe = still unknown; no rows look like bare text.
+			var row_r := Rect2(Vector2(bx - 2.0, cy - 1.0), Vector2(332.0, 16.0))
+			var accent: Color
+			if known:
+				accent = WyrdUi.SAGE.darkened(0.08)
+			else:
+				accent = Color(WyrdUi.INK_MID, 0.45)
+			WyrdUi.draw_list_row(self, row_r, accent)
 			if known:
 				# Spec 44 — a tiny bottle in the ink's color marks the find.
-				WyrdUi.draw_ink_bottle(self, Vector2(bx + 6.0, cy + 7.0), 13.0,
+				WyrdUi.draw_ink_bottle(self, Vector2(bx + 8.0, cy + 7.0), 13.0,
 					INK_TINT.get(String(rid), Color(0.4, 0.4, 0.4)))
-				draw_string(font, Vector2(bx + 16.0, cy + 11.0), line,
-					HORIZONTAL_ALIGNMENT_LEFT, 314, 11, col)
+				draw_string(font, Vector2(bx + 18.0, cy + 11.0), line,
+					HORIZONTAL_ALIGNMENT_LEFT, 312, 11, col)
 				# Spec 45-carto — Practiced Measures: a known row is a button.
-				_codex_rects.append({"rect": Rect2(Vector2(bx, cy),
-					Vector2(330.0, 15.0)), "id": String(rid)})
+				_codex_rects.append({"rect": row_r, "id": String(rid)})
 			else:
-				draw_string(font, Vector2(bx, cy + 11.0), line,
-					HORIZONTAL_ALIGNMENT_LEFT, 330, 11, col)
-			cy += 15.0
+				draw_string(font, Vector2(bx + 6.0, cy + 11.0), line,
+					HORIZONTAL_ALIGNMENT_LEFT, 326, 11, col)
+			cy += 16.0
 
 	func _draw_result(hdr: Font, font: Font) -> void:
 		var rx := 660.0
