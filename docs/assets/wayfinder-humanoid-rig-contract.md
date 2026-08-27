@@ -47,6 +47,18 @@ under that attachment and keeps a small item-specific local transform. The live
 bow already proves this pattern against `LeftHand`; authored socket bones remove
 the remaining per-model guesswork.
 
+Rigid items also own the other half of the contract: their object origin (or an
+authoring-only `Grip` marker) sits at the actual contact point. For the shortbow,
+Blender detects the moss-green wrap from its base-color texture and UVs, then
+rebases the exported mesh so that point is local zero. A palm socket aligned to
+a bounding-box-centered weapon is not a valid attachment.
+
+The current Meshy skeleton has no finger bones. The Ranger therefore ships a
+`BowGrip_L` blend shape for the closed left-hand silhouette; Godot activates it
+when the model loads. Characters with articulated finger bones should use an
+authored hand pose instead, but should keep the same socket + item-origin
+contract.
+
 ## Two gear paths
 
 Rigid gear does not need skinning. Hats, weapons, quivers, backpacks, belts,

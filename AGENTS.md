@@ -22,21 +22,13 @@ charts (parameterized dungeon keys) whose affixes shape each run.
 ## Run the game
 
 ```bash
-godot --path wyrd                 # binary at /opt/homebrew/bin/godot
+wyrd/tools/godot.sh --path wyrd   # prefers the project-matched Godot 4.6.2
 ```
 
-## Tests (the gate — all eight must stay green)
+## Tests (the gate — all 23 entrypoints must stay green)
 
 ```bash
-cd wyrd
-WYRD_NO_SAVE=1 godot --headless --path . --script res://test_wyrd_loop.gd
-WYRD_NO_SAVE=1 godot --headless --path . --script res://test_wyrd_dungeon_scene.gd
-WYRD_NO_SAVE=1 godot --headless --path . --script res://test_wyrd_transitions.gd
-WYRD_NO_SAVE=1 godot --headless --path . --script res://test_skills.gd
-WYRD_NO_SAVE=1 godot --headless --path . --script res://test_boot_smoke.gd
-WYRD_NO_SAVE=1 godot --headless --path . --script res://test_first_road_slice.gd
-WYRD_NO_SAVE=1 godot --headless --path . --script res://test_movement_feel.gd
-WYRD_NO_SAVE=1 godot --headless --path . --script res://test_hollow_readability.gd
+wyrd/tools/test_checkpoint_gate.sh
 ```
 
 ## Layout

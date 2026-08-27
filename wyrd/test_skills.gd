@@ -100,18 +100,82 @@ func _test_fresh_basic_only(game: Node, player: Node3D) -> void:
 
 func _test_basic_release_timing(player: Node3D, host: Node) -> void:
 	print("[Basic release animation]")
+	var grip_shape_found := false
+	var grip_shape_value := 0.0
+	for candidate in player._mesh.find_children("*", "MeshInstance3D", true, false):
+		var mesh_instance := candidate as MeshInstance3D
+		if mesh_instance.mesh == null:
+			continue
+		for shape_index in mesh_instance.mesh.get_blend_shape_count():
+			if String(mesh_instance.mesh.get_blend_shape_name(shape_index)) == "BowGrip_L":
+				grip_shape_found = true
+				grip_shape_value = mesh_instance.get_blend_shape_value(shape_index)
+	_check("Ranger GLB exposes the authored palm socket and closed bow grip",
+		player._skel.find_bone("Socket_Hand_L") >= 0
+			and player._bow_socket.bone_name == "Socket_Hand_L"
+			and grip_shape_found
+			and grip_shape_value >= 0.99,
+		str({"socket": player._bow_socket.bone_name,
+			"grip_shape_found": grip_shape_found,
+			"grip_shape_value": grip_shape_value}))
 	# Clear the buffer asserted above and drive the release seam directly. The
 	# projectile must not exist during the authored nock beat, then must appear
 	# exactly when the pending release resolves.
 	player._fire_buffer = 0.0
+	player._bow_draw_t = 0.0
+	player._update_bow()
+	var socket_rotation_before: Vector3 = player._bow_socket.rotation
+	var relative_basis_before: Basis = player._bow_socket.global_basis.orthonormalized().inverse() \
+		* player._bow.global_basis.orthonormalized()
+	player._bow_socket.rotation.z += deg_to_rad(25.0)
+	player._update_bow()
+	var relative_basis_after: Basis = player._bow_socket.global_basis.orthonormalized().inverse() \
+		* player._bow.global_basis.orthonormalized()
+	var hand_follow_error: float = relative_basis_before.get_rotation_quaternion().angle_to(
+		relative_basis_after.get_rotation_quaternion())
+	_check("bow keeps a fixed angle to the ranger's hand",
+		hand_follow_error <= deg_to_rad(0.5),
+		"relative rotation drift=%.2f degrees" % rad_to_deg(hand_follow_error))
+	player._bow_socket.rotation = socket_rotation_before
+	player._update_bow()
+	var wrist_idx: int = player._skel.find_bone("LeftHand")
+	var wrist_world: Vector3 = player._skel.global_transform \
+		* player._skel.get_bone_global_pose(wrist_idx).origin
+	var carry_hand_axis: Vector3 = (
+		player._bow_socket.global_position - wrist_world).normalized()
+	var carry_long_axis: Vector3 = player._bow.global_basis.y.normalized()
+	var carry_string_axis: Vector3 = player._bow.global_basis.x.normalized()
+	var uppermost_string_axis: Vector3 = (
+		Vector3.UP - carry_hand_axis * Vector3.UP.dot(carry_hand_axis)).normalized()
+	_check("lowered arm carries the bow parallel to the hand with its string uppermost",
+		carry_long_axis.dot(carry_hand_axis) >= 0.99
+			and carry_string_axis.dot(uppermost_string_axis) >= 0.99,
+		str({"hand_axis": carry_hand_axis,
+			"long_axis": carry_long_axis, "string_axis": carry_string_axis}))
 	var before := host.get_children().filter(func(child: Node) -> bool:
 		return child.name == "Arrow").size()
 	player._begin_basic_release()
+	player._update_bow()
+	var full_draw_long_axis: Vector3 = player._bow.global_basis.y.normalized()
+	_check("the draw keeps the bow parallel to the hand",
+		full_draw_long_axis.dot(carry_hand_axis) >= 0.99,
+		str({"hand_axis": carry_hand_axis, "long_axis": full_draw_long_axis}))
 	_check("Basic Shot begins with a visible nock pose",
 		bool(player._basic_release_pending)
 			and float(player._bow_draw_t) > 0.0
 			and player._bow_modifier != null
 			and float(player._bow_modifier.draw_amount) > 0.99)
+	await physics_frame
+	await process_frame
+	var palm_anchor: Vector3 = player._bow_socket.global_position
+	var grip_error: float = player._bow.global_position.distance_to(palm_anchor)
+	_check("bow grip remains seated in the left-palm socket during draw",
+		player._bow.get_parent() == player._bow_socket
+			and (player._weapon_presentation.hand_offset as Vector3).is_zero_approx()
+			and grip_error <= 0.01,
+		str({"parent": player._bow.get_parent(),
+			"offset": player._weapon_presentation.hand_offset,
+			"grip_error": grip_error}))
 	var anticipation := float(player.get_script().get_script_constant_map().get(
 		"BOW_ANTICIPATION_TIME", 0.07))
 	var during := host.get_children().filter(func(child: Node) -> bool:

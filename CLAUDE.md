@@ -19,8 +19,11 @@ data, design docs — was ported into `wyrd/data/` and `docs/`.
 ## Run the game
 
 ```bash
-godot --path wyrd                 # binary at /opt/homebrew/bin/godot
+wyrd/tools/godot.sh --path wyrd   # prefers the project-matched Godot 4.6.2
 ```
+
+`wyrd/tools/godot.sh` uses `WYRD_GODOT_BIN` when supplied, then the matching
+macOS app at `/Applications/Godot 4.6.2.app`, then `godot` from `PATH`.
 
 Dev hooks (env vars): `WYRD_NO_SAVE=1` (never touch the real save),
 `WYRD_SHOT=1` (screenshot to /tmp/wyrd_town.png), `WYRD_UI_SHOT=<surface>`
@@ -33,19 +36,11 @@ ladder + ADR-0013 difficulty bands).
 ## Tests
 
 ```bash
-cd wyrd
-WYRD_NO_SAVE=1 godot --headless --path . --script res://test_wyrd_loop.gd
-WYRD_NO_SAVE=1 godot --headless --path . --script res://test_wyrd_dungeon_scene.gd
-WYRD_NO_SAVE=1 godot --headless --path . --script res://test_wyrd_transitions.gd
-WYRD_NO_SAVE=1 godot --headless --path . --script res://test_skills.gd
-WYRD_NO_SAVE=1 godot --headless --path . --script res://test_boot_smoke.gd
-WYRD_NO_SAVE=1 godot --headless --path . --script res://test_first_road_slice.gd
-WYRD_NO_SAVE=1 godot --headless --path . --script res://test_movement_feel.gd
-WYRD_NO_SAVE=1 godot --headless --path . --script res://test_hollow_readability.gd
+wyrd/tools/test_checkpoint_gate.sh
 ```
 
-All eight must stay green. The current assertion counts and browser gate live
-in `docs/test-manifest.md`. test_skills covers the hotbar dispatch path —
+All 23 checkpoint entrypoints must stay green. The current assertion counts
+and browser gate live in `docs/test-manifest.md`. test_skills covers the hotbar dispatch path —
 it's the only suite that catches a dead keypress; its absence once let a
 frozen-hotbar regression ship. **test_boot_smoke** compiles every
 `scripts/*.gd` + loads Town/World.tscn — the only suite that catches a
@@ -100,3 +95,5 @@ docs/                      ← world bible, plans, specs/, adr/, ui-refs/
   LLM Wiki; start at `kb/index.md`, schema in `kb/CLAUDE.md`). The loose
   design docs that used to sit in `docs/` were folded into `kb/` and
   removed 2026-06-13.
+- The concise, reconciled project map is `docs/PROJECT-OUTLINE.md`; the root
+  `CONTEXT.md` is the single ubiquitous-language glossary.

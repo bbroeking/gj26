@@ -133,13 +133,16 @@ func _run() -> void:
 		var player_constants: Dictionary = player.get_script().get_script_constant_map()
 		_check("player uses meshless chibi locomotion sidecars",
 			String(player_constants.get("CHIBI_WALK_PATH", "")) \
-				== "res://models/player_chibi_walk_anim_v1.glb" \
+				== "res://models/player_wayfinder_v2_casual_walk_anim.glb" \
+			and String(player_constants.get("CHIBI_IDLE_POSE_PATH", "")) \
+				== "res://models/player_wayfinder_v2_walk_anim.glb" \
 			and String(player_constants.get("CHIBI_RUN_PATH", "")) \
 				== "res://models/player_chibi_run_anim_v1.glb" \
 			and String(player_constants.get("CHIBI_DASH_PATH", "")) \
 				== "res://models/player_chibi_dash_anim_v1.glb")
 		for sidecar_path in [
-			"res://models/player_chibi_walk_anim_v1.glb",
+			"res://models/player_wayfinder_v2_casual_walk_anim.glb",
+			"res://models/player_wayfinder_v2_walk_anim.glb",
 			"res://models/player_chibi_run_anim_v1.glb",
 			"res://models/player_chibi_dash_anim_v1.glb",
 		]:

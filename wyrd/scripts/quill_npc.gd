@@ -8,7 +8,8 @@ extends Interactable
 # docs/WORLD_BIBLE.md (plain-spoken, warm, no fantasy-isms).
 
 const QUILL_GLB := preload("res://models/npc_quill_v3_rigged.glb")
-const QUILL_WALK_GLB := preload("res://models/npc_quill_v3_walk_anim.glb")
+const QUILL_POSE_GLB := preload("res://models/npc_quill_v3_walk_anim.glb")
+const QUILL_WALK_GLB := preload("res://models/npc_quill_v3_casual_walk_anim.glb")
 const AnimDriverScript := preload("res://scripts/anim_driver.gd")
 const NpcAttentionScript := preload("res://scripts/npc_attention.gd")
 const NpcWanderScript := preload("res://scripts/npc_wander.gd")
@@ -33,7 +34,7 @@ func _ready_interactable() -> void:
 	mesh.scale = Vector3.ONE
 	GlbFit.unmetal(mesh)
 	GlbFit.add_ink_outline(mesh)
-	AnimDriverScript.play_sidecar_pose(mesh, QUILL_WALK_GLB, "walk", 0.75, 0.68)
+	AnimDriverScript.play_sidecar_pose(mesh, QUILL_POSE_GLB, "walk", 0.75, 0.68)
 	var attention := NpcAttentionScript.new()
 	attention.name = "NpcAttention"
 	add_child(attention)
@@ -43,7 +44,7 @@ func _ready_interactable() -> void:
 	add_child(wander)
 	wander.setup(self, mesh, QUILL_WALK_GLB, [
 		Vector3(1.2, 0.0, -0.8), Vector3(-1.0, 0.0, 0.7),
-	], 0.66)
+	], 0.66, 0.68)
 
 func interact(player: Node) -> void:
 	var attention := get_node_or_null("NpcAttention")

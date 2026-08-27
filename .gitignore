@@ -13,6 +13,11 @@ companion-site/
 models/*.bak
 models/*_r[0-9][0-9][0-9]_*.glb
 models/cook_v30.glb.bak
+*.blend1
+
+# Raw Meshy downloads and generated rig exports. Production GLBs, source
+# scripts, delivery receipts, and selected Blender authoring files are tracked.
+models/meshy_staging/
 models/cow_old.glb.bak
 
 # Eldra autoresearch outputs (huge GLB iterations + symlinks pointing

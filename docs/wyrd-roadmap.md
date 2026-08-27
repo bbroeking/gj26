@@ -4,6 +4,22 @@ THE single where-are-we doc. Detail lives in the linked plans; when this
 disagrees with code, code wins. Repo note: the three.js prototype was
 removed 2026-06-12 (recoverable from git history).
 
+## Unified source checkpoint — ready locally 2026-08-27
+
+The reconciled source now lives on `codex/wayfinder-unified` as
+`0.1.25-wayfinder-unified`; see [the complete project outline](PROJECT-OUTLINE.md)
+for the current domain, runtime, campaign, branch, and release map. `main` and
+`feat/system-buildout` are ancestors of this line; `gh-pages` remains a derived
+deployment branch. The latest public build is still `0.1.24`.
+
+The in-flight Wayfinder v2 rig, authored shortbow socket/grip, casual-walk
+sidecars, Neighbor steering, HUD objective, and cursor pass are integrated.
+The 23-entrypoint native gate is green at 1,082 checks. A Godot 4.6.2 Web
+export audited all 118 D6–D8 resources from a 118,023,608-byte PCK, and Chrome
+completed the compact title → town → World → return route with no game
+diagnostic. The dedicated fresh D8 title-to-Wayweaver browser marathon and
+final Knot-Eater art remain open.
+
 ## Full-game direction locked 2026-07-17
 
 The playable build below remains the current implementation, but the next

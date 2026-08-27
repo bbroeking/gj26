@@ -3,10 +3,10 @@ extends CharacterBody3D
 # Spec 07 / 13 / 23 — the player Ranger.
 # Camera-relative movement with a walk/run/dash/roll state machine, the bow
 # + arrow firing, HP/death. Animation is clip-based (spec 23 — the Meshy
-# v5 Ranger ships working idle/walk/run clips); the bow rides the RightHand
+# v2 Wayfinder ships working idle/walk/run clips); the bow rides the LeftHand
 # bone each frame.
 
-const BOW_SCENE := preload("res://models/prop_bow_v1.glb")
+const BOW_SCENE := preload("res://models/prop_shortbow_v2.glb")
 const BowDrawModifier := preload("res://scripts/bow_draw_modifier.gd")  # Phase 4
 const GatherSwingModifier := preload("res://scripts/gather_swing_modifier.gd")  # Plan.md B1
 const ARROW_SCENE := preload("res://scenes/Arrow.tscn")
@@ -19,11 +19,12 @@ const StatusEffectScript := preload("res://scripts/status_effect.gd")     # spec
 const RANGER_BODY_PATH := "res://models/npc_ranger_v5_rigged.glb"
 const RANGER_WALK_PATH := "res://models/ranger_walk_anim_v1.glb"
 const RANGER_RUN_PATH := "res://models/ranger_run_anim_v1.glb"
-# Wyrd — the chibi wayfinder (Meshy rig pipeline, 2026-06-10). When the
+# Wyrd — the cohesive chibi Wayfinder (Meshy rig pipeline, 2026-07-24). When the
 # rigged GLB exists it replaces the Player.tscn ranger mesh wholesale;
 # the ranger remains the fallback so the game never loses its body.
-const CHIBI_BODY_PATH := "res://models/player_chibi_v1_rigged.glb"
-const CHIBI_WALK_PATH := "res://models/player_chibi_walk_anim_v1.glb"
+const CHIBI_BODY_PATH := "res://models/player_wayfinder_v2_rigged.glb"
+const CHIBI_WALK_PATH := "res://models/player_wayfinder_v2_casual_walk_anim.glb"
+const CHIBI_IDLE_POSE_PATH := "res://models/player_wayfinder_v2_walk_anim.glb"
 const CHIBI_RUN_PATH := "res://models/player_chibi_run_anim_v1.glb"
 const CHIBI_DASH_PATH := "res://models/player_chibi_dash_anim_v1.glb"
 const CHIBI_HEIGHT := 1.25
@@ -82,7 +83,7 @@ const BOW_DRAW_TIME := 0.22         # Phase 4 — arm draw-and-loose duration on
 const BOW_ANTICIPATION_TIME := 0.07 # visible nock before the Basic arrow exists
 const ARROW_SPAWN_FWD := 0.3
 const INPUT_BUFFER_SEC := 0.15
-const BOW_SCALE := 0.5
+const BOW_SCALE := 1.0
 const BOW_ROT_DEG := Vector3.ZERO  # authored glTF is already upright
 
 # ---- survival (spec 15) ----
@@ -112,6 +113,8 @@ var _gather_modifier: SkeletonModifier3D = null   # Plan.md B1 — gather arm-sw
 var _bow: Node3D
 # Spec 46-C — the bow's hand socket + tunables (local, in socket space).
 var _bow_socket: BoneAttachment3D = null
+var _bow_socket_basis_correction := Basis.IDENTITY
+var _bow_socket_basis_calibrated := false
 var _bow_base_pos := Vector3(0.0, 0.05, 0.0)
 var _bow_draw_dir := Vector3(0.0, 0.0, 1.0)
 const BOW_SOCKET_ROT := Vector3(90.0, 0.0, 0.0)
@@ -377,6 +380,7 @@ func _ready() -> void:
 		if _ap != null:
 			_ap.advance(0.0)
 		_add_ink_outline(_mesh)        # the player wears the same ink rim as foes
+		_set_bow_grip_shape(true)
 	_attach_bow()
 
 	# Spec 46 — puppets carry no HUD, panels, or hotbar; one set per machine.
@@ -422,6 +426,20 @@ func _ink_outline_pass() -> StandardMaterial3D:
 	o.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	o.albedo_color = Color(0.13, 0.09, 0.06)
 	return o
+
+
+# The Meshy skeleton has no finger bones. Blender authors a reversible
+# BowGrip_L morph instead, and rigid bows/tools continue to use socket bones.
+func _set_bow_grip_shape(active: bool) -> void:
+	if _mesh == null:
+		return
+	for candidate in _all_mesh_instances(_mesh):
+		var mesh_instance := candidate as MeshInstance3D
+		if mesh_instance.mesh == null:
+			continue
+		for shape_index in mesh_instance.mesh.get_blend_shape_count():
+			if String(mesh_instance.mesh.get_blend_shape_name(shape_index)) == "BowGrip_L":
+				mesh_instance.set_blend_shape_value(shape_index, 1.0 if active else 0.0)
 
 # Instantiate the chibi Wayfinder when her rigged GLB is present, otherwise the
 # legacy ranger. Player.tscn intentionally owns no model dependency: this keeps
@@ -480,8 +498,12 @@ func _setup_clips() -> void:
 			const PLAYER_IDLE_POSE := "player_idle_pose"
 			if lib.has_animation(PLAYER_IDLE_POSE):
 				lib.remove_animation(PLAYER_IDLE_POSE)
-			lib.add_animation(PLAYER_IDLE_POSE,
-				lib.get_animation(_clip_walk).duplicate())
+			if ResourceLoader.exists(CHIBI_IDLE_POSE_PATH):
+				_merge_clip_by_key(lib, PLAYER_IDLE_POSE,
+					load(CHIBI_IDLE_POSE_PATH), "walk")
+			if not lib.has_animation(PLAYER_IDLE_POSE):
+				lib.add_animation(PLAYER_IDLE_POSE,
+					lib.get_animation(_clip_walk).duplicate())
 			_clip_idle = PLAYER_IDLE_POSE
 	else:
 		if _clip_walk == "" and ResourceLoader.exists(RANGER_WALK_PATH):
@@ -956,31 +978,33 @@ func _play_anim(state: String) -> void:
 		_ap.play(clip, 0.04 if state == "dash" else 0.08)
 
 # Spec 46-C — the bow is ANCHORED now: a BoneAttachment3D on the bow hand
-# (BoneAttachment updates after the AnimationPlayer applies the pose, so
-# the old "jittered around her hood" problem is gone — that jitter came
-# from reading bone poses in _physics_process, one frame early). The
-# recoil/draw motion rides as a local offset inside the socket.
+# supplies both the post-animation palm point and wrist angle. The bow remains
+# top-level to avoid inheriting the imported rig's scale, but its rotation is
+# rebuilt from the socket basis plus an item-local correction. The visible grip
+# therefore stays seated while every wrist/hand turn carries the bow with it.
 func _update_bow() -> void:
 	if _bow == null:
 		return
 	var hand_offset: Vector3 = _weapon_presentation.get("hand_offset",
 		Vector3(0.12, 0.06, 0.05)) as Vector3
-	var draw_forward := float(_weapon_presentation.get("draw_forward", _arc_fwd))
 	var rot_deg: Vector3 = _weapon_presentation.get("rotation_degrees", BOW_ROT_DEG) as Vector3
+	var carry_rot_deg: Vector3 = _weapon_presentation.get(
+		"carry_rotation_degrees", rot_deg) as Vector3
 	if _bow_socket != null and _mesh != null:
-		var yaw: float = _mesh.rotation.y
-		var fwd := Vector3(sin(yaw), 0.0, cos(yaw))
-		var right := Vector3(fwd.z, 0.0, -fwd.x)
 		var draw := clampf(_bow_draw_t / BOW_DRAW_TIME, 0.0, 1.0)
-		# Anchored at the hand; eased just clear of the hood's silhouette.
-		# On the draw the bow arcs UP + forward toward the aim so the shot reads
-		# from the top-down camera (a small side-lift was near-invisible there).
-		_bow.global_position = _bow_socket.global_position \
-			+ right * hand_offset.x + Vector3(0.0, hand_offset.y + _arc_up * draw, 0.0) \
-			+ fwd * (hand_offset.z + draw_forward * draw)
-		var look := Basis.looking_at(fwd, Vector3.UP) * Basis.from_euler(
-			Vector3(deg_to_rad(rot_deg.x), deg_to_rad(rot_deg.y),
-				deg_to_rad(rot_deg.z)))
+		var active_rot_deg := carry_rot_deg.lerp(rot_deg, smoothstep(0.0, 1.0, draw))
+		# The bow GLB origin is its wrapped green grip. Keep that point at the
+		# post-animation hand socket through the entire nock/draw/release.
+		var socket_basis := _bow_socket.global_basis.orthonormalized()
+		if not _bow_socket_basis_calibrated:
+			_bow_socket_basis_correction = socket_basis.inverse() \
+				* _semantic_bow_hand_basis(socket_basis)
+			_bow_socket_basis_calibrated = true
+		var hand_basis := socket_basis * _bow_socket_basis_correction
+		_bow.global_position = _bow_socket.global_position + socket_basis * hand_offset
+		var look := hand_basis * Basis.from_euler(
+			Vector3(deg_to_rad(active_rot_deg.x), deg_to_rad(active_rot_deg.y),
+				deg_to_rad(active_rot_deg.z)))
 		_bow.global_rotation = look.get_euler()
 		return
 	# Fallback (no skeleton/hand found): the old body-offset ride.
@@ -997,6 +1021,30 @@ func _update_bow() -> void:
 		Vector3(deg_to_rad(rot_deg.x), deg_to_rad(rot_deg.y),
 			deg_to_rad(rot_deg.z)))
 	_bow.global_rotation = look.get_euler()
+
+
+# Meshy/glTF can remap a bone's displayed local axes even when its palm point
+# is correct. Calibrate one fixed socket-local basis from the actual wrist→palm
+# direction: bow +Y follows the hand, bow +X is the string/top side. Once
+# captured, the correction stays rigidly attached and inherits every wrist
+# rotation instead of being rebuilt against world-up each frame.
+func _semantic_bow_hand_basis(socket_basis: Basis) -> Basis:
+	var hand_axis := socket_basis.y.normalized()
+	if _skel != null:
+		var wrist_idx := _skel.find_bone("LeftHand")
+		if wrist_idx >= 0:
+			var wrist_pose := _skel.get_bone_global_pose(wrist_idx)
+			var wrist_world: Vector3 = _skel.global_transform * wrist_pose.origin
+			var wrist_to_palm := _bow_socket.global_position - wrist_world
+			if wrist_to_palm.length_squared() > 0.000001:
+				hand_axis = wrist_to_palm.normalized()
+	var string_axis := Vector3.UP - hand_axis * Vector3.UP.dot(hand_axis)
+	if string_axis.length_squared() <= 0.000001:
+		string_axis = socket_basis.x
+	string_axis = string_axis.normalized()
+	var front_axis := string_axis.cross(hand_axis).normalized()
+	return Basis(string_axis, hand_axis, front_axis)
+
 
 func _input_dir() -> Vector3:
 	var iz := 0.0
@@ -1740,7 +1788,7 @@ func _attach_bow() -> void:
 	# body-offset ride when no skeleton/hand exists.
 	if _bow_socket == null and _skel != null:
 		var hand_idx := -1
-		for bone_name in ["LeftHand", "RightHand"]:
+		for bone_name in ["Socket_Hand_L", "LeftHand", "RightHand"]:
 			hand_idx = _skel.find_bone(bone_name)
 			if hand_idx >= 0:
 				break

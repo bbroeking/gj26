@@ -165,50 +165,40 @@ func _build_mute_indicator() -> void:
 
 # ---- Wyrd overlay: objective + toasts + skill levels ----
 func _build_wyrd_overlay() -> void:
-	# Quest tracker — a parchment scroll plate top-center, with a small-caps
-	# QUEST header, the objective, and a live progress counter.
+	# The ambient "next step" note answers three questions in order: what should
+	# I do, how far along am I, and (only when useful) how do I do it. It stays
+	# visually quieter than the world and every modal surface.
 	_quest_plate = Panel.new()
 	_quest_plate.name = "QuestNote"
-	# Slice B — promote the quest tracker from a flat chip to a SEALED SCROLL:
-	# a painted-wood 9-patch backing + a drawn parchment-grain / flourish /
-	# wax-seal overlay (QuestScrollArt below). The button-plate art (144×80,
-	# 18px margins) is the right scale for a ~90px banner — panel_frame's
-	# ~37/40px margins would crush a plate this short — so it's the primary,
-	# with the chip stylebox as the only fallback.
-	# 2026-07-01 — a rounded card. MapleStory: cream with a wood frame (text goes
-	# dark so it reads on cream); else the soft enamel card (cream text).
 	var maple := WyrdUi.has_maple()
 	var q_hdr_col: Color = WyrdUi.MAPLE_WOOD_D if maple else WyrdUi.GOLD
 	var q_body_col: Color = WyrdUi.MAPLE_INK_DARK if maple else WyrdUi.TEXT_ON_DARK
-	var q_prog_col: Color = Color(0.18, 0.36, 0.12) if maple else WyrdUi.SAGE
+	var q_prog_col: Color = Color(0.21, 0.39, 0.15) if maple else WyrdUi.SAGE
 	var sb := StyleBoxFlat.new()
-	sb.set_corner_radius_all(18)
-	sb.corner_detail = 10
+	sb.set_corner_radius_all(11)
+	sb.corner_detail = 8
 	sb.anti_aliasing = true
 	if maple:
-		sb.bg_color = WyrdUi.MAPLE_CREAM
-		sb.set_border_width_all(6)
-		sb.border_color = WyrdUi.MAPLE_WOOD
+		sb.bg_color = Color(WyrdUi.MAPLE_CREAM, 0.94)
+		sb.set_border_width_all(1)
+		sb.border_color = Color(WyrdUi.MAPLE_WOOD_D, 0.46)
 	else:
-		sb.bg_color = Color(WyrdUi.KIT_PLATE, 0.90)
-		sb.set_border_width_all(2)
-		sb.border_color = Color(WyrdUi.GOLD, 0.55)
-	sb.shadow_color = Color(0, 0, 0, 0.28)
-	sb.shadow_size = 8
-	sb.shadow_offset = Vector2(0, 4)
+		sb.bg_color = Color(WyrdUi.KIT_PLATE, 0.88)
+		sb.set_border_width_all(1)
+		sb.border_color = Color(WyrdUi.GOLD, 0.38)
+	sb.shadow_color = Color(0, 0, 0, 0.20)
+	sb.shadow_size = 4
+	sb.shadow_offset = Vector2(0, 2)
 	_quest_plate.add_theme_stylebox_override("panel", sb)
-	# Spec 52 (Direction A) — a compact objective chip pinned top-LEFT, not a
-	# 520px banner centred over the world. One line + an affix sub-line.
 	_quest_plate.anchor_left = 0.0
 	_quest_plate.anchor_right = 0.0
-	_quest_plate.offset_left = 14
-	_quest_plate.offset_right = 386
+	_quest_plate.offset_left = 12
+	_quest_plate.offset_right = 350
 	_quest_plate.offset_top = 12
-	_quest_plate.offset_bottom = 82
+	_quest_plate.offset_bottom = 78
 	add_child(_quest_plate)
-	# Drawn scroll dressing — added first so it sits behind the text. Fills the
-	# plate; redraws on resize. The _draw-on-Control pattern is proven in this
-	# CanvasLayer (GlobeGauge).
+	# One slim wayfinding-green thread gives the eye an entry point without
+	# turning the note into another framed parchment panel.
 	var art := QuestScrollArt.new()
 	art.anchor_right = 1.0
 	art.anchor_bottom = 1.0
@@ -216,25 +206,25 @@ func _build_wyrd_overlay() -> void:
 	_quest_plate.add_child(art)
 	var qhdr := Label.new()
 	qhdr.name = "QuestTitle"
-	qhdr.text = "✦ Next"
+	qhdr.text = "NEXT STEP"
 	var hf := WyrdUi.font_header()
 	if hf != null:
 		qhdr.add_theme_font_override("font", hf)
-	qhdr.add_theme_font_size_override("font_size", 15)
+	qhdr.add_theme_font_size_override("font_size", 13)
 	qhdr.add_theme_color_override("font_color", q_hdr_col)
-	qhdr.offset_left = 16
+	qhdr.offset_left = 20
 	qhdr.anchor_right = 1.0
-	qhdr.offset_top = 7
+	qhdr.offset_top = 8
 	qhdr.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_quest_plate.add_child(qhdr)
-	# Progress counter rides the top-right corner of the chip, beside the eyebrow.
 	_quest_progress = Label.new()
-	_quest_progress.add_theme_font_size_override("font_size", 15)
+	_quest_progress.name = "ObjectiveProgress"
+	_quest_progress.add_theme_font_size_override("font_size", 13)
 	_quest_progress.add_theme_color_override("font_color", q_prog_col)
 	_quest_progress.anchor_right = 1.0
-	_quest_progress.offset_left = -110
-	_quest_progress.offset_right = -12
-	_quest_progress.offset_top = 7
+	_quest_progress.offset_left = -116
+	_quest_progress.offset_right = -13
+	_quest_progress.offset_top = 8
 	_quest_progress.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_quest_plate.add_child(_quest_progress)
 	_objective = Label.new()
@@ -242,9 +232,9 @@ func _build_wyrd_overlay() -> void:
 	_objective.add_theme_font_size_override("font_size", 18)
 	_objective.add_theme_color_override("font_color", q_body_col)
 	_objective.anchor_right = 1.0
-	_objective.offset_top = 29
-	_objective.offset_left = 16
-	_objective.offset_right = -14
+	_objective.offset_top = 27
+	_objective.offset_left = 20
+	_objective.offset_right = -13
 	_objective.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_quest_plate.add_child(_objective)
@@ -255,10 +245,10 @@ func _build_wyrd_overlay() -> void:
 	_objective_hint.anchor_right = 1.0
 	_objective_hint.anchor_top = 1.0
 	_objective_hint.anchor_bottom = 1.0
-	_objective_hint.offset_left = 16
-	_objective_hint.offset_right = -14
-	_objective_hint.offset_top = -25
-	_objective_hint.offset_bottom = -7
+	_objective_hint.offset_left = 20
+	_objective_hint.offset_right = -13
+	_objective_hint.offset_top = -24
+	_objective_hint.offset_bottom = -5
 	_objective_hint.clip_text = true
 	_quest_plate.add_child(_objective_hint)
 	# D13 — sub-objective: names the chart / affixes you're delving. Bottom-
@@ -269,10 +259,10 @@ func _build_wyrd_overlay() -> void:
 	_quest_sub.anchor_right = 1.0
 	_quest_sub.anchor_top = 1.0
 	_quest_sub.anchor_bottom = 1.0
-	_quest_sub.offset_top = -26
-	_quest_sub.offset_bottom = -7
-	_quest_sub.offset_left = 14
-	_quest_sub.offset_right = -12
+	_quest_sub.offset_top = -25
+	_quest_sub.offset_bottom = -5
+	_quest_sub.offset_left = 20
+	_quest_sub.offset_right = -13
 	_quest_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_quest_sub.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_quest_sub.clip_text = true
@@ -282,10 +272,10 @@ func _build_wyrd_overlay() -> void:
 	_compass = CompassArrow.new()
 	_compass.anchor_left = 0.0
 	_compass.anchor_top = 0.0
-	_compass.offset_left = 352
-	_compass.offset_top = 14
-	_compass.offset_right = 392
-	_compass.offset_bottom = 54
+	_compass.offset_left = 320
+	_compass.offset_top = 15
+	_compass.offset_right = 356
+	_compass.offset_bottom = 51
 	_compass.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_compass)
 	_build_action_bar()
@@ -424,12 +414,12 @@ func _fit_quest_plate() -> void:
 	if _quest_plate == null or not is_instance_valid(_quest_plate):
 		return
 	var lines: int = maxi(1, _objective.get_line_count())
-	var h: float = 31.0 + float(lines) * 24.0
+	var h: float = 28.0 + float(lines) * 23.0
 	if _objective_hint != null and _objective_hint.visible:
-		h += 23.0
+		h += 22.0
 	if _quest_sub.visible:
 		h += 20.0
-	h += 10.0
+	h += 7.0
 	_quest_plate.offset_bottom = _quest_plate.offset_top + h
 
 # Bottom-right action bar — Pack (I) and Satchel (M) as clickable parchment
@@ -1129,12 +1119,9 @@ class QuestScrollArt extends Control:
 	func _draw() -> void:
 		if size.x < 2.0 or size.y < 2.0:
 			return
-		# Spec 53 — editorial restraint for the compact chip: the flourish rule
-		# crossed the objective baseline and the wax seal fought the corners, so
-		# both are dropped. A whisper of grain is the only dressing; the "✦ Quest"
-		# eyebrow carries the mark.
-		var inner := Rect2(Vector2(18, 16), size - Vector2(36, 32))
-		WyrdUi.draw_parchment_grain(self, inner, 23)
+		draw_line(Vector2(9, 13), Vector2(9, size.y - 13),
+			Color(WyrdUi.MAPLE_GREEN, 0.86), 3.0, true)
+		draw_circle(Vector2(9, 13), 2.2, WyrdUi.MAPLE_GREEN)
 
 
 # Spec 52 — a top-down compass arrow that points at the run's descent target.

@@ -7,7 +7,8 @@ extends Interactable
 # (src/data/npcs.js).
 
 const HOD_GLB := preload("res://models/npc_hod_tenter_v1_rigged.glb")
-const HOD_WALK_GLB := preload("res://models/npc_hod_tenter_v1_walk_anim.glb")
+const HOD_POSE_GLB := preload("res://models/npc_hod_tenter_v1_walk_anim.glb")
+const HOD_WALK_GLB := preload("res://models/npc_hod_tenter_v1_casual_walk_anim.glb")
 const AnimDriverScript := preload("res://scripts/anim_driver.gd")
 const NpcAttentionScript := preload("res://scripts/npc_attention.gd")
 const NpcWanderScript := preload("res://scripts/npc_wander.gd")
@@ -32,7 +33,7 @@ func _ready_interactable() -> void:
 	mesh.scale = Vector3.ONE * (1.72 / 1.336)
 	GlbFit.unmetal(mesh)
 	GlbFit.add_ink_outline(mesh)
-	AnimDriverScript.play_sidecar_pose(mesh, HOD_WALK_GLB, "walk", 0.75, 0.34)
+	AnimDriverScript.play_sidecar_pose(mesh, HOD_POSE_GLB, "walk", 0.75, 0.34)
 	var attention := NpcAttentionScript.new()
 	attention.name = "NpcAttention"
 	add_child(attention)
@@ -42,7 +43,7 @@ func _ready_interactable() -> void:
 	add_child(wander)
 	wander.setup(self, mesh, HOD_WALK_GLB, [
 		Vector3(1.0, 0.0, 0.8), Vector3(-0.8, 0.0, 1.0),
-	], 0.62)
+	], 0.62, 0.34)
 
 func interact(player: Node) -> void:
 	var attention := get_node_or_null("NpcAttention")

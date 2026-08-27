@@ -13,16 +13,21 @@ const FALLBACK_KIND := "default_bow"
 const PRESENTATIONS := {
 
 	FALLBACK_KIND: {
-		"scene_path": "res://models/prop_bow_v1.glb",
-		# prop_bow is 1.902 m on its long axis. Half scale gives the chibi a
-		# readable ~0.95 m shortbow instead of a weapon taller than her body.
-		"scale": 0.50,
-		# glTF conversion already maps the authored long axis to Godot UP. The
-		# old +90 X correction laid the bow flat in the firing plane.
+		"scene_path": "res://models/prop_shortbow_v2.glb",
+		# Authored at 0.68 m: a compact 54%-of-body shortbow that supports the
+		# chibi silhouette instead of competing with it.
+		"scale": 1.0,
+		# Socket_Hand_L owns the hold angle: +Y follows the fingers and +X
+		# points toward the string side. The bow therefore needs no corrective
+		# rotation and follows the animated wrist as one rigid held object.
 		"rotation_degrees": Vector3.ZERO,
-		"hand_offset": Vector3(0.12, 0.06, 0.05),
+		"carry_rotation_degrees": Vector3.ZERO,
+		# The GLB origin is the wrapped grip and Socket_Hand_L is authored at
+		# the weighted palm center, so no corrective runtime offset is needed.
+		"hand_offset": Vector3.ZERO,
 		"draw_forward": 0.32,
-		"tint": Color(0.40, 0.28, 0.18),
+		# Preserve the generated wood, moss-green grip, and cream wraps.
+		"tint": null,
 		"rune_cosmetic": "",
 	},
 	"wayweaver": {
@@ -31,6 +36,7 @@ const PRESENTATIONS := {
 		# ~0.96 m held silhouette as the familiar bow.
 		"scale": 0.40,
 		"rotation_degrees": Vector3.ZERO,
+		"carry_rotation_degrees": Vector3(0.0, 0.0, 90.0),
 		"hand_offset": Vector3(0.12, 0.06, 0.05),
 		"draw_forward": 0.32,
 		# The Blender GLB owns its dark-waysteel/root-sap palette.  Do not tint

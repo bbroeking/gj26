@@ -116,6 +116,11 @@ func _run() -> void:
 	_check(cursor_probe.has_method("cursor_click_scale")
 		and float(cursor_probe.call("cursor_click_scale", 1.0)) < 0.9,
 		"cursor visibly compresses on click")
+	_check(cursor_probe.has_method("cursor_display_scale")
+		and float(cursor_probe.call("cursor_display_scale", false)) < 0.70
+		and float(cursor_probe.call("cursor_display_scale", true))
+			> float(cursor_probe.call("cursor_display_scale", false)),
+		"cursor renders near 32px and lifts slightly over actionable controls")
 	if cursor_probe.has_method("cursor_kind_for"):
 		_check(String(cursor_probe.call("cursor_kind_for", null)) == "world",
 			"empty hover uses the world cursor")

@@ -2,12 +2,13 @@
 set -eu
 
 cd "$(dirname "$0")/.."
+godot_cmd='./tools/godot.sh'
 node --check tools/web_smoke_probe.js
 node tools/validate_web_smoke_probe.js
 rm -rf build/web
 mkdir -p build/web
-godot --headless --path . --export-release Web build/web/index.html
-godot --headless --path tools/pck_audit_project \
+"$godot_cmd" --headless --path . --export-release Web build/web/index.html
+"$godot_cmd" --headless --path tools/pck_audit_project \
   --script "$(pwd)/tools/audit_pck.gd" -- "$(pwd)/build/web/index.pck"
 if [ -f assets/brand/wayfinder_social.png ]; then
   cp assets/brand/wayfinder_social.png build/web/og.png

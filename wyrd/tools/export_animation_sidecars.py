@@ -35,6 +35,14 @@ SIDECARS = {
     "meshy_staging/npc_hod_tenter_v1_run.glb": "npc_hod_tenter_v1_run_anim.glb",
     "meshy_staging/npc_quill_v3_walk.glb": "npc_quill_v3_walk_anim.glb",
     "meshy_staging/npc_quill_v3_run.glb": "npc_quill_v3_run_anim.glb",
+    "meshy_staging/player_chibi_v1_casual_walk_source.glb":
+        "player_wayfinder_v2_casual_walk_anim.glb",
+    "meshy_staging/npc_mara_linnet_v1_casual_walk_source.glb":
+        "npc_mara_linnet_v1_casual_walk_anim.glb",
+    "meshy_staging/npc_hod_tenter_v1_casual_walk_source.glb":
+        "npc_hod_tenter_v1_casual_walk_anim.glb",
+    "meshy_staging/npc_quill_v3_casual_walk_source.glb":
+        "npc_quill_v3_casual_walk_anim.glb",
 }
 
 

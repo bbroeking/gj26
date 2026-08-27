@@ -16,7 +16,7 @@ const DRAW_BONES := [
 	{"name": "LeftArm", "axis": Vector3.RIGHT, "angle": -0.92},
 	{"name": "LeftForeArm", "axis": Vector3.RIGHT, "angle": -0.12},
 	{"name": "RightArm", "axis": Vector3.RIGHT, "angle": -0.72},
-	{"name": "RightForeArm", "axis": Vector3.FORWARD, "angle": -2.15},
+	{"name": "RightForeArm", "axis": Vector3.FORWARD, "angle": -1.40},
 ]
 
 var draw_amount := 0.0
@@ -30,11 +30,13 @@ func _ready() -> void:
 		var record := record_v as Dictionary
 		var idx := sk.find_bone(String(record.name))
 		if idx >= 0:
-			var rest := sk.get_bone_rest(idx).basis.get_rotation_quaternion()
+			# Bone pose rotations are local deltas layered on the imported rest
+			# transform. Multiplying by rest here applies the rest rotation
+			# twice, which straightens the string arm away from the cheek.
 			var delta := Quaternion(record.axis as Vector3, float(record.angle))
-			_pose_bones.append({"idx": idx, "target": rest * delta})
+			_pose_bones.append({"idx": idx, "target": delta})
 
-func _process_modification() -> void:
+func _process_modification_with_delta(_delta: float) -> void:
 	if draw_amount <= 0.001 or _pose_bones.is_empty():
 		return
 	var sk := get_skeleton()

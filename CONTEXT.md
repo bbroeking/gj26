@@ -1,65 +1,198 @@
-# gj26 — Bramblewood ARPG
+# Wayfinder
 
-A cozy fairytale Godot 4.6.2 ARPG set in Bramblewood. Toon-shaded low-poly visuals, a 4-skill hotbar + Focus resource, a status-effect framework, and themed procedural dungeons with typed-room contracts (combat / treasure / shrine / rest). NOT OSRS, NOT Diablo grimdark — storybook flavour with Diablo/PoE-shaped mechanics.
+Wayfinder is a cozy fairytale ARPG about making and following enchanted roads
+through Bramblewood. It is one domain: village life, Trades, Chartmaking, and
+delving are parts of the same gather → craft → chart → delve → restore loop.
 
-## Language
+## World and story
 
-**Pickup**:
-An item lying in the world that the player can pick up. Spawned by drops (combatant deaths) and chests (treasure rooms). Visually a glowing beacon + a rarity-coloured floating label; an Area3D on the pickup layer so the player's PickupScanner detects it. The single seam through which loot enters the player's inventory.
-_Avoid_: GroundLoot, GroundItem, DroppedItem, WorldItem.
+**Bramblewood**:
+The warm, local woodland settlement and surrounding old roads where the game
+takes place.
+_Avoid_: world, realm, kingdom.
 
-**Skill**:
-A player-usable ability bound to a hotbar slot. Carries cost (Focus), cooldown, and a list of SkillEffects applied on hit. Slot 1 is always BasicShot; slots 2–4 are picked from the pool (PowerShot, MultiShot, BrambleSnare, PiercingBolt, RainOfThorns, Thornburst, HuntersMark, HeartwoodWard, MercyShot — the deeper hunting verbs gate on Huntcraft level). Lives in `scripts/skills/`.
-_Avoid_: ability, spell, attack. Never use Skill for a leveling discipline — that's a **Trade**.
+**Wayfinder**:
+The player role: a resident who learns routes, inscribes Charts, and restores
+forgotten connections through Bramblewood.
+_Avoid_: cartographer, hero, adventurer class.
+
+**Neighbor**:
+A named Bramblewood resident whose needs, lessons, and restored workplace
+connect the player to a Trade or Chapter.
+_Avoid_: NPC in player-visible language, quest giver.
+
+**Road**:
+A named route in Bramblewood's story. A Chart materializes one procedural
+traversal of a Road.
+_Avoid_: level, dungeon, campaign node.
+
+**Hollow**:
+The procedurally arranged place reached by following a Chart, composed of
+clearings, passages, encounters, and discoveries.
+_Avoid_: dungeon in player-visible language, instance.
+
+**Delve**:
+One journey from entering a Charted Road until the Wayfinder returns or
+abandons it.
+_Avoid_: run, match, session.
+
+**Chapter**:
+An authored progression arc made from repeated Road returns, gathered clues,
+a Boss Chart, a keeper encounter, and a visible restoration at home.
+_Avoid_: questline, act.
+
+**Living Atlas**:
+The permanent village record of discovered Roads, recovered knowledge, and
+restored connections.
+_Avoid_: map screen, completion tracker.
+
+**Root Rune**:
+A permanent Chapter trophy that records a restored bond with an old Road and
+helps authorize the final Wayweaver pursuit.
+_Avoid_: key item, boss token.
+
+**Wayweaver**:
+The legendary bow earned by mastering all four Trades and settling the final
+Road.
+_Avoid_: ultimate weapon, endgame drop.
+
+## Growth and action
 
 **Trade**:
-An independently levelled discipline. Wayfinding, Earthcraft, Wildcraft, and Huntcraft each run from level 1 through 23 and own the XP earned through their verbs.
-_Avoid_: skill (reserved for hotbar abilities), stat, profession.
+An independently levelled discipline from level 1 through 23: Wayfinding,
+Earthcraft, Wildcraft, or Huntcraft.
+_Avoid_: skill, stat, profession.
 
 **Wayfinding**:
-The Trade of discovering routes, learning Chart Recipes, inscribing Charts, reading Affixes, restoring the Living Atlas, and turning chapter clues into Boss Charts.
+The Trade of discovering Chart Recipes, inscribing Charts, reading Affixes,
+recovering clues, and restoring the Living Atlas.
 _Avoid_: Cartography, carto, mapmaking skill.
 
-**Chart**:
-A crafted route that opens one dungeon run. Its Chart Recipe determines the destination and route shape; its inks shape the Affix odds. A Chart is inscribed at the Chart Table and consumed by the Waystone on entry.
-_Avoid_: map (overloaded), orb, keystone (flavor, not identifier).
+**Earthcraft**:
+The Trade of mining, refining, smithing, tools, gear, and charms.
+_Avoid_: Mining, Smithing when naming the whole Trade.
 
-**Chart Table**:
-Mara's Wayfinding station. The player places a Chart Base, Waymark, Binding, inks, and an optional Seal into a learned arrangement; the arrangement chooses the Chart's destination and shape while the inks shape its Affix odds.
-_Avoid_: Creation Table, Crafting Bench, Inscribing Table.
+**Wildcraft**:
+The Trade of foraging, woodcutting, cooking, brewing, inks, and field
+preparations.
+_Avoid_: Herblore, Gathering when naming the whole Trade.
+
+**Huntcraft**:
+The Trade of encounters, elite hunts, bosses, and learning combat Skills.
+_Avoid_: Combat level, Ranged.
+
+**Skill**:
+A player action bound to the four-slot hotbar. Basic Shot is fixed; the other
+three slots are chosen from Skills earned through Huntcraft and the story.
+_Avoid_: ability, spell, Trade.
+
+**Vigor**:
+The capacity of the Wayfinder or a creature to withstand harm before falling.
+_Avoid_: health, hit points in player-visible language.
+
+**Focus**:
+The renewable resource spent to use combat Skills beyond Basic Shot.
+_Avoid_: mana, energy.
+
+**Mastery**:
+A durable expression of how the Wayfinder practices a Trade, earned at major
+progression milestones.
+_Avoid_: talent tree, class specialization.
+
+## Chartmaking
+
+**Chart**:
+A crafted route that opens one Delve. Its recipe fixes the destination and
+shape while its inks and Affixes shape the journey's conditions.
+_Avoid_: map, keystone, ticket.
 
 **Chart Recipe**:
-A discoverable arrangement of components at the Chart Table that deterministically produces a Chart family. A recipe determines where the Chart leads and what route it draws, not the final good/bad Affix rolls.
-_Avoid_: Formula, blueprint, crafting menu entry.
+A discovered arrangement of Chart components that always produces the same
+Chart family.
+_Avoid_: formula, blueprint, crafting menu entry.
+
+**Chart Table**:
+Mara's Wayfinding station, where components and inks are arranged to inscribe
+a Chart.
+_Avoid_: Crafting Bench, Inscribing Table, Creation Table.
+
+**Chart Base**:
+The page or leaf that determines how much a Chart can hold.
+_Avoid_: blank map, paper tier.
+
+**Waymark**:
+A Chart component that points the Road toward a destination family.
+_Avoid_: waypoint, biome token.
+
+**Binding**:
+A Chart component that determines the Road's shape and depth.
+_Avoid_: topology item, route modifier.
+
+**Ink**:
+A prepared Chart material that biases Affix families and their stability
+without fixing the floor plan.
+_Avoid_: paint, affix token.
 
 **Affix**:
-A chart property with a good twin and a bad twin, resolved by a stability roll at inscribe time. Bias affixes spawn GatherNodes; modifier/pacing affixes change combat math; boss affixes put a boss in the deepest room. Only affixes with implemented effects appear in `Charts.AFFIXES` — the preview must never promise what the run can't deliver.
-_Avoid_: modifier (overloaded with elite modifiers), property, mod.
+A visible promise attached to a Chart, resolved as a good or bad twin that
+changes the contents or conditions of its Hollow.
+_Avoid_: mod, property, elite modifier.
 
-**GatherNode**:
-An Interactable resource node (ore_rock / forage_node / log_pile). One E-press harvests: a material into the satchel + trade XP. Dungeon nodes deplete for the run; town herb patches regrow.
-_Avoid_: resource, spawn, vein (that's an affix name).
+**Seal**:
+A Chart component that guarantees a named keeper, story room, or hunt.
+_Avoid_: boss key, summon item.
+
+**Relic**:
+A permanent story record that authorizes a late Chart Recipe without being
+consumed.
+_Avoid_: currency, crafting ingredient.
+
+**Boss Chart**:
+A deterministic Chart assembled from Chapter clues and a Seal to find the
+Chapter's keeper.
+_Avoid_: boss key, boss map.
 
 **Waystone**:
-The travel stones. The town Waystone sockets a chart and starts the run; the exit waystone inside a dungeon ends it (completion XP, return to town). In a boss chart the exit waystone rises only when the boss falls. An **abandon stone** always stands at the dungeon entry — stepping through it ends the run with no completion reward (the chart stays spent).
-_Avoid_: portal, gate (the boss arena's seals are gates).
+A travel stone that begins, continues, completes, or abandons a Delve.
+_Avoid_: portal, teleporter.
+
+## Goods and rewards
+
+**GatherNode**:
+A harvestable source of ore, forage, or logs found in Bramblewood or a Hollow.
+_Avoid_: resource spawn, vein when naming the general concept.
 
 **Satchel**:
-The keyed, stackable materials inventory (`Game.materials`, id → count) — herbs, ores, logs, inks. Separate from the Tetris gear Inventory by design: gear and reagents are different verbs.
-_Avoid_: pouch, bag, materials-inventory.
+The stackable store for materials, ingredients, inks, and other making goods.
+_Avoid_: pouch, bag, inventory.
 
-**SkillEffect**:
-The on-hit consequence of a Skill (e.g. apply burn, apply snared, apply bleed). Carried by the projectile and applied to the hit target at impact. v1 effects all apply statuses via Combatant.apply_status.
-_Avoid_: on-hit, ailment-data.
+**Pack**:
+The spatial store for Gear carried but not equipped, deliberately separate
+from the Satchel.
+_Avoid_: Satchel, materials inventory.
 
-**HitFeedback**:
-The system that fires the 6 visual/audio channels (flash, knockback, hitstop, hit-spark, camera shake, SFX) when a Combatant takes a hit, plus a soft mesh-tint pulse when a status DoT ticks. Static module; tier-keyed tunables in one place.
-_Avoid_: impact-effect, hit-react.
+**Gear**:
+Equipment worn or wielded by the Wayfinder, including weapons, armor, rings,
+and Trade tools.
+_Avoid_: loot when referring to equipped items.
 
-**Interactable**:
-A world object the player presses E to engage. Single-use (Chest, Shrine) or multi-use (Hearth). Spawned by typed-room contracts (spec 29). Detected via INTERACT_LAYER + the player's InteractScanner. Base class owns Area3D + collision sphere + prompt Label3D; subclasses override hooks (`interact`, `is_used`, `get_prompt_text`, `get_prompt_color`, `_ready_interactable`).
-_Avoid_: triggerable, usable, prompt-target.
+**Pickup**:
+An item physically waiting in a Hollow or Bramblewood to enter the Pack or
+Satchel.
+_Avoid_: GroundLoot, GroundItem, WorldItem.
+
+## Encounters and refuge
 
 **Elite**:
-A Combatant promoted at spawn-time with one of four storybook modifiers (Brambled, Swift, Sunlit, Briarbound) that bump HP, scale, and tint, and dispatch per-modifier behaviour (death-nova bleed, faster movement, melee burn-pulse, CC-immunity). Travels with 2–3 same-kind trash as retinue. Drops loot at the new `"elite"` tier (magic-leaning floor, above combat, below treasure). One elite per combat room maximum.
-_Avoid_: champion, rare, modifier (the last one is overloaded with status/affix).
+A stronger, visibly distinguished creature with an authored modifier and a
+better reward promise.
+_Avoid_: champion, rare creature.
+
+**Boss**:
+A named keeper or creature whose encounter closes a Chapter or major Road.
+_Avoid_: raid boss, final enemy.
+
+**Hearth**:
+A place of safety and preparation where the Wayfinder may recover, change
+their loadout, or decide whether to press deeper.
+_Avoid_: checkpoint, campfire.

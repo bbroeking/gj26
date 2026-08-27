@@ -7,7 +7,8 @@ extends Interactable
 # warm, short sentences, no fantasy-isms).
 
 const WANDERER_GLB := preload("res://models/npc_mara_linnet_v1_rigged.glb")
-const WANDERER_WALK_GLB := preload("res://models/npc_mara_linnet_v1_walk_anim.glb")
+const WANDERER_POSE_GLB := preload("res://models/npc_mara_linnet_v1_walk_anim.glb")
+const WANDERER_WALK_GLB := preload("res://models/npc_mara_linnet_v1_casual_walk_anim.glb")
 const AnimDriverScript := preload("res://scripts/anim_driver.gd")
 const NpcAttentionScript := preload("res://scripts/npc_attention.gd")
 const NpcWanderScript := preload("res://scripts/npc_wander.gd")
@@ -36,7 +37,8 @@ func _ready_interactable() -> void:
 	mesh.scale = Vector3.ONE * (1.7 / 1.627)
 	GlbFit.unmetal(mesh)
 	GlbFit.add_ink_outline(mesh)
-	AnimDriverScript.play_sidecar_pose(mesh, WANDERER_WALK_GLB, "walk", 0.75, 0.0)
+	AnimDriverScript.play_sidecar_pose(
+		mesh, WANDERER_POSE_GLB, "walk", 0.75, 0.0)
 	var attention := NpcAttentionScript.new()
 	attention.name = "NpcAttention"
 	add_child(attention)

@@ -66,6 +66,45 @@ func run() -> void:
 	check("all three NPCs travel with their authored walk clip", patrols_advanced)
 	check("walking NPC skeletons are visibly outside the T-pose",
 		walking_rigs_deformed)
+
+	# A patrol corner must be a walking turn, never the old
+	# arrive → swivel in place → pause → depart sequence.
+	var corner_npc := walkers[0] as Node3D
+	var corner_wander := corner_npc.get_node("NpcWander")
+	corner_wander.set_process(false)
+	var corner_origin := corner_npc.global_position
+	corner_wander.set("_points", [
+		corner_origin,
+		corner_origin + Vector3(0.0, 0.0, 0.34),
+		corner_origin + Vector3(0.62, 0.0, 0.34),
+	])
+	corner_wander.set("_point_index", 1)
+	corner_wander.set("_pause_left", 0.0)
+	corner_wander.set("_move_direction", Vector3.FORWARD)
+	corner_wander.set("_current_speed", float(corner_wander.get("_speed")))
+	corner_npc.rotation.y = 0.0
+	var corner_min_step := INF
+	var corner_changed := false
+	var corner_samples_after_change := 0
+	for _sample in 24:
+		var before_step := corner_npc.global_position
+		corner_wander.call("_process", 0.08)
+		corner_min_step = minf(corner_min_step,
+			corner_npc.global_position.distance_to(before_step))
+		if int(corner_wander.get("_point_index")) == 2:
+			if not corner_changed:
+				corner_changed = true
+			else:
+				corner_samples_after_change += 1
+		if corner_changed and corner_samples_after_change >= 2:
+			break
+	check("NPC patrol corners keep walking instead of swivel-stop-go",
+		corner_changed and corner_min_step > 0.015,
+		{"changed": corner_changed, "minimum_step": corner_min_step,
+			"pause": corner_wander.get("_pause_left")})
+	corner_npc.global_position = corner_origin
+	corner_wander.set_process(true)
+
 	var paused_rigs_deformed := true
 	for npc in walkers:
 		var wander := npc.get_node_or_null("NpcWander")

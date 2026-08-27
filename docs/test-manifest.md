@@ -1,6 +1,6 @@
 # Wayfinder test manifest
 
-Updated 2026-07-23 for `0.1.20-readable-objective`.
+Updated 2026-08-27 for `0.1.25-wayfinder-unified`.
 
 ## Canonical checkpoint gate
 
@@ -10,11 +10,11 @@ Run every entry with `WYRD_NO_SAVE=1 godot --headless --path wyrd --script res:/
 |---|---:|---|
 | `test_wyrd_loop.gd` | 427 | Core loop, data, economy, campaign contracts, Gilded chest count |
 | `test_wyrd_dungeon_scene.gd` | 41 | Production World scene and dungeon construction |
-| `test_wyrd_transitions.gd` | 125 | Town/World transitions and return ownership |
-| `test_skills.gd` | 75 | Hotbar dispatch and Skill behavior |
-| `test_boot_smoke.gd` | 148 | Script compilation and Town/World boot paths |
-| `test_first_road_slice.gd` | 17 | Fresh 5–10 minute First Road promise and three-stage first-control guidance |
-| `test_movement_feel.gd` | 14 | Production keyboard movement, roll feel, named-neighbor motion, and creature opening-to-pursuit behavior |
+| `test_wyrd_transitions.gd` | 134 | Town/World transitions, return ownership, and Wayfinder v2 presentation resources |
+| `test_skills.gd` | 80 | Hotbar dispatch, Skill behavior, bow socketing, and draw-pose contracts |
+| `test_boot_smoke.gd` | 150 | Script compilation and Town/World boot paths |
+| `test_first_road_slice.gd` | 25 | Fresh 5–10 minute First Road promise and three-stage first-control guidance |
+| `test_movement_feel.gd` | 17 | Production keyboard movement, roll feel, named-neighbor motion, and creature opening-to-pursuit behavior |
 | `test_hollow_readability.gd` | 9 | Boundary-only living walls, complete-profile cutaway restoration, and budget |
 | `test_first_hollow_room_grammar.gd` | 8 | Archetype determinism, variation, boundary truth, and combat apertures |
 | `test_first_hollow_living_edge.gd` | 9 | Profile ownership, landmark count, deterministic remixing, and production realization |
@@ -31,7 +31,7 @@ Run every entry with `WYRD_NO_SAVE=1 godot --headless --path wyrd --script res:/
 | `test_town_arrival_framing.gd` | 8 | Town-only camera profile, bounded framing values, and the real 1280×720 player/Mara/landmark projection |
 | `test_town_working_edge.gd` | 12 | Three-landmark band, attached support ownership, protected approaches, and lower-facade projection |
 | `test_ui_hud_and_pack_contract.gd` | 36 | Objective readability floor, semantic HUD actions, Pack layout, focus, and quick actions |
-| **Total** | **1,055** | **Required before a checkpoint is accepted** |
+| **Total** | **1,082** | **Required before a checkpoint is accepted** |
 
 ## Exported-browser gate
 
@@ -170,6 +170,15 @@ authorities remain unchanged. The exact 96,120,928-byte PCK has SHA-256
 `619b5db4494e1abd2bac1db740da7f0c6cb0072b8e52ccbd7f6ba8c0bd77c555`.
 The public `v0.1.20` immediate frame and enhanced title → town → chart table →
 Codex → world → return route passed from the exact hosted package.
+
+The `0.1.25-wayfinder-unified` proof adds the Wayfinder v2 rig, authored
+left-palm bow socket and grip shape, shortbow v2, casual-walk sidecars for the
+player and three named Neighbors, smooth waypoint steering, and the quieter
+objective/cursor treatment. The Godot 4.6.2 release export audited all 118
+D6–D8 resources from a 118,023,608-byte PCK. Chrome completed the compact real
+`title → town → world → complete` route with the harness in `passed` state and
+an empty game diagnostic ledger. The dedicated fresh D8 title-to-Wayweaver
+browser marathon remains a separate open release gate.
 
 The persistence-disabled retained corpus currently contains 128 direct
 entrypoints. A strict 30-second-per-entrypoint serial audit passed 120; the

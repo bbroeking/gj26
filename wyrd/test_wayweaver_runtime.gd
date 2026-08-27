@@ -62,8 +62,13 @@ func _test_presentation(player: Node3D, wayweaver: Dictionary) -> void:
 			and (resolved.rotation_degrees as Vector3).is_equal_approx(Vector3.ZERO), resolved)
 	var fallback := Presentations.for_item(null)
 	_check("familiar bow stays chibi-sized and authored-upright",
-		is_equal_approx(float(fallback.scale), 0.50)
+		String(fallback.scene_path) == "res://models/prop_shortbow_v2.glb"
+			and is_equal_approx(float(fallback.scale), 1.0)
 			and (fallback.rotation_degrees as Vector3).is_equal_approx(Vector3.ZERO), fallback)
+	_check("shortbow grip stays inside the Ranger's left palm",
+		(fallback.hand_offset as Vector3).is_zero_approx(),
+		{"hand_offset": fallback.hand_offset,
+			"expected_palm_anchor": Vector3.ZERO})
 	_check("equipping Wayweaver replaces the single existing hand child",
 		socket != null and player._bow != null and String(player._weapon_presentation.scene_path)
 			== "res://models/wayweaver_v1.glb" and player._bow.get_parent() == socket
@@ -257,7 +262,7 @@ func _test_weapon_loss_burns(player: Node3D) -> void:
 	game.equipment.equip(ItemsData.make_item("warbow", "rare"))
 	_check("weapon replacement burns an armed thread and restores fallback presentation",
 		player.wayweaver_thread_state().state == Rules.SPENT
-			and String(player._weapon_presentation.scene_path) == "res://models/prop_bow_v1.glb")
+			and String(player._weapon_presentation.scene_path) == "res://models/prop_shortbow_v2.glb")
 
 
 func _check(label: String, ok: bool, detail = "") -> void:
