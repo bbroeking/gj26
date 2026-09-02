@@ -57,6 +57,9 @@ kb/          the LLM Wiki — synthesized, interlinked design knowledge base
   synthesized design map (systems, entities, world, decisions, pipeline, plus an
   MMO-research cluster) lives in the **`kb/` wiki** — read it to understand how
   Wayfinder fits together.
+- **Production:** `docs/production/PRODUCTION-COMPLETION-PLAN.md` is the current
+  gate/staffing plan. The resource-pillar decision is narrowed in
+  `docs/production/RESOURCE-PILLAR-DIRECTOR-CALL.md`.
 
 ## Project memory
 

@@ -97,3 +97,11 @@ docs/                      ← world bible, plans, specs/, adr/, ui-refs/
   removed 2026-06-13.
 - The concise, reconciled project map is `docs/PROJECT-OUTLINE.md`; the root
   `CONTEXT.md` is the single ubiquitous-language glossary.
+- Production direction lives in
+  `docs/production/PRODUCTION-COMPLETION-PLAN.md`. The current resource-system
+  recommendation is `docs/production/RESOURCE-PILLAR-DIRECTOR-CALL.md`; it
+  supersedes broader first-slice machinery in the exploratory pillar proposal.
+- Delivery model: the lead agent acts as game director, Sol Ultra plans and
+  sequences, bounded Terra specialists implement, and an independent Terra
+  reviews. Keep at most two builders active and assign one owner to integration
+  hotspots such as `game.gd`, `town.gd`, and `layout_loader.gd`.
